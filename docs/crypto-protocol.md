@@ -346,6 +346,7 @@ Before any production use the following must pass:
 | `test-vectors/device-prf-v1.json` | PRF / HKDF / Device-Key Envelope KATs     |
 | `recovery.md`             | Detailed Emergency Kit UX & operational guidance    |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
+| **`security-review-adversarial-crypto-core.md`** | **Adversarial code review of `packages/crypto`: attack-by-attack findings, fixes, confirmed gaps** |
 
 ---
 

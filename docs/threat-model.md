@@ -98,6 +98,7 @@ A **new** client has no pinned revision. The first snapshot it accepts is pin-on
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
 | Quantum attacks on AES            | Out of scope for v1                               | Future protocol version |
+| Per-entry rollback within one `vaultKeyVersion` epoch: `entryAad` does not bind `revision`, so a malicious server can serve one entry's stale-but-authentic ciphertext while otherwise reporting an advanced, `evaluateRevision`-accepted revision | Confirmed gap (v1) | Bind `revision`/`vault_key_version` into entry/envelope AAD, or authenticate a signed snapshot manifest — see `security-review-adversarial-crypto-core.md` §3 |
 
 ---
 

@@ -130,3 +130,5 @@ After a snapshot is accepted as fresh and a wrapping key unwraps:
 ## 7. What the server can still do
 
 See `threat-model.md` §2.7. Freshness and atomic snapshots stop *silent* rollback and *partial* rotation. They do not stop availability attacks (withholding the latest snapshot, refusing writes).
+
+**Confirmed gap (adversarial review):** freshness at the metadata layer does not imply freshness of every individual entry. Because `entryAad` does not bind `revision`/`vault_key_version`, a malicious server can report an advanced, freshness-check-passing revision while silently substituting one entry's stale-but-authentic ciphertext from an earlier revision in the same `vault_key_version` epoch. `decryptEntry` has no way to detect this on its own. See `security-review-adversarial-crypto-core.md` §3 for a runnable reproduction and the proposed fix (bind revision into AAD, or authenticate a signed snapshot manifest).

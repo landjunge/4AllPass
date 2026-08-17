@@ -85,6 +85,8 @@ interface KeyEnvelope {
 
   // Present only when type === "device"
   deviceId?: string;                             // stable device/profile identifier
+                                                 // Device-Key rotation uses DeviceKeyEnvelope.deviceKeyVersion,
+                                                 // not this envelope. See §5.1.
 
   // Common fields
   encryption: "AES-256-GCM";
@@ -122,6 +124,8 @@ The `crypto_version` field in AAD **must** be the `version` stored on that same 
 Implementations must pass `envelope.version` into `envelopeAad(...)` on wrap and unwrap. A library-wide default is not acceptable: it would allow `envelope.version = 2` to be sealed under AAD `crypto_version = 1`.
 
 Worked hex and encrypt/decrypt known-answer tests: **[docs/test-vectors.md](test-vectors.md)** (`TV-ENV-*`, `TV-TAMPER-TYPE`).
+
+Server-supplied `revision` / `vault_key_version` are **not** part of envelope AAD. Those numbers are authenticated by the **Vault Manifest** (§8.1). Putting them on every envelope would force a re-wrap of the entire envelope set on every edit. The manifest binds the set without that cost.
 
 ---
 
@@ -171,6 +175,36 @@ The byte-level construction (PRF input, HKDF salt/info, Device-Key Envelope, fal
 4. Wrap VK under DK (Device Envelope, server).
 5. On biometric unlock: assertion → PRF → DWK → DK → VK.
 
+### 5.1 Device-Key Envelope vs Device Envelope
+
+```
+DeviceKeyEnvelope
+  vaultId, deviceId, credentialId, deviceKeyVersion
+       │
+       └── DK          // random 256-bit, local
+             │
+             ▼
+       Device Envelope (type = "device")
+         deviceId
+             │
+             └── VK    // uploaded
+```
+
+| Object | Wraps | Wrapping key | Version field | Typical store |
+|---|---|---|---|---|
+| **Device-Key Envelope** | DK | DWK (from PRF) | `deviceKeyVersion` (≥ 1) | local; may be mirrored opaque |
+| **Device Envelope** | VK | DK | snapshot `vault_key_version` | server snapshot |
+
+`deviceKeyVersion` increments **only** when this device’s DK is rotated (lost authenticator, suspected local compromise of DK, not of VK). That is independent of `vault_key_version`.
+
+AAD for the Device-Key Envelope (exact order):
+
+```
+"4allpass-device-key-v1" || vault_id || device_id || credential_id || crypto_version_u32be || device_key_version_u32be
+```
+
+Clients pin the last accepted `deviceKeyVersion` locally and refuse a downgrade (`assertDeviceKeyVersion`).
+
 Fallback to Master Password must always remain possible.  
 Do not implement a custom “WebAuthn → Device Key” shortcut.
 
@@ -181,14 +215,49 @@ Do not implement a custom “WebAuthn → Device Key” shortcut.
 ### Primary Recovery Mechanism (v1)
 **Recovery Key** (recommended and required for production vaults)
 
-- Generated once at vault creation (cryptographically random, ≥ 256 bit entropy).
-- Encoded for humans (BIP39 24-word style **or** high-entropy Base58).
-- Creates a **Recovery Envelope** (type = `"recovery"`).
+- Generated once at vault creation: **32 CSPRNG bytes** (`generateRecoveryKey`).
+- **Never** used directly as an AES key. Same rule as WebAuthn PRF output.
+
+```
+Recovery Key (32 bytes)
+        │
+        ▼
+   HKDF-SHA-256
+        │
+        ▼
+      RWK (32 bytes)
+        │
+        ▼
+  unwrap Recovery Envelope  →  VK
+```
+
+```
+RWK = HKDF-SHA-256(
+  IKM  = recovery_key,                                          // 32 bytes
+  salt = SHA-256(encodeAad(["4allpass-recovery-salt-v1", vault_id])),
+  info = encodeAad(["4allpass-recovery-wrap-v1", vault_id, crypto_version_u32be]),
+  L    = 32
+)
+```
+
+- Emergency-Kit encoding (authoritative in v1):
+
+  ```
+  4ap1k.<64 lowercase hex key>.<8 hex checksum>
+  ```
+
+  Checksum = `SHA-256("4allpass-recovery-checksum-v1" || key)[0:4]`.  
+  Parse is case-insensitive and ignores whitespace and dashes.  
+  BIP39 / Base58 remain **optional future encodings** of the same 32 bytes; they are not required for v1.
+
+- Creates a **Recovery Envelope** (type = `"recovery"`) wrapping VK under **RWK**.
 - Presented to the user as an **Emergency Kit** (printable + QR):
   - Vault ID
-  - Recovery words / code
+  - Recovery code (`4ap1k.…`)
   - Clear warning that this is the **only** recovery path
   - Instruction to store offline and securely
+
+Details: **[docs/recovery.md](recovery.md)**. KATs: `docs/test-vectors/recovery-v1.json`.
 
 ### Explicit Non-Goals for v1
 - No e-mail / “forgot password” reset that restores vault access.
@@ -196,9 +265,10 @@ Do not implement a custom “WebAuthn → Device Key” shortcut.
 - No server-side recovery of the Vault Key.
 
 ### Recovery Flow
-1. User provides Recovery Key.
-2. Client unwraps Recovery Envelope → obtains Vault Key.
-3. User can then create a new Master Envelope and/or new Device Envelopes.
+1. User provides the Emergency Kit string (or scans the QR).
+2. Client `parseRecoveryKey` → 32-byte key (checksum must match).
+3. Client derives RWK and unwraps the Recovery Envelope → Vault Key.
+4. User can then create a new Master Envelope and/or new Device Envelopes.
 
 Later versions may add Shamir Secret Sharing as an optional advanced recovery method.
 
@@ -223,7 +293,7 @@ Because a compromised device already knows the current Vault Key, soft revocatio
 
 Summary: produce a complete new snapshot at `revision N+1` with `vault_key_version + 1`, re-encrypt every entry, mint a full new envelope set, then CAS `active_revision`. Never mix VK₁ entries with VK₂ envelopes.
 
-Implementations **must** support Vault Key Rotation and must refuse rolled-back revisions (`evaluateRevision`).
+Implementations **must** support Vault Key Rotation and must refuse rolled-back revisions (`evaluateRevision` on the **authenticated** manifest, via `acceptSnapshot`).
 
 ---
 
@@ -256,9 +326,88 @@ The caller does not pass them. That is what keeps a v2 payload decryptable after
 
   Both version integers in the AAD are the values stored on that same `EncryptedEntry`.
 
+  `revision` and `vault_key_version` are **not** in entry AAD. Re-encrypting every entry on every edit just to bind those numbers would be an operational tax. The **Vault Manifest** (§8.1) binds the exact ciphertext set to those numbers instead.
+
 - Plaintext is only ever present on the client after successful unlock.
 
 Worked hex: **TV-ENTRY-01**. Cross-vault rejection: **TV-TAMPER-CROSS-VAULT**.
+
+### 8.1 Authenticated Vault Manifest (required)
+
+`VaultRevision` as a JSON object is **not** authentic. A malicious server can pair `revision = 50` with ciphertext from another snapshot that still decrypts under the current VK.
+
+Every published snapshot **must** include a **SealedManifest**. The client **must** call `acceptSnapshot` (or the equivalent) before applying envelopes or entries.
+
+```
+SealedManifest
+├── vaultId
+├── revision                  // untrusted header; rebound through AAD + HKDF
+├── vaultKeyVersion
+├── cryptoProtocolVersion
+├── nonce / ciphertext / tag  // AES-256-GCM under SK, not under VK directly
+```
+
+```
+SK = HKDF-SHA-256(
+  IKM  = VK,
+  salt = SHA-256(encodeAad(["4allpass-manifest-salt-v1", vault_id])),
+  info = encodeAad([
+           "4allpass-manifest-key-v1",
+           vault_id,
+           revision_u32be,
+           vault_key_version_u32be,
+           crypto_version_u32be
+         ]),
+  L    = 32
+)
+```
+
+Manifest AAD (exact order):
+
+```
+"4allpass-manifest-v1" || vault_id || revision_u32be || vault_key_version_u32be || crypto_version_u32be
+```
+
+The plaintext body commits to every envelope and every entry via `SHA-256(encodeAad(["4allpass-box-digest-v1", nonce, ciphertext, tag]))`, sorted canonically.
+
+`acceptSnapshot`:
+
+1. Open the sealed manifest (header numbers are taken from the object, then rebound — a swapped `revision` fails AEAD).
+2. Refuse server-claimed metadata that does not equal the authenticated header.
+3. Run `evaluateRevision` on the **authenticated** numbers.
+4. Recompute commitments; a single mismatch is `IntegrityError`.
+
+KATs: `docs/test-vectors/manifest-v1.json`.
+
+### 8.2 Atomic snapshot (backend protocol requirement)
+
+The server’s unit of storage and of sync is **one immutable snapshot**:
+
+```
+Revision N
+│
+├── vault_key_version
+├── crypto_protocol_version
+├── envelopes[]          // master + device + recovery for this VK
+├── entries[]            // EncryptedEntry values under this VK
+└── sealed_manifest      // authenticates the four lines above
+```
+
+plus a single pointer `active_revision`.
+
+**Must:**
+
+- Write snapshot `N+1` **in full** (every envelope, every entry, the sealed manifest) **before** CAS `active_revision` from `N` to `N+1`.
+- Serve only the snapshot named by `active_revision`. Never assemble “current envelopes + current entries” from different revisions.
+- On crash between write and CAS, leave `active_revision = N`. The incomplete `N+1` object is never served.
+
+**Must not:**
+
+- Publish `revision = 42` while some entries still belong to revision 41.
+- Flip `active_revision` before the sealed manifest of `N+1` is durable.
+- Treat server-side `revision` / `vault_key_version` columns as authentic without the manifest.
+
+Normative commit / rotation steps: **[docs/vault-revision.md](vault-revision.md)**.
 
 ---
 
@@ -266,7 +415,7 @@ Worked hex: **TV-ENTRY-01**. Cross-vault rejection: **TV-TAMPER-CROSS-VAULT**.
 
 - Every KeyEnvelope carries `version: 1` (crypto protocol).
 - Every EncryptedEntry carries `cryptoVersion: 1` and a `schemaVersion` of its plaintext.
-- The vault snapshot records `crypto_protocol_version`, `revision`, and `vault_key_version` — see [vault-revision.md](vault-revision.md).
+- The vault snapshot records `crypto_protocol_version`, `revision`, `vault_key_version`, **and** a sealed Vault Manifest — see [vault-revision.md](vault-revision.md) and §8.1.
 - Future protocol changes (new KDF, new AAD schema, new algorithms) will increment the crypto version and provide a migration path.
 - KDF parameters live inside the Master Envelope so that the client can always re-derive the correct Master Key even after a profile upgrade.
 
@@ -298,8 +447,8 @@ LOCKED  →  UNLOCKING  →  UNLOCKED  →  LOCKING  →  LOCKED
 
 The server may store:
 - Account authentication data (email, account password hash, OAuth identifiers)
-- Vault metadata (`vault_id`, creation time, `crypto_protocol_version`, `revision`, `vault_key_version`)
-- Immutable snapshots (envelopes + entries) and the `active_revision` pointer
+- Vault metadata (`vault_id`, creation time, `crypto_protocol_version`, `revision`, `vault_key_version`) — **untrusted until the sealed manifest verifies**
+- Immutable snapshots (envelopes + entries + sealed manifest) and the `active_revision` pointer
 - Device metadata (`deviceId`, user-agent summary, last seen, WebAuthn credential IDs)
 - Salts and Argon2 parameters (they live inside the Master Envelope)
 
@@ -324,7 +473,9 @@ Before any production use the following must pass:
 - Wrong-password / wrong-recovery-key tests
 - Nonce uniqueness under concurrent encryption
 - Revision rollback / vault-key downgrade (`evaluateRevision`)
+- Authenticated manifest + mix-and-match / claimed-revision mismatch (`acceptSnapshot`)
 - Device-PRF HKDF + Device-Key Envelope (`device-prf-v1.json`)
+- Recovery HKDF + Emergency Kit encoding (`recovery-v1.json`)
 - Key rotation end-to-end test (full snapshot commit)
 - Soft + hard revocation tests
 - Cross-device envelope isolation tests
@@ -341,10 +492,12 @@ Before any production use the following must pass:
 | `threat-model.md`         | Attackers, assets, **malicious server**, residual risks |
 | **`webauthn-prf.md`**     | **PRF → HKDF → DWK → DK construction + fallback**   |
 | **`vault-revision.md`**   | **Snapshots, rollback detection, atomic rotation**  |
+| **`recovery.md`**         | **Recovery key encoding, RWK, Emergency Kit**       |
 | **`test-vectors.md`**     | **AES-256-GCM known-answer tests + AAD encoder**    |
 | **`test-vectors-argon2id.md`** | **Argon2id known-answer tests + KDF profiles** |
 | `test-vectors/device-prf-v1.json` | PRF / HKDF / Device-Key Envelope KATs     |
-| `recovery.md`             | Detailed Emergency Kit UX & operational guidance    |
+| `test-vectors/manifest-v1.json` | Authenticated snapshot manifest KATs      |
+| `test-vectors/recovery-v1.json` | Recovery encoding + RWK KATs              |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
 
 ---

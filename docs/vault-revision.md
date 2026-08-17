@@ -42,8 +42,13 @@ VaultSnapshot
 ├── vault_key_version
 ├── crypto_protocol_version
 ├── envelopes[]          // all current Master / Device / Recovery envelopes
-└── entries[]            // all EncryptedEntry values under this VK
+├── entries[]            // all EncryptedEntry values under this VK
+└── sealed_manifest      // AEAD under HKDF(VK); authenticates every field above
 ```
+
+`revision` / `vault_key_version` in the snapshot header or a SQL column are **untrusted**.  
+The client takes those numbers from the **opened manifest**, then runs `evaluateRevision`.  
+`acceptSnapshot` is the required entry point.
 
 The server also stores a single pointer:
 
@@ -75,6 +80,9 @@ The client pins the last accepted `(vault_id, revision, vault_key_version)`.
 | different `vault_id` | **`mismatch` — refuse** |
 
 Implemented in `@4allpass/crypto` as `evaluateRevision` / `assertFreshSnapshot`.  
+Those functions are **policy only**. They do not prove that the numbers belong to the ciphertext.
+
+The client **must** obtain the incoming `VaultRevision` from `openManifest` / `acceptSnapshot`, not from a server column.  
 A refused snapshot must not be decrypted into the unlocked vault.
 
 Pin-on-first-use is intentional: a brand-new client has no prior revision. After the first successful unlock, the pin is stored locally (outside the server’s control).
@@ -85,15 +93,18 @@ Pin-on-first-use is intentional: a brand-new client has no prior revision. After
 
 1. Client reads `active_revision = N` and the snapshot.
 2. Client checks freshness (§3).
-3. Client produces snapshot `N+1` (new nonces, same AAD rules).
-4. Server writes snapshot `N+1` **in full** (envelopes + entries). It is not active yet.
-5. Server CAS: `if active_revision == N then active_revision = N+1`.
-6. On CAS failure the client re-fetches and retries.
+3. Client produces snapshot `N+1` (changed entries get new nonces; unchanged ciphertexts may be reused).
+4. Client seals a **Vault Manifest** over the exact envelope + entry set of `N+1`.
+5. Server writes snapshot `N+1` **in full** (envelopes + entries + sealed manifest). It is not active yet.
+6. Server CAS: `if active_revision == N then active_revision = N+1`.
+7. On CAS failure the client re-fetches and retries.
 
-If the process dies between steps 4 and 5, `active_revision` is still `N`.  
+If the process dies between steps 5 and 6, `active_revision` is still `N`.  
 The incomplete `N+1` object is never served. It may be garbage-collected.
 
-**Never** flip `active_revision` before every entry and every envelope of `N+1` is durable.
+**Never** flip `active_revision` before every entry, every envelope, **and** the sealed manifest of `N+1` are durable.
+
+**Never** publish revision `N+1` while any served entry or envelope still belongs to revision `N`. The snapshot is one object.
 
 ---
 
@@ -121,9 +132,11 @@ Soft revocation (device not believed compromised) is still “delete that device
 
 After a snapshot is accepted as fresh and a wrapping key unwraps:
 
-1. Every envelope in the snapshot must unwrap to the **same** 32-byte VK (or be ignored as not applicable to this device).
-2. Every entry must decrypt under that VK. A single `AuthFailureError` fails the whole snapshot (`IntegrityError`).
-3. Mixed `VK_v` entries with `VK_{v+1}` envelopes therefore cannot be applied.
+1. `acceptSnapshot` has already bound the claimed revision to the ciphertext set.
+2. Every envelope in the snapshot must unwrap to the **same** 32-byte VK (or be ignored as not applicable to this device).
+3. Every entry must decrypt under that VK. A single `AuthFailureError` fails the whole snapshot (`IntegrityError`).
+4. Mixed `VK_v` entries with `VK_{v+1}` envelopes therefore cannot be applied.
+5. Mixed revision-`N` entries with a revision-`N+1` header fail the manifest commitment check even when they still decrypt under the same VK.
 
 ---
 

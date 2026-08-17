@@ -27,6 +27,7 @@ Zusammenfassung der wichtigsten Punkte:
 - Key Envelopes (Master / Device / Recovery)
 - AES-256-GCM mit Pflicht-AAD und library-generierten Nonces
 - Vault Key Rotation bei Hard-Revocation
+- Authentifiziertes Vault-Manifest (`acceptSnapshot`) — Server-`revision` ist untrusted
 - Recovery Key + Emergency Kit (kein Server-Reset)
 
 Threat Model: → **[docs/threat-model.md](threat-model.md)**

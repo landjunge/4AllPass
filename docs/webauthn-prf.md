@@ -15,7 +15,7 @@ This document is the byte-level construction. Do not invent another one.
 
 | Key | Source | Lifetime |
 |---|---|---|
-| **Device Key (DK)** | Random 256-bit, generated after first master-password unlock on this device | Until the device is revoked or the vault key is rotated |
+| **Device Key (DK)** | Random 256-bit, generated after first master-password unlock on this device | Until this device’s DK is rotated (`deviceKeyVersion + 1`) or the device is revoked |
 | **Device Wrapping Key (DWK)** | Derived from WebAuthn PRF output via HKDF | Ephemeral; re-derived on every biometric unlock |
 | **Vault Key (VK)** | Random 256-bit | Wrapped in the Device Envelope on the server |
 
@@ -124,15 +124,28 @@ AAD = encodeAad([
   vault_id,
   device_id,
   credential_id,
-  crypto_version_u32be
+  crypto_version_u32be,
+  device_key_version_u32be
 ])
 
 ciphertext || tag = AES-256-GCM(DWK, DK, AAD)
 ```
 
+`deviceKeyVersion` starts at 1 and increments only when **this device’s DK** is rotated. It is independent of `vault_key_version`.
+
+```
+DeviceKeyEnvelope { deviceId, credentialId, deviceKeyVersion }
+       │
+       └── DK
+             │
+             ▼
+       Device Envelope { deviceId }     // wraps VK; lives in the snapshot
+```
+
 Nonce is library-generated. Test hook only for KATs (**TV-DKE-01**).
 
-`decrypt` uses the versions and ids stored on the envelope. Nothing is guessed.
+`decrypt` uses the versions and ids stored on the envelope. Nothing is guessed.  
+Clients pin `deviceKeyVersion` locally and refuse a downgrade (`assertDeviceKeyVersion`).
 
 ---
 

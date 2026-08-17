@@ -275,6 +275,12 @@ A crypto core is **AES-GCM v1 compliant** when:
 
 Argon2id known-answer vectors are **out of scope** for this file.
 
+Related suites (not AES-GCM primitive KATs):
+
+- [`test-vectors/device-prf-v1.json`](test-vectors/device-prf-v1.json) — PRF / HKDF / Device-Key Envelope (`deviceKeyVersion` is in AAD)
+- [`test-vectors/manifest-v1.json`](test-vectors/manifest-v1.json) — authenticated snapshot manifest
+- [`test-vectors/recovery-v1.json`](test-vectors/recovery-v1.json) — Emergency Kit encoding + recovery wrapping key
+
 ---
 
 ## 8. How these were generated

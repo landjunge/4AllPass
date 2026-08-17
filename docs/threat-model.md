@@ -53,8 +53,9 @@
 |---|---|
 | Refuse reads or writes | User-visible sync error |
 | Serve an older authentic snapshot | `evaluateRevision` → `RollbackError` once a newer revision was pinned |
-| Serve snapshot `N` envelopes with snapshot `M` entries | Decrypt of some/all entries fails → `IntegrityError`; snapshot refused |
-| Flip `vault_key_version` backwards | `downgrade` / `mismatch` |
+| Pair `revision = 50` metadata with ciphertext from another snapshot that still uses the same VK | `acceptSnapshot`: AEAD fail or commitment mismatch → `IntegrityError` |
+| Serve snapshot `N` envelopes with snapshot `M` entries | Manifest commitment mismatch → `IntegrityError`; snapshot refused |
+| Flip `vault_key_version` backwards | `downgrade` / `mismatch` (on the **opened** manifest, not the SQL column) |
 | Change `deviceId`, envelope `type`, `vault_id`, or crypto version on an existing blob | AES-GCM AAD mismatch → `AuthFailureError` |
 | Truncate or flip bits in ciphertext / tag | `AuthFailureError` |
 | Drop a device envelope (unauthorized soft revoke) | That device can no longer unlock via DK; Master Password / Recovery still work |
@@ -63,7 +64,8 @@
 ### Cannot do
 
 - Recover VK, DK, DWK, Master Password, or Recovery Key from stored data alone.
-- Forge a new entry or envelope that decrypts under the real VK.
+- Forge a new entry, envelope, or snapshot manifest that decrypts under the real VK.
+- Change `revision` / `vault_key_version` independently of the ciphertext set.
 - Turn an account-password / OAuth compromise into vault plaintext.
 - Silently roll a client **back** after that client has pinned a newer revision.
 

@@ -12,6 +12,7 @@ import {
   kdfParamsFrom,
   unwrapVaultKey,
   wrapVaultKey,
+  AuthFailureError,
   ProtocolError,
 } from "../src/index.ts";
 import { wrapVaultKeyWithNonce, encryptEntryWithNonce } from "../src/test-only.ts";
@@ -246,7 +247,9 @@ describe("encryptEntry / decryptEntry", () => {
     assert.equal(entry.schemaVersion, 2);
     assert.equal(entry.cryptoVersion, 1);
     assert.deepEqual(decryptEntry(entry, opts), plaintext);
-    assert.throws(() => decryptEntry({ ...entry, schemaVersion: 1 }, opts));
+    // A forged-but-well-formed version is an authentication failure: the AAD no
+    // longer matches what was sealed.
+    assert.throws(() => decryptEntry({ ...entry, schemaVersion: 1 }, opts), AuthFailureError);
   });
 
   it("round-trips with a library-owned nonce", () => {

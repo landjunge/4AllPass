@@ -14,7 +14,7 @@ import {
   openManifest,
   revisionFromManifest,
   sealManifest,
-  verifySnapshot,
+  verifySnapshotManifest,
   wrapVaultKey,
   type VaultRevision,
 } from "../src/index.ts";
@@ -95,7 +95,7 @@ describe("attack: revision rollback", () => {
     const older = snapshotAt(41);
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           current.sealed,
           { entries: older.entries, envelopes: current.envelopes },
           { vaultKey, vaultId: C.vault_id, revision: 42, vaultKeyVersion: VKV },
@@ -117,7 +117,7 @@ describe("attack: revision rollback", () => {
     });
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           current.sealed,
           { entries: current.entries, envelopes: [...current.envelopes, revoked] },
           { vaultKey, vaultId: C.vault_id, revision: 42, vaultKeyVersion: VKV },
@@ -186,7 +186,7 @@ describe("attack: snapshot truncation and injection", () => {
     const sealed = sealManifest({ vaultKey, manifest });
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           sealed,
           { entries: current.entries, envelopes: current.envelopes },
           { vaultKey, vaultId: C.vault_id, revision: 42, vaultKeyVersion: VKV },
@@ -206,7 +206,7 @@ describe("attack: snapshot truncation and injection", () => {
     });
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           current.sealed,
           { entries: [...current.entries, injected], envelopes: current.envelopes },
           { vaultKey, vaultId: C.vault_id, revision: 42, vaultKeyVersion: VKV },

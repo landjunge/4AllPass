@@ -1,11 +1,5 @@
-import {
-  CRYPTO_PROTOCOL_VERSION,
-  DEFAULT_SCHEMA_VERSION,
-  KEY_BYTES,
-  NONCE_BYTES,
-  TAG_BYTES,
-} from "./constants.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION, KEY_BYTES } from "./constants.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { entryAad, type EntryAadInput } from "./encoding/aad.ts";
 import { ProtocolError } from "./errors.ts";
 import {
@@ -97,9 +91,12 @@ export function decryptEntry(entry: EncryptedEntry, opts: DecryptEntryOptions): 
   }
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
   // Each byte field is read exactly once, so validation and use cannot disagree.
-  const nonce = assertBytes("entry.nonce", entry.nonce, { exact: NONCE_BYTES });
+  // Wrong length of server-supplied AEAD material is an authentication failure,
+  // not a malformed-input error; see assertAeadFraming.
+  const nonce = assertBytes("entry.nonce", entry.nonce);
   const ciphertext = assertBytes("entry.ciphertext", entry.ciphertext);
-  const tag = assertBytes("entry.tag", entry.tag, { exact: TAG_BYTES });
+  const tag = assertBytes("entry.tag", entry.tag);
+  assertAeadFraming(nonce, tag);
 
   const cryptoVersion = assertVersion("entry.cryptoVersion", entry.cryptoVersion);
   if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {

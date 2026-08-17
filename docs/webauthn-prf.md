@@ -175,6 +175,36 @@ Rotating a Device Key:
 Because the version is inside both AADs, a server cannot hand back generation `n`
 after the device has moved to `n+1`.
 
+### 4.2 Freshness (no independent rollback)
+
+`deviceKeyVersion` (§4.1) makes a *superseded* Device-Key Envelope
+distinguishable: it is inside the AAD, so an envelope from generation `n` cannot
+be opened by a client that expects `n+1`. What the version alone does not supply
+is the knowledge of which generation is current — the DWK is derived
+deterministically from `(rpId, vault_id, device_id, credential_id)`, so a stale
+envelope is still a perfectly valid blob for anyone who does not know better.
+That knowledge comes from the snapshot.
+
+Therefore the Device-Key Envelope **must not** be rolled back or updated
+independently of the vault snapshot it belongs to:
+
+- When mirrored to the server (§2.1 step 7), it is versioned and committed
+  **atomically with its vault-snapshot `revision`** (see
+  `vault-revision.md` §4). A client fetches it only as part of the snapshot
+  named by `active_revision`, never through a separate, independently
+  replayable channel.
+- Freshness of the Device-Key Envelope is thus inherited from the snapshot's
+  `evaluateRevision` check. A malicious server that replays only an old
+  Device-Key Envelope blob (e.g. to resurrect a rotated-out Device Key) fails on
+  any of three counts: the snapshot freshness check, the `deviceKeyVersion` the
+  caller states when opening it, or the current Device Envelope refusing to
+  unwrap under the stale Device Key — it never yields the Vault Key.
+
+Implementations that store the mirror in a table separate from the snapshot
+(as an optimization) still MUST gate serving it on the current
+`active_revision` and MUST replace it in the same commit that rotates the
+Device Key.
+
 ---
 
 ## 5. Fallback when PRF is unavailable

@@ -206,11 +206,22 @@ describe("attack: AAD and digest ambiguity", () => {
 });
 
 describe("attack: truncation", () => {
+  // Wrong *length* of server-supplied AEAD material is an authentication failure:
+  // it is attacker-controlled framing and such a blob cannot authenticate. Wrong
+  // *type* stays a ProtocolError — see the malformed-input block below.
   it("refuses a truncated GCM tag instead of treating it as authentic", () => {
     const entry = freshEntry();
     assert.throws(
       () => decryptEntry({ ...entry, tag: entry.tag.slice(0, 8) }, entryOpts),
-      ProtocolError,
+      AuthFailureError,
+    );
+  });
+
+  it("refuses a wrong-length nonce", () => {
+    const entry = freshEntry();
+    assert.throws(
+      () => decryptEntry({ ...entry, nonce: entry.nonce.slice(0, 11) }, entryOpts),
+      AuthFailureError,
     );
   });
 
@@ -224,20 +235,25 @@ describe("attack: truncation", () => {
 
   it("refuses a key envelope whose ciphertext is not a wrapped 32-byte key", () => {
     const { master } = fixtureSnapshot();
-    assert.throws(
-      () =>
-        unwrapVaultKey(
-          { ...master, ciphertext: master.ciphertext.slice(0, 16) },
-          {
-            wrappingKey: masterKey,
-            vaultId: C.vault_id,
-            expectType: "master",
-            expectVaultKeyVersion: VKV,
-            allowTestProfile: true,
-          },
-        ),
-      ProtocolError,
-    );
+    for (const ciphertext of [
+      master.ciphertext.slice(0, 16),
+      new Uint8Array(master.ciphertext.length + 4),
+    ]) {
+      assert.throws(
+        () =>
+          unwrapVaultKey(
+            { ...master, ciphertext },
+            {
+              wrappingKey: masterKey,
+              vaultId: C.vault_id,
+              expectType: "master",
+              expectVaultKeyVersion: VKV,
+              allowTestProfile: true,
+            },
+          ),
+        AuthFailureError,
+      );
+    }
   });
 
   it("refuses a sealed blob shorter than the tag", () => {

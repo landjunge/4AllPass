@@ -8,7 +8,7 @@ import {
   NONCE_BYTES,
   TAG_BYTES,
 } from "./constants.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { manifestAad } from "./encoding/aad.ts";
 import { assertKdfBlock } from "./kdf/profiles.ts";
 import { entryDigest, envelopeDigest, sealedManifestDigest } from "./encoding/digest.ts";
@@ -122,7 +122,7 @@ function assertSorted(label: string, keys: readonly string[]): void {
  * decrypt. If the record were validated through one read and digested through a
  * second, an object with accessors instead of data properties could present
  * honest bytes to the checks and stale bytes to the digest — and a snapshot that
- * passed `verifySnapshot` would then decrypt to something else entirely. So the
+ * passed `verifySnapshotManifest` would then decrypt to something else entirely. So the
  * digest is always taken over this normalized copy, never over the input object.
  */
 function normalizeEntry(entry: EncryptedEntry): EncryptedEntry {
@@ -362,8 +362,11 @@ export function encodeManifest(manifest: SnapshotManifest): Uint8Array {
 class FrameReader {
   private offset = 0;
   private readonly decoder = new TextDecoder("utf-8", { fatal: true });
+  private readonly buf: Uint8Array;
 
-  constructor(private readonly buf: Uint8Array) {}
+  constructor(buf: Uint8Array) {
+    this.buf = buf;
+  }
 
   private readLength(): number {
     if (this.offset + 4 > this.buf.length) {
@@ -542,9 +545,10 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
   }
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
   // Each byte field is read exactly once, so validation and use cannot disagree.
-  const nonce = assertBytes("sealed.nonce", sealed.nonce, { exact: NONCE_BYTES });
-  const ciphertext = assertBytes("sealed.ciphertext", sealed.ciphertext, { min: 1 });
-  const tag = assertBytes("sealed.tag", sealed.tag, { exact: TAG_BYTES });
+  const nonce = assertBytes("sealed.nonce", sealed.nonce);
+  const ciphertext = assertBytes("sealed.ciphertext", sealed.ciphertext);
+  const tag = assertBytes("sealed.tag", sealed.tag);
+  assertAeadFraming(nonce, tag);
   const version = assertVersion("sealed.version", sealed.version);
   if (version !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`unsupported sealed manifest version: ${version}`);
@@ -651,7 +655,7 @@ export function assertSnapshotMatchesManifest(
  * Decrypt the returned `entries` and `envelopes`, not the ones you passed in:
  * those are the exact records the manifest digests were computed over.
  */
-export function verifySnapshot(
+export function verifySnapshotManifest(
   sealed: SealedManifest,
   contents: SnapshotContents,
   opts: OpenManifestOptions,

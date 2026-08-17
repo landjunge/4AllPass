@@ -38,7 +38,7 @@ src/
 - Versions are never defaulted: `vaultKeyVersion`, `deviceKeyVersion`, `schemaVersion` and `cryptoVersion` are stated by the writer and read back from the object.
 - Every field is authenticated. AAD covers the KDF parameter digest and both key generations; metadata that does not belong to an envelope kind is rejected, not ignored.
 - Opening is done against an expectation. AAD built from an object's own fields proves self-consistency, not identity.
-- Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshot` returns those copies — **apply them**, not the objects you passed in.
+- Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshotManifest` returns those copies — **apply them**, not the objects you passed in.
 - Identifiers must be well-formed UTF-16. A lone surrogate has no UTF-8 encoding and would collapse two identities into one U+FFFD.
 - `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.
@@ -50,10 +50,12 @@ src/
 
 | Error | Meaning |
 |---|---|
-| `ProtocolError` | malformed input: wrong type, wrong length, out of range, non-canonical |
-| `IntegrityError` | well-formed input that contradicts the caller's expectation — the signature of substitution |
-| `AuthFailureError` | the GCM tag did not verify |
+| `ProtocolError` | malformed in a way no remote attacker can cause: wrong type, out of range, non-canonical — i.e. a local bug |
+| `AuthFailureError` | the GCM tag did not verify, **or** untrusted AEAD material had the wrong length (attacker-controlled framing cannot authenticate) |
+| `IntegrityError` | well-formed input that contradicts the caller's expectation, or a snapshot that does not match its manifest — the signature of substitution |
 | `RollbackError` | an incoming revision is older than the pinned one |
+
+All four extend `CryptoError`; catch that when the distinction does not matter.
 
 ## Usage sketch
 
@@ -76,7 +78,7 @@ const vk = unwrapVaultKey(master, {
   wrappingKey: deriveMasterKeyFromEnvelope(password, master),
   vaultId, expectType: "master", expectVaultKeyVersion: 1,
 });
-const verified = verifySnapshot(sealed, { entries, envelopes }, {
+const verified = verifySnapshotManifest(sealed, { entries, envelopes }, {
   vaultKey: vk, vaultId, revision: 1, vaultKeyVersion: 1,
 });
 assertFreshSnapshot(pin, revisionFromManifest(verified));

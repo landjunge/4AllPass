@@ -32,6 +32,44 @@ function assertKeyNonce(key: Uint8Array, nonce: Uint8Array): void {
   assertBytes("nonce", nonce, { exact: NONCE_BYTES });
 }
 
+/**
+ * Framing check for AEAD material read from an *untrusted* source (an
+ * envelope or entry served by a possibly-malicious server).
+ *
+ * The split is on provenance, not on which check trips first:
+ *
+ * - Wrong **type** (not a `Uint8Array` at all — the shape a plain `JSON.parse`
+ *   produces) is a local deserialization bug that no remote attacker can cause,
+ *   so it stays a `ProtocolError`.
+ * - Wrong **length** of correctly-typed byte material is fully attacker
+ *   controlled, and such a blob cannot authenticate by definition. It surfaces as
+ *   `AuthFailureError`, the same class every other failed authenticated
+ *   decryption produces, because callers handle "corrupt or wrong key" there.
+ *   Leaking a `ProtocolError` on that path would turn a hostile blob into an
+ *   uncaught crash.
+ *
+ * Aggregate snapshot verification classifies both as `IntegrityError`; see
+ * `assertSnapshotMatchesManifest`.
+ */
+export function assertAeadFraming(
+  nonce: unknown,
+  tag: unknown,
+  ciphertext?: unknown,
+  ciphertextBytes?: number,
+): void {
+  const framed = assertBytes("nonce", nonce);
+  const authTag = assertBytes("tag", tag);
+  if (framed.length !== NONCE_BYTES || authTag.length !== TAG_BYTES) {
+    throw new AuthFailureError();
+  }
+  if (ciphertext !== undefined) {
+    const sealed = assertBytes("ciphertext", ciphertext);
+    if (ciphertextBytes !== undefined && sealed.length !== ciphertextBytes) {
+      throw new AuthFailureError();
+    }
+  }
+}
+
 /** Production encrypt. Nonce is generated inside the library. */
 export function encrypt(
   key: Uint8Array,

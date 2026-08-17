@@ -1,5 +1,11 @@
 import { argon2id } from "@noble/hashes/argon2.js";
-import { ARGON2_VERSION, HASH_LEN, SALT_BYTES_MAX, SALT_BYTES_MIN } from "../constants.ts";
+import {
+  ARGON2_MAXMEM_BYTES,
+  ARGON2_VERSION,
+  HASH_LEN,
+  SALT_BYTES_MAX,
+  SALT_BYTES_MIN,
+} from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
 import { assertBytes } from "../validate.ts";
@@ -31,7 +37,9 @@ export function deriveArgon2idRaw(opts: DeriveRawOptions): Uint8Array {
     p: params.parallelism,
     dkLen,
     version: params.version ?? ARGON2_VERSION,
-    maxmem: Math.max(params.memory * 1024 * 2, 64 * 1024),
+    // Fixed backstop — must never scale with the caller-supplied `memory`,
+    // or a malicious value defeats the guard (see ARGON2_MAXMEM_BYTES).
+    maxmem: ARGON2_MAXMEM_BYTES,
     ...extra,
   });
 }
@@ -66,10 +74,19 @@ export function deriveMasterKey(
   });
 }
 
+/** Kept as the name the rest of the tree imports; identical to `DeriveMasterKeyOptions`. */
+export type DeriveMasterKeyFromEnvelopeOptions = DeriveMasterKeyOptions;
+
+/**
+ * The envelope (and thus its `kdf` field) is untrusted server-provided data.
+ * `deriveMasterKey` therefore validates it: the absolute upper bounds always
+ * apply, and the production floor applies unless a test profile is explicitly
+ * allowed.
+ */
 export function deriveMasterKeyFromEnvelope(
   password: string,
   envelope: KeyEnvelope,
-  opts: DeriveMasterKeyOptions = {},
+  opts: DeriveMasterKeyFromEnvelopeOptions = {},
 ): Uint8Array {
   if (envelope?.type !== "master" || !envelope.kdf) {
     throw new ProtocolError("master envelope is missing kdf parameters");

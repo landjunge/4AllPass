@@ -37,12 +37,25 @@ export const HASH_LEN = 32;
 export const PRODUCTION_MEMORY_KIB_MIN = 32 * 1024;
 
 /**
- * Upper bounds for KDF parameters read back from a (possibly hostile) server.
- * Without a ceiling, `kdf.memory` from an envelope is a remote allocation primitive.
+ * KDF parameter ceilings. Enforced even for the test profile, because these
+ * bounds exist to stop a malicious server from weaponizing an untrusted
+ * Master Envelope's `kdf` field into a client-side resource-exhaustion DoS
+ * (see docs/threat-model.md §3, "Malicious / Active Server"). The values sit
+ * comfortably above the strongest documented production profile (`high`:
+ * 128 MiB / t=4 / p=4) while blocking absurd requests.
  */
-export const KDF_MEMORY_KIB_MAX = 1024 * 1024;
-export const KDF_ITERATIONS_MAX = 16;
-export const KDF_PARALLELISM_MAX = 16;
+export const PRODUCTION_MEMORY_KIB_MAX = 512 * 1024; // 512 MiB
+export const PRODUCTION_ITERATIONS_MIN = 3;
+export const PRODUCTION_ITERATIONS_MAX = 16;
+export const PRODUCTION_PARALLELISM_MIN = 1;
+export const PRODUCTION_PARALLELISM_MAX = 16;
+
+/**
+ * Absolute upper bound (bytes) passed to Argon2id as `maxmem`, derived from
+ * `PRODUCTION_MEMORY_KIB_MAX`. This is a fixed backstop; it must never scale
+ * with the caller-supplied `memory` parameter, or the guard is defeated.
+ */
+export const ARGON2_MAXMEM_BYTES = PRODUCTION_MEMORY_KIB_MAX * 1024 * 2;
 
 export const VERSION_MAX = 0xffffffff;
 /** `revision` and `vaultKeyVersion` are encoded as uint32be in AAD, so they cannot exceed this. */

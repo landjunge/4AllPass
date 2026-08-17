@@ -25,7 +25,7 @@ import {
   sealManifest,
   unwrapDeviceKey,
   unwrapVaultKey,
-  verifySnapshot,
+  verifySnapshotManifest,
   wrapDeviceKey,
   wrapVaultKey,
   type EncryptedEntry,
@@ -110,7 +110,7 @@ describe("end-to-end vault lifecycle", () => {
     let pin: VaultRevision | null = null;
     let applied: EncryptedEntry[] = [];
     const accept = (snapshot: ReturnType<typeof publish>, key: Uint8Array) => {
-      const verified = verifySnapshot(
+      const verified = verifySnapshotManifest(
         snapshot.sealed,
         { entries: snapshot.entries, envelopes: snapshot.envelopes },
         {
@@ -261,7 +261,7 @@ describe("end-to-end vault lifecycle", () => {
     );
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           snapshot3.sealed,
           { entries: snapshot3.entries, envelopes: [master, recovery, deviceEnvelope, phoneEnvelope] },
           { vaultKey, vaultId: VAULT_ID, revision: 3, vaultKeyVersion: 1 },
@@ -330,7 +330,7 @@ describe("end-to-end vault lifecycle", () => {
     );
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           snapshot4.sealed,
           { entries: snapshot4.entries, envelopes: [...snapshot4.envelopes, phoneEnvelope] },
           { vaultKey: vaultKey2, vaultId: VAULT_ID, revision: 4, vaultKeyVersion: 2 },

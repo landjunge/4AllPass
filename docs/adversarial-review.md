@@ -161,11 +161,16 @@ been through `JSON.parse` (arrays of numbers) reached AES-GCM and failed with
 "this data was deserialized wrong". Non-integer, negative, `NaN`, `Infinity` and
 string versions were equally undiagnosed.
 
-**Fix:** `validate.ts` with a deliberate split — `ProtocolError` for malformed
-input, `IntegrityError` for well-formed input that contradicts the caller, and
-`AuthFailureError` only for a real tag failure. Identifiers are bounded
+**Fix:** `validate.ts` with a deliberate split by *who can cause the failure* —
+`ProtocolError` for input malformed in a way no remote attacker can produce
+(wrong type, out of range, non-canonical), `AuthFailureError` for a failed tag
+*and* for wrong-length AEAD material from an untrusted blob, and `IntegrityError`
+for well-formed input that contradicts the caller. Identifiers are bounded
 (non-empty, ≤ 256 UTF-8 bytes), credential ids are bounded (16…1023 bytes),
 version numbers must be uint32 ≥ 1.
+
+The length half of that split came out of the merge with `main`'s M3 hardening,
+which had made the opposite call for framing errors; see §5.
 
 Tests: the whole `attack: malformed input` block.
 
@@ -310,7 +315,7 @@ defeated the manifest completely. All are fixed, and each has a regression test 
 to `entryDigest()` / `envelopeDigest()`, which read every field again. Measured with a
 counting `Proxy`, every field was read exactly twice. So a record whose fields are
 accessors rather than data could show honest bytes to the validation and stale bytes
-to the digest — and a stale-but-authentic entry then passed `verifySnapshot` and
+to the digest — and a stale-but-authentic entry then passed `verifySnapshotManifest` and
 decrypted to a password the user had already rotated away from. The envelope variant
 re-attached a revoked device's envelope to a verified snapshot.
 
@@ -326,7 +331,7 @@ The fix has two halves, because normalizing internally is not sufficient on its 
    copy — including a copy of each `Uint8Array` (a `Proxy` over one satisfies
    `instanceof` and `length` and can still change its bytes) and of the KDF block —
    and digests that copy.
-2. `verifySnapshot` **returns** those normalized records, and the protocol now requires
+2. `verifySnapshotManifest` **returns** those normalized records, and the protocol now requires
    the caller to apply them. Otherwise the same gap simply moves one layer up: the
    library verifies its copy while the application decrypts its own.
 
@@ -361,7 +366,7 @@ blessed. `openManifest` now returns `{ manifest, sealedDigest }` as one value an
 
 ### F-22 — Hostile container shapes escaped as raw `TypeError` · **low**
 
-`verifySnapshot` with a sparse `entries` array (a JSON hole), an array-like object or
+`verifySnapshotManifest` with a sparse `entries` array (a JSON hole), an array-like object or
 `null` threw a bare `TypeError`. An application that catches `CryptoError` to tell
 tampering from bugs would take that as an unhandled crash, and the server controls the
 JSON that produces it. `assertRecordList` now requires a dense array of objects.

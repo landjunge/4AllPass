@@ -1,15 +1,17 @@
 import {
   ARGON2_VERSION,
   HASH_LEN,
-  KDF_ITERATIONS_MAX,
-  KDF_MEMORY_KIB_MAX,
-  KDF_PARALLELISM_MAX,
+  PRODUCTION_ITERATIONS_MAX,
+  PRODUCTION_ITERATIONS_MIN,
+  PRODUCTION_MEMORY_KIB_MAX,
   PRODUCTION_MEMORY_KIB_MIN,
+  PRODUCTION_PARALLELISM_MAX,
+  PRODUCTION_PARALLELISM_MIN,
   SALT_BYTES_MAX,
   SALT_BYTES_MIN,
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
-import { assertBytes, copyBytes } from "../validate.ts";
+import { copyBytes } from "../validate.ts";
 import type { Argon2idParams, Argon2idProfile, Argon2idProfileName, KdfParams } from "../types.ts";
 
 function profile(
@@ -46,10 +48,38 @@ export function resolveProfile(name: Argon2idProfileName = DEFAULT_PROFILE): Arg
 }
 
 /**
+ * Absolute upper bounds on Argon2id parameters. Enforced on every path that
+ * reads KDF parameters from an untrusted source (e.g. a Master Envelope served
+ * by a possibly-malicious server), independent of the production floor and even
+ * for the test profile. Without this, an inflated `memory` value turns unlock
+ * into a client-side resource-exhaustion DoS.
+ */
+export function assertKdfUpperBounds(params: Argon2idParams): void {
+  if (!Number.isInteger(params.memory) || params.memory > PRODUCTION_MEMORY_KIB_MAX) {
+    throw new ProtocolError(
+      `KDF memory ${String(params.memory)} KiB exceeds the maximum (${PRODUCTION_MEMORY_KIB_MAX} KiB)`,
+    );
+  }
+  if (!Number.isInteger(params.iterations) || params.iterations > PRODUCTION_ITERATIONS_MAX) {
+    throw new ProtocolError(
+      `KDF iterations ${String(params.iterations)} exceeds the maximum (${PRODUCTION_ITERATIONS_MAX})`,
+    );
+  }
+  if (!Number.isInteger(params.parallelism) || params.parallelism > PRODUCTION_PARALLELISM_MAX) {
+    throw new ProtocolError(
+      `KDF parallelism ${String(params.parallelism)} exceeds the maximum (${PRODUCTION_PARALLELISM_MAX})`,
+    );
+  }
+}
+
+/**
  * Shape and range check for KDF parameters that came back from the server.
  * `kdf.memory` is an allocation instruction: without an upper bound a hostile
  * envelope is a remote out-of-memory primitive, and without a lower bound it is
  * a silent KDF downgrade.
+ *
+ * This is the weakest acceptable check — it permits the test-only `ci` profile,
+ * so it is only reachable behind an explicit `allowTestProfile`.
  */
 export function assertKdfParamsWellFormed(params: Argon2idParams): void {
   if (params?.algorithm !== "argon2id") {
@@ -61,15 +91,16 @@ export function assertKdfParamsWellFormed(params: Argon2idParams): void {
   if (params.hashLen !== HASH_LEN) {
     throw new ProtocolError(`hashLen must be ${HASH_LEN}, got ${String(params.hashLen)}`);
   }
-  for (const [name, value, max] of [
-    ["memory", params.memory, KDF_MEMORY_KIB_MAX],
-    ["iterations", params.iterations, KDF_ITERATIONS_MAX],
-    ["parallelism", params.parallelism, KDF_PARALLELISM_MAX],
+  for (const [name, value] of [
+    ["memory", params.memory],
+    ["iterations", params.iterations],
+    ["parallelism", params.parallelism],
   ] as const) {
-    if (!Number.isInteger(value) || value < 1 || value > max) {
-      throw new ProtocolError(`KDF ${name} must be an integer in [1, ${max}], got ${String(value)}`);
+    if (!Number.isInteger(value) || value < 1) {
+      throw new ProtocolError(`KDF ${name} must be an integer >= 1, got ${String(value)}`);
     }
   }
+  assertKdfUpperBounds(params);
 }
 
 export function assertKdfSalt(salt: unknown): Uint8Array {
@@ -86,6 +117,16 @@ export function assertProductionKdf(params: Argon2idParams): void {
   if (params.memory < PRODUCTION_MEMORY_KIB_MIN) {
     throw new ProtocolError(
       `KDF memory ${params.memory} KiB is below the production floor (${PRODUCTION_MEMORY_KIB_MIN} KiB). The ci profile is test-only.`,
+    );
+  }
+  if (params.iterations < PRODUCTION_ITERATIONS_MIN) {
+    throw new ProtocolError(
+      `KDF iterations ${params.iterations} is below the production floor (${PRODUCTION_ITERATIONS_MIN})`,
+    );
+  }
+  if (params.parallelism < PRODUCTION_PARALLELISM_MIN) {
+    throw new ProtocolError(
+      `KDF parallelism ${params.parallelism} is below the production floor (${PRODUCTION_PARALLELISM_MIN})`,
     );
   }
 }

@@ -14,7 +14,7 @@ import {
   hexToBytes,
   openManifest,
   sealManifest,
-  verifySnapshot,
+  verifySnapshotManifest,
 } from "../src/index.ts";
 import { buildManifest, concat, frame, type SnapshotManifest } from "../src/index.ts";
 import { MANIFEST_CONTENT_LABEL } from "../src/constants.ts";
@@ -79,7 +79,7 @@ describe("snapshot manifest", () => {
   it("round-trips through seal / open / verify", () => {
     const { manifest, entries, envelopes } = fixtureSnapshot();
     const sealed = sealManifest({ vaultKey, manifest });
-    const { manifest: opened } = verifySnapshot(
+    const { manifest: opened } = verifySnapshotManifest(
       sealed,
       { entries, envelopes },
       {

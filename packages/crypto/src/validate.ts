@@ -6,10 +6,19 @@ import type { EnvelopeType } from "./types.ts";
 /**
  * Input validation for everything that crosses the trust boundary.
  *
- * Two error classes, deliberately different:
- * - `ProtocolError`  — the value is malformed (wrong type, wrong length, out of range).
- * - `IntegrityError` — the value is well-formed but contradicts what the caller asked for.
- *   That is the signature of a substitution attack, not of a bug.
+ * Three error classes, deliberately different, split by who can cause them:
+ * - `ProtocolError`  — the value is malformed in a way no remote attacker can
+ *   cause: wrong type, out of range, non-canonical. That is a local bug (usually
+ *   a deserializer handing over arrays instead of `Uint8Array`).
+ * - `AuthFailureError` — wrong *length* of AEAD material read from an untrusted
+ *   blob. It is attacker-controlled framing and cannot authenticate; see
+ *   `assertAeadFraming`.
+ * - `IntegrityError` — the value is well-formed but contradicts what the caller
+ *   asked for, or a snapshot does not match its manifest. That is the signature
+ *   of a substitution attack, not of a bug.
+ *
+ * All three extend `CryptoError`, so a caller that cannot act on the difference
+ * catches that.
  */
 
 export function assertBytes(

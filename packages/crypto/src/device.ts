@@ -5,10 +5,8 @@ import {
   CREDENTIAL_ID_BYTES_MIN,
   CRYPTO_PROTOCOL_VERSION,
   KEY_BYTES,
-  NONCE_BYTES,
-  TAG_BYTES,
 } from "./constants.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import {
   deviceKeyAad,
   dwkHkdfInfo,
@@ -89,6 +87,9 @@ export function deriveDeviceWrappingKey(opts: DeriveDeviceWrappingKeyOptions): U
   const deviceId = assertId("deviceId", opts.deviceId);
   const credentialId = assertCredentialId(opts.credentialId);
   const cryptoVersion = assertVersion("cryptoVersion", opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION);
+  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(`unsupported device crypto version: ${cryptoVersion}`);
+  }
   const salt = sha256(dwkHkdfSalt(vaultId, credentialId));
   const info = dwkHkdfInfo(rpId, vaultId, deviceId, credentialId, cryptoVersion);
   return hkdf(sha256, opts.prfOutput, salt, info, KEY_BYTES);
@@ -167,9 +168,10 @@ export function unwrapDeviceKey(
   }
   assertBytes("deviceWrappingKey", opts.deviceWrappingKey, { exact: KEY_BYTES });
   // Each byte field is read exactly once, so validation and use cannot disagree.
-  const nonce = assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
-  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
-  const tag = assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
+  const nonce = assertBytes("envelope.nonce", envelope.nonce);
+  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext);
+  const tag = assertBytes("envelope.tag", envelope.tag);
+  assertAeadFraming(nonce, tag, ciphertext, KEY_BYTES);
 
   const cryptoVersion = assertVersion("envelope.version", envelope.version);
   if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {

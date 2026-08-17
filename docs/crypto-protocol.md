@@ -445,13 +445,16 @@ Rules:
 1. Fetch the snapshot named by `active_revision`.
 2. Obtain VK by unwrapping one envelope (Master, Device or Recovery) — against explicit
    expectations, §3.2.
-3. `verifySnapshot(sealed, { entries, envelopes }, { vaultKey, vaultId, revision, vaultKeyVersion })`.
+3. `verifySnapshotManifest(sealed, { entries, envelopes }, { vaultKey, vaultId, revision, vaultKeyVersion })`.
    The GCM tag decides whether the server's claimed `revision` is real, the decoded
    body must agree with the AAD, and the snapshot must be exactly the declared set:
    no substitutions, nothing missing, nothing extra.
 4. **Apply the records that verification returned**, not the ones that were passed in
    (§8.2).
-5. Only now compute the freshness decision (`evaluateRevision`) and pin the result
+5. Run the content integrity pass of §8.3 (`verifySnapshot` / `unlockSnapshot`): every
+   entry must decrypt under that one Vault Key, and every other envelope the client can
+   unwrap must yield the same one.
+6. Only now compute the freshness decision (`evaluateRevision`) and pin the result
    with `revisionFromManifest(verified)`, which carries the digest of the blob that was
    actually authenticated. Passing a manifest and a sealed blob separately is not
    allowed: pinning the digest of an unverified blob would turn the equivocation check
@@ -471,7 +474,7 @@ suggestions:
   over one passes every type and length check and can still change its bytes.
 - **Hand the normalized records back to the caller** and require that those are the
   ones applied. Anything else re-opens the same gap one layer up:
-  `verifySnapshot(...)` returns `{ manifest, sealedDigest, entries, envelopes }` for
+  `verifySnapshotManifest(...)` returns `{ manifest, sealedDigest, entries, envelopes }` for
   exactly this reason.
 
 Identifiers get the same treatment: a string containing an unpaired surrogate has no
@@ -485,6 +488,38 @@ fixed field order**: `frame()` encodes the number `1` and the four bytes
 `00 00 00 01` identically, so an optional or variable-arity field would introduce a
 genuine ambiguity. New fields therefore go at the end of a preimage, are never
 optional, and a new preimage gets a new label.
+
+---
+
+## 8.3 Content integrity pass
+
+The manifest proves *which records* belong to the snapshot. It does not prove that
+they all decrypt: a client that holds VK for generation `v` and is handed a
+manifest-consistent snapshot at generation `v` still has to establish that every
+record really is under that one key. That is the pass specified in
+`vault-revision.md` §6 and implemented as `verifySnapshot` / `unlockSnapshot`:
+
+- every entry must decrypt under the Vault Key the client obtained, and
+- every additional envelope the client can unwrap (e.g. the master envelope
+  alongside a device envelope) must yield the **same** Vault Key.
+
+A single failure rejects the whole snapshot with `IntegrityError`. A wrong wrapping
+key (wrong Master Password) is *not* an integrity failure — it stays
+`AuthFailureError`, because it is an ordinary, expected condition.
+
+The two mechanisms are complementary and neither replaces the other:
+
+| | Manifest (§8.1) | Content pass (§8.3) |
+|---|---|---|
+| Authenticates `revision` | yes | no |
+| Detects records that are valid but not part of this snapshot | yes | no |
+| Detects a dropped or injected record | yes | only if it fails to decrypt |
+| Detects `VK₁` entries under `VK₂` envelopes | yes, structurally | yes, by decryption |
+| Works on a snapshot published without a manifest | no | yes |
+| Needs a wrapping key beyond VK | no | only for cross-checks |
+
+Run the manifest check first where a manifest exists; the content pass is the only
+available defence for snapshots that predate it.
 
 What this catches that per-object AEAD does not:
 

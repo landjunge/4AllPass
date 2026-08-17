@@ -110,7 +110,7 @@ written from numbers the server merely asserted:
 ```
 1. fetch snapshot at active_revision
 2. unwrap an envelope → VK                 (against explicit expectations)
-3. verified = verifySnapshot(sealed, contents, claimed metadata)
+3. verified = verifySnapshotManifest(sealed, contents, claimed metadata)
                                            → revision and the record set are authenticated
 4. apply verified.entries / verified.envelopes, not the fetched objects
 5. evaluateRevision(pin, revisionFromManifest(verified))
@@ -218,6 +218,13 @@ After a snapshot is accepted as fresh and a wrapping key unwraps:
 3. Every envelope in the snapshot must unwrap to the **same** 32-byte VK (or be ignored as not applicable to this device).
 4. Every entry must decrypt under that VK. A single `AuthFailureError` fails the whole snapshot (`IntegrityError`).
 5. Mixed `VK_v` entries with `VK_{v+1}` envelopes therefore cannot be applied — the manifest cannot even describe them.
+
+Steps 3 and 4 are implemented as `verifySnapshot` / `unlockSnapshot`
+(`packages/crypto/src/snapshot.ts`); steps 1 and 2 as `verifySnapshotManifest`
+(`manifest.ts`). Keep both: the manifest authenticates *which* records belong to the
+revision, the pass proves they all decrypt under one key, and only the pass works for
+a snapshot published before the manifest existed. See `crypto-protocol.md` §8.3 for
+the comparison.
 
 ---
 

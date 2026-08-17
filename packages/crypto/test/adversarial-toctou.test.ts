@@ -20,7 +20,7 @@ import {
   sealManifest,
   unwrapVaultKey,
   utf8,
-  verifySnapshot,
+  verifySnapshotManifest,
   wrapVaultKey,
   type EncryptedEntry,
   type KeyEnvelope,
@@ -87,7 +87,7 @@ describe("attack: time-of-check/time-of-use on the snapshot", () => {
     // A plain replay of the stale record is caught by the digest set.
     assert.throws(
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           sealed,
           { entries: [stale], envelopes },
           { vaultKey, vaultId: C.vault_id, revision: REVISION, vaultKeyVersion: VKV },
@@ -100,7 +100,7 @@ describe("attack: time-of-check/time-of-use on the snapshot", () => {
     for (const honestReads of [0, 1, 2, 3, 4]) {
       const verified = (() => {
         try {
-          return verifySnapshot(
+          return verifySnapshotManifest(
             sealed,
             { entries: [swappingRecord(honest, stale, honestReads)], envelopes },
             { vaultKey, vaultId: C.vault_id, revision: REVISION, vaultKeyVersion: VKV },
@@ -138,7 +138,7 @@ describe("attack: time-of-check/time-of-use on the snapshot", () => {
       envelopes,
     });
     const sealed = sealManifest({ vaultKey, manifest });
-    const verified = verifySnapshot(
+    const verified = verifySnapshotManifest(
       sealed,
       { entries: [entry], envelopes },
       { vaultKey, vaultId: C.vault_id, revision: REVISION, vaultKeyVersion: VKV },
@@ -180,7 +180,7 @@ describe("attack: time-of-check/time-of-use on the snapshot", () => {
     for (const honestReads of [0, 1, 2, 3, 4]) {
       let verified;
       try {
-        verified = verifySnapshot(
+        verified = verifySnapshotManifest(
           sealed,
           { entries, envelopes: [swappingRecord(trusted, revoked, honestReads)] },
           { vaultKey, vaultId: C.vault_id, revision: REVISION, vaultKeyVersion: VKV },
@@ -358,7 +358,7 @@ describe("attack: hostile container shapes", () => {
   ] as const) {
     it(`reports ${label} as an integrity failure, not a raw TypeError`, () => {
       assert.throws(
-        () => verifySnapshot(sealed, { entries: hostile, envelopes }, opts),
+        () => verifySnapshotManifest(sealed, { entries: hostile, envelopes }, opts),
         (error: unknown) => error instanceof IntegrityError,
       );
     });
@@ -380,11 +380,11 @@ describe("error taxonomy on the snapshot path", () => {
   const first = entries[0] as EncryptedEntry;
 
   const cases: Array<[string, () => unknown]> = [
-    ["an entry served twice", () => verifySnapshot(sealed, { entries: [first, first], envelopes }, opts)],
+    ["an entry served twice", () => verifySnapshotManifest(sealed, { entries: [first, first], envelopes }, opts)],
     [
       "a corrupted envelope type",
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           sealed,
           { entries, envelopes: [{ ...(envelopes[0] as KeyEnvelope), type: "bogus" as never }] },
           opts,
@@ -393,7 +393,7 @@ describe("error taxonomy on the snapshot path", () => {
     [
       "a truncated envelope ciphertext",
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           sealed,
           {
             entries,
@@ -410,7 +410,7 @@ describe("error taxonomy on the snapshot path", () => {
     [
       "an entry ciphertext that is a JSON array",
       () =>
-        verifySnapshot(
+        verifySnapshotManifest(
           sealed,
           { entries: [{ ...first, ciphertext: [...first.ciphertext] as never }, entries[1] as EncryptedEntry], envelopes },
           opts,

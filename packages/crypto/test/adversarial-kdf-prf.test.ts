@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   ARGON2ID_PROFILES,
   AuthFailureError,
-  KDF_MEMORY_KIB_MAX,
+  PRODUCTION_MEMORY_KIB_MAX,
   ProtocolError,
   bytesToHex,
   deriveDeviceWrappingKey,
@@ -142,7 +142,7 @@ describe("attack: KDF parameter downgrade", () => {
     const { master } = fixtureSnapshot();
     const kdfBlock = master.kdf;
     assert.ok(kdfBlock);
-    for (const memory of [KDF_MEMORY_KIB_MAX + 1, 2 ** 31, Number.MAX_SAFE_INTEGER]) {
+    for (const memory of [PRODUCTION_MEMORY_KIB_MAX + 1, 2 ** 31, Number.MAX_SAFE_INTEGER]) {
       const bomb = { ...master, kdf: { ...kdfBlock, memory } };
       assert.throws(() => deriveMasterKeyFromEnvelope("pw", bomb), ProtocolError);
     }

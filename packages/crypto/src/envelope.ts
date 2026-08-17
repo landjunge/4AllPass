@@ -1,7 +1,7 @@
-import { CRYPTO_PROTOCOL_VERSION, KEY_BYTES, NONCE_BYTES, TAG_BYTES } from "./constants.ts";
+import { CRYPTO_PROTOCOL_VERSION, KEY_BYTES } from "./constants.ts";
 import { envelopeAad } from "./encoding/aad.ts";
 import { ProtocolError } from "./errors.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { assertKdfBlock } from "./kdf/profiles.ts";
 import {
   assertBytes,
@@ -175,9 +175,12 @@ export function unwrapVaultKey(envelope: KeyEnvelope, opts: UnwrapVaultKeyOption
   assertBytes("wrappingKey", opts.wrappingKey, { exact: KEY_BYTES });
   // Read each byte field exactly once: validating one value and then decrypting
   // another is how a field with a getter (or a Proxy) would slip past the checks.
-  const nonce = assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
-  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
-  const tag = assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
+  // Wrong *type* is a local deserialization bug (`ProtocolError`); wrong *length*
+  // is attacker-controlled framing that cannot authenticate (`AuthFailureError`).
+  const nonce = assertBytes("envelope.nonce", envelope.nonce);
+  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext);
+  const tag = assertBytes("envelope.tag", envelope.tag);
+  assertAeadFraming(nonce, tag, ciphertext, KEY_BYTES);
 
   const fields = resolveFields(
     {

@@ -1,0 +1,10 @@
+{
+  "name": "4AllPass",
+  "short_name": "4AllPass",
+  "description": "Self-hosted zero-knowledge password manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "lang": "en"
+}

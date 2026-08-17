@@ -43,6 +43,31 @@ describe("recovery key representation", () => {
     assert.deepEqual(parseRecoveryKey(formatRecoveryKey(key)), key);
   });
 
+  it("round-trips 1000 random keys and always produces the same shape", () => {
+    for (let i = 0; i < 1000; i++) {
+      const key = generateRecoveryKey();
+      const formatted = formatRecoveryKey(key);
+      assert.match(formatted, /^[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){10}$/);
+      assert.deepEqual(parseRecoveryKey(formatted), key);
+    }
+  });
+
+  it("covers every alphabet symbol without ambiguity", () => {
+    const alphabet = suite.encoding.alphabet;
+    assert.equal(alphabet.length, 32);
+    assert.equal(new Set(alphabet).size, 32);
+    for (const forbidden of ["I", "L", "O", "U"]) {
+      assert.equal(alphabet.includes(forbidden), false);
+    }
+    const seen = new Set<string>();
+    for (let i = 0; i < 2000 && seen.size < 32; i++) {
+      for (const char of formatRecoveryKey(generateRecoveryKey()).replace(/-/g, "")) {
+        seen.add(char);
+      }
+    }
+    assert.equal(seen.size, 32, `unreachable symbols: ${[...alphabet].filter((c) => !seen.has(c)).join("")}`);
+  });
+
   it("accepts sloppy user input (case, spacing, Crockford substitutions)", () => {
     const formatted = formatRecoveryKey(recoveryKey);
     const sloppy = formatted.toLowerCase().replace(/-/g, " ").replace(/0/g, "o").replace(/1/g, "l");

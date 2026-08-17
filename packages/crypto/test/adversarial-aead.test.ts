@@ -10,9 +10,16 @@ import {
   bytesToHex,
   decrypt,
   decryptEntry,
+  deviceKeyAad,
   encrypt,
   encryptEntry,
+  entryAad,
+  entryDigest,
+  envelopeAad,
+  envelopeDigest,
+  frame,
   generateVaultKey,
+  manifestAad,
   unwrapVaultKey,
   zeroize,
 } from "../src/index.ts";
@@ -140,6 +147,61 @@ describe("attack: AAD mismatch", () => {
         }),
       IntegrityError,
     );
+  });
+});
+
+describe("attack: AAD and digest ambiguity", () => {
+  it("cannot be made to collide by shifting bytes between adjacent fields", () => {
+    const a = entryAad({
+      vaultId: "vault_a",
+      entryId: "bc",
+      schemaVersion: 1,
+      cryptoVersion: 1,
+      vaultKeyVersion: 1,
+    });
+    const b = entryAad({
+      vaultId: "vault_ab",
+      entryId: "c",
+      schemaVersion: 1,
+      cryptoVersion: 1,
+      vaultKeyVersion: 1,
+    });
+    assert.notEqual(bytesToHex(a), bytesToHex(b));
+    assert.notEqual(bytesToHex(frame(["a", "bc"])), bytesToHex(frame(["ab", "c"])));
+  });
+
+  it("gives every AAD role its own byte space", () => {
+    const shared = { vaultId: C.vault_id, cryptoVersion: 1, vaultKeyVersion: VKV };
+    const aads = [
+      envelopeAad({ ...shared, type: "master", deviceId: "", deviceKeyVersion: 0 }),
+      envelopeAad({ ...shared, type: "recovery", deviceId: "", deviceKeyVersion: 0 }),
+      envelopeAad({ ...shared, type: "device", deviceId: C.device_id, deviceKeyVersion: 1 }),
+      entryAad({
+        vaultId: C.vault_id,
+        entryId: C.entry_id,
+        schemaVersion: 1,
+        cryptoVersion: 1,
+        vaultKeyVersion: VKV,
+      }),
+      deviceKeyAad({
+        vaultId: C.vault_id,
+        deviceId: C.device_id,
+        credentialId: new Uint8Array(16).fill(1),
+        cryptoVersion: 1,
+        deviceKeyVersion: 1,
+      }),
+      manifestAad({ vaultId: C.vault_id, cryptoVersion: 1, revision: 1, vaultKeyVersion: VKV }),
+    ].map(bytesToHex);
+    assert.equal(new Set(aads).size, aads.length);
+  });
+
+  it("keeps entry and envelope digests in separate spaces", () => {
+    const { entry, master } = fixtureSnapshot();
+    const digests = new Set([bytesToHex(entryDigest(entry)), bytesToHex(envelopeDigest(master))]);
+    assert.equal(digests.size, 2);
+    // Same sealed bytes under a different role must not produce the same digest.
+    const asEnvelope = { ...master, nonce: entry.nonce, ciphertext: entry.ciphertext, tag: entry.tag };
+    assert.notEqual(bytesToHex(envelopeDigest(asEnvelope)), bytesToHex(entryDigest(entry)));
   });
 });
 

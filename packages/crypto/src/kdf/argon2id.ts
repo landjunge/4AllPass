@@ -2,6 +2,7 @@ import { argon2id } from "@noble/hashes/argon2.js";
 import { ARGON2_VERSION, HASH_LEN, SALT_BYTES_MAX, SALT_BYTES_MIN } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
+import { zeroize } from "../memory.ts";
 import type { Argon2idParams, KdfParams, KeyEnvelope } from "../types.ts";
 
 export interface DeriveRawOptions {
@@ -35,7 +36,14 @@ export function deriveArgon2idRaw(opts: DeriveRawOptions): Uint8Array {
   });
 }
 
-/** Derive the 256-bit Master Key. Password is NFC-normalized then UTF-8. */
+/**
+ * Derive the 256-bit Master Key. Password is NFC-normalized then UTF-8.
+ *
+ * The caller's `password` string cannot be zeroized (JS strings are immutable),
+ * but this function owns the intermediate UTF-8 byte buffer it allocates via
+ * `utf8Nfc`. Per crypto-protocol.md Hard Invariant #4 ("zeroized as soon as
+ * possible after key derivation"), that buffer must not outlive this call.
+ */
 export function deriveMasterKey(
   password: string,
   salt: Uint8Array,
@@ -44,11 +52,16 @@ export function deriveMasterKey(
   if (salt.length !== SALT_BYTES_MIN && salt.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
-  return deriveArgon2idRaw({
-    password: utf8Nfc(password),
-    salt,
-    params,
-  });
+  const passwordBytes = utf8Nfc(password);
+  try {
+    return deriveArgon2idRaw({
+      password: passwordBytes,
+      salt,
+      params,
+    });
+  } finally {
+    zeroize(passwordBytes);
+  }
 }
 
 export function deriveMasterKeyFromEnvelope(password: string, envelope: KeyEnvelope): Uint8Array {

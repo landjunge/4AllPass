@@ -21,6 +21,20 @@ export interface DeriveDeviceWrappingKeyOptions {
   cryptoVersion?: number;
 }
 
+/**
+ * A credential id is one of the identity fields folded into the DWK's HKDF
+ * info and into the Device-Key Envelope AAD. An empty credential id would
+ * still be length-prefixed unambiguously, but it collapses the credential
+ * dimension of the binding to a constant, which weakens resistance to
+ * credential-swapping across devices/vaults that share the same rpId. Reject
+ * it outright instead of silently accepting a degenerate binding.
+ */
+function assertCredentialId(credentialId: Uint8Array): void {
+  if (credentialId.length === 0) {
+    throw new ProtocolError("credentialId must not be empty");
+  }
+}
+
 export interface WrapDeviceKeyOptions {
   deviceKey: Uint8Array;
   deviceWrappingKey: Uint8Array;
@@ -44,6 +58,7 @@ export function prfEvalFirst(rpId: string, vaultId: string): Uint8Array {
  */
 export function deriveDeviceWrappingKey(opts: DeriveDeviceWrappingKeyOptions): Uint8Array {
   assertLength("prfOutput", opts.prfOutput, KEY_BYTES);
+  assertCredentialId(opts.credentialId);
   const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
   const salt = sha256(dwkHkdfSalt(opts.vaultId, opts.credentialId));
   const info = dwkHkdfInfo(
@@ -59,6 +74,7 @@ export function deriveDeviceWrappingKey(opts: DeriveDeviceWrappingKeyOptions): U
 export function wrapDeviceKey(opts: WrapDeviceKeyOptions): DeviceKeyEnvelope {
   assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
   assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
+  assertCredentialId(opts.credentialId);
   const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
   if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`this library only writes device-key envelope version ${CRYPTO_PROTOCOL_VERSION}`);
@@ -82,6 +98,7 @@ export function wrapDeviceKeyWithNonce(
 ): DeviceKeyEnvelope {
   assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
   assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
+  assertCredentialId(opts.credentialId);
   const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
   const aad = deviceKeyAad(opts.vaultId, opts.deviceId, opts.credentialId, cryptoVersion);
   const box = encryptWithNonce(opts.deviceWrappingKey, opts.nonce, opts.deviceKey, aad);
@@ -101,6 +118,7 @@ export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: 
   if (envelope.version !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`unsupported device-key envelope version: ${envelope.version}`);
   }
+  assertCredentialId(envelope.credentialId);
   assertLength("deviceWrappingKey", deviceWrappingKey, KEY_BYTES);
   const aad = deviceKeyAad(
     envelope.vaultId,

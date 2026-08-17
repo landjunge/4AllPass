@@ -154,6 +154,17 @@ Worked hex and encrypt/decrypt known-answer tests: **[docs/test-vectors.md](test
 `standard` is RFC 9106 SECOND RECOMMENDED memory. `ci` MUST NOT be persisted on a production vault.  
 Chosen parameters **must** be stored inside the Master Envelope so that later re-keying is possible without data loss.
 
+### 4.1 KDF parameters are untrusted input
+
+The `kdf` block of a Master Envelope is **not** covered by the GCM tag — it cannot be, because the wrapping key is derived from it. A malicious server can therefore hand out arbitrary parameters. Tampering cannot leak the password (the derived key only ever fails AAD-authenticated decryption locally), but it can DoS the client at unlock time.
+
+Before running Argon2id on parameters read from an envelope, implementations **must** validate them (`deriveMasterKeyFromEnvelope` does this):
+
+- `algorithm = argon2id`, `version = 0x13`, `hashLen = 32`, salt 16 or 32 bytes
+- `memory` ≥ production floor (32 MiB) and ≤ **1 GiB** (`MEMORY_KIB_MAX`)
+- `iterations` in `1..32` (`ITERATIONS_MAX`)
+- `parallelism` in `1..16` (`PARALLELISM_MAX`)
+
 Known-answer tests: **[docs/test-vectors-argon2id.md](test-vectors-argon2id.md)**.
 
 ---
@@ -321,6 +332,7 @@ Before any production use the following must pass:
   Run: `npm test` (skips 32–128 MiB unless `RUN_HEAVY=1`) or `python3 scripts/verify-argon2id-vectors.py`
 - Property-based tests (random keys, random plaintexts)
 - Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure) — covered by `TV-TAMPER-*`
+- Adversarial suite (`packages/crypto/test/adversarial.test.ts`): cross-vault / cross-device swapping, envelope type confusion, entry-id renaming, truncation, credential swapping, version confusion on write and read, hostile KDF parameters
 - Wrong-password / wrong-recovery-key tests
 - Nonce uniqueness under concurrent encryption
 - Revision rollback / vault-key downgrade (`evaluateRevision`)

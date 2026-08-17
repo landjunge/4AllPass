@@ -130,3 +130,11 @@ After a snapshot is accepted as fresh and a wrapping key unwraps:
 ## 7. What the server can still do
 
 See `threat-model.md` §2.7. Freshness and atomic snapshots stop *silent* rollback and *partial* rotation. They do not stop availability attacks (withholding the latest snapshot, refusing writes).
+
+---
+
+## 8. Known gap: revision is not yet cryptographically bound (planned for v2)
+
+`(revision, vault_key_version)` is plain snapshot metadata. `evaluateRevision` enforces monotonicity against the local pin, and the §6 integrity pass rejects mixed-VK snapshots, but nothing cryptographically binds the *number* `revision = N` to the ciphertexts inside snapshot `N`. A malicious server could label an authentic old entry set with a fresh revision number, as long as it never goes below the client's pin and keeps `vault_key_version` consistent.
+
+v1 accepts this residual risk (the §6 pass plus per-entry AAD already prevents mixing across vaults, entries, and key versions that fail decryption). The planned v2 fix is an **authenticated vault manifest**: a per-snapshot structure containing `vault_id`, `revision`, `vault_key_version`, `crypto_protocol_version`, and a commitment (hash list or Merkle root) over all entry and envelope ciphertexts, sealed under the Vault Key with its own AAD label. Binding the revision into every entry AAD instead was considered and rejected for v1: it would force re-encrypting every entry on every commit and would break the pinned v1 test vectors.

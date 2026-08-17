@@ -50,7 +50,13 @@ function snapshotAt(revision: number, vaultKeyVersion = VKV) {
     envelopes,
   });
   const sealed = sealManifest({ vaultKey, manifest });
-  return { entries, envelopes, manifest, sealed };
+  const verified = openManifest(sealed, {
+    vaultKey,
+    vaultId: C.vault_id,
+    revision,
+    vaultKeyVersion,
+  });
+  return { entries, envelopes, manifest, sealed, verified };
 }
 
 const pin: VaultRevision = {
@@ -123,8 +129,8 @@ describe("attack: revision rollback", () => {
   it("detects a server that serves two different snapshots for one revision", () => {
     const first = snapshotAt(42);
     const second = snapshotAt(42);
-    const pinnedFirst = revisionFromManifest(first.manifest, first.sealed);
-    const pinnedSecond = revisionFromManifest(second.manifest, second.sealed);
+    const pinnedFirst = revisionFromManifest(first.verified);
+    const pinnedSecond = revisionFromManifest(second.verified);
     const decision = evaluateRevision(pinnedFirst, pinnedSecond);
     assert.equal(decision.ok, false);
     if (!decision.ok) {
@@ -136,7 +142,7 @@ describe("attack: revision rollback", () => {
 
   it("refuses to drop the manifest check once a revision was pinned with one", () => {
     const current = snapshotAt(42);
-    const pinned = revisionFromManifest(current.manifest, current.sealed);
+    const pinned = revisionFromManifest(current.verified);
     const withoutDigest: VaultRevision = {
       vaultId: pinned.vaultId,
       revision: pinned.revision,
@@ -306,7 +312,7 @@ describe("attack: key-generation downgrade", () => {
 
   it("pins only what the manifest proves", () => {
     const current = snapshotAt(42);
-    const pinned = revisionFromManifest(current.manifest, current.sealed);
+    const pinned = revisionFromManifest(current.verified);
     assert.equal(pinned.revision, 42);
     assert.equal(pinned.vaultKeyVersion, VKV);
     assert.equal(pinned.manifestDigest?.length, 32);

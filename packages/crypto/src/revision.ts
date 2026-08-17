@@ -1,9 +1,9 @@
 import { CRYPTO_PROTOCOL_VERSION, DIGEST_BYTES } from "./constants.ts";
-import { sealedManifestDigest } from "./encoding/digest.ts";
 import { bytesToHex } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError, RollbackError } from "./errors.ts";
 import { assertBytes, assertId, assertRevision, assertVersion } from "./validate.ts";
-import type { SealedManifest, SnapshotManifest, VaultRevision } from "./types.ts";
+import type { VerifiedManifest } from "./manifest.ts";
+import type { VaultRevision } from "./types.ts";
 
 export type RevisionAction = "first_seen" | "same" | "advance" | "rotation";
 
@@ -134,14 +134,17 @@ export function assertFreshSnapshot(
 
 /**
  * Build the pinnable revision state from a manifest that has already been
- * opened under the Vault Key. This is the only pin a client should store: it
- * carries the digest of the sealed manifest, which makes a later "same
- * revision, different content" answer detectable.
+ * verified under the Vault Key. This is the only pin a client should store.
+ *
+ * It takes the whole `VerifiedManifest` — manifest plus the digest of the blob
+ * that was actually authenticated — rather than the two separately. Passing them
+ * separately made it possible to pin the digest of a blob that was never
+ * verified, which would turn the equivocation check into noise: the honest
+ * snapshot is then rejected as a fork, and a digest of the attacker's choosing is
+ * blessed instead.
  */
-export function revisionFromManifest(
-  manifest: SnapshotManifest,
-  sealed: SealedManifest,
-): VaultRevision {
+export function revisionFromManifest(verified: VerifiedManifest): VaultRevision {
+  const { manifest } = verified;
   return {
     vaultId: assertId("manifest.vaultId", manifest.vaultId),
     revision: assertRevision("manifest.revision", manifest.revision),
@@ -150,6 +153,6 @@ export function revisionFromManifest(
       "manifest.cryptoProtocolVersion",
       manifest.cryptoProtocolVersion,
     ),
-    manifestDigest: sealedManifestDigest(sealed),
+    manifestDigest: assertBytes("manifest digest", verified.sealedDigest, { exact: DIGEST_BYTES }),
   };
 }

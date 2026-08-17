@@ -127,6 +127,7 @@ export {
   buildManifest,
   decodeManifest,
   encodeManifest,
+  normalizeSnapshotContents,
   openManifest,
   sealManifest,
   validateManifest,
@@ -137,6 +138,8 @@ export type {
   OpenManifestOptions,
   SealManifestOptions,
   SnapshotContents,
+  VerifiedManifest,
+  VerifiedSnapshot,
 } from "./manifest.ts";
 
 export {

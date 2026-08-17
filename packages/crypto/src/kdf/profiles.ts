@@ -9,7 +9,7 @@ import {
   SALT_BYTES_MIN,
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
-import { assertBytes } from "../validate.ts";
+import { assertBytes, copyBytes } from "../validate.ts";
 import type { Argon2idParams, Argon2idProfile, Argon2idProfileName, KdfParams } from "../types.ts";
 
 function profile(
@@ -73,7 +73,7 @@ export function assertKdfParamsWellFormed(params: Argon2idParams): void {
 }
 
 export function assertKdfSalt(salt: unknown): Uint8Array {
-  const bytes = assertBytes("kdf.salt", salt);
+  const bytes = copyBytes("kdf.salt", salt);
   if (bytes.length !== SALT_BYTES_MIN && bytes.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`kdf.salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
@@ -90,12 +90,29 @@ export function assertProductionKdf(params: Argon2idParams): void {
   }
 }
 
-/** Full validation of the `kdf` block of a master envelope, including the salt. */
-export function assertKdfBlock(kdf: KdfParams, allowTestProfile: boolean): void {
+/**
+ * Full validation of the `kdf` block of a master envelope, including the salt,
+ * returning a plain copy.
+ *
+ * The copy matters: the block is digested into the envelope AAD, and if the
+ * caller's object exposed accessors instead of data properties, validating one
+ * value and digesting another would be a time-of-check/time-of-use gap.
+ */
+export function assertKdfBlock(kdf: KdfParams, allowTestProfile: boolean): KdfParams {
+  const block: KdfParams = {
+    algorithm: kdf?.algorithm,
+    version: kdf?.version,
+    memory: kdf?.memory,
+    iterations: kdf?.iterations,
+    parallelism: kdf?.parallelism,
+    hashLen: kdf?.hashLen,
+    salt: kdf?.salt,
+  };
   if (allowTestProfile) {
-    assertKdfParamsWellFormed(kdf);
+    assertKdfParamsWellFormed(block);
   } else {
-    assertProductionKdf(kdf);
+    assertProductionKdf(block);
   }
-  assertKdfSalt(kdf.salt);
+  block.salt = assertKdfSalt(block.salt);
+  return block;
 }

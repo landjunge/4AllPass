@@ -96,14 +96,15 @@ function resolveFields(
     }
   }
 
+  let kdf: KdfParams | undefined;
   if (type === "master") {
     if (!input.kdf) throw new ProtocolError("master envelope requires kdf parameters");
-    assertKdfBlock(input.kdf, allowTestProfile);
+    kdf = assertKdfBlock(input.kdf, allowTestProfile);
   } else if (input.kdf) {
     throw new ProtocolError(`${type} envelope must not carry kdf parameters`);
   }
 
-  return { vaultId, type, cryptoVersion, vaultKeyVersion, deviceId, deviceKeyVersion, kdf: input.kdf };
+  return { vaultId, type, cryptoVersion, vaultKeyVersion, deviceId, deviceKeyVersion, kdf };
 }
 
 function prepareWrap(opts: WrapVaultKeyOptions): { fields: ResolvedEnvelopeFields; aad: Uint8Array } {

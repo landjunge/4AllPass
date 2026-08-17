@@ -79,7 +79,7 @@ describe("snapshot manifest", () => {
   it("round-trips through seal / open / verify", () => {
     const { manifest, entries, envelopes } = fixtureSnapshot();
     const sealed = sealManifest({ vaultKey, manifest });
-    const opened = verifySnapshot(
+    const { manifest: opened } = verifySnapshot(
       sealed,
       { entries, envelopes },
       {

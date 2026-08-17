@@ -10,14 +10,17 @@ import {
 } from "./constants.ts";
 import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { manifestAad } from "./encoding/aad.ts";
-import { entryDigest, envelopeDigest } from "./encoding/digest.ts";
+import { assertKdfBlock } from "./kdf/profiles.ts";
+import { entryDigest, envelopeDigest, sealedManifestDigest } from "./encoding/digest.ts";
 import { frame } from "./encoding/framing.ts";
-import { bytesToHex, concat } from "./encoding/bytes.ts";
+import { bytesToHex, compareUtf8, concat } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError } from "./errors.ts";
 import {
   assertBytes,
   assertEnvelopeType,
+  copyBytes,
   assertId,
+  assertRecordList,
   assertRevision,
   assertUint32,
   assertVersion,
@@ -62,12 +65,46 @@ export interface SnapshotContents {
   envelopes: readonly KeyEnvelope[];
 }
 
+/**
+ * The result of actually authenticating a sealed manifest: the manifest together
+ * with the digest of the exact blob it came out of.
+ *
+ * These two values are produced together and travel together so that a pin can
+ * never record a digest of a blob that was not verified — which would silently
+ * turn the equivocation check into noise.
+ */
+export interface VerifiedManifest {
+  manifest: SnapshotManifest;
+  sealedDigest: Uint8Array;
+}
+
+/**
+ * A verified snapshot, including the normalized records the digests were taken
+ * over.
+ *
+ * Callers must decrypt **these** records, not the objects they passed in.
+ * Verification commits to the bytes it read; if the application then decrypts its
+ * own object, anything that can make a second read return something else (an
+ * accessor, a lazily-decoding transport wrapper, a model layer) reopens the gap
+ * the manifest exists to close.
+ */
+export interface VerifiedSnapshot extends VerifiedManifest {
+  entries: EncryptedEntry[];
+  envelopes: KeyEnvelope[];
+}
+
 function envelopeKey(type: string, deviceId: string): string {
   return `${type}\u0000${deviceId}`;
 }
 
+/**
+ * Canonical order is defined on the UTF-8 encoding, not on UTF-16 code units.
+ * JavaScript's `<` compares code units, which orders astral characters
+ * differently from their bytes — a second implementation sorting the wire format
+ * would then disagree with us about what "canonical" means.
+ */
 function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  return compareUtf8(a, b);
 }
 
 function assertSorted(label: string, keys: readonly string[]): void {
@@ -79,22 +116,61 @@ function assertSorted(label: string, keys: readonly string[]): void {
 }
 
 /**
- * Digesting happens before anything else looks at these buffers, so the shape
- * check has to happen here: a digest over malformed input is a well-formed
- * commitment to garbage.
+ * Copy a record into plain data, reading every field exactly once.
+ *
+ * The manifest's whole job is to commit to the bytes the client will later
+ * decrypt. If the record were validated through one read and digested through a
+ * second, an object with accessors instead of data properties could present
+ * honest bytes to the checks and stale bytes to the digest — and a snapshot that
+ * passed `verifySnapshot` would then decrypt to something else entirely. So the
+ * digest is always taken over this normalized copy, never over the input object.
  */
-function assertSealedShape(
-  label: string,
-  sealed: { nonce: unknown; ciphertext: unknown; tag: unknown },
-  ciphertextBytes?: number,
-): void {
-  assertBytes(`${label}.nonce`, sealed.nonce, { exact: NONCE_BYTES });
-  assertBytes(
-    `${label}.ciphertext`,
-    sealed.ciphertext,
-    ciphertextBytes === undefined ? {} : { exact: ciphertextBytes },
-  );
-  assertBytes(`${label}.tag`, sealed.tag, { exact: TAG_BYTES });
+function normalizeEntry(entry: EncryptedEntry): EncryptedEntry {
+  const id = assertId("entry.id", entry.id);
+  return {
+    id,
+    schemaVersion: assertVersion("entry.schemaVersion", entry.schemaVersion),
+    cryptoVersion: assertVersion("entry.cryptoVersion", entry.cryptoVersion),
+    vaultKeyVersion: assertVersion("entry.vaultKeyVersion", entry.vaultKeyVersion),
+    nonce: copyBytes(`entry ${id} nonce`, entry.nonce, { exact: NONCE_BYTES }),
+    ciphertext: copyBytes(`entry ${id} ciphertext`, entry.ciphertext),
+    tag: copyBytes(`entry ${id} tag`, entry.tag, { exact: TAG_BYTES }),
+  };
+}
+
+function normalizeEnvelope(envelope: KeyEnvelope): KeyEnvelope {
+  const type = assertEnvelopeType(envelope.type);
+  const record: KeyEnvelope = {
+    version: assertVersion("envelope.version", envelope.version),
+    type,
+    vaultKeyVersion: assertVersion("envelope.vaultKeyVersion", envelope.vaultKeyVersion),
+    encryption: "AES-256-GCM",
+    nonce: copyBytes(`${type} envelope nonce`, envelope.nonce, { exact: NONCE_BYTES }),
+    ciphertext: copyBytes(`${type} envelope ciphertext`, envelope.ciphertext, { exact: KEY_BYTES }),
+    tag: copyBytes(`${type} envelope tag`, envelope.tag, { exact: TAG_BYTES }),
+  };
+  if (envelope.encryption !== "AES-256-GCM") {
+    throw new ProtocolError(`unsupported envelope encryption: ${String(envelope.encryption)}`);
+  }
+  const kdf = envelope.kdf;
+  if (type === "master") {
+    if (!kdf) throw new ProtocolError("master envelope requires kdf parameters");
+    record.kdf = assertKdfBlock(kdf, true);
+  } else if (kdf) {
+    throw new ProtocolError(`${type} envelope must not carry kdf parameters`);
+  }
+  if (type === "device") {
+    record.deviceId = assertId("envelope.deviceId", envelope.deviceId);
+    record.deviceKeyVersion = assertVersion("envelope.deviceKeyVersion", envelope.deviceKeyVersion);
+  } else {
+    if (envelope.deviceId !== undefined && envelope.deviceId !== "") {
+      throw new ProtocolError(`${type} envelope must not carry deviceId`);
+    }
+    if (envelope.deviceKeyVersion !== undefined) {
+      throw new ProtocolError(`${type} envelope must not carry deviceKeyVersion`);
+    }
+  }
+  return record;
 }
 
 function assertSnapshotHeader(header: {
@@ -129,47 +205,59 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
     vaultKeyVersion: opts.vaultKeyVersion,
     cryptoProtocolVersion: opts.cryptoProtocolVersion ?? CRYPTO_PROTOCOL_VERSION,
   });
-  if (opts.entries.length > MANIFEST_ENTRIES_MAX) {
+  return describeSnapshot(header, normalizeSnapshotContents(opts));
+}
+
+/** Copy a snapshot into plain records, reading every field of every record once. */
+export function normalizeSnapshotContents(contents: SnapshotContents): {
+  entries: EncryptedEntry[];
+  envelopes: KeyEnvelope[];
+} {
+  const inputEntries = assertRecordList<EncryptedEntry>("entries", contents.entries);
+  const inputEnvelopes = assertRecordList<KeyEnvelope>("envelopes", contents.envelopes);
+  if (inputEntries.length > MANIFEST_ENTRIES_MAX) {
     throw new ProtocolError(`snapshot has more than ${MANIFEST_ENTRIES_MAX} entries`);
   }
-  if (opts.envelopes.length > MANIFEST_ENVELOPES_MAX) {
+  if (inputEnvelopes.length > MANIFEST_ENVELOPES_MAX) {
     throw new ProtocolError(`snapshot has more than ${MANIFEST_ENVELOPES_MAX} envelopes`);
   }
+  return {
+    entries: inputEntries.map(normalizeEntry),
+    envelopes: inputEnvelopes.map(normalizeEnvelope),
+  };
+}
 
-  const entries: ManifestEntryRef[] = opts.entries.map((entry) => {
-    const id = assertId("entry.id", entry?.id);
-    assertSealedShape(`entry ${id}`, entry);
+function describeSnapshot(
+  header: Pick<SnapshotManifest, "vaultId" | "revision" | "vaultKeyVersion" | "cryptoProtocolVersion">,
+  normalized: { entries: EncryptedEntry[]; envelopes: KeyEnvelope[] },
+): SnapshotManifest {
+  const entries: ManifestEntryRef[] = normalized.entries.map((record) => {
     requireSameNumber(
-      `entry ${id} vaultKeyVersion`,
+      `entry ${record.id} vaultKeyVersion`,
       header.vaultKeyVersion,
-      assertVersion("entry.vaultKeyVersion", entry.vaultKeyVersion),
+      record.vaultKeyVersion,
     );
     return {
-      id,
-      schemaVersion: assertVersion("entry.schemaVersion", entry.schemaVersion),
-      cryptoVersion: assertVersion("entry.cryptoVersion", entry.cryptoVersion),
-      vaultKeyVersion: header.vaultKeyVersion,
-      digest: entryDigest(entry),
+      id: record.id,
+      schemaVersion: record.schemaVersion,
+      cryptoVersion: record.cryptoVersion,
+      vaultKeyVersion: record.vaultKeyVersion,
+      digest: entryDigest(record),
     };
   });
 
-  const envelopes: ManifestEnvelopeRef[] = opts.envelopes.map((envelope) => {
-    const type = assertEnvelopeType(envelope?.type);
-    assertSealedShape(`${type} envelope`, envelope, KEY_BYTES);
+  const envelopes: ManifestEnvelopeRef[] = normalized.envelopes.map((record) => {
     requireSameNumber(
-      `envelope ${type} vaultKeyVersion`,
+      `envelope ${record.type} vaultKeyVersion`,
       header.vaultKeyVersion,
-      assertVersion("envelope.vaultKeyVersion", envelope.vaultKeyVersion),
+      record.vaultKeyVersion,
     );
     return {
-      type,
-      deviceId: type === "device" ? assertId("envelope.deviceId", envelope.deviceId) : "",
-      vaultKeyVersion: header.vaultKeyVersion,
-      deviceKeyVersion:
-        type === "device"
-          ? assertVersion("envelope.deviceKeyVersion", envelope.deviceKeyVersion)
-          : 0,
-      digest: envelopeDigest(envelope),
+      type: record.type,
+      deviceId: record.deviceId ?? "",
+      vaultKeyVersion: record.vaultKeyVersion,
+      deviceKeyVersion: record.deviceKeyVersion ?? 0,
+      digest: envelopeDigest(record),
     };
   });
 
@@ -445,7 +533,7 @@ export function sealManifestWithNonce(
  * Any lie about `vaultId`, `revision` or `vaultKeyVersion` fails the GCM tag;
  * a manifest whose body disagrees with its own AAD fails the equality checks.
  */
-export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions): SnapshotManifest {
+export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions): VerifiedManifest {
   if (sealed === null || typeof sealed !== "object") {
     throw new ProtocolError("sealed manifest must be an object");
   }
@@ -480,7 +568,17 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
     claimed.cryptoProtocolVersion,
     manifest.cryptoProtocolVersion,
   );
-  return manifest;
+  // The digest is taken over the validated buffers, not over `sealed` again.
+  return {
+    manifest,
+    sealedDigest: sealedManifestDigest({
+      version,
+      encryption: "AES-256-GCM",
+      nonce,
+      ciphertext,
+      tag,
+    }),
+  };
 }
 
 /**
@@ -491,16 +589,22 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
 export function assertSnapshotMatchesManifest(
   manifest: SnapshotManifest,
   contents: SnapshotContents,
-): void {
+): { entries: EncryptedEntry[]; envelopes: KeyEnvelope[] } {
   const expected = validateManifest(manifest);
-  const observed = buildManifest({
-    vaultId: expected.vaultId,
-    revision: expected.revision,
-    vaultKeyVersion: expected.vaultKeyVersion,
-    cryptoProtocolVersion: expected.cryptoProtocolVersion,
-    entries: contents.entries,
-    envelopes: contents.envelopes,
-  });
+  // Everything in `contents` came from the server. A malformed record there is
+  // not a local programming error, it is a tampering attempt, and the caller
+  // distinguishes the two by error class.
+  let normalized: { entries: EncryptedEntry[]; envelopes: KeyEnvelope[] };
+  let observed: SnapshotManifest;
+  try {
+    normalized = normalizeSnapshotContents(contents);
+    observed = describeSnapshot(expected, normalized);
+  } catch (cause) {
+    if (cause instanceof IntegrityError) throw cause;
+    throw new IntegrityError(
+      `snapshot contents are not a valid snapshot: ${(cause as Error).message}`,
+    );
+  }
 
   if (observed.entries.length !== expected.entries.length) {
     throw new IntegrityError(
@@ -538,15 +642,21 @@ export function assertSnapshotMatchesManifest(
     }
     requireSameNumber(`envelope ${label} deviceKeyVersion`, want.deviceKeyVersion, got.deviceKeyVersion);
   }
+  return normalized;
 }
 
-/** Open the manifest and check the snapshot contents in one step. */
+/**
+ * Open the manifest and check the snapshot contents in one step.
+ *
+ * Decrypt the returned `entries` and `envelopes`, not the ones you passed in:
+ * those are the exact records the manifest digests were computed over.
+ */
 export function verifySnapshot(
   sealed: SealedManifest,
   contents: SnapshotContents,
   opts: OpenManifestOptions,
-): SnapshotManifest {
-  const manifest = openManifest(sealed, opts);
-  assertSnapshotMatchesManifest(manifest, contents);
-  return manifest;
+): VerifiedSnapshot {
+  const verified = openManifest(sealed, opts);
+  const normalized = assertSnapshotMatchesManifest(verified.manifest, contents);
+  return { ...verified, entries: normalized.entries, envelopes: normalized.envelopes };
 }

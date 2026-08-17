@@ -33,8 +33,38 @@ export function u32be(n: number): Uint8Array {
   return b;
 }
 
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+function isWellFormed(s: string): boolean {
+  const check = (s as { isWellFormed?: () => boolean }).isWellFormed;
+  return typeof check === "function" ? check.call(s) : !LONE_SURROGATE.test(s);
+}
+
+/**
+ * UTF-8 of a string, refusing ill-formed UTF-16.
+ *
+ * `TextEncoder` replaces every unpaired surrogate with U+FFFD, so `"\uD800"`,
+ * `"\uDC00"` and `"\uFFFD"` would all encode to the same three bytes. Since these
+ * bytes end up in AAD and in digest preimages, that silent replacement would
+ * collapse distinct identifiers into one cryptographic identity.
+ */
 export function utf8(s: string): Uint8Array {
+  if (!isWellFormed(s)) {
+    throw new ProtocolError("string contains an unpaired surrogate and has no UTF-8 encoding");
+  }
   return new TextEncoder().encode(s);
+}
+
+/** Byte-order comparison of the UTF-8 encodings. Canonical ordering is defined on bytes. */
+export function compareUtf8(a: string, b: string): number {
+  const left = utf8(a);
+  const right = utf8(b);
+  const shared = Math.min(left.length, right.length);
+  for (let i = 0; i < shared; i++) {
+    const diff = (left[i] as number) - (right[i] as number);
+    if (diff !== 0) return diff < 0 ? -1 : 1;
+  }
+  return left.length === right.length ? 0 : left.length < right.length ? -1 : 1;
 }
 
 export function bytesToHex(bytes: Uint8Array): string {

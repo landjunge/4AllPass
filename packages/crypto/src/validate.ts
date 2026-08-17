@@ -32,6 +32,27 @@ export function assertBytes(
   return value;
 }
 
+/**
+ * Validate and copy, one read per byte.
+ *
+ * `assertBytes` only proves the value *is* a `Uint8Array` of the right length; a
+ * `Proxy` over one satisfies that and can still answer differently every time its
+ * bytes are read. Anything that will be both digested and used later must be
+ * captured. `Uint8Array.from` is used rather than `slice()` because `slice`
+ * requires the typed-array internal slot and throws a bare `TypeError` on a proxy.
+ */
+export function copyBytes(
+  name: string,
+  value: unknown,
+  bounds: { exact?: number; min?: number; max?: number } = {},
+): Uint8Array {
+  const copy = Uint8Array.from(assertBytes(name, value, bounds));
+  if (bounds.exact !== undefined && copy.length !== bounds.exact) {
+    throw new ProtocolError(`${name} changed length while being read`);
+  }
+  return copy;
+}
+
 export function assertUint32(name: string, value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > VERSION_MAX) {
     throw new ProtocolError(`${name} must be an integer in [0, ${VERSION_MAX}], got ${String(value)}`);
@@ -60,15 +81,46 @@ export function assertRevision(name: string, value: unknown): number {
   return value;
 }
 
+/**
+ * Identifiers must be non-empty, bounded, and well-formed UTF-16 — an unpaired
+ * surrogate would be encoded as U+FFFD, so two different ids would share one AAD.
+ * `utf8` enforces well-formedness and throws for us.
+ */
 export function assertId(name: string, value: unknown): string {
   if (typeof value !== "string" || value.length === 0) {
     throw new ProtocolError(`${name} must be a non-empty string`);
   }
-  const bytes = utf8(value).length;
+  let bytes: number;
+  try {
+    bytes = utf8(value).length;
+  } catch {
+    throw new ProtocolError(`${name} contains an unpaired surrogate`);
+  }
   if (bytes > ID_BYTES_MAX) {
     throw new ProtocolError(`${name} must be at most ${ID_BYTES_MAX} UTF-8 bytes, got ${bytes}`);
   }
   return value;
+}
+
+/**
+ * A list of records that arrived from outside: a dense array of objects.
+ * Sparse arrays (JSON holes) and array-likes must not reach a loop that would
+ * dereference their elements.
+ */
+export function assertRecordList<T>(name: string, value: unknown): readonly T[] {
+  if (!Array.isArray(value)) {
+    throw new ProtocolError(`${name} must be an array`);
+  }
+  for (let i = 0; i < value.length; i++) {
+    if (!(i in value)) {
+      throw new ProtocolError(`${name}[${i}] is missing`);
+    }
+    const element: unknown = value[i];
+    if (element === null || typeof element !== "object") {
+      throw new ProtocolError(`${name}[${i}] must be an object`);
+    }
+  }
+  return value as readonly T[];
 }
 
 export function assertEnvelopeType(value: unknown): EnvelopeType {

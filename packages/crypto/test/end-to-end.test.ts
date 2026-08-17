@@ -108,6 +108,7 @@ describe("end-to-end vault lifecycle", () => {
     assert.deepEqual(unlockedVk, vaultKey);
 
     let pin: VaultRevision | null = null;
+    let applied: EncryptedEntry[] = [];
     const accept = (snapshot: ReturnType<typeof publish>, key: Uint8Array) => {
       const verified = verifySnapshot(
         snapshot.sealed,
@@ -119,11 +120,15 @@ describe("end-to-end vault lifecycle", () => {
           vaultKeyVersion: snapshot.vaultKeyVersion,
         },
       );
-      const action = assertFreshSnapshot(pin, revisionFromManifest(verified, snapshot.sealed));
-      pin = revisionFromManifest(verified, snapshot.sealed);
+      const incoming = revisionFromManifest(verified);
+      const action = assertFreshSnapshot(pin, incoming);
+      pin = incoming;
+      // The client applies the records verification returned, not its own copies.
+      applied = verified.entries;
       return action;
     };
     assert.equal(accept(snapshot1, unlockedVk), "first_seen");
+    assert.equal(applied.length, 1);
 
     // ---- enrol this device through WebAuthn PRF ---------------------------
     const credentialId = new Uint8Array(20).fill(0xc1);
@@ -201,9 +206,11 @@ describe("end-to-end vault lifecycle", () => {
       expectDeviceKeyVersion: 1,
     });
     assert.deepEqual(vkFromDevice, vaultKey);
+    const mail = applied.find((record) => record.id === "entry_mail");
+    assert.ok(mail);
     assert.equal(
       new TextDecoder().decode(
-        decryptEntry(snapshot2.entries[1] as EncryptedEntry, {
+        decryptEntry(mail, {
           vaultKey: vkFromDevice,
           vaultId: VAULT_ID,
           entryId: "entry_mail",

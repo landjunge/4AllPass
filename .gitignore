@@ -7,6 +7,8 @@ dev-dist/
 .DS_Store
 .env
 *.log
+test-results/
+playwright-report/
 
 # Python / backend
 .venv/

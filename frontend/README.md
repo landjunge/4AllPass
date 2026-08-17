@@ -6,20 +6,6 @@ architecture specs:
 - [`../docs/architecture.md`](../docs/architecture.md)
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
 
-## What lives here (v1 scaffold)
-
-- `src/lib/webauthnPrf.ts` — the WebAuthn PRF device-unlock construction from
-  `docs/webauthn-prf.md`, built directly on `@4allpass/crypto`'s
-  `prfEvalFirst`, `deriveDeviceWrappingKey`, `wrapDeviceKey`, and
-  `unwrapDeviceKey`. The pure register/unlock core is unit tested
-  (`webauthnPrf.test.ts`); the `navigator.credentials` glue at the bottom of
-  the file is not (it needs a real authenticator).
-- A minimal "vault locked" screen (`src/App.tsx`) wiring the Master
-  Password and biometric-unlock entry points. Neither is connected to a
-  running backend yet — there is no account/session/vault API to unlock
-  against in this scaffold.
-- PWA manifest + service worker via `vite-plugin-pwa` (`vite.config.ts`).
-
 ## Local setup
 
 ```sh
@@ -30,7 +16,30 @@ npm run dev -w @4allpass/frontend
 ## Tests
 
 ```sh
-npm run test -w @4allpass/frontend        # pure WebAuthn/PRF core logic
+npm run test -w @4allpass/frontend        # unit tests
+npm run test:e2e -w @4allpass/frontend    # Playwright + virtual authenticator
 npm run typecheck -w @4allpass/frontend
 npm run build -w @4allpass/frontend
 ```
+
+E2E tests drive the backend (PostgreSQL, Redis, uvicorn) and Chrome's virtual
+authenticator. They flip `hasPrf` / `hasLargeBlob` to cover all three unlock
+ranks.
+
+## Flows
+
+**Create vault.** Reserve a `vault_id`, generate a random Vault Key, derive the
+Master Key with Argon2id, wrap master + recovery envelopes, commit revision 1.
+
+**Unlock.** Fetch `active_revision`, refuse a rollback against the local pin,
+unwrap the Vault Key, verify snapshot integrity, decrypt into memory.
+
+**Device unlock.** `@4allpass/webauthn` provisions the best rank (PRF, largeBlob,
+UV-gated local store). Unlock is assertion → DWK → Device Key → Vault Key.
+Master password always remains a fallback.
+
+## Lock lifecycle
+
+The Vault Key is zeroized on manual lock, after inactivity, and when the tab is
+hidden. JavaScript cannot guarantee erasure of every copy; that limit is
+accepted in the threat model.

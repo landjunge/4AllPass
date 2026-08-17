@@ -102,6 +102,16 @@ describe("key envelope wire format", () => {
     const wire = encodeKeyEnvelope(deviceEnvelope());
     delete wire.deviceId;
     assert.throws(() => decodeKeyEnvelope(wire), ProtocolError);
+    assert.throws(() => decodeKeyEnvelope({ ...wire, deviceId: null }), ProtocolError);
+  });
+
+  it("treats an explicit null optional field as absent", () => {
+    const master = masterEnvelope();
+    const decoded = decodeKeyEnvelope({ ...encodeKeyEnvelope(master), deviceId: null });
+    assert.deepEqual(decoded, master);
+
+    const device = deviceEnvelope();
+    assert.deepEqual(decodeKeyEnvelope({ ...encodeKeyEnvelope(device), kdf: null }), device);
   });
 
   it("rejects unknown versions, bad nonce and tag lengths, and non-32-byte payloads", () => {

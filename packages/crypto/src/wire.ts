@@ -85,6 +85,12 @@ function asRecord(value: unknown, label: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+/** An optional field may be omitted or explicitly null; both mean "absent". */
+function optional(source: Record<string, unknown>, key: string): unknown {
+  const value = source[key];
+  return value === null ? undefined : value;
+}
+
 function requireString(source: Record<string, unknown>, key: string, label: string): string {
   const value = source[key];
   if (typeof value !== "string" || value.length === 0) {
@@ -201,17 +207,22 @@ export function decodeKeyEnvelope(value: unknown): KeyEnvelope {
     ciphertext: requireBytes(source, "ciphertext", "envelope", KEY_BYTES),
     tag: requireBytes(source, "tag", "envelope", TAG_BYTES),
   };
+  const kdf = optional(source, "kdf");
   if (envelope.type === "master") {
-    if (source.kdf === undefined) {
+    if (kdf === undefined) {
       throw new ProtocolError("master envelope requires kdf parameters");
     }
-    envelope.kdf = decodeKdfParams(source.kdf);
-  } else if (source.kdf !== undefined) {
+    envelope.kdf = decodeKdfParams(kdf);
+  } else if (kdf !== undefined) {
     throw new ProtocolError(`${envelope.type} envelope must not carry kdf parameters`);
   }
+  const deviceId = optional(source, "deviceId");
   if (envelope.type === "device") {
+    if (deviceId === undefined) {
+      throw new ProtocolError("device envelope requires deviceId");
+    }
     envelope.deviceId = requireString(source, "deviceId", "envelope");
-  } else if (source.deviceId !== undefined) {
+  } else if (deviceId !== undefined) {
     throw new ProtocolError(`${envelope.type} envelope must not carry deviceId`);
   }
   return envelope;

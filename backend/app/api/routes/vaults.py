@@ -26,7 +26,7 @@ async def get_vault(vault: VaultDep) -> VaultResponse:
     return vault_to_response(vault)
 
 
-@router.get("/{vault_id}/snapshot", response_model=SnapshotResponse)
+@router.get("/{vault_id}/snapshot", response_model=SnapshotResponse, response_model_exclude_none=True)
 async def get_active_snapshot(vault: VaultDep, session: SessionDep) -> SnapshotResponse:
     """The snapshot named by `active_revision`, never a mix of revisions."""
     snapshot = await vault_service.get_active_snapshot(session, vault)
@@ -34,7 +34,10 @@ async def get_active_snapshot(vault: VaultDep, session: SessionDep) -> SnapshotR
 
 
 @router.post(
-    "/{vault_id}/snapshots", response_model=SnapshotResponse, status_code=status.HTTP_201_CREATED
+    "/{vault_id}/snapshots",
+    response_model=SnapshotResponse,
+    response_model_exclude_none=True,
+    status_code=status.HTTP_201_CREATED,
 )
 async def commit_snapshot(
     payload: SnapshotCommitRequest,

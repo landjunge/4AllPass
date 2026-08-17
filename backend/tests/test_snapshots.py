@@ -56,6 +56,21 @@ async def test_commit_initial_snapshot_and_read_it_back(account: Api, vault_id: 
     assert vault["activeVaultKeyVersion"] == 1
 
 
+async def test_snapshot_response_omits_absent_optional_fields(account: Api, vault_id: str) -> None:
+    """The wire form is canonical: absent, not null, so clients can stay strict."""
+    await register_device(account, vault_id, "dev_wire")
+    await account.post(
+        f"/vaults/{vault_id}/snapshots",
+        snapshot(envelopes=[master_envelope(), recovery_envelope(), device_envelope("dev_wire")]),
+    )
+    served = (await account.get(f"/vaults/{vault_id}/snapshot")).json()
+    by_type = {envelope["type"]: envelope for envelope in served["envelopes"]}
+    assert "deviceId" not in by_type["master"]
+    assert "kdf" not in by_type["recovery"]
+    assert "kdf" not in by_type["device"]
+    assert by_type["device"]["deviceId"] == "dev_wire"
+
+
 async def test_second_commit_advances_the_revision(account: Api, vault_id: str) -> None:
     await account.post(f"/vaults/{vault_id}/snapshots", snapshot())
     second = await account.post(

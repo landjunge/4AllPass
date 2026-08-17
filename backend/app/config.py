@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -28,7 +28,11 @@ class Settings(BaseSettings):
     session_cookie_name: str = "4allpass_session"
     login_attempts_per_minute: int = 10
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # NoDecode: accept a plain comma-separated list in the environment instead of
+    # requiring JSON.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     webauthn_rp_id: str = "localhost"
     webauthn_rp_name: str = "4AllPass"

@@ -1,0 +1,27 @@
+{
+  "protocol": "4AllPass Crypto Protocol v1",
+  "primitive": "Authenticated vault manifest (HKDF-SHA-256 + AES-256-GCM)",
+  "generated": "2026-08-17T22:30:00Z",
+  "constants": {
+    "vault_id": "vault_01HZX4ALLPASS000000000001",
+    "entry_id": "entry_01HZX4ALLPASS0000000000A1",
+    "vault_key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+    "master_key": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+    "revision": 7,
+    "vault_key_version": 2
+  },
+  "success": [
+    {
+      "id": "TV-MANIFEST-KEY",
+      "purpose": "HKDF snapshot key from VK, bound to vault + revision + vaultKeyVersion",
+      "manifest_key": "4f1a823c61baf4a3b50e0c14c9af47e6820f8cee3dfbf84a9326127ea9b99e2c"
+    },
+    {
+      "id": "TV-MANIFEST-01",
+      "purpose": "Seal a one-envelope / one-entry snapshot",
+      "nonce": "222222222222222222222222",
+      "ciphertext": "d14d5075e02adc4f00ed57185e1cf70a3fc230886fb14ef354a2c0930a1ec465f722864e4f87d98dc5ddb7753c129314583de7bddd13452fdc9f27c2fd3c8e9e187089bc7de5c86d62b1499b8dea3f21f2227f7cfd0747365e8f1a320ee44fa0bf42f727549a79002740468e8869c16b5b8c6fed5b52f9cc0e1d15c7f2830f44ecdfa3eb6b10b5b3154117c4a2900164c71ad1cbea2fbad2c88452dd7cb48e024b9b70d30980073872370c550778628bfc7dd07c74da35bff3563e9564233891ac19ba483b",
+      "tag": "ddf27d37e5667c1cdb9ed1971a7cee90"
+    }
+  ]
+}

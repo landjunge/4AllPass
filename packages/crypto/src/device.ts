@@ -8,8 +8,8 @@ import {
   dwkHkdfSalt,
   prfEvalFirstInput,
 } from "./encoding/aad.ts";
-import { assertLength } from "./encoding/bytes.ts";
-import { ProtocolError } from "./errors.ts";
+import { assertId, assertLength, assertVersionCounter } from "./encoding/bytes.ts";
+import { IntegrityError, ProtocolError } from "./errors.ts";
 import type { DeviceKeyEnvelope } from "./types.ts";
 
 export interface DeriveDeviceWrappingKeyOptions {
@@ -27,6 +27,8 @@ export interface WrapDeviceKeyOptions {
   vaultId: string;
   deviceId: string;
   credentialId: Uint8Array;
+  /** Defaults to 1. Increment only when this device's DK is rotated. */
+  deviceKeyVersion?: number;
   cryptoVersion?: number;
 }
 
@@ -56,25 +58,57 @@ export function deriveDeviceWrappingKey(opts: DeriveDeviceWrappingKeyOptions): U
   return hkdf(sha256, opts.prfOutput, salt, info, KEY_BYTES);
 }
 
-export function wrapDeviceKey(opts: WrapDeviceKeyOptions): DeviceKeyEnvelope {
-  assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
-  assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
-  const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
-  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+function resolveDeviceKeyVersion(value: number | undefined): number {
+  const deviceKeyVersion = value ?? 1;
+  assertVersionCounter("deviceKeyVersion", deviceKeyVersion);
+  return deviceKeyVersion;
+}
+
+function resolveDeviceCryptoVersion(cryptoVersion: number | undefined): number {
+  const version = cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  if (version !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`this library only writes device-key envelope version ${CRYPTO_PROTOCOL_VERSION}`);
   }
-  const aad = deviceKeyAad(opts.vaultId, opts.deviceId, opts.credentialId, cryptoVersion);
-  const box = encrypt(opts.deviceWrappingKey, opts.deviceKey, aad);
+  return version;
+}
+
+function buildDeviceKeyEnvelope(
+  opts: WrapDeviceKeyOptions,
+  cryptoVersion: number,
+  deviceKeyVersion: number,
+  nonce: Uint8Array,
+  ciphertext: Uint8Array,
+  tag: Uint8Array,
+): DeviceKeyEnvelope {
   return {
     version: CRYPTO_PROTOCOL_VERSION,
     vaultId: opts.vaultId,
     deviceId: opts.deviceId,
     credentialId: opts.credentialId,
+    deviceKeyVersion,
     encryption: "AES-256-GCM",
-    nonce: box.nonce,
-    ciphertext: box.ciphertext,
-    tag: box.tag,
+    nonce,
+    ciphertext,
+    tag,
   };
+}
+
+export function wrapDeviceKey(opts: WrapDeviceKeyOptions): DeviceKeyEnvelope {
+  assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
+  assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
+  assertId("vaultId", opts.vaultId);
+  assertId("deviceId", opts.deviceId);
+  const cryptoVersion = resolveDeviceCryptoVersion(opts.cryptoVersion);
+  const deviceKeyVersion = resolveDeviceKeyVersion(opts.deviceKeyVersion);
+  const aad = deviceKeyAad(
+    opts.vaultId,
+    opts.deviceId,
+    opts.credentialId,
+    cryptoVersion,
+    deviceKeyVersion,
+  );
+  const box = encrypt(opts.deviceWrappingKey, opts.deviceKey, aad);
+  return buildDeviceKeyEnvelope(opts, cryptoVersion, deviceKeyVersion, box.nonce, box.ciphertext, box.tag);
 }
 
 export function wrapDeviceKeyWithNonce(
@@ -82,19 +116,19 @@ export function wrapDeviceKeyWithNonce(
 ): DeviceKeyEnvelope {
   assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
   assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
-  const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
-  const aad = deviceKeyAad(opts.vaultId, opts.deviceId, opts.credentialId, cryptoVersion);
+  assertId("vaultId", opts.vaultId);
+  assertId("deviceId", opts.deviceId);
+  const cryptoVersion = resolveDeviceCryptoVersion(opts.cryptoVersion);
+  const deviceKeyVersion = resolveDeviceKeyVersion(opts.deviceKeyVersion);
+  const aad = deviceKeyAad(
+    opts.vaultId,
+    opts.deviceId,
+    opts.credentialId,
+    cryptoVersion,
+    deviceKeyVersion,
+  );
   const box = encryptWithNonce(opts.deviceWrappingKey, opts.nonce, opts.deviceKey, aad);
-  return {
-    version: CRYPTO_PROTOCOL_VERSION,
-    vaultId: opts.vaultId,
-    deviceId: opts.deviceId,
-    credentialId: opts.credentialId,
-    encryption: "AES-256-GCM",
-    nonce: box.nonce,
-    ciphertext: box.ciphertext,
-    tag: box.tag,
-  };
+  return buildDeviceKeyEnvelope(opts, cryptoVersion, deviceKeyVersion, box.nonce, box.ciphertext, box.tag);
 }
 
 export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: Uint8Array): Uint8Array {
@@ -102,11 +136,13 @@ export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: 
     throw new ProtocolError(`unsupported device-key envelope version: ${envelope.version}`);
   }
   assertLength("deviceWrappingKey", deviceWrappingKey, KEY_BYTES);
+  assertVersionCounter("deviceKeyVersion", envelope.deviceKeyVersion);
   const aad = deviceKeyAad(
     envelope.vaultId,
     envelope.deviceId,
     envelope.credentialId,
     envelope.version,
+    envelope.deviceKeyVersion,
   );
   const dk = decrypt(
     deviceWrappingKey,
@@ -117,4 +153,18 @@ export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: 
   );
   assertLength("deviceKey", dk, KEY_BYTES);
   return dk;
+}
+
+/**
+ * Refuse a Device-Key Envelope whose version went backwards.
+ * A missing pin (first unlock on this device) is accepted.
+ */
+export function assertDeviceKeyVersion(lastSeen: number | null, incoming: number): "first_seen" | "same" | "advance" {
+  assertVersionCounter("incoming deviceKeyVersion", incoming);
+  if (lastSeen === null) return "first_seen";
+  assertVersionCounter("lastSeen deviceKeyVersion", lastSeen);
+  if (incoming < lastSeen) {
+    throw new IntegrityError(`deviceKeyVersion downgrade: ${incoming} < ${lastSeen}`);
+  }
+  return incoming === lastSeen ? "same" : "advance";
 }

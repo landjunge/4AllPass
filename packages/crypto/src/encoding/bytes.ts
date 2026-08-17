@@ -69,3 +69,20 @@ export function assertLength(name: string, bytes: Uint8Array, expected: number):
     throw new ProtocolError(`${name} must be ${expected} bytes, got ${bytes.length}`);
   }
 }
+
+/** Non-empty protocol identifier (vaultId, entryId, deviceId, …). */
+export function assertId(name: string, value: string): void {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new ProtocolError(`${name} is required`);
+  }
+  if (utf8(value).length > 0xffff) {
+    throw new ProtocolError(`${name} exceeds AAD field limit`);
+  }
+}
+
+/** Monotonic protocol counter stored as uint32be in AAD. */
+export function assertVersionCounter(name: string, value: number): void {
+  if (!Number.isInteger(value) || value < 1 || value > 0xffffffff) {
+    throw new ProtocolError(`${name} must be an integer in 1…4294967295`);
+  }
+}

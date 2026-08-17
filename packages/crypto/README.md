@@ -20,8 +20,10 @@ src/
     aes-gcm.ts          encrypt (library nonce) / decrypt
   envelope.ts           wrapVaultKey / unwrapVaultKey (AAD version from the envelope)
   entry.ts              encryptEntry / decryptEntry (schemaVersion stored on the entry)
-  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope
-  revision.ts           evaluateRevision / rollback detection
+  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope, deviceKeyVersion
+  revision.ts           evaluateRevision / rollback detection (policy only)
+  manifest.ts           authenticated snapshot manifest + acceptSnapshot
+  recovery.ts           Emergency Kit encoding + RWK HKDF
   random.ts             CSPRNG helpers
   memory.ts             best-effort zeroize
 ```
@@ -32,7 +34,8 @@ src/
 - Public `encrypt` / `wrapVaultKey` / `encryptEntry` **do not** take a nonce.
 - Envelope AAD `crypto_version` is the envelope's own `version`, never a global default.
 - `decryptEntry` reads `schemaVersion` / `cryptoVersion` from the entry.
-- Raw WebAuthn PRF output is never used as a key; HKDF is mandatory.
+- Server-supplied `revision` is untrusted. Clients call `acceptSnapshot`.
+- Raw WebAuthn PRF output and the raw recovery key are never used as AES keys; HKDF is mandatory.
 - `ci` profile cannot be persisted unless `allowTestProfile: true`.
 - Master password is NFC-normalized, then UTF-8.
 

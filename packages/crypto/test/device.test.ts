@@ -87,6 +87,7 @@ describe("Device Key envelope", () => {
     });
     assert.equal(bytesToHex(env.ciphertext), req(v, "ciphertext"));
     assert.equal(bytesToHex(env.tag), req(v, "tag"));
+    assert.equal(env.deviceKeyVersion, 1);
     assert.deepEqual(unwrapDeviceKey(env, dwk), hexToBytes(C.device_key));
   });
 

@@ -1,6 +1,6 @@
 import { CRYPTO_PROTOCOL_VERSION, KEY_BYTES } from "./constants.ts";
 import { envelopeAad } from "./encoding/aad.ts";
-import { assertLength } from "./encoding/bytes.ts";
+import { assertId, assertLength } from "./encoding/bytes.ts";
 import { ProtocolError } from "./errors.ts";
 import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { assertProductionKdf } from "./kdf/profiles.ts";
@@ -42,6 +42,7 @@ function resolveCryptoVersion(opts: WrapVaultKeyOptions): number {
 export function wrapVaultKey(opts: WrapVaultKeyOptions): KeyEnvelope {
   assertLength("vaultKey", opts.vaultKey, KEY_BYTES);
   assertLength("wrappingKey", opts.wrappingKey, KEY_BYTES);
+  assertId("vaultId", opts.vaultId);
   const deviceId = requireDeviceId(opts.type, opts.deviceId);
   validateMasterKdf(opts.type, opts.kdf, opts.allowTestProfile === true);
   const cryptoVersion = resolveCryptoVersion(opts);
@@ -56,6 +57,7 @@ export function wrapVaultKeyWithNonce(
 ): KeyEnvelope {
   assertLength("vaultKey", opts.vaultKey, KEY_BYTES);
   assertLength("wrappingKey", opts.wrappingKey, KEY_BYTES);
+  assertId("vaultId", opts.vaultId);
   const deviceId = requireDeviceId(opts.type, opts.deviceId);
   validateMasterKdf(opts.type, opts.kdf, opts.allowTestProfile === true);
   const cryptoVersion = resolveCryptoVersion(opts);

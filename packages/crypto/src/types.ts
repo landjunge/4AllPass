@@ -50,6 +50,8 @@ export interface DeviceKeyEnvelope {
   vaultId: string;
   deviceId: string;
   credentialId: Uint8Array;
+  /** Monotonic Device-Key generation. +1 only when this device's DK is rotated. */
+  deviceKeyVersion: number;
   encryption: "AES-256-GCM";
   nonce: Uint8Array;
   ciphertext: Uint8Array;
@@ -61,6 +63,40 @@ export interface VaultRevision {
   revision: number;
   vaultKeyVersion: number;
   cryptoProtocolVersion: 1;
+}
+
+/** Cleartext header of a sealed snapshot manifest. Numbers are untrusted until AEAD succeeds. */
+export interface SealedManifest {
+  version: 1;
+  vaultId: string;
+  revision: number;
+  vaultKeyVersion: number;
+  cryptoProtocolVersion: 1;
+  encryption: "AES-256-GCM";
+  nonce: Uint8Array;
+  ciphertext: Uint8Array;
+  tag: Uint8Array;
+}
+
+export interface ManifestEnvelopeCommitment {
+  type: EnvelopeType;
+  deviceId: string;
+  digest: Uint8Array;
+}
+
+export interface ManifestEntryCommitment {
+  id: string;
+  digest: Uint8Array;
+}
+
+/** Authenticated snapshot contents after `openManifest`. */
+export interface VaultManifest {
+  vaultId: string;
+  revision: number;
+  vaultKeyVersion: number;
+  cryptoProtocolVersion: 1;
+  envelopes: ManifestEnvelopeCommitment[];
+  entries: ManifestEntryCommitment[];
 }
 
 export interface GcmBox {

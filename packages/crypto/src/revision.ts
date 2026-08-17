@@ -1,3 +1,4 @@
+import { assertId, assertVersionCounter } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError, RollbackError } from "./errors.ts";
 import type { VaultRevision } from "./types.ts";
 
@@ -17,14 +18,13 @@ export interface RevisionReject {
 export type RevisionDecision = RevisionAccept | RevisionReject;
 
 function assertRevisionFields(state: VaultRevision, label: string): void {
-  if (!state.vaultId) {
-    throw new ProtocolError(`${label} vaultId is required`);
-  }
-  if (!Number.isInteger(state.revision) || state.revision < 1) {
-    throw new ProtocolError(`${label} revision must be an integer >= 1`);
-  }
-  if (!Number.isInteger(state.vaultKeyVersion) || state.vaultKeyVersion < 1) {
-    throw new ProtocolError(`${label} vaultKeyVersion must be an integer >= 1`);
+  try {
+    assertId(`${label} vaultId`, state.vaultId);
+    assertVersionCounter(`${label} revision`, state.revision);
+    assertVersionCounter(`${label} vaultKeyVersion`, state.vaultKeyVersion);
+  } catch (error) {
+    if (error instanceof ProtocolError) throw error;
+    throw new ProtocolError(`${label} is invalid`);
   }
   if (state.cryptoProtocolVersion !== 1) {
     throw new ProtocolError(`${label} unsupported cryptoProtocolVersion`);

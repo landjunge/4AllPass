@@ -1,7 +1,7 @@
 import { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION, KEY_BYTES } from "./constants.ts";
 import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { entryAad } from "./encoding/aad.ts";
-import { assertLength } from "./encoding/bytes.ts";
+import { assertId, assertLength } from "./encoding/bytes.ts";
 import { ProtocolError } from "./errors.ts";
 import type { EncryptedEntry } from "./types.ts";
 
@@ -18,14 +18,21 @@ function resolveVersions(opts: EncryptEntryOptions): {
   schemaVersion: number;
   cryptoVersion: number;
 } {
-  return {
-    schemaVersion: opts.schemaVersion ?? DEFAULT_SCHEMA_VERSION,
-    cryptoVersion: opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION,
-  };
+  const schemaVersion = opts.schemaVersion ?? DEFAULT_SCHEMA_VERSION;
+  const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(`this library only writes entry cryptoVersion ${CRYPTO_PROTOCOL_VERSION}`);
+  }
+  if (!Number.isInteger(schemaVersion) || schemaVersion < 1) {
+    throw new ProtocolError(`invalid schemaVersion: ${schemaVersion}`);
+  }
+  return { schemaVersion, cryptoVersion };
 }
 
 export function encryptEntry(opts: EncryptEntryOptions): EncryptedEntry {
   assertLength("vaultKey", opts.vaultKey, KEY_BYTES);
+  assertId("vaultId", opts.vaultId);
+  assertId("entryId", opts.entryId);
   const { schemaVersion, cryptoVersion } = resolveVersions(opts);
   const aad = entryAad(opts.vaultId, opts.entryId, schemaVersion, cryptoVersion);
   const box = encrypt(opts.vaultKey, opts.plaintext, aad);
@@ -43,6 +50,8 @@ export function encryptEntryWithNonce(
   opts: EncryptEntryOptions & { nonce: Uint8Array },
 ): EncryptedEntry {
   assertLength("vaultKey", opts.vaultKey, KEY_BYTES);
+  assertId("vaultId", opts.vaultId);
+  assertId("entryId", opts.entryId);
   const { schemaVersion, cryptoVersion } = resolveVersions(opts);
   const aad = entryAad(opts.vaultId, opts.entryId, schemaVersion, cryptoVersion);
   const box = encryptWithNonce(opts.vaultKey, opts.nonce, opts.plaintext, aad);

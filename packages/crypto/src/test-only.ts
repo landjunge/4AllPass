@@ -8,3 +8,5 @@ export { deriveArgon2idRaw } from "./kdf/argon2id.ts";
 export { wrapVaultKeyWithNonce } from "./envelope.ts";
 export { encryptEntryWithNonce } from "./entry.ts";
 export { wrapDeviceKeyWithNonce } from "./device.ts";
+export { sealManifestWithNonce } from "./manifest.ts";
+export { wrapRecoveryEnvelopeWithNonce } from "./recovery.ts";

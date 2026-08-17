@@ -1,0 +1,29 @@
+{
+  "protocol": "4AllPass Crypto Protocol v1",
+  "primitive": "Recovery key encoding + HKDF wrapping key + recovery envelope",
+  "generated": "2026-08-17T22:30:00Z",
+  "constants": {
+    "vault_id": "vault_01HZX4ALLPASS000000000001",
+    "recovery_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "vault_key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+  },
+  "success": [
+    {
+      "id": "TV-RECOVERY-ENCODE",
+      "purpose": "Emergency Kit encoding with SHA-256 checksum",
+      "encoded": "4ap1k.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.77691dd7"
+    },
+    {
+      "id": "TV-RECOVERY-RWK",
+      "purpose": "HKDF recovery wrapping key; raw RK is never the AES key",
+      "recovery_wrapping_key": "87efb0234b105e0a26dfdee45fc516adc8bff0877c736ea02756ac24891c5b8f"
+    },
+    {
+      "id": "TV-RECOVERY-WRAP",
+      "purpose": "Wrap VK under RWK + recovery envelope AAD",
+      "nonce": "deadbeefdeadbeefdeadbeef",
+      "ciphertext": "af25878eb2dab3e5eb041dc6706c86a490191a8cc215b0e95ddd5b191aabb5a6",
+      "tag": "57596bdcf89fb93991da852a8ba0c3da"
+    }
+  ]
+}

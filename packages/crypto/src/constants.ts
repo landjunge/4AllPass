@@ -7,6 +7,15 @@ export const DEVICE_KEY_AAD_LABEL = "4allpass-device-key-v1";
 export const PRF_EVAL_LABEL = "4allpass-webauthn-prf-v1";
 export const DWK_SALT_LABEL = "4allpass-dwk-salt-v1";
 export const DWK_INFO_LABEL = "4allpass-device-wrap-v1";
+export const MANIFEST_AAD_LABEL = "4allpass-manifest-v1";
+export const MANIFEST_SALT_LABEL = "4allpass-manifest-salt-v1";
+export const MANIFEST_KEY_LABEL = "4allpass-manifest-key-v1";
+export const MANIFEST_BODY_LABEL = "4allpass-manifest-body-v1";
+export const BOX_DIGEST_LABEL = "4allpass-box-digest-v1";
+export const RECOVERY_SALT_LABEL = "4allpass-recovery-salt-v1";
+export const RECOVERY_INFO_LABEL = "4allpass-recovery-wrap-v1";
+export const RECOVERY_CHECKSUM_LABEL = "4allpass-recovery-checksum-v1";
+export const RECOVERY_KEY_PREFIX = "4ap1k";
 
 export const KEY_BYTES = 32;
 export const NONCE_BYTES = 12;

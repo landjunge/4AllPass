@@ -137,14 +137,15 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
   }
 
   const entries: ManifestEntryRef[] = opts.entries.map((entry) => {
-    assertSealedShape(`entry ${String(entry?.id)}`, entry);
+    const id = assertId("entry.id", entry?.id);
+    assertSealedShape(`entry ${id}`, entry);
     requireSameNumber(
-      `entry ${String(entry.id)} vaultKeyVersion`,
+      `entry ${id} vaultKeyVersion`,
       header.vaultKeyVersion,
       assertVersion("entry.vaultKeyVersion", entry.vaultKeyVersion),
     );
     return {
-      id: assertId("entry.id", entry.id),
+      id,
       schemaVersion: assertVersion("entry.schemaVersion", entry.schemaVersion),
       cryptoVersion: assertVersion("entry.cryptoVersion", entry.cryptoVersion),
       vaultKeyVersion: header.vaultKeyVersion,

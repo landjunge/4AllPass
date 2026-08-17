@@ -254,6 +254,47 @@ be imported in a production build`.
 
 ---
 
+## 1.1 Second pass — findings in the code this review added
+
+The fixes above introduced new attack surface (a length-prefixed parser, a Base32
+decoder, a new pin field). Reviewing that surface with the same method turned up
+four more issues, all fixed:
+
+### F-15 — The manifest parser silently re-sorted records · **medium**
+
+`decodeManifest` handed its output to `validateManifest`, which sorts. So a manifest
+whose records were *not* in canonical order decoded fine, meaning two different byte
+strings decoded to the same manifest. Only a holder of VK can seal a manifest, but
+plaintext malleability under an authenticated encryption layer is still a footgun:
+it makes "the manifest for revision N" ambiguous, and the pinned digest is over the
+sealed bytes. Canonical order is now required on the wire (`assertSorted`).
+
+### F-16 — Digests were computed before the byte fields were checked · **low**
+
+`buildManifest` called `entryDigest()` / `envelopeDigest()` first and validated
+afterwards. A digest over a malformed record is a perfectly valid commitment to
+garbage, and `frame()` accepted anything with a `length` property. `frame()` now
+rejects non-`Uint8Array` fields, and `buildManifest` checks nonce/ciphertext/tag
+sizes (including the exact 32-byte wrapped-key size) before digesting.
+
+### F-17 — The manifest comparison could be dropped after pinning · **medium**
+
+`evaluateRevision` only compared manifest digests when *both* states had one. A
+server that answered with unverified state (no digest) for a revision the client had
+pinned *with* a verified manifest therefore got a plain `same` — the equivocation
+check could simply be omitted. Missing digest on the incoming side is now a
+`mismatch`.
+
+### F-18 — Untrusted byte fields were read twice · **low**
+
+Each open path validated `envelope.nonce` and then passed `envelope.nonce` to
+`decrypt` again. For a plain object that is identical; for an object with getters (or
+a Proxy) it is a time-of-check/time-of-use gap. Every open path now captures the
+validated buffer and uses that value. The regression test asserts the getter is
+invoked exactly once.
+
+---
+
 ## 2. Checked and found sound
 
 Not everything reviewed was broken. These were probed and held:

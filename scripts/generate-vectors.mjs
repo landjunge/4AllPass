@@ -957,8 +957,14 @@ const recoverySuite = {
     {
       id: "TV-RK-CHECKSUM",
       purpose: "One mistyped character must be reported as a checksum failure, not as a wrong key",
-      formatted: `${kitGrouped.slice(0, -1)}${kitGrouped.at(-1) === "0" ? "1" : "0"}`,
+      formatted: `${kitGrouped.slice(0, 2)}${kitGrouped[2] === "0" ? "1" : "0"}${kitGrouped.slice(3)}`,
       expect: "checksum_fail",
+    },
+    {
+      id: "TV-RK-NONCANONICAL",
+      purpose: "The padding bits of the last character must be zero",
+      formatted: `${kitGrouped.slice(0, -1)}${kitGrouped.at(-1) === "1" ? "2" : "1"}`,
+      expect: "parse_fail",
     },
     {
       id: "TV-RWK-WRONG-VAULT",

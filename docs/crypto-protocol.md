@@ -429,9 +429,11 @@ sealed manifest  = AES-256-GCM(VK, body, AAD = manifest AAD of §3.1)
 
 Rules:
 
-- Entries are sorted by `entry_id`, envelopes by `(type, device_id)`. Ids are unique;
-  a duplicate id or two envelopes for one device is an error. Canonical form matters
-  because the manifest is the object being authenticated.
+- Entries are sorted by `entry_id`, envelopes by `(type, device_id)`, comparing the
+  **UTF-8 bytes** — not UTF-16 code units, which would order astral characters
+  differently from the wire format. Ids are unique; a duplicate id or two envelopes
+  for one device is an error. Canonical form matters because the manifest is the
+  object being authenticated.
 - A snapshot has **exactly one** `vault_key_version`. Every entry and envelope in it
   must carry that same value; a manifest that spans two generations is not
   representable.
@@ -443,13 +445,46 @@ Rules:
 1. Fetch the snapshot named by `active_revision`.
 2. Obtain VK by unwrapping one envelope (Master, Device or Recovery) — against explicit
    expectations, §3.2.
-3. `openManifest(sealed, { vaultKey, vaultId, revision, vaultKeyVersion })`. The GCM
-   tag decides whether the server's claimed `revision` is real. The decoded body must
-   agree with the AAD.
-4. `assertSnapshotMatchesManifest(manifest, { entries, envelopes })`: exactly the
-   declared set, no substitutions, nothing missing, nothing extra.
+3. `verifySnapshot(sealed, { entries, envelopes }, { vaultKey, vaultId, revision, vaultKeyVersion })`.
+   The GCM tag decides whether the server's claimed `revision` is real, the decoded
+   body must agree with the AAD, and the snapshot must be exactly the declared set:
+   no substitutions, nothing missing, nothing extra.
+4. **Apply the records that verification returned**, not the ones that were passed in
+   (§8.2).
 5. Only now compute the freshness decision (`evaluateRevision`) and pin the result
-   with `revisionFromManifest()`, which records the digest of the sealed manifest.
+   with `revisionFromManifest(verified)`, which carries the digest of the blob that was
+   actually authenticated. Passing a manifest and a sealed blob separately is not
+   allowed: pinning the digest of an unverified blob would turn the equivocation check
+   into noise — the honest snapshot would then be rejected as a fork.
+
+### 8.2 Verify and use must see the same bytes
+
+A digest only means something if the bytes that were digested are the bytes that get
+decrypted. Two rules follow, and they are requirements on implementations, not
+suggestions:
+
+- **Read each field of an untrusted record exactly once**, into a normalized copy, and
+  digest that copy. A record whose fields are accessors rather than data — the natural
+  output of a JSON reviver, a lazily-decoding transport wrapper, or a model layer — can
+  otherwise answer differently on a second read, presenting honest bytes to the checks
+  and stale bytes to the digest. `Uint8Array` fields must be copied, since a `Proxy`
+  over one passes every type and length check and can still change its bytes.
+- **Hand the normalized records back to the caller** and require that those are the
+  ones applied. Anything else re-opens the same gap one layer up:
+  `verifySnapshot(...)` returns `{ manifest, sealedDigest, entries, envelopes }` for
+  exactly this reason.
+
+Identifiers get the same treatment: a string containing an unpaired surrogate has no
+UTF-8 encoding, and `TextEncoder` would silently replace it with U+FFFD — so
+`"\uD800"`, `"\uDC00"` and `"\uFFFD"` would share one AAD and one digest preimage.
+Since `vault_id` is server-supplied and is the only cryptographic separator between
+vaults, ill-formed UTF-16 must be **rejected**, not encoded.
+
+Finally, the framing of §8.1 is safe because every preimage has **fixed arity and a
+fixed field order**: `frame()` encodes the number `1` and the four bytes
+`00 00 00 01` identically, so an optional or variable-arity field would introduce a
+genuine ambiguity. New fields therefore go at the end of a preimage, are never
+optional, and a new preimage gets a new label.
 
 What this catches that per-object AEAD does not:
 

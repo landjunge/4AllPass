@@ -38,7 +38,9 @@ src/
 - Versions are never defaulted: `vaultKeyVersion`, `deviceKeyVersion`, `schemaVersion` and `cryptoVersion` are stated by the writer and read back from the object.
 - Every field is authenticated. AAD covers the KDF parameter digest and both key generations; metadata that does not belong to an envelope kind is rejected, not ignored.
 - Opening is done against an expectation. AAD built from an object's own fields proves self-consistency, not identity.
-- `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest`.
+- Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshot` returns those copies — **apply them**, not the objects you passed in.
+- Identifiers must be well-formed UTF-16. A lone surrogate has no UTF-8 encoding and would collapse two identities into one U+FFFD.
+- `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.
 - The printed Recovery Key is never used as an AES key; `deriveRecoveryWrappingKey` first.
 - `ci` profile cannot be used unless `allowTestProfile: true` — on read as well as write.
@@ -77,8 +79,11 @@ const vk = unwrapVaultKey(master, {
 const verified = verifySnapshot(sealed, { entries, envelopes }, {
   vaultKey: vk, vaultId, revision: 1, vaultKeyVersion: 1,
 });
-assertFreshSnapshot(pin, revisionFromManifest(verified, sealed));
-const plaintext = decryptEntry(entry, { vaultKey: vk, vaultId, entryId, vaultKeyVersion: 1 });
+assertFreshSnapshot(pin, revisionFromManifest(verified));
+
+// Decrypt the records verification returned, not the ones fetched from the server.
+const record = verified.entries.find((e) => e.id === entryId)!;
+const plaintext = decryptEntry(record, { vaultKey: vk, vaultId, entryId, vaultKeyVersion: 1 });
 ```
 
 ## Tests

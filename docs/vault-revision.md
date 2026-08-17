@@ -110,11 +110,19 @@ written from numbers the server merely asserted:
 ```
 1. fetch snapshot at active_revision
 2. unwrap an envelope → VK                 (against explicit expectations)
-3. openManifest(...)                       → revision is now authenticated
-4. assertSnapshotMatchesManifest(...)      → the set of records is authenticated
-5. evaluateRevision(pin, revisionFromManifest(manifest, sealed))
+3. verified = verifySnapshot(sealed, contents, claimed metadata)
+                                           → revision and the record set are authenticated
+4. apply verified.entries / verified.envelopes, not the fetched objects
+5. evaluateRevision(pin, revisionFromManifest(verified))
 6. on accept: store that pin locally
 ```
+
+Step 4 is not cosmetic. Verification commits to the bytes it read; if the client then
+applies its own copy of the snapshot, anything that can make a second read return
+something else (an accessor, a lazily-decoding wrapper) puts a stale record back into
+the vault after the check passed. `revisionFromManifest` likewise takes the whole
+verification result, so the pinned digest can only ever be the digest of the blob that
+was authenticated.
 
 `revision` and `vault_key_version` are bounded to the uint32 range they are encoded
 in. Without that bound, a single hostile answer to a fresh client (`revision =

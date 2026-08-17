@@ -12,10 +12,11 @@ reverted. The tests are grouped by attack class so the mapping is checkable:
 
 | File | Attack classes |
 |---|---|
-| `test/adversarial-aead.test.ts` | nonce reuse, AAD mismatch, truncation, malformed input, zeroization leaks, test-only API leakage |
+| `test/adversarial-aead.test.ts` | nonce reuse, AAD/digest ambiguity, AAD mismatch, truncation, malformed input, zeroization leaks, test-only API leakage |
 | `test/adversarial-identity.test.ts` | entry substitution, cross-vault, cross-device, credential swapping, key substitution, version confusion |
 | `test/adversarial-freshness.test.ts` | rollback, snapshot mix-and-match, truncation/injection of records, revoked-device replay, equivocation, key-generation downgrade, pin poisoning |
 | `test/adversarial-kdf-prf.test.ts` | PRF misuse, HKDF misuse, KDF parameter downgrade and resource exhaustion |
+| `test/adversarial-toctou.test.ts` | time-of-check/time-of-use on records and the KDF block, identifier collisions through ill-formed UTF-16, pin desynchronization, hostile container shapes, error taxonomy |
 
 ---
 
@@ -295,6 +296,108 @@ invoked exactly once.
 
 ---
 
+## 1.2 Third pass — an independent review of the new code
+
+The manifest, the Base32 decoder and the new pin field were then reviewed
+independently, by someone who had not written them and worked only from the
+specification and the threat model. That pass found five more issues, one of which
+defeated the manifest completely. All are fixed, and each has a regression test in
+`test/adversarial-toctou.test.ts`.
+
+### F-19 — The manifest committed to a *second read* of each record · **high**
+
+`buildManifest` validated each record field by field and then handed the same object
+to `entryDigest()` / `envelopeDigest()`, which read every field again. Measured with a
+counting `Proxy`, every field was read exactly twice. So a record whose fields are
+accessors rather than data could show honest bytes to the validation and stale bytes
+to the digest — and a stale-but-authentic entry then passed `verifySnapshot` and
+decrypted to a password the user had already rotated away from. The envelope variant
+re-attached a revoked device's envelope to a verified snapshot.
+
+This is worth being blunt about: it defeated the exact guarantee F-01 was added for,
+against a purely remote attacker, and it was introduced by the fix for F-18 covering
+only the *open* paths and not the *digest* path. Accessor-backed records are not
+exotic — a JSON reviver, a lazily-decoding transport wrapper, or an ORM-style model
+layer all produce them.
+
+The fix has two halves, because normalizing internally is not sufficient on its own:
+
+1. `buildManifest` reads every field of every record exactly once into a normalized
+   copy — including a copy of each `Uint8Array` (a `Proxy` over one satisfies
+   `instanceof` and `length` and can still change its bytes) and of the KDF block —
+   and digests that copy.
+2. `verifySnapshot` **returns** those normalized records, and the protocol now requires
+   the caller to apply them. Otherwise the same gap simply moves one layer up: the
+   library verifies its copy while the application decrypts its own.
+
+The regression test tunes the attacker's read counter across the whole plausible range
+and asserts the invariant directly: whatever verification accepts, the records it
+returns are the records it digested.
+
+### F-20 — Ill-formed UTF-16 identifiers collapsed two vaults into one · **medium**
+
+`assertId` checked type, emptiness and a byte ceiling, but not well-formedness.
+`TextEncoder` replaces every unpaired surrogate with U+FFFD, so `"\uD800"`,
+`"\uDC00"` and `"\uFFFD"` are three distinct JS strings with one UTF-8 encoding —
+and therefore one AAD, one digest preimage, one DWK and one RWK. Since `vault_id` is
+server-supplied and is the only cryptographic separator between vaults, a server that
+issued colliding ids could splice one vault's envelopes and entries into another
+vault's session, with every `!==` check passing because the strings genuinely differ.
+There was also a self-inflicted denial of service: such an id survived `buildManifest`
+but was rewritten by the manifest round-trip, so the client could not open its own
+vault, and the failure was reported as a tampering alarm.
+
+`utf8()` now refuses strings with unpaired surrogates, which covers every AAD, digest
+and HKDF path at once.
+
+### F-21 — The pinned manifest digest could be desynchronized · **medium**
+
+`revisionFromManifest(manifest, sealed)` took two independent arguments and never
+checked that `sealed` was the blob `manifest` came out of. Pinning the digest of an
+unverified blob does not fail loudly — it inverts the equivocation check: the honest
+snapshot is thereafter rejected as a fork while a digest of the attacker's choosing is
+blessed. `openManifest` now returns `{ manifest, sealedDigest }` as one value and
+`revisionFromManifest` takes that, so the two cannot be paired incorrectly.
+
+### F-22 — Hostile container shapes escaped as raw `TypeError` · **low**
+
+`verifySnapshot` with a sparse `entries` array (a JSON hole), an array-like object or
+`null` threw a bare `TypeError`. An application that catches `CryptoError` to tell
+tampering from bugs would take that as an unhandled crash, and the server controls the
+JSON that produces it. `assertRecordList` now requires a dense array of objects.
+
+### F-23 — Genuine tampering reported as `ProtocolError` · **low**
+
+The library documents `ProtocolError` as "malformed" and `IntegrityError` as "the
+signature of a substitution attack", but four server-controlled actions landed on the
+wrong side of that line: an entry served twice, a corrupted envelope `type`, a
+truncated envelope ciphertext, and a byte field arriving as a JSON array. A client
+that retries on `ProtocolError` and alarms only on `IntegrityError` would have treated
+a duplicate-entry injection as a sync glitch. Everything reached through
+`assertSnapshotMatchesManifest` is server-supplied, so failures there are now
+`IntegrityError`.
+
+### Two structural notes from the same pass, not bugs
+
+- Canonical manifest order was defined by UTF-16 code-unit comparison while the wire
+  format is UTF-8, so a second implementation sorting bytes would have had its manifest
+  rejected as non-canonical (reproducible with ids `U+10000` and `U+FF3A`). Ordering is
+  now defined on UTF-8 bytes.
+- `frame()` encodes the number `1` and the four bytes `00 00 00 01` identically, and an
+  entry record and a device-envelope record in the manifest body share a five-field
+  shape. Neither is exploitable, because every preimage has fixed arity and the record
+  counts live inside the sealed plaintext — but that is exactly the invariant a v2 could
+  break by accident, so it is now written down in `crypto-protocol.md` §8.2.
+
+What that pass probed and found sound is worth recording too: nonce uniqueness over
+20 000 seals, prefix-freedom of all eleven AAD builders, the manifest parser against
+length-field overflow, unbounded counts, truncation, invalid and overlong UTF-8, and a
+maximal 7 MB body, the Base32 encoding over 20 000 random keys and all 256 one-hot
+keys, the KDF bounds, and an exhaustive search of all 324 revision state pairs over
+three revisions × two key versions × three digest states.
+
+---
+
 ## 2. Checked and found sound
 
 Not everything reviewed was broken. These were probed and held:
@@ -337,6 +440,9 @@ Not everything reviewed was broken. These were probed and held:
   and the nonce budget per key.
 - `crypto-protocol.md` §8.1 and `vault-revision.md` §3–§7 — the sealed manifest,
   the client verification order, and the backend's atomic-publication duty.
+- `crypto-protocol.md` §8.2 — read-once normalization, applying the records that
+  verification returned, rejecting ill-formed UTF-16 identifiers, and the fixed-arity
+  invariant that makes the digest framing unambiguous.
 - `webauthn-prf.md` §4 — `deviceKeyVersion` and Device-Key rotation.
 - `recovery.md` (new) — Emergency-Kit encoding and the Recovery Wrapping Key.
 - `test-vectors.md` — regenerated hex, 16 tamper vectors, manifest and recovery

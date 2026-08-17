@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fourallpass
+      POSTGRES_PASSWORD: fourallpass
+      POSTGRES_DB: fourallpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fourallpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: apps/api
+    environment:
+      FOURALLPASS_DATABASE_URL: postgresql+psycopg://fourallpass:fourallpass@postgres:5432/fourallpass
+      FOURALLPASS_REDIS_URL: redis://redis:6379/0
+      # Must stay stable for the life of the vault's device credentials.
+      FOURALLPASS_RP_ID: localhost
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

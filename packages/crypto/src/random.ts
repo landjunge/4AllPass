@@ -1,7 +1,7 @@
 import { KEY_BYTES, NONCE_BYTES, SALT_BYTES_MIN } from "./constants.ts";
 import { ProtocolError } from "./errors.ts";
 
-function getRandomValues(bytes: Uint8Array): Uint8Array {
+function getRandomValues(bytes: Uint8Array<ArrayBuffer>): Uint8Array {
   const cryptoObj = globalThis.crypto;
   if (!cryptoObj?.getRandomValues) {
     throw new ProtocolError("no CSPRNG available (crypto.getRandomValues)");

@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/web"
   ],
   "scripts": {
-    "test": "npm test -w @4allpass/crypto",
+    "test": "npm test -w @4allpass/crypto && npm test -w @4allpass/web",
     "test:crypto": "npm test -w @4allpass/crypto",
     "test:crypto:heavy": "npm run test:heavy -w @4allpass/crypto",
-    "typecheck": "npm run typecheck -w @4allpass/crypto"
+    "test:web": "npm test -w @4allpass/web",
+    "dev:web": "npm run dev -w @4allpass/web",
+    "typecheck": "npm run typecheck -w @4allpass/crypto && npm run typecheck -w @4allpass/web"
   }
 }

@@ -1,5 +1,8 @@
 export type EnvelopeType = "master" | "device" | "recovery";
 
+/** Ranked in `webauthn-prf.md` §5. Master-password unlock is always available and is not in this list. */
+export type DeviceUnlockMechanism = "prf" | "large_blob" | "uv_gated_local";
+
 export type Argon2idProfileName =
   | "ci"
   | "mobile_safe"

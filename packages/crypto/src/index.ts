@@ -30,6 +30,7 @@ export type {
   Argon2idProfile,
   Argon2idProfileName,
   DeviceKeyEnvelope,
+  DeviceUnlockMechanism,
   EncryptedEntry,
   EnvelopeType,
   GcmBox,
@@ -39,6 +40,7 @@ export type {
 } from "./types.ts";
 
 export { bytesToHex, concat, equalBytes, hexToBytes, u16be, u32be, utf8 } from "./encoding/bytes.ts";
+export { base64UrlToBytes, bytesToBase64Url } from "./encoding/base64url.ts";
 export {
   deviceKeyAad,
   dwkHkdfInfo,
@@ -78,6 +80,25 @@ export {
   wrapDeviceKey,
 } from "./device.ts";
 export type { DeriveDeviceWrappingKeyOptions, WrapDeviceKeyOptions } from "./device.ts";
+
+export {
+  DEVICE_UNLOCK_MECHANISMS,
+  selectDeviceUnlock,
+  unwrapDeviceKeyFromPrf,
+  wrapDeviceKeyFromPrf,
+} from "./device-unlock.ts";
+export type { DeviceKeyFromPrfOptions } from "./device-unlock.ts";
+
+export {
+  FORBIDDEN_WIRE_KEYS,
+  deviceKeyEnvelopeFromWire,
+  deviceKeyEnvelopeToWire,
+  encryptedEntryFromWire,
+  encryptedEntryToWire,
+  keyEnvelopeFromWire,
+  keyEnvelopeToWire,
+} from "./wire.ts";
+export type { DeviceKeyEnvelopeWire, EncryptedEntryWire, KeyEnvelopeWire, KdfParamsWire } from "./wire.ts";
 
 export { assertFreshSnapshot, evaluateRevision } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

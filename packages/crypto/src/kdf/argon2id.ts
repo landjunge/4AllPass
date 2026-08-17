@@ -2,6 +2,8 @@ import { argon2id } from "@noble/hashes/argon2.js";
 import { ARGON2_VERSION, HASH_LEN, SALT_BYTES_MAX, SALT_BYTES_MIN } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
+import { assertBytes } from "../validate.ts";
+import { assertKdfBlock, assertKdfParamsWellFormed, assertKdfSalt } from "./profiles.ts";
 import type { Argon2idParams, KdfParams, KeyEnvelope } from "../types.ts";
 
 export interface DeriveRawOptions {
@@ -15,9 +17,8 @@ export interface DeriveRawOptions {
 /** Low-level Argon2id. Password is raw bytes (no NFC). Used by tests and RFC vectors. */
 export function deriveArgon2idRaw(opts: DeriveRawOptions): Uint8Array {
   const { password, salt, params } = opts;
-  if (salt.length < 8) {
-    throw new ProtocolError(`salt must be at least 8 bytes (Argon2 minimum)`);
-  }
+  assertBytes("password", password);
+  assertBytes("salt", salt, { min: 8 });
   const dkLen = params.hashLen ?? HASH_LEN;
   const extra: { key?: Uint8Array; personalization?: Uint8Array } = {};
   if (opts.secret && opts.secret.length > 0) extra.key = opts.secret;
@@ -35,12 +36,26 @@ export function deriveArgon2idRaw(opts: DeriveRawOptions): Uint8Array {
   });
 }
 
-/** Derive the 256-bit Master Key. Password is NFC-normalized then UTF-8. */
+export interface DeriveMasterKeyOptions {
+  /** Allow the test-only `ci` profile (unit tests and KATs only). */
+  allowTestProfile?: boolean;
+}
+
+/**
+ * Derive the 256-bit Master Key. Password is NFC-normalized then UTF-8.
+ * Parameters are range-checked first: they normally arrive from a server-held
+ * envelope, so they are untrusted input, not configuration.
+ */
 export function deriveMasterKey(
   password: string,
   salt: Uint8Array,
   params: Argon2idParams,
+  opts: DeriveMasterKeyOptions = {},
 ): Uint8Array {
+  if (typeof password !== "string") {
+    throw new ProtocolError("password must be a string");
+  }
+  assertKdfBlock({ ...params, salt }, opts.allowTestProfile === true);
   if (salt.length !== SALT_BYTES_MIN && salt.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
@@ -51,15 +66,20 @@ export function deriveMasterKey(
   });
 }
 
-export function deriveMasterKeyFromEnvelope(password: string, envelope: KeyEnvelope): Uint8Array {
-  if (envelope.type !== "master" || !envelope.kdf) {
+export function deriveMasterKeyFromEnvelope(
+  password: string,
+  envelope: KeyEnvelope,
+  opts: DeriveMasterKeyOptions = {},
+): Uint8Array {
+  if (envelope?.type !== "master" || !envelope.kdf) {
     throw new ProtocolError("master envelope is missing kdf parameters");
   }
   const { salt, ...params } = envelope.kdf;
-  return deriveMasterKey(password, salt, params);
+  return deriveMasterKey(password, assertKdfSalt(salt), params, opts);
 }
 
 export function kdfParamsFrom(params: Argon2idParams, salt: Uint8Array): KdfParams {
+  assertKdfParamsWellFormed(params);
   return {
     algorithm: "argon2id",
     version: params.version,
@@ -67,6 +87,6 @@ export function kdfParamsFrom(params: Argon2idParams, salt: Uint8Array): KdfPara
     iterations: params.iterations,
     parallelism: params.parallelism,
     hashLen: params.hashLen,
-    salt,
+    salt: assertKdfSalt(salt),
   };
 }

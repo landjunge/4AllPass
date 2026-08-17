@@ -76,14 +76,19 @@ describe("Argon2id NFC password path", () => {
   it("deriveMasterKey matches TV-ARGON2-UNICODE", () => {
     const v = suite.success.find((x) => x.id === "TV-ARGON2-UNICODE");
     assert.ok(v);
-    const mk = deriveMasterKey("paßwort-🔑", hex(v.salt), {
-      algorithm: "argon2id",
-      version: 0x13,
-      memory: v.memory_kib,
-      iterations: v.iterations,
-      parallelism: v.parallelism,
-      hashLen: 32,
-    });
+    const mk = deriveMasterKey(
+      "paßwort-🔑",
+      hex(v.salt),
+      {
+        algorithm: "argon2id",
+        version: 0x13,
+        memory: v.memory_kib,
+        iterations: v.iterations,
+        parallelism: v.parallelism,
+        hashLen: 32,
+      },
+      { allowTestProfile: true },
+    );
     assert.equal(bytesToHex(mk), v.dk);
   });
 });

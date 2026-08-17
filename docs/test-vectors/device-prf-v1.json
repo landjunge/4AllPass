@@ -1,10 +1,11 @@
 {
   "protocol": "4AllPass Crypto Protocol v1",
   "primitive": "WebAuthn-PRF + HKDF-SHA-256 + AES-256-GCM device-key wrap",
-  "generated": "2026-08-17T21:20:00Z",
+  "generated": "2026-08-17T22:31:14Z",
+  "generator": "node scripts/generate-vectors.mjs (node:crypto createCipheriv aes-256-gcm, OpenSSL)",
   "verified_with": [
-    "@noble/hashes 2.3.0 hkdf/sha256",
-    "@noble/ciphers AES-GCM"
+    "node:crypto hkdfSync/sha256",
+    "@noble/hashes hkdf via packages/crypto tests"
   ],
   "constants": {
     "vault_id": "vault_01HZX4ALLPASS000000000001",
@@ -13,7 +14,21 @@
     "credential_id": "cafebabecafebabecafebabecafebabe",
     "prf_output": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "device_key": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    "crypto_version": 1
+    "crypto_version": 1,
+    "device_key_version": 2
+  },
+  "aad_construction": {
+    "device_key_fields": [
+      "4allpass-device-key-v1",
+      "vault_id",
+      "device_id",
+      "credential_id",
+      "crypto_version_u32be",
+      "device_key_version_u32be"
+    ],
+    "hex": {
+      "device_key": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001000400000002"
+    }
   },
   "success": [
     {
@@ -32,13 +47,14 @@
     },
     {
       "id": "TV-DKE-01",
-      "purpose": "Wrap the random Device Key under DWK + device-key AAD",
+      "purpose": "Wrap the Device Key under DWK; AAD binds vault, device, credential and deviceKeyVersion",
       "key": "01b7fb49d6f146ecb0bfed501bd6d64c349fa87ae9a257ad7da6209c7be4a5aa",
       "nonce": "0102030405060708090a0b0c",
-      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001000400000002",
+      "device_key_version": 2,
       "plaintext": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
-      "tag": "4b6b1207003bf159090d9c154a12fbbd"
+      "tag": "2dbe613324b8e6321e33b99fee001d04"
     }
   ],
   "negative": [
@@ -55,9 +71,29 @@
       "expect": "auth_fail",
       "key": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "nonce": "0102030405060708090a0b0c",
-      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001000400000002",
       "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
-      "tag": "4b6b1207003bf159090d9c154a12fbbd"
+      "tag": "2dbe613324b8e6321e33b99fee001d04"
+    },
+    {
+      "id": "TV-DKE-CREDENTIAL-SWAP",
+      "purpose": "Same DWK, credential_id swapped in AAD → credential substitution must fail",
+      "expect": "auth_fail",
+      "key": "01b7fb49d6f146ecb0bfed501bd6d64c349fa87ae9a257ad7da6209c7be4a5aa",
+      "nonce": "0102030405060708090a0b0c",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f3100100badc0de0badc0de0badc0de0badc0de000400000001000400000002",
+      "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
+      "tag": "2dbe613324b8e6321e33b99fee001d04"
+    },
+    {
+      "id": "TV-DKE-VERSION-ROLLBACK",
+      "purpose": "Same DWK, deviceKeyVersion rolled back in AAD → must fail",
+      "expect": "auth_fail",
+      "key": "01b7fb49d6f146ecb0bfed501bd6d64c349fa87ae9a257ad7da6209c7be4a5aa",
+      "nonce": "0102030405060708090a0b0c",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001000400000001",
+      "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
+      "tag": "2dbe613324b8e6321e33b99fee001d04"
     }
   ]
 }

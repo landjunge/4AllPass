@@ -1,19 +1,34 @@
 export { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION } from "./constants.ts";
 export {
   ARGON2_VERSION,
+  CREDENTIAL_ID_BYTES_MAX,
+  CREDENTIAL_ID_BYTES_MIN,
   DEVICE_KEY_AAD_LABEL,
+  DIGEST_BYTES,
   DWK_INFO_LABEL,
   DWK_SALT_LABEL,
   ENTRY_AAD_LABEL,
   ENVELOPE_AAD_LABEL,
   HASH_LEN,
+  ID_BYTES_MAX,
+  KDF_ITERATIONS_MAX,
+  KDF_MEMORY_KIB_MAX,
+  KDF_PARALLELISM_MAX,
   KEY_BYTES,
+  MANIFEST_AAD_LABEL,
+  MANIFEST_ENTRIES_MAX,
+  MANIFEST_ENVELOPES_MAX,
   NONCE_BYTES,
   PRF_EVAL_LABEL,
   PRODUCTION_MEMORY_KIB_MIN,
+  REVISION_MAX,
+  RWK_INFO_LABEL,
+  RWK_SALT_LABEL,
   SALT_BYTES_MAX,
   SALT_BYTES_MIN,
+  SEALS_PER_KEY_MAX,
   TAG_BYTES,
+  VERSION_MAX,
 } from "./constants.ts";
 
 export {
@@ -35,6 +50,10 @@ export type {
   GcmBox,
   KdfParams,
   KeyEnvelope,
+  ManifestEntryRef,
+  ManifestEnvelopeRef,
+  SealedManifest,
+  SnapshotManifest,
   VaultRevision,
 } from "./types.ts";
 
@@ -46,14 +65,33 @@ export {
   encodeAad,
   envelopeAad,
   entryAad,
+  manifestAad,
   prfEvalFirstInput,
+  rwkHkdfInfo,
+  rwkHkdfSalt,
   versionField,
 } from "./encoding/aad.ts";
+export type {
+  DeviceKeyAadInput,
+  EntryAadInput,
+  EnvelopeAadInput,
+  ManifestAadInput,
+} from "./encoding/aad.ts";
+export {
+  entryDigest,
+  envelopeDigest,
+  kdfParamsDigest,
+  sealedManifestDigest,
+} from "./encoding/digest.ts";
+export { frame } from "./encoding/framing.ts";
 export { utf8Nfc } from "./encoding/unicode.ts";
 
 export {
   ARGON2ID_PROFILES,
   DEFAULT_PROFILE,
+  assertKdfBlock,
+  assertKdfParamsWellFormed,
+  assertKdfSalt,
   assertProductionKdf,
   resolveProfile,
 } from "./kdf/profiles.ts";
@@ -62,14 +100,15 @@ export {
   deriveMasterKeyFromEnvelope,
   kdfParamsFrom,
 } from "./kdf/argon2id.ts";
+export type { DeriveMasterKeyOptions } from "./kdf/argon2id.ts";
 
 export { decrypt, decryptBox, encrypt } from "./aead/aes-gcm.ts";
 
 export { wrapVaultKey, unwrapVaultKey } from "./envelope.ts";
-export type { WrapVaultKeyOptions } from "./envelope.ts";
+export type { UnwrapVaultKeyOptions, WrapVaultKeyOptions } from "./envelope.ts";
 
 export { encryptEntry, decryptEntry } from "./entry.ts";
-export type { EncryptEntryOptions } from "./entry.ts";
+export type { DecryptEntryOptions, EncryptEntryOptions } from "./entry.ts";
 
 export {
   deriveDeviceWrappingKey,
@@ -77,9 +116,37 @@ export {
   unwrapDeviceKey,
   wrapDeviceKey,
 } from "./device.ts";
-export type { DeriveDeviceWrappingKeyOptions, WrapDeviceKeyOptions } from "./device.ts";
+export type {
+  DeriveDeviceWrappingKeyOptions,
+  UnwrapDeviceKeyOptions,
+  WrapDeviceKeyOptions,
+} from "./device.ts";
 
-export { assertFreshSnapshot, evaluateRevision } from "./revision.ts";
+export {
+  assertSnapshotMatchesManifest,
+  buildManifest,
+  decodeManifest,
+  encodeManifest,
+  openManifest,
+  sealManifest,
+  validateManifest,
+  verifySnapshot,
+} from "./manifest.ts";
+export type {
+  BuildManifestOptions,
+  OpenManifestOptions,
+  SealManifestOptions,
+  SnapshotContents,
+} from "./manifest.ts";
+
+export {
+  deriveRecoveryWrappingKey,
+  formatRecoveryKey,
+  parseRecoveryKey,
+} from "./recovery.ts";
+export type { DeriveRecoveryWrappingKeyOptions } from "./recovery.ts";
+
+export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";
 
 export {
@@ -90,5 +157,13 @@ export {
   randomBytes,
   randomNonce,
 } from "./random.ts";
+
+export {
+  assertBytes,
+  assertId,
+  assertRevision,
+  assertUint32,
+  assertVersion,
+} from "./validate.ts";
 
 export { zeroize } from "./memory.ts";

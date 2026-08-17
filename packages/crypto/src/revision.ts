@@ -1,5 +1,9 @@
+import { CRYPTO_PROTOCOL_VERSION, DIGEST_BYTES } from "./constants.ts";
+import { sealedManifestDigest } from "./encoding/digest.ts";
+import { bytesToHex } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError, RollbackError } from "./errors.ts";
-import type { VaultRevision } from "./types.ts";
+import { assertBytes, assertId, assertRevision, assertVersion } from "./validate.ts";
+import type { SealedManifest, SnapshotManifest, VaultRevision } from "./types.ts";
 
 export type RevisionAction = "first_seen" | "same" | "advance" | "rotation";
 
@@ -17,18 +21,28 @@ export interface RevisionReject {
 export type RevisionDecision = RevisionAccept | RevisionReject;
 
 function assertRevisionFields(state: VaultRevision, label: string): void {
-  if (!state.vaultId) {
-    throw new ProtocolError(`${label} vaultId is required`);
+  if (state === null || typeof state !== "object") {
+    throw new ProtocolError(`${label} must be an object`);
   }
-  if (!Number.isInteger(state.revision) || state.revision < 1) {
-    throw new ProtocolError(`${label} revision must be an integer >= 1`);
+  assertId(`${label} vaultId`, state.vaultId);
+  assertRevision(`${label} revision`, state.revision);
+  assertVersion(`${label} vaultKeyVersion`, state.vaultKeyVersion);
+  const protocolVersion = assertVersion(`${label} cryptoProtocolVersion`, state.cryptoProtocolVersion);
+  if (protocolVersion > CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(
+      `${label} cryptoProtocolVersion ${protocolVersion} is newer than this client supports (${CRYPTO_PROTOCOL_VERSION})`,
+    );
   }
-  if (!Number.isInteger(state.vaultKeyVersion) || state.vaultKeyVersion < 1) {
-    throw new ProtocolError(`${label} vaultKeyVersion must be an integer >= 1`);
+  if (state.manifestDigest !== undefined) {
+    assertBytes(`${label} manifestDigest`, state.manifestDigest, { exact: DIGEST_BYTES });
   }
-  if (state.cryptoProtocolVersion !== 1) {
-    throw new ProtocolError(`${label} unsupported cryptoProtocolVersion`);
-  }
+}
+
+function reject(
+  action: RevisionReject["action"],
+  error: RollbackError | IntegrityError,
+): RevisionReject {
+  return { ok: false, action, error };
 }
 
 /**
@@ -36,7 +50,14 @@ function assertRevisionFields(state: VaultRevision, label: string): void {
  *
  * AES-GCM authenticity does not imply freshness. A malicious server can
  * replay an older *valid* snapshot. The client must refuse any incoming
- * revision or vaultKeyVersion that goes backwards.
+ * revision, vaultKeyVersion or protocol version that goes backwards.
+ *
+ * `revision` is only trustworthy once it has been verified cryptographically —
+ * see `openManifest` and `revisionFromManifest`. Pinning a number the server
+ * merely asserted lets a hostile server poison the pin (claim revision
+ * 4 294 967 295 once and every honest snapshot afterwards looks like a
+ * rollback), which is why the bounds in `assertRevisionFields` are enforced and
+ * why the pin should be written from a verified manifest.
  */
 export function evaluateRevision(
   lastSeen: VaultRevision | null,
@@ -48,35 +69,42 @@ export function evaluateRevision(
   }
   assertRevisionFields(lastSeen, "lastSeen");
   if (incoming.vaultId !== lastSeen.vaultId) {
-    return {
-      ok: false,
-      action: "mismatch",
-      error: new IntegrityError("incoming vaultId does not match pinned vault"),
-    };
+    return reject("mismatch", new IntegrityError("incoming vaultId does not match pinned vault"));
+  }
+  if (incoming.cryptoProtocolVersion < lastSeen.cryptoProtocolVersion) {
+    return reject(
+      "downgrade",
+      new IntegrityError(
+        `cryptoProtocolVersion downgrade: ${incoming.cryptoProtocolVersion} < ${lastSeen.cryptoProtocolVersion}`,
+      ),
+    );
   }
   if (incoming.revision < lastSeen.revision) {
-    return {
-      ok: false,
-      action: "rollback",
-      error: new RollbackError(lastSeen.revision, incoming.revision),
-    };
+    return reject("rollback", new RollbackError(lastSeen.revision, incoming.revision));
   }
   if (incoming.vaultKeyVersion < lastSeen.vaultKeyVersion) {
-    return {
-      ok: false,
-      action: "downgrade",
-      error: new IntegrityError(
+    return reject(
+      "downgrade",
+      new IntegrityError(
         `vaultKeyVersion downgrade: ${incoming.vaultKeyVersion} < ${lastSeen.vaultKeyVersion}`,
       ),
-    };
+    );
   }
   if (incoming.revision === lastSeen.revision) {
     if (incoming.vaultKeyVersion !== lastSeen.vaultKeyVersion) {
-      return {
-        ok: false,
-        action: "mismatch",
-        error: new IntegrityError("same revision but different vaultKeyVersion"),
-      };
+      return reject("mismatch", new IntegrityError("same revision but different vaultKeyVersion"));
+    }
+    if (
+      lastSeen.manifestDigest !== undefined &&
+      incoming.manifestDigest !== undefined &&
+      bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)
+    ) {
+      return reject(
+        "mismatch",
+        new IntegrityError(
+          `revision ${incoming.revision} was served with two different manifests (server equivocation)`,
+        ),
+      );
     }
     return { ok: true, action: "same" };
   }
@@ -93,4 +121,26 @@ export function assertFreshSnapshot(
   const decision = evaluateRevision(lastSeen, incoming);
   if (!decision.ok) throw decision.error;
   return decision.action;
+}
+
+/**
+ * Build the pinnable revision state from a manifest that has already been
+ * opened under the Vault Key. This is the only pin a client should store: it
+ * carries the digest of the sealed manifest, which makes a later "same
+ * revision, different content" answer detectable.
+ */
+export function revisionFromManifest(
+  manifest: SnapshotManifest,
+  sealed: SealedManifest,
+): VaultRevision {
+  return {
+    vaultId: assertId("manifest.vaultId", manifest.vaultId),
+    revision: assertRevision("manifest.revision", manifest.revision),
+    vaultKeyVersion: assertVersion("manifest.vaultKeyVersion", manifest.vaultKeyVersion),
+    cryptoProtocolVersion: assertVersion(
+      "manifest.cryptoProtocolVersion",
+      manifest.cryptoProtocolVersion,
+    ),
+    manifestDigest: sealedManifestDigest(sealed),
+  };
 }

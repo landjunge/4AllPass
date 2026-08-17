@@ -316,9 +316,9 @@ The server must **never** store:
 Before any production use the following must pass:
 
 - **AES-256-GCM known-answer tests** in [docs/test-vectors.md](test-vectors.md) / [`docs/test-vectors/aes-gcm-v1.json`](test-vectors/aes-gcm-v1.json)  
-  Run: `node scripts/verify-aes-gcm-vectors.mjs`
+  Run: `node scripts/verify-aes-gcm-vectors.mjs` or `npm test` (`@4allpass/crypto`)
 - **Argon2id known-answer tests** in [docs/test-vectors-argon2id.md](test-vectors-argon2id.md) / [`docs/test-vectors/argon2id-v1.json`](test-vectors/argon2id-v1.json)  
-  Run: `pip install -r scripts/requirements-dev.txt && python3 scripts/verify-argon2id-vectors.py`
+  Run: `npm test` (skips 32–128 MiB unless `RUN_HEAVY=1`) or `python3 scripts/verify-argon2id-vectors.py`
 - Property-based tests (random keys, random plaintexts)
 - Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure) — covered by `TV-TAMPER-*`
 - Wrong-password / wrong-recovery-key tests
@@ -335,6 +335,7 @@ Before any production use the following must pass:
 |---------------------------|-----------------------------------------------------|
 | `architecture.md`         | High-level system design & product goals            |
 | **`crypto-protocol.md`**  | **This document – authoritative crypto rules**      |
+| **`packages/crypto`**     | **Reference TypeScript implementation of this spec** |
 | `threat-model.md`         | Attackers, assets, assumptions, residual risks      |
 | **`test-vectors.md`**     | **AES-256-GCM known-answer tests + AAD encoder**    |
 | **`test-vectors-argon2id.md`** | **Argon2id known-answer tests + KDF profiles** |

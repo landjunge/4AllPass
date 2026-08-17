@@ -1,0 +1,14 @@
+{
+  "name": "4allpass",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm test -w @4allpass/crypto",
+    "test:crypto": "npm test -w @4allpass/crypto",
+    "test:crypto:heavy": "npm run test:heavy -w @4allpass/crypto",
+    "typecheck": "npm run typecheck -w @4allpass/crypto"
+  }
+}

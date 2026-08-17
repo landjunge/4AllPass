@@ -1,0 +1,32 @@
+{
+  "name": "@4allpass/crypto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "4AllPass Crypto Protocol v1 — Argon2id, AES-256-GCM, envelopes",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test-only": "./src/test-only.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "test:heavy": "RUN_HEAVY=1 tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^1.3.0",
+    "@noble/hashes": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

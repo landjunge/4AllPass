@@ -5,6 +5,8 @@
 **Machine-readable:** [`test-vectors/aes-gcm-v1.json`](test-vectors/aes-gcm-v1.json)  
 **Verifier:** `node scripts/verify-aes-gcm-vectors.mjs`
 
+Companion: Argon2id vectors in [`test-vectors-argon2id.md`](test-vectors-argon2id.md).
+
 These vectors pin AES-256-GCM **and** the canonical AAD encoding.  
 Any compliant implementation must reproduce every `decrypt_ok` ciphertext/tag and must reject every `auth_fail` case.
 

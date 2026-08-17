@@ -79,7 +79,8 @@ interface KeyEnvelope {
     memory: number;                              // KiB
     iterations: number;
     parallelism: number;
-    salt: Uint8Array;                            // 16–32 bytes recommended
+    hashLen: 32;                                 // Master Key bytes
+    salt: Uint8Array;                            // 16 or 32 bytes
   };
 
   // Present only when type === "device"
@@ -134,8 +135,23 @@ Worked hex and encrypt/decrypt known-answer tests: **[docs/test-vectors.md](test
 - Memory: 64 MiB (65536 KiB)
 - Iterations: 3
 - Parallelism: 4
+- Hash length: **32 bytes**
+- Version: **0x13** (19)
+- Secret (K) and associated data (X): **empty**
+- Password encoding: Unicode **NFC**, then UTF-8
 
-Profiles (Standard / Balanced / Mobile-safe / High) may be offered, but the chosen parameters **must** be stored inside the Master Envelope so that later re-keying is possible without data loss.
+| Profile | Memory | t | p | Production |
+|---------|-------:|--:|--:|------------|
+| `ci` | 32 KiB | 3 | 4 | **No** — tests only |
+| `mobile_safe` | 32 MiB | 3 | 1 | Yes |
+| `balanced` | 32 MiB | 6 | 4 | Yes |
+| **`standard`** (default) | **64 MiB** | **3** | **4** | Yes |
+| `high` | 128 MiB | 4 | 4 | Yes |
+
+`standard` is RFC 9106 SECOND RECOMMENDED memory. `ci` MUST NOT be persisted on a production vault.  
+Chosen parameters **must** be stored inside the Master Envelope so that later re-keying is possible without data loss.
+
+Known-answer tests: **[docs/test-vectors-argon2id.md](test-vectors-argon2id.md)**.
 
 ---
 
@@ -301,7 +317,8 @@ Before any production use the following must pass:
 
 - **AES-256-GCM known-answer tests** in [docs/test-vectors.md](test-vectors.md) / [`docs/test-vectors/aes-gcm-v1.json`](test-vectors/aes-gcm-v1.json)  
   Run: `node scripts/verify-aes-gcm-vectors.mjs`
-- Known-answer / test-vector tests for Argon2id wrapping (separate file, not yet published)
+- **Argon2id known-answer tests** in [docs/test-vectors-argon2id.md](test-vectors-argon2id.md) / [`docs/test-vectors/argon2id-v1.json`](test-vectors/argon2id-v1.json)  
+  Run: `pip install -r scripts/requirements-dev.txt && python3 scripts/verify-argon2id-vectors.py`
 - Property-based tests (random keys, random plaintexts)
 - Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure) — covered by `TV-TAMPER-*`
 - Wrong-password / wrong-recovery-key tests
@@ -320,6 +337,7 @@ Before any production use the following must pass:
 | **`crypto-protocol.md`**  | **This document – authoritative crypto rules**      |
 | `threat-model.md`         | Attackers, assets, assumptions, residual risks      |
 | **`test-vectors.md`**     | **AES-256-GCM known-answer tests + AAD encoder**    |
+| **`test-vectors-argon2id.md`** | **Argon2id known-answer tests + KDF profiles** |
 | `recovery.md`             | Detailed Emergency Kit UX & operational guidance    |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
 

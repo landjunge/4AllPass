@@ -1,7 +1,7 @@
 import { hkdf } from "@noble/hashes/hkdf.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { CRYPTO_PROTOCOL_VERSION, KEY_BYTES } from "./constants.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import {
   deviceKeyAad,
   dwkHkdfInfo,
@@ -48,6 +48,9 @@ export function prfEvalFirst(rpId: string, vaultId: string): Uint8Array {
 export function deriveDeviceWrappingKey(opts: DeriveDeviceWrappingKeyOptions): Uint8Array {
   assertLength("prfOutput", opts.prfOutput, KEY_BYTES);
   const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(`unsupported device crypto version: ${cryptoVersion}`);
+  }
   const salt = sha256(dwkHkdfSalt(opts.vaultId, opts.credentialId));
   const info = dwkHkdfInfo(
     opts.rpId,
@@ -280,6 +283,7 @@ export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: 
     throw new ProtocolError(`unsupported device-key envelope version: ${envelope.version}`);
   }
   assertLength("deviceWrappingKey", deviceWrappingKey, KEY_BYTES);
+  assertAeadFraming(envelope.nonce, envelope.tag);
   const aad = deviceKeyAad(
     envelope.vaultId,
     envelope.deviceId,

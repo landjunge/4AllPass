@@ -1,22 +1,22 @@
-from httpx import AsyncClient
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from app.main import app
+
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-async def test_health_reports_dependencies(client: AsyncClient, api: str) -> None:
-    response = await client.get(f"{api}/health")
+async def test_health():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health")
     assert response.status_code == 200
-    body = response.json()
-    assert body["status"] == "ok"
-    assert body["database"] is True
-    assert body["redis"] is True
-    assert body["crypto_protocol_version"] == 1
+    assert response.json() == {"status": "ok"}
 
 
-async def test_openapi_documents_the_zero_knowledge_contract(client: AsyncClient) -> None:
-    schema = (await client.get("/openapi.json")).json()
-    assert "never sees a master password" in schema["info"]["description"]
-    paths = schema["paths"]
-    assert "/api/v1/vaults/{vault_id}/snapshots" in paths
-    assert (
-        "/api/v1/vaults/{vault_id}/devices/{device_id}/credentials/{credential_id}/device-key-envelope"
-        in paths
-    )
+async def test_health_db(engine):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health/db")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

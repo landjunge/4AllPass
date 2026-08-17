@@ -1,14 +1,17 @@
 node_modules/
 dist/
+dist-ssr/
+dev-dist/
+.vite/
 *.tsbuildinfo
 .DS_Store
 .env
 *.log
+
+# Python / backend
 .venv/
-__pycache__/
+backend/.venv/
+**/__pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-dist/
-.vite/
-dev-dist/

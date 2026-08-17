@@ -134,6 +134,33 @@ Nonce is library-generated. Test hook only for KATs (**TV-DKE-01**).
 
 `decrypt` uses the versions and ids stored on the envelope. Nothing is guessed.
 
+### 4.1 Freshness (no independent rollback)
+
+The Device-Key Envelope has **no revision field of its own**, and the DWK is
+derived deterministically from `(rpId, vault_id, device_id, credential_id)` —
+so re-wrapping a *new* Device Key for the same credential produces an envelope
+with the **same AAD** as the old one. Nothing inside the blob distinguishes a
+current Device-Key Envelope from a superseded one.
+
+Therefore the Device-Key Envelope **must not** be rolled back or updated
+independently of the vault snapshot it belongs to:
+
+- When mirrored to the server (§2.1 step 7), it is versioned and committed
+  **atomically with its vault-snapshot `revision`** (see
+  `vault-revision.md` §4). A client fetches it only as part of the snapshot
+  named by `active_revision`, never through a separate, independently
+  replayable channel.
+- Freshness of the Device-Key Envelope is thus inherited from the snapshot's
+  `evaluateRevision` check. A malicious server that replays only an old
+  Device-Key Envelope blob (e.g. to resurrect a rotated-out Device Key)
+  either fails the snapshot freshness check or fails to unwrap the current
+  Device Envelope under the stale Device Key — it never yields the Vault Key.
+
+Implementations that store the mirror in a table separate from the snapshot
+(as an optimization) still MUST gate serving it on the current
+`active_revision` and MUST replace it in the same commit that rotates the
+Device Key.
+
 ---
 
 ## 5. Fallback when PRF is unavailable

@@ -2,135 +2,140 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   ARGON2ID_PROFILES,
+  AuthFailureError,
+  IntegrityError,
   encryptEntry,
-  generateDeviceKey,
   generateSalt,
   generateVaultKey,
-  IntegrityError,
   kdfParamsFrom,
-  verifySnapshotIntegrity,
+  randomBytes,
+  unlockSnapshot,
+  verifySnapshot,
   wrapVaultKey,
 } from "../src/index.ts";
-import type { VaultSnapshot } from "../src/index.ts";
 
-const VAULT_ID = "vault_01HZX4ALLPASS000000000001";
+const vaultId = "vault_test_snapshot";
 
-function build(vaultKey: Uint8Array, masterKey: Uint8Array, entryIds: string[]): VaultSnapshot {
-  return {
-    vaultId: VAULT_ID,
-    revision: 4,
-    vaultKeyVersion: 2,
-    cryptoProtocolVersion: 1,
-    envelopes: [
-      wrapVaultKey({
-        vaultKey,
-        wrappingKey: masterKey,
-        vaultId: VAULT_ID,
-        type: "master",
-        kdf: kdfParamsFrom(ARGON2ID_PROFILES.standard, generateSalt()),
-      }),
-    ],
-    entries: entryIds.map((id) =>
-      encryptEntry({
-        vaultKey,
-        vaultId: VAULT_ID,
-        entryId: id,
-        plaintext: new TextEncoder().encode(`{"title":"${id}"}`),
-      }),
-    ),
-  };
+function makeEntry(vaultKey: Uint8Array, id: string, text: string) {
+  return encryptEntry({
+    vaultKey,
+    vaultId,
+    entryId: id,
+    plaintext: new TextEncoder().encode(text),
+  });
 }
 
-describe("verifySnapshotIntegrity", () => {
-  it("accepts a consistent snapshot and cross-checks the master envelope", () => {
+function deviceEnvelope(vaultKey: Uint8Array, deviceKey: Uint8Array) {
+  return wrapVaultKey({
+    vaultKey,
+    wrappingKey: deviceKey,
+    vaultId,
+    type: "device",
+    deviceId: "dev-1",
+  });
+}
+
+function masterEnvelope(vaultKey: Uint8Array, masterKey: Uint8Array) {
+  return wrapVaultKey({
+    vaultKey,
+    wrappingKey: masterKey,
+    vaultId,
+    type: "master",
+    kdf: kdfParamsFrom(ARGON2ID_PROFILES.ci, generateSalt()),
+    allowTestProfile: true,
+  });
+}
+
+describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
+  it("unlocks a consistent snapshot via the device envelope", () => {
     const vaultKey = generateVaultKey();
-    const masterKey = generateDeviceKey();
-    const snapshot = build(vaultKey, masterKey, ["a", "b", "c"]);
-    verifySnapshotIntegrity({
-      snapshot,
-      vaultKey,
-      crossChecks: [{ envelope: snapshot.envelopes[0]!, wrappingKey: masterKey }],
+    const deviceKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+    const entries = [makeEntry(vaultKey, "e1", "alpha"), makeEntry(vaultKey, "e2", "beta")];
+
+    const result = unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries });
+
+    assert.deepEqual(result.vaultKey, vaultKey);
+    assert.equal(result.entries.length, 2);
+    const first = result.entries[0];
+    assert.ok(first);
+    assert.equal(new TextDecoder().decode(first.plaintext), "alpha");
+  });
+
+  it("accepts master + device cross-check that agree on the Vault Key", () => {
+    const vaultKey = generateVaultKey();
+    const deviceKey = randomBytes(32);
+    const masterKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+    const master = masterEnvelope(vaultKey, masterKey);
+
+    const result = unlockSnapshot({
+      vaultId,
+      envelope: env,
+      wrappingKey: deviceKey,
+      entries: [makeEntry(vaultKey, "e1", "x")],
+      crossCheckEnvelopes: [{ envelope: master, wrappingKey: masterKey }],
     });
+
+    assert.deepEqual(result.vaultKey, vaultKey);
   });
 
-  it("rejects a snapshot that mixes entries from another Vault Key", () => {
+  it("rejects a mixed snapshot: an entry sealed under a different Vault Key", () => {
     const vaultKey = generateVaultKey();
-    const masterKey = generateDeviceKey();
-    const snapshot = build(vaultKey, masterKey, ["a", "b"]);
-    const foreign = build(generateVaultKey(), masterKey, ["c"]);
-    snapshot.entries.push(foreign.entries[0]!);
+    const otherKey = generateVaultKey();
+    const deviceKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+    const entries = [makeEntry(vaultKey, "e1", "ok"), makeEntry(otherKey, "e2", "mixed")];
+
     assert.throws(
-      () => verifySnapshotIntegrity({ snapshot, vaultKey }),
-      (error: unknown) =>
-        error instanceof IntegrityError && /entry c does not decrypt/.test(error.message),
+      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries }),
+      IntegrityError,
     );
   });
 
-  it("rejects an envelope that unwraps to a different Vault Key", () => {
+  it("rejects a mixed snapshot: a cross-check envelope wrapping a different Vault Key", () => {
     const vaultKey = generateVaultKey();
-    const masterKey = generateDeviceKey();
-    const snapshot = build(vaultKey, masterKey, ["a"]);
-    const staleDeviceKey = generateDeviceKey();
-    snapshot.envelopes.push(
-      wrapVaultKey({
-        vaultKey: generateVaultKey(),
-        wrappingKey: staleDeviceKey,
-        vaultId: VAULT_ID,
-        type: "device",
-        deviceId: "dev_stale",
-      }),
-    );
+    const otherVaultKey = generateVaultKey();
+    const masterKey = randomBytes(32);
+    const master = masterEnvelope(otherVaultKey, masterKey);
+
     assert.throws(
       () =>
-        verifySnapshotIntegrity({
-          snapshot,
+        verifySnapshot({
+          vaultId,
           vaultKey,
-          crossChecks: [{ envelope: snapshot.envelopes[1]!, wrappingKey: staleDeviceKey }],
-        }),
-      (error: unknown) =>
-        error instanceof IntegrityError && /different Vault Key/.test(error.message),
-    );
-  });
-
-  it("ignores envelopes this device has no key for", () => {
-    const vaultKey = generateVaultKey();
-    const snapshot = build(vaultKey, generateDeviceKey(), ["a"]);
-    snapshot.envelopes.push(
-      wrapVaultKey({
-        vaultKey,
-        wrappingKey: generateDeviceKey(),
-        vaultId: VAULT_ID,
-        type: "device",
-        deviceId: "dev_someone_else",
-      }),
-    );
-    verifySnapshotIntegrity({ snapshot, vaultKey });
-  });
-
-  it("rejects duplicate entry ids and empty envelope sets", () => {
-    const vaultKey = generateVaultKey();
-    const snapshot = build(vaultKey, generateDeviceKey(), ["a"]);
-    snapshot.entries.push(snapshot.entries[0]!);
-    assert.throws(() => verifySnapshotIntegrity({ snapshot, vaultKey }), IntegrityError);
-
-    const empty = build(vaultKey, generateDeviceKey(), []);
-    empty.envelopes = [];
-    assert.throws(() => verifySnapshotIntegrity({ snapshot: empty, vaultKey }), IntegrityError);
-  });
-
-  it("rejects a cross-check envelope that is not part of the snapshot", () => {
-    const vaultKey = generateVaultKey();
-    const masterKey = generateDeviceKey();
-    const snapshot = build(vaultKey, masterKey, ["a"]);
-    const other = build(vaultKey, masterKey, ["a"]);
-    assert.throws(
-      () =>
-        verifySnapshotIntegrity({
-          snapshot,
-          vaultKey,
-          crossChecks: [{ envelope: other.envelopes[0]!, wrappingKey: masterKey }],
+          entries: [],
+          crossCheckEnvelopes: [{ envelope: master, wrappingKey: masterKey }],
         }),
       IntegrityError,
+    );
+  });
+
+  it("rejects a cross-vault entry as IntegrityError", () => {
+    const vaultKey = generateVaultKey();
+    const deviceKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+    const foreign = encryptEntry({
+      vaultKey,
+      vaultId: "vault_OTHER",
+      entryId: "e1",
+      plaintext: new TextEncoder().encode("x"),
+    });
+
+    assert.throws(
+      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries: [foreign] }),
+      IntegrityError,
+    );
+  });
+
+  it("a wrong wrapping key surfaces as AuthFailureError, not IntegrityError", () => {
+    const vaultKey = generateVaultKey();
+    const deviceKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+
+    assert.throws(
+      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: randomBytes(32), entries: [] }),
+      AuthFailureError,
     );
   });
 });

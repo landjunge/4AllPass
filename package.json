@@ -12,7 +12,7 @@
     "test:crypto:heavy": "npm run test:heavy -w @4allpass/crypto",
     "test:webauthn": "npm test -w @4allpass/webauthn",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "dev": "npm run dev -w @4allpass/web",
-    "build": "npm run build -w @4allpass/web"
+    "dev": "npm run dev -w @4allpass/frontend",
+    "build": "npm run build -w @4allpass/frontend"
   }
 }

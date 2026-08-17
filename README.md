@@ -20,10 +20,10 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
 - Vault revision / rotation: [`docs/vault-revision.md`](docs/vault-revision.md)
+- Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
 - Database schema: [`docs/db-schema.md`](docs/db-schema.md)
-- Threat model: [`docs/threat-model.md`](docs/threat-model.md)
-- AES-256-GCM vectors: [`docs/test-vectors.md`](docs/test-vectors.md)
-- Argon2id vectors: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
+- AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
+- Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 
 ## Key path
 
@@ -34,37 +34,51 @@ WebAuthn assertion + PRF ──HKDF──► DWK ──unwraps──► Device-K
                                                     Device Envelope ─────► Vault Key
 ```
 
-The Vault Key is always random, never derived from a password. PRF output and
-the DWK are never used as keys and are zeroized immediately after use. Master
-password unlock stays available on every device.
+The Vault Key is always random, never derived from a password. Raw PRF output is never used as a key.
 
-## Run everything
+## Project structure
 
-```sh
-docker compose up --build       # web on http://localhost:8080
+```
+4allpass/
+├── docs/                 crypto & architecture specs (authoritative)
+├── packages/crypto/      Zero-Knowledge crypto core
+├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-gated unlock
+├── backend/              FastAPI + SQLAlchemy + Alembic + Redis
+├── frontend/             React + TypeScript + PWA (Vite)
+├── docker-compose.yml    Postgres + Redis + backend
+└── scripts/              standalone test-vector verification
 ```
 
-Local development:
+## Tests
 
 ```sh
 npm install
-npm test                        # crypto + webauthn suites
-npm run typecheck
-
-cd backend
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-.venv/bin/alembic upgrade head
-.venv/bin/uvicorn app.main:app --reload
-
-npm run dev -w @4allpass/web    # http://localhost:5173
-```
-
-```sh
-npm run test:crypto:heavy       # includes the 32–128 MiB Argon2id profiles
+npm test
+npm run test:crypto:heavy   # includes 32–128 MiB Argon2id profiles
+npm run test:webauthn
+npm run test -w @4allpass/frontend
 node scripts/verify-aes-gcm-vectors.mjs
 pip install -r scripts/requirements-dev.txt
 python3 scripts/verify-argon2id-vectors.py
 ```
 
-`backend/.venv/bin/pytest` needs PostgreSQL and Redis; it runs the real Alembic
-migration and uses the `_test` database plus Redis DB 1.
+## Backend
+
+```sh
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+pytest
+```
+
+See [`backend/README.md`](backend/README.md).
+
+## Docker Compose
+
+```sh
+docker compose up --build
+```
+
+Starts Postgres, Redis, and the backend on `http://localhost:8000`.

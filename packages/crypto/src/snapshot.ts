@@ -1,79 +1,133 @@
-/**
- * Client integrity pass over an accepted snapshot (vault-revision.md §6).
- *
- * Freshness (`assertFreshSnapshot`) says the snapshot is not a replay. This
- * pass says the snapshot is internally consistent: one Vault Key seals every
- * envelope this client can open and decrypts every entry. It is what stops a
- * server from mixing VK₁ entries with VK₂ envelopes after a half-applied
- * rotation.
- */
-import { KEY_BYTES } from "./constants.ts";
+import { equalBytes } from "./encoding/bytes.ts";
 import { decryptEntry } from "./entry.ts";
 import { unwrapVaultKey } from "./envelope.ts";
-import { assertLength, equalBytes } from "./encoding/bytes.ts";
-import { AuthFailureError, IntegrityError } from "./errors.ts";
-import { zeroize } from "./memory.ts";
-import type { KeyEnvelope, VaultSnapshot } from "./types.ts";
+import { IntegrityError } from "./errors.ts";
+import type { EncryptedEntry, KeyEnvelope } from "./types.ts";
 
-export interface SnapshotIntegrityOptions {
-  snapshot: VaultSnapshot;
-  /** Vault Key already obtained from one envelope of this snapshot. */
-  vaultKey: Uint8Array;
-  /**
-   * Other envelopes of the same snapshot this client can open, with their
-   * wrapping key. Envelopes without a key are skipped: they belong to other
-   * devices ("not applicable to this device").
-   */
-  crossChecks?: ReadonlyArray<{ envelope: KeyEnvelope; wrappingKey: Uint8Array }>;
+/**
+ * Snapshot integrity pass — docs/vault-revision.md §6 ("Client integrity
+ * pass after unwrap").
+ *
+ * `evaluateRevision` (revision.ts) only checks that a snapshot's
+ * `(vaultId, revision, vaultKeyVersion)` triple is *fresh*. It does not
+ * check that the snapshot's contents are internally consistent. A malicious
+ * server can still serve a "mixed" snapshot — e.g. `VK₂` envelopes stitched
+ * onto `VK₁` entries — that passes the freshness check.
+ *
+ * This module closes that gap: after a wrapping key unwraps the caller's own
+ * envelope to a Vault Key, every entry must decrypt under *that* Vault Key,
+ * and any additional envelopes the caller can unwrap must yield the *same*
+ * Vault Key. A single failure rejects the whole snapshot with an
+ * `IntegrityError`, so a mixed `VK₁`/`VK₂` snapshot can never be applied.
+ */
+
+export interface DecryptedEntry {
+  id: string;
+  schemaVersion: number;
+  cryptoVersion: number;
+  plaintext: Uint8Array;
 }
 
-export function verifySnapshotIntegrity(options: SnapshotIntegrityOptions): void {
-  const { snapshot, vaultKey } = options;
-  assertLength("vaultKey", vaultKey, KEY_BYTES);
-  if (snapshot.cryptoProtocolVersion !== 1) {
-    throw new IntegrityError(`unsupported snapshot cryptoProtocolVersion: ${snapshot.cryptoProtocolVersion}`);
-  }
-  if (snapshot.envelopes.length === 0) {
-    throw new IntegrityError("snapshot has no envelopes: the vault would be unrecoverable");
-  }
+/** An additional envelope the caller holds a wrapping key for and can cross-check. */
+export interface CrossCheckEnvelope {
+  envelope: KeyEnvelope;
+  wrappingKey: Uint8Array;
+}
 
-  for (const check of options.crossChecks ?? []) {
-    if (!snapshot.envelopes.includes(check.envelope)) {
-      throw new IntegrityError("cross-checked envelope is not part of this snapshot");
-    }
-    let other: Uint8Array | undefined;
+export interface VerifySnapshotOptions {
+  vaultId: string;
+  /** The Vault Key the caller already obtained by unwrapping their own envelope. */
+  vaultKey: Uint8Array;
+  entries: readonly EncryptedEntry[];
+  /**
+   * Optional additional envelopes the caller can unwrap (e.g. a master
+   * envelope alongside a device envelope). Each MUST unwrap to the same
+   * Vault Key. Envelopes the caller cannot unwrap (other devices) are simply
+   * not passed here — per §6 they are "ignored as not applicable to this
+   * device", not treated as errors.
+   */
+  crossCheckEnvelopes?: readonly CrossCheckEnvelope[];
+}
+
+/**
+ * Verify that every entry decrypts under `vaultKey` and that every
+ * cross-check envelope unwraps to the same `vaultKey`. Returns the decrypted
+ * entries on success. Throws `IntegrityError` (wrapping the first underlying
+ * failure) if any entry or cross-check envelope is inconsistent.
+ */
+export function verifySnapshot(opts: VerifySnapshotOptions): DecryptedEntry[] {
+  const { vaultId, vaultKey, entries, crossCheckEnvelopes = [] } = opts;
+
+  for (const { envelope, wrappingKey } of crossCheckEnvelopes) {
+    let candidate: Uint8Array;
     try {
-      other = unwrapVaultKey(check.envelope, check.wrappingKey, snapshot.vaultId);
+      candidate = unwrapVaultKey(envelope, wrappingKey, vaultId);
     } catch (cause) {
       throw new IntegrityError(
-        `envelope ${check.envelope.type}${check.envelope.deviceId ? `/${check.envelope.deviceId}` : ""} did not unwrap: ${(cause as Error).message}`,
+        `snapshot envelope (type=${envelope.type}) failed to unwrap during cross-check`,
+        { cause },
       );
     }
-    const same = equalBytes(other, vaultKey);
-    zeroize(other);
-    if (!same) {
+    if (!equalBytes(candidate, vaultKey)) {
       throw new IntegrityError(
-        `envelope ${check.envelope.type} unwraps to a different Vault Key: snapshot mixes key versions`,
+        `snapshot envelope (type=${envelope.type}) unwraps to a different Vault Key (mixed snapshot)`,
       );
     }
   }
 
-  const seen = new Set<string>();
-  for (const entry of snapshot.entries) {
-    if (seen.has(entry.id)) {
-      throw new IntegrityError(`duplicate entry id in snapshot: ${entry.id}`);
-    }
-    seen.add(entry.id);
-    let plaintext: Uint8Array | undefined;
+  const decrypted: DecryptedEntry[] = [];
+  for (const entry of entries) {
+    let plaintext: Uint8Array;
     try {
-      plaintext = decryptEntry(entry, vaultKey, snapshot.vaultId);
+      plaintext = decryptEntry(entry, vaultKey, vaultId);
     } catch (cause) {
-      if (cause instanceof AuthFailureError) {
-        throw new IntegrityError(`entry ${entry.id} does not decrypt under this Vault Key`);
-      }
-      throw cause;
-    } finally {
-      zeroize(plaintext);
+      throw new IntegrityError(
+        `snapshot entry ${entry.id} failed to decrypt under the Vault Key (mixed or tampered snapshot)`,
+        { cause },
+      );
     }
+    decrypted.push({
+      id: entry.id,
+      schemaVersion: entry.schemaVersion,
+      cryptoVersion: entry.cryptoVersion,
+      plaintext,
+    });
   }
+
+  return decrypted;
+}
+
+export interface UnlockSnapshotOptions {
+  vaultId: string;
+  /** The caller's own envelope (master / device / recovery). */
+  envelope: KeyEnvelope;
+  /** The wrapping key for `envelope` (Master Key, Device Key, or Recovery Key). */
+  wrappingKey: Uint8Array;
+  entries: readonly EncryptedEntry[];
+  crossCheckEnvelopes?: readonly CrossCheckEnvelope[];
+}
+
+export interface UnlockedSnapshot {
+  vaultKey: Uint8Array;
+  entries: DecryptedEntry[];
+}
+
+/**
+ * Unwrap the caller's own envelope to the Vault Key, then run the integrity
+ * pass over the whole snapshot.
+ *
+ * A wrong wrapping key (e.g. wrong Master Password) surfaces as the usual
+ * `AuthFailureError` from `unwrapVaultKey` — a normal, expected condition, so
+ * it is deliberately *not* rewrapped as `IntegrityError`. `IntegrityError` is
+ * reserved for a snapshot that is internally inconsistent (mixed/tampered).
+ */
+export function unlockSnapshot(opts: UnlockSnapshotOptions): UnlockedSnapshot {
+  const vaultKey = unwrapVaultKey(opts.envelope, opts.wrappingKey, opts.vaultId);
+  const entries = verifySnapshot({
+    vaultId: opts.vaultId,
+    vaultKey,
+    entries: opts.entries,
+    ...(opts.crossCheckEnvelopes ? { crossCheckEnvelopes: opts.crossCheckEnvelopes } : {}),
+  });
+  return { vaultKey, entries };
 }

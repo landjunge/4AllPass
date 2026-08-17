@@ -23,7 +23,7 @@ src/
   entry.ts              encryptEntry / decryptEntry (schemaVersion stored on the entry)
   device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope,
                         bindDeviceWithPrfOutput / unwrapVaultKeyWithPrfOutput
-  snapshot.ts           verifySnapshotIntegrity (vault-revision.md §6)
+  snapshot.ts           verifySnapshot / unlockSnapshot (vault-revision.md §6)
   revision.ts           evaluateRevision / rollback detection
   wire.ts               JSON encode/decode for server transport (strict)
   random.ts             CSPRNG helpers

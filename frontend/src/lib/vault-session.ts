@@ -29,7 +29,7 @@ import {
   generateVaultKey,
   kdfParamsFrom,
   unwrapVaultKey,
-  verifySnapshotIntegrity,
+  verifySnapshot,
   wrapVaultKey,
   zeroize,
 } from "@4allpass/crypto";
@@ -124,7 +124,12 @@ function openSnapshot(
   unlockedWith: UnlockMethod,
   crossChecks: ReadonlyArray<{ envelope: KeyEnvelope; wrappingKey: Uint8Array }> = [],
 ): UnlockedVault {
-  verifySnapshotIntegrity({ snapshot, vaultKey, crossChecks });
+  verifySnapshot({
+    vaultId: snapshot.vaultId,
+    vaultKey,
+    entries: snapshot.entries,
+    crossCheckEnvelopes: crossChecks,
+  });
   const entries: VaultEntry[] = snapshot.entries.map((entry) => {
     const plaintext = decryptEntry(entry, vaultKey, snapshot.vaultId);
     try {

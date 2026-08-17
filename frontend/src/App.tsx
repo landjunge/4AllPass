@@ -1,77 +1,61 @@
-import type { ReactNode } from "react";
-import { useApp } from "./state/app-state.tsx";
-import { AuthPage } from "./pages/AuthPage.tsx";
-import { CreateVaultPage } from "./pages/CreateVaultPage.tsx";
-import { UnlockPage } from "./pages/UnlockPage.tsx";
-import { VaultPage } from "./pages/VaultPage.tsx";
-import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { useState } from 'react'
+import { webauthnPrfAvailable } from './lib/webauthnCapabilities.ts'
 
-export function App(): ReactNode {
-  const { ready, email, vaults, lockState, error, notice, recoveryKey, clearMessages, lock, signOut } =
-    useApp();
+function App() {
+  const [masterPassword, setMasterPassword] = useState('')
+  const [prfSupported] = useState(() => webauthnPrfAvailable())
 
-  if (!ready) {
-    return (
-      <div className="centered">
-        <p className="muted">Loading…</p>
-      </div>
-    );
+  // NOTE: this is UI scaffolding only. Master-Password derivation
+  // (Argon2id -> Master Envelope, crypto-protocol.md §4) and the WebAuthn
+  // PRF unlock flow (src/lib/webauthnPrf.ts, docs/webauthn-prf.md) are
+  // wired as library functions but not yet connected to a running vault —
+  // there is no account/session backend endpoint to unlock against yet.
+  function handleMasterPasswordUnlock(event: React.FormEvent) {
+    event.preventDefault()
   }
 
   return (
-    <div className="app">
-      <header>
-        <span className="brand">4AllPass</span>
-        {email ? (
-          <div className="header-actions">
-            <span className="muted small" data-testid="account-email">
-              {email}
-            </span>
-            <span className="state" data-testid="lock-state">
-              {lockState}
-            </span>
-            {lockState === "UNLOCKED" ? (
-              <button type="button" onClick={lock} data-testid="lock">
-                Lock
-              </button>
-            ) : null}
-            <button type="button" className="link" onClick={() => void signOut()}>
-              Sign out
-            </button>
-          </div>
-        ) : null}
-      </header>
+    <main className="lock-screen">
+      <div className="lock-card">
+        <img src="/icon.svg" alt="" width={56} height={56} className="brand-icon" />
+        <h1>4AllPass</h1>
+        <p className="tagline">Self-hosted Zero-Knowledge password manager.</p>
 
-      {error ? (
-        <div className="banner error" role="alert" data-testid="error-banner">
-          <span>{error}</span>
-          <button type="button" className="link" onClick={clearMessages}>
-            Dismiss
+        <form className="unlock-form" onSubmit={handleMasterPasswordUnlock}>
+          <label htmlFor="master-password">Master Password</label>
+          <input
+            id="master-password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your Master Password"
+            value={masterPassword}
+            onChange={(event) => setMasterPassword(event.target.value)}
+          />
+          <button type="submit" className="primary" disabled={masterPassword.length === 0}>
+            Unlock vault
           </button>
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="banner notice" data-testid="notice-banner">
-          <span>{notice}</span>
-          <button type="button" className="link" onClick={clearMessages}>
-            Dismiss
-          </button>
-        </div>
-      ) : null}
+        </form>
 
-      <main>
-        {!email ? (
-          <AuthPage />
-        ) : vaults.length === 0 ? (
-          <CreateVaultPage />
-        ) : lockState === "UNLOCKED" ? (
-          <VaultPage />
-        ) : (
-          <UnlockPage />
+        <div className="divider">
+          <span>or</span>
+        </div>
+
+        <button type="button" className="secondary" disabled={!prfSupported}>
+          Unlock with device biometrics
+        </button>
+        {!prfSupported && (
+          <p className="hint">
+            This browser has no WebAuthn PRF support. Falls back to largeBlob or a
+            UV-gated local store when configured — Master Password unlock always works.
+          </p>
         )}
-      </main>
 
-      {recoveryKey ? <RecoveryKitDialog /> : null}
-    </div>
-  );
+        <p className="footnote">
+          The server never sees your Master Password, Vault Key, or plaintext entries.
+        </p>
+      </div>
+    </main>
+  )
 }
+
+export default App

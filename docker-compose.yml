@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: 4allpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-4allpass}
+      POSTGRES_DB: 4allpass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 4allpass -d 4allpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      FOURALLPASS_ENVIRONMENT: ${FOURALLPASS_ENVIRONMENT:-production}
+      FOURALLPASS_DATABASE_URL: postgresql+asyncpg://4allpass:${POSTGRES_PASSWORD:-4allpass}@postgres:5432/4allpass
+      FOURALLPASS_REDIS_URL: redis://redis:6379/0
+      FOURALLPASS_CORS_ORIGINS: ${FOURALLPASS_CORS_ORIGINS:-http://localhost:8080}
+      FOURALLPASS_WEBAUTHN_RP_ID: ${FOURALLPASS_WEBAUTHN_RP_ID:-localhost}
+    command:
+      - sh
+      - -c
+      - "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:

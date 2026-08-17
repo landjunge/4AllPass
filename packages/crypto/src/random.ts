@@ -6,7 +6,11 @@ function getRandomValues(bytes: Uint8Array): Uint8Array {
   if (!cryptoObj?.getRandomValues) {
     throw new ProtocolError("no CSPRNG available (crypto.getRandomValues)");
   }
-  cryptoObj.getRandomValues(bytes);
+  // `bytes` is always backed by a plain ArrayBuffer (constructed via
+  // `new Uint8Array(length)` below), never a SharedArrayBuffer. The cast
+  // satisfies DOM lib's `ArrayBufferView<ArrayBuffer>` constraint on
+  // `getRandomValues` under TypeScript's generic typed-array types.
+  cryptoObj.getRandomValues(bytes as Uint8Array<ArrayBuffer>);
   return bytes;
 }
 

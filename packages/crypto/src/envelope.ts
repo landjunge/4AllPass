@@ -172,9 +172,11 @@ export function unwrapVaultKey(envelope: KeyEnvelope, opts: UnwrapVaultKeyOption
     throw new ProtocolError(`unsupported envelope encryption: ${String(envelope.encryption)}`);
   }
   assertBytes("wrappingKey", opts.wrappingKey, { exact: KEY_BYTES });
-  assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
-  assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
-  assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
+  // Read each byte field exactly once: validating one value and then decrypting
+  // another is how a field with a getter (or a Proxy) would slip past the checks.
+  const nonce = assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
+  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
+  const tag = assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
 
   const fields = resolveFields(
     {
@@ -208,13 +210,7 @@ export function unwrapVaultKey(envelope: KeyEnvelope, opts: UnwrapVaultKeyOption
     );
   }
 
-  const vk = decrypt(
-    opts.wrappingKey,
-    envelope.nonce,
-    envelope.ciphertext,
-    envelope.tag,
-    envelopeAad(fields),
-  );
+  const vk = decrypt(opts.wrappingKey, nonce, ciphertext, tag, envelopeAad(fields));
   assertBytes("vaultKey", vk, { exact: KEY_BYTES });
   return vk;
 }

@@ -452,9 +452,10 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
     throw new ProtocolError(`unsupported manifest encryption: ${String(sealed.encryption)}`);
   }
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
-  assertBytes("sealed.nonce", sealed.nonce, { exact: NONCE_BYTES });
-  assertBytes("sealed.ciphertext", sealed.ciphertext, { min: 1 });
-  assertBytes("sealed.tag", sealed.tag, { exact: TAG_BYTES });
+  // Each byte field is read exactly once, so validation and use cannot disagree.
+  const nonce = assertBytes("sealed.nonce", sealed.nonce, { exact: NONCE_BYTES });
+  const ciphertext = assertBytes("sealed.ciphertext", sealed.ciphertext, { min: 1 });
+  const tag = assertBytes("sealed.tag", sealed.tag, { exact: TAG_BYTES });
   const version = assertVersion("sealed.version", sealed.version);
   if (version !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`unsupported sealed manifest version: ${version}`);
@@ -466,13 +467,7 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
     vaultKeyVersion: opts.vaultKeyVersion,
     cryptoProtocolVersion: opts.cryptoProtocolVersion ?? CRYPTO_PROTOCOL_VERSION,
   });
-  const plaintext = decrypt(
-    opts.vaultKey,
-    sealed.nonce,
-    sealed.ciphertext,
-    sealed.tag,
-    manifestAadOf(claimed),
-  );
+  const plaintext = decrypt(opts.vaultKey, nonce, ciphertext, tag, manifestAadOf(claimed));
   const manifest = decodeManifest(plaintext);
   plaintext.fill(0);
 

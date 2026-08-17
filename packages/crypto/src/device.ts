@@ -166,9 +166,10 @@ export function unwrapDeviceKey(
     );
   }
   assertBytes("deviceWrappingKey", opts.deviceWrappingKey, { exact: KEY_BYTES });
-  assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
-  assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
-  assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
+  // Each byte field is read exactly once, so validation and use cannot disagree.
+  const nonce = assertBytes("envelope.nonce", envelope.nonce, { exact: NONCE_BYTES });
+  const ciphertext = assertBytes("envelope.ciphertext", envelope.ciphertext, { exact: KEY_BYTES });
+  const tag = assertBytes("envelope.tag", envelope.tag, { exact: TAG_BYTES });
 
   const cryptoVersion = assertVersion("envelope.version", envelope.version);
   if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
@@ -195,13 +196,7 @@ export function unwrapDeviceKey(
     fields.deviceKeyVersion,
   );
 
-  const dk = decrypt(
-    opts.deviceWrappingKey,
-    envelope.nonce,
-    envelope.ciphertext,
-    envelope.tag,
-    deviceKeyAad(fields),
-  );
+  const dk = decrypt(opts.deviceWrappingKey, nonce, ciphertext, tag, deviceKeyAad(fields));
   assertBytes("deviceKey", dk, { exact: KEY_BYTES });
   return dk;
 }

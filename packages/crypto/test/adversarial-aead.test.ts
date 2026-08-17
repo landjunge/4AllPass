@@ -254,6 +254,21 @@ describe("attack: malformed input", () => {
     }
   });
 
+  it("reads each byte field exactly once, so a getter cannot swap it after validation", () => {
+    const entry = freshEntry();
+    let nonceReads = 0;
+    const swapping = {
+      ...entry,
+      get nonce() {
+        nonceReads += 1;
+        return nonceReads === 1 ? entry.nonce : new Uint8Array(12).fill(0xff);
+      },
+    };
+    const plaintext = decryptEntry(swapping, entryOpts);
+    assert.equal(nonceReads, 1);
+    assert.deepEqual(plaintext, decryptEntry(entry, entryOpts));
+  });
+
   it("refuses an unsupported AEAD name", () => {
     const { master } = fixtureSnapshot();
     assert.throws(

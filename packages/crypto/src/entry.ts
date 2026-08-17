@@ -96,9 +96,10 @@ export function decryptEntry(entry: EncryptedEntry, opts: DecryptEntryOptions): 
     throw new ProtocolError("entry must be an object");
   }
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
-  assertBytes("entry.nonce", entry.nonce, { exact: NONCE_BYTES });
-  assertBytes("entry.ciphertext", entry.ciphertext);
-  assertBytes("entry.tag", entry.tag, { exact: TAG_BYTES });
+  // Each byte field is read exactly once, so validation and use cannot disagree.
+  const nonce = assertBytes("entry.nonce", entry.nonce, { exact: NONCE_BYTES });
+  const ciphertext = assertBytes("entry.ciphertext", entry.ciphertext);
+  const tag = assertBytes("entry.tag", entry.tag, { exact: TAG_BYTES });
 
   const cryptoVersion = assertVersion("entry.cryptoVersion", entry.cryptoVersion);
   if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
@@ -119,5 +120,5 @@ export function decryptEntry(entry: EncryptedEntry, opts: DecryptEntryOptions): 
     fields.vaultKeyVersion,
   );
 
-  return decrypt(opts.vaultKey, entry.nonce, entry.ciphertext, entry.tag, entryAad(fields));
+  return decrypt(opts.vaultKey, nonce, ciphertext, tag, entryAad(fields));
 }

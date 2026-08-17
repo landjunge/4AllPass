@@ -1,6 +1,7 @@
-import { ID_BYTES_MAX, REVISION_MAX, VERSION_MAX } from "./constants.ts";
+import { ENVELOPE_TYPES, ID_BYTES_MAX, REVISION_MAX, VERSION_MAX } from "./constants.ts";
 import { equalBytes, utf8 } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError } from "./errors.ts";
+import type { EnvelopeType } from "./types.ts";
 
 /**
  * Input validation for everything that crosses the trust boundary.
@@ -68,6 +69,13 @@ export function assertId(name: string, value: unknown): string {
     throw new ProtocolError(`${name} must be at most ${ID_BYTES_MAX} UTF-8 bytes, got ${bytes}`);
   }
   return value;
+}
+
+export function assertEnvelopeType(value: unknown): EnvelopeType {
+  if (typeof value !== "string" || !ENVELOPE_TYPES.includes(value as EnvelopeType)) {
+    throw new ProtocolError(`unsupported envelope type: ${String(value)}`);
+  }
+  return value as EnvelopeType;
 }
 
 /** Same as `assertId` but allows the empty string (deviceId on non-device envelopes). */

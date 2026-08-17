@@ -16,6 +16,7 @@ import { bytesToHex, concat } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError } from "./errors.ts";
 import {
   assertBytes,
+  assertEnvelopeType,
   assertId,
   assertRevision,
   assertUint32,
@@ -25,7 +26,6 @@ import {
 } from "./validate.ts";
 import type {
   EncryptedEntry,
-  EnvelopeType,
   GcmBox,
   KeyEnvelope,
   ManifestEntryRef,
@@ -33,8 +33,6 @@ import type {
   SealedManifest,
   SnapshotManifest,
 } from "./types.ts";
-
-const ENVELOPE_TYPES: readonly EnvelopeType[] = ["master", "device", "recovery"];
 
 export interface BuildManifestOptions {
   vaultId: string;
@@ -78,13 +76,6 @@ function assertSorted(label: string, keys: readonly string[]): void {
       throw new ProtocolError(`manifest ${label} are not in canonical order`);
     }
   }
-}
-
-function assertEnvelopeType(value: unknown): EnvelopeType {
-  if (typeof value !== "string" || !ENVELOPE_TYPES.includes(value as EnvelopeType)) {
-    throw new ProtocolError(`unsupported envelope type: ${String(value)}`);
-  }
-  return value as EnvelopeType;
 }
 
 /**

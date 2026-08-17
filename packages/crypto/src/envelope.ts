@@ -5,14 +5,13 @@ import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { assertKdfBlock } from "./kdf/profiles.ts";
 import {
   assertBytes,
+  assertEnvelopeType,
   assertId,
   assertVersion,
   requireSameNumber,
   requireSameString,
 } from "./validate.ts";
 import type { EnvelopeType, GcmBox, KdfParams, KeyEnvelope } from "./types.ts";
-
-const ENVELOPE_TYPES: readonly EnvelopeType[] = ["master", "device", "recovery"];
 
 export interface WrapVaultKeyOptions {
   vaultKey: Uint8Array;
@@ -56,13 +55,6 @@ interface ResolvedEnvelopeFields {
   deviceId: string;
   deviceKeyVersion: number;
   kdf: KdfParams | undefined;
-}
-
-function assertEnvelopeType(value: unknown): EnvelopeType {
-  if (typeof value !== "string" || !ENVELOPE_TYPES.includes(value as EnvelopeType)) {
-    throw new ProtocolError(`unsupported envelope type: ${String(value)}`);
-  }
-  return value as EnvelopeType;
 }
 
 /**

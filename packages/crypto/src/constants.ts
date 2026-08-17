@@ -22,6 +22,8 @@ export const ENTRY_DIGEST_LABEL = "4allpass-entry-digest-v1";
 export const ENVELOPE_DIGEST_LABEL = "4allpass-envelope-digest-v1";
 export const SEALED_MANIFEST_DIGEST_LABEL = "4allpass-sealed-manifest-digest-v1";
 
+export const ENVELOPE_TYPES = ["master", "device", "recovery"] as const;
+
 export const KEY_BYTES = 32;
 export const NONCE_BYTES = 12;
 export const TAG_BYTES = 16;

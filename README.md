@@ -1,2 +1,7 @@
 # 4AllPass
-Self-hosted Zero-Knowledge Password Manager – for all browsers and devices. Selective profile sharing, Argon2id, WebAuthn biometrics.
+
+Self-hosted Zero-Knowledge Password Manager – for all browsers and devices.
+
+Selektives Profil-Sharing, Argon2id, WebAuthn-Biometrie, PWA.
+
+Siehe `docs/architecture.md` für die vollständige Architektur.

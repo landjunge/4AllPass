@@ -4,14 +4,17 @@
   "type": "module",
   "workspaces": [
     "packages/*",
+    "frontend",
     "apps/web"
   ],
   "scripts": {
     "test": "npm test -w @4allpass/crypto",
     "test:crypto": "npm test -w @4allpass/crypto",
     "test:crypto:heavy": "npm run test:heavy -w @4allpass/crypto",
+    "test:frontend": "npm run test -w @4allpass/frontend",
     "test:api": "python3 -m pytest -c apps/api/pyproject.toml --rootdir=apps/api apps/api/tests",
-    "typecheck": "npm run typecheck -w @4allpass/crypto && npm run typecheck -w @4allpass/web",
+    "typecheck": "npm run typecheck -w @4allpass/crypto && npm run typecheck -w @4allpass/frontend && npm run typecheck -w @4allpass/web",
+    "dev:frontend": "npm run dev -w @4allpass/frontend",
     "dev:web": "npm run dev -w @4allpass/web",
     "dev:api": "python3 -m uvicorn app.main:app --reload --app-dir apps/api --port 8000"
   }

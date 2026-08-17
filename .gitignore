@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-ssr/
 *.tsbuildinfo
 .DS_Store
 .env
@@ -9,3 +10,9 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .mypy_cache/
+
+# Python / backend
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc

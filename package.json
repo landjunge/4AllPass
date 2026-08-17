@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "frontend"
   ],
   "scripts": {
     "test": "npm test -w @4allpass/crypto",

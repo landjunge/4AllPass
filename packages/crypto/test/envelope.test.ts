@@ -145,7 +145,25 @@ describe("encryptEntry / decryptEntry", () => {
     });
     assert.equal(bytesToHex(entry.ciphertext), v.ciphertext);
     assert.equal(bytesToHex(entry.tag), v.tag);
+    assert.equal(entry.schemaVersion, 1);
+    assert.equal(entry.cryptoVersion, 1);
     assert.deepEqual(decryptEntry(entry, vk, C.vault_id), plaintext);
+  });
+
+  it("stores schemaVersion on the entry and uses it on decrypt", () => {
+    const plaintext = new TextEncoder().encode('{"title":"x"}');
+    const entry = encryptEntry({
+      vaultKey: vk,
+      vaultId: C.vault_id,
+      entryId: C.entry_id,
+      plaintext,
+      schemaVersion: 2,
+    });
+    assert.equal(entry.schemaVersion, 2);
+    assert.equal(entry.cryptoVersion, 1);
+    assert.deepEqual(decryptEntry(entry, vk, C.vault_id), plaintext);
+    const forged = { ...entry, schemaVersion: 1 };
+    assert.throws(() => decryptEntry(forged, vk, C.vault_id));
   });
 
   it("round-trips with a library-owned nonce", () => {

@@ -1,0 +1,63 @@
+{
+  "protocol": "4AllPass Crypto Protocol v1",
+  "primitive": "WebAuthn-PRF + HKDF-SHA-256 + AES-256-GCM device-key wrap",
+  "generated": "2026-08-17T21:20:00Z",
+  "verified_with": [
+    "@noble/hashes 2.3.0 hkdf/sha256",
+    "@noble/ciphers AES-GCM"
+  ],
+  "constants": {
+    "vault_id": "vault_01HZX4ALLPASS000000000001",
+    "device_id": "dev_macbook_chrome_profile_1",
+    "rp_id": "pass.example.local",
+    "credential_id": "cafebabecafebabecafebabecafebabe",
+    "prf_output": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "device_key": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "crypto_version": 1
+  },
+  "success": [
+    {
+      "id": "TV-PRF-EVAL-FIRST",
+      "purpose": "SHA-256 of length-prefixed PRF context → WebAuthn prf.eval.first",
+      "prf_eval_first_input": "001834616c6c706173732d776562617574686e2d7072662d76310012706173732e6578616d706c652e6c6f63616c001f7661756c745f3031485a5834414c4c50415353303030303030303030303031",
+      "prf_eval_first": "41803b6e9d076df2fce6674eeabe501c31b1ef3569b3396f2301ce25fc1d491c"
+    },
+    {
+      "id": "TV-DWK-01",
+      "purpose": "HKDF-SHA-256 Device Wrapping Key from a fixed 32-byte PRF output",
+      "prf_output": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "hkdf_salt_preimage": "001434616c6c706173732d64776b2d73616c742d7631001f7661756c745f3031485a5834414c4c504153533030303030303030303030310010cafebabecafebabecafebabecafebabe",
+      "hkdf_info": "001734616c6c706173732d6465766963652d777261702d76310012706173732e6578616d706c652e6c6f63616c001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001",
+      "device_wrapping_key": "01b7fb49d6f146ecb0bfed501bd6d64c349fa87ae9a257ad7da6209c7be4a5aa"
+    },
+    {
+      "id": "TV-DKE-01",
+      "purpose": "Wrap the random Device Key under DWK + device-key AAD",
+      "key": "01b7fb49d6f146ecb0bfed501bd6d64c349fa87ae9a257ad7da6209c7be4a5aa",
+      "nonce": "0102030405060708090a0b0c",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001",
+      "plaintext": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
+      "tag": "4b6b1207003bf159090d9c154a12fbbd"
+    }
+  ],
+  "negative": [
+    {
+      "id": "TV-DWK-WRONG-VAULT",
+      "purpose": "Different vault_id must produce a different DWK",
+      "vault_id": "vault_OTHER",
+      "expect": "dk_differs",
+      "differs_from": "TV-DWK-01"
+    },
+    {
+      "id": "TV-DKE-WRONG-DWK",
+      "purpose": "Wrong DWK must not unwrap TV-DKE-01",
+      "expect": "auth_fail",
+      "key": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "nonce": "0102030405060708090a0b0c",
+      "aad": "001634616c6c706173732d6465766963652d6b65792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f310010cafebabecafebabecafebabecafebabe000400000001",
+      "ciphertext": "951fa5aa8579eb4c329beec0319298fdd603287bb9edeed9bb13a4a6a1890f28",
+      "tag": "4b6b1207003bf159090d9c154a12fbbd"
+    }
+  ]
+}

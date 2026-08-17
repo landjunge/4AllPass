@@ -15,15 +15,15 @@ const hex = suite.aad_construction.hex;
 
 describe("canonical AAD", () => {
   it("encodes envelope master", () => {
-    assert.equal(bytesToHex(envelopeAad(vault_id, "master")), hex.envelope_master);
+    assert.equal(bytesToHex(envelopeAad(vault_id, "master", "", 1)), hex.envelope_master);
   });
 
   it("encodes envelope device", () => {
-    assert.equal(bytesToHex(envelopeAad(vault_id, "device", device_id)), hex.envelope_device);
+    assert.equal(bytesToHex(envelopeAad(vault_id, "device", device_id, 1)), hex.envelope_device);
   });
 
   it("encodes envelope recovery", () => {
-    assert.equal(bytesToHex(envelopeAad(vault_id, "recovery")), hex.envelope_recovery);
+    assert.equal(bytesToHex(envelopeAad(vault_id, "recovery", "", 1)), hex.envelope_recovery);
   });
 
   it("encodes entry", () => {

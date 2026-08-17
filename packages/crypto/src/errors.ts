@@ -12,3 +12,18 @@ export class AuthFailureError extends CryptoError {
 }
 
 export class ProtocolError extends CryptoError {}
+
+export class RollbackError extends CryptoError {
+  readonly lastSeenRevision: number;
+  readonly incomingRevision: number;
+
+  constructor(lastSeenRevision: number, incomingRevision: number) {
+    super(
+      `rollback detected: incoming revision ${incomingRevision} is older than last seen ${lastSeenRevision}`,
+    );
+    this.lastSeenRevision = lastSeenRevision;
+    this.incomingRevision = incomingRevision;
+  }
+}
+
+export class IntegrityError extends CryptoError {}

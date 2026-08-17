@@ -38,10 +38,29 @@ export interface KeyEnvelope {
 
 export interface EncryptedEntry {
   id: string;
-  version: number;
+  schemaVersion: number;
+  cryptoVersion: number;
   nonce: Uint8Array;
   ciphertext: Uint8Array;
   tag: Uint8Array;
+}
+
+export interface DeviceKeyEnvelope {
+  version: 1;
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  encryption: "AES-256-GCM";
+  nonce: Uint8Array;
+  ciphertext: Uint8Array;
+  tag: Uint8Array;
+}
+
+export interface VaultRevision {
+  vaultId: string;
+  revision: number;
+  vaultKeyVersion: number;
+  cryptoProtocolVersion: 1;
 }
 
 export interface GcmBox {

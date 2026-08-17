@@ -7,3 +7,4 @@ export { encryptWithNonce } from "./aead/aes-gcm.ts";
 export { deriveArgon2idRaw } from "./kdf/argon2id.ts";
 export { wrapVaultKeyWithNonce } from "./envelope.ts";
 export { encryptEntryWithNonce } from "./entry.ts";
+export { wrapDeviceKeyWithNonce } from "./device.ts";

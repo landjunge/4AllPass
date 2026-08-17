@@ -6,6 +6,8 @@ Selektives Profil-Sharing, Argon2id, WebAuthn-Biometrie, PWA.
 
 - Architektur: [`docs/architecture.md`](docs/architecture.md)
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
+- WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
+- Vault revision / rotation: [`docs/vault-revision.md`](docs/vault-revision.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
 - Crypto core: [`packages/crypto`](packages/crypto)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)

@@ -1,7 +1,10 @@
 import {
-  CRYPTO_PROTOCOL_VERSION,
+  DEVICE_KEY_AAD_LABEL,
+  DWK_INFO_LABEL,
+  DWK_SALT_LABEL,
   ENTRY_AAD_LABEL,
   ENVELOPE_AAD_LABEL,
+  PRF_EVAL_LABEL,
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import type { AadField, EnvelopeType } from "../types.ts";
@@ -31,11 +34,12 @@ export function versionField(version: number): Uint8Array {
   return u32be(version);
 }
 
+/** cryptoVersion is taken from the envelope being wrapped/unwrapped. Never implicit. */
 export function envelopeAad(
   vaultId: string,
   type: EnvelopeType,
-  deviceId = "",
-  cryptoVersion: number = CRYPTO_PROTOCOL_VERSION,
+  deviceId: string,
+  cryptoVersion: number,
 ): Uint8Array {
   return encodeAad([
     ENVELOPE_AAD_LABEL,
@@ -46,17 +50,58 @@ export function envelopeAad(
   ]);
 }
 
+/** schemaVersion and cryptoVersion come from the EncryptedEntry object. Never guessed. */
 export function entryAad(
   vaultId: string,
   entryId: string,
   schemaVersion: number,
-  cryptoVersion: number = CRYPTO_PROTOCOL_VERSION,
+  cryptoVersion: number,
 ): Uint8Array {
   return encodeAad([
     ENTRY_AAD_LABEL,
     vaultId,
     entryId,
     versionField(schemaVersion),
+    versionField(cryptoVersion),
+  ]);
+}
+
+export function deviceKeyAad(
+  vaultId: string,
+  deviceId: string,
+  credentialId: Uint8Array,
+  cryptoVersion: number,
+): Uint8Array {
+  return encodeAad([
+    DEVICE_KEY_AAD_LABEL,
+    vaultId,
+    deviceId,
+    credentialId,
+    versionField(cryptoVersion),
+  ]);
+}
+
+export function prfEvalFirstInput(rpId: string, vaultId: string): Uint8Array {
+  return encodeAad([PRF_EVAL_LABEL, rpId, vaultId]);
+}
+
+export function dwkHkdfSalt(vaultId: string, credentialId: Uint8Array): Uint8Array {
+  return encodeAad([DWK_SALT_LABEL, vaultId, credentialId]);
+}
+
+export function dwkHkdfInfo(
+  rpId: string,
+  vaultId: string,
+  deviceId: string,
+  credentialId: Uint8Array,
+  cryptoVersion: number,
+): Uint8Array {
+  return encodeAad([
+    DWK_INFO_LABEL,
+    rpId,
+    vaultId,
+    deviceId,
+    credentialId,
     versionField(cryptoVersion),
   ]);
 }

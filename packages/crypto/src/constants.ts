@@ -1,7 +1,12 @@
 export const CRYPTO_PROTOCOL_VERSION = 1 as const;
+export const DEFAULT_SCHEMA_VERSION = 1 as const;
 
 export const ENVELOPE_AAD_LABEL = "4allpass-envelope-v1";
 export const ENTRY_AAD_LABEL = "4allpass-entry-v1";
+export const DEVICE_KEY_AAD_LABEL = "4allpass-device-key-v1";
+export const PRF_EVAL_LABEL = "4allpass-webauthn-prf-v1";
+export const DWK_SALT_LABEL = "4allpass-dwk-salt-v1";
+export const DWK_INFO_LABEL = "4allpass-device-wrap-v1";
 
 export const KEY_BYTES = 32;
 export const NONCE_BYTES = 12;

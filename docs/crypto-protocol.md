@@ -118,6 +118,9 @@ AAD    = field+
 
 This binds the envelope to a specific vault and prevents cross-vault or type-confusion attacks.
 
+The `crypto_version` field in AAD **must** be the `version` stored on that same envelope.  
+Implementations must pass `envelope.version` into `envelopeAad(...)` on wrap and unwrap. A library-wide default is not acceptable: it would allow `envelope.version = 2` to be sealed under AAD `crypto_version = 1`.
+
 Worked hex and encrypt/decrypt known-answer tests: **[docs/test-vectors.md](test-vectors.md)** (`TV-ENV-*`, `TV-TAMPER-TYPE`).
 
 ---
@@ -157,25 +160,19 @@ Known-answer tests: **[docs/test-vectors-argon2id.md](test-vectors-argon2id.md)*
 
 ## 5. Device Model & WebAuthn
 
-### Design Principle
-WebAuthn / Passkeys are used as a **platform-protected unlock trigger** and as protection for Device Key Material.  
-They are **not** treated as a general-purpose encryption oracle for the Vault Key.
+WebAuthn / Passkeys are a **platform-protected unlock trigger** and the preferred source of the Device Wrapping Key.  
+They are **not** an encryption oracle for the Vault Key.
 
-### Recommended v1 approach
-1. After successful Master-Password unlock, generate a random 256-bit **Device Key**.
-2. Protect this Device Key using the best available platform capability:
-   - Preferred: WebAuthn PRF extension (where supported).
-   - Fallback: Authenticator-bound secret + local encrypted storage that is only released after a successful WebAuthn assertion.
-3. The Device Key wraps the Vault Key → produces a **Device Envelope**.
-4. The Device Envelope is uploaded to the server and associated with the device identity.
+The byte-level construction (PRF input, HKDF salt/info, Device-Key Envelope, fallback ranking) lives in **[docs/webauthn-prf.md](webauthn-prf.md)**. That document is authoritative. A short summary:
 
-### Unlock with Biometrics
-1. Perform WebAuthn assertion (user presence / biometric).
-2. Obtain / unlock the Device Key Material.
-3. Unwrap the Device Envelope → obtain Vault Key.
-4. Proceed to decrypt entries.
+1. After Master-Password unlock, generate a random 256-bit **Device Key (DK)**.
+2. Derive **DWK = HKDF-SHA-256(PRF output, …)** — never use raw PRF output as a key.
+3. Wrap DK under DWK (Device-Key Envelope, local).
+4. Wrap VK under DK (Device Envelope, server).
+5. On biometric unlock: assertion → PRF → DWK → DK → VK.
 
-Fallback to Master Password must always remain possible.
+Fallback to Master Password must always remain possible.  
+Do not implement a custom “WebAuthn → Device Key” shortcut.
 
 ---
 
@@ -222,14 +219,11 @@ Later versions may add Shamir Secret Sharing as an optional advanced recovery me
 ### Hard Revocation (device may be compromised)
 Because a compromised device already knows the current Vault Key, soft revocation is insufficient.
 
-**Required procedure – Vault Key Rotation:**
-1. Generate a new random Vault Key (`VK_v2`).
-2. Re-encrypt **all** vault entries under `VK_v2` (new nonces, same AAD rules + updated key version).
-3. Create fresh Envelopes (Master, Recovery, and all remaining trusted devices) that wrap `VK_v2`.
-4. Atomically replace the old envelopes + old encrypted entries on the server.
-5. Old devices that still possess `VK_v1` can no longer decrypt the new vault data.
+**Required procedure – Vault Key Rotation:** see **[docs/vault-revision.md](vault-revision.md)**.
 
-Implementations **must** support Vault Key Rotation.
+Summary: produce a complete new snapshot at `revision N+1` with `vault_key_version + 1`, re-encrypt every entry, mint a full new envelope set, then CAS `active_revision`. Never mix VK₁ entries with VK₂ envelopes.
+
+Implementations **must** support Vault Key Rotation and must refuse rolled-back revisions (`evaluateRevision`).
 
 ---
 
@@ -239,12 +233,16 @@ Implementations **must** support Vault Key Rotation.
 ```ts
 interface EncryptedEntry {
   id: string;                 // stable entry identifier
-  version: number;            // schema / crypto version
+  schemaVersion: number;      // plaintext JSON schema; stored, never guessed
+  cryptoVersion: number;      // crypto protocol version used to seal this entry
   nonce: Uint8Array;          // 12 bytes
   ciphertext: Uint8Array;     // raw GCM ciphertext (no tag)
   tag: Uint8Array;            // 16-byte auth tag
 }
 ```
+
+`decryptEntry(entry, vaultKey, vaultId)` reads `schemaVersion` and `cryptoVersion` **from the entry**.  
+The caller does not pass them. That is what keeps a v2 payload decryptable after a schema bump.
 
 ### Rules
 - Public library API must **not** accept a caller-supplied nonce.
@@ -256,6 +254,8 @@ interface EncryptedEntry {
   "4allpass-entry-v1" || vault_id || entry_id || schema_version_u32be || crypto_version_u32be
   ```
 
+  Both version integers in the AAD are the values stored on that same `EncryptedEntry`.
+
 - Plaintext is only ever present on the client after successful unlock.
 
 Worked hex: **TV-ENTRY-01**. Cross-vault rejection: **TV-TAMPER-CROSS-VAULT**.
@@ -264,9 +264,10 @@ Worked hex: **TV-ENTRY-01**. Cross-vault rejection: **TV-TAMPER-CROSS-VAULT**.
 
 ## 9. Serialization, Versioning & Future Migration
 
-- Every KeyEnvelope and every EncryptedEntry carries `version: 1`.
-- The vault root object also records `crypto_protocol_version: 1`.
-- Future protocol changes (new KDF, new AAD schema, new algorithms) will increment the version and provide a migration path.
+- Every KeyEnvelope carries `version: 1` (crypto protocol).
+- Every EncryptedEntry carries `cryptoVersion: 1` and a `schemaVersion` of its plaintext.
+- The vault snapshot records `crypto_protocol_version`, `revision`, and `vault_key_version` — see [vault-revision.md](vault-revision.md).
+- Future protocol changes (new KDF, new AAD schema, new algorithms) will increment the crypto version and provide a migration path.
 - KDF parameters live inside the Master Envelope so that the client can always re-derive the correct Master Key even after a profile upgrade.
 
 ---
@@ -297,10 +298,9 @@ LOCKED  →  UNLOCKING  →  UNLOCKED  →  LOCKING  →  LOCKED
 
 The server may store:
 - Account authentication data (email, account password hash, OAuth identifiers)
-- Vault metadata (vault_id, creation time, crypto_protocol_version)
-- KeyEnvelopes (ciphertext only)
-- EncryptedEntries (ciphertext only)
-- Device metadata (deviceId, user-agent summary, last seen, WebAuthn credential IDs)
+- Vault metadata (`vault_id`, creation time, `crypto_protocol_version`, `revision`, `vault_key_version`)
+- Immutable snapshots (envelopes + entries) and the `active_revision` pointer
+- Device metadata (`deviceId`, user-agent summary, last seen, WebAuthn credential IDs)
 - Salts and Argon2 parameters (they live inside the Master Envelope)
 
 The server must **never** store:
@@ -323,7 +323,9 @@ Before any production use the following must pass:
 - Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure) — covered by `TV-TAMPER-*`
 - Wrong-password / wrong-recovery-key tests
 - Nonce uniqueness under concurrent encryption
-- Key rotation end-to-end test
+- Revision rollback / vault-key downgrade (`evaluateRevision`)
+- Device-PRF HKDF + Device-Key Envelope (`device-prf-v1.json`)
+- Key rotation end-to-end test (full snapshot commit)
 - Soft + hard revocation tests
 - Cross-device envelope isolation tests
 
@@ -336,9 +338,12 @@ Before any production use the following must pass:
 | `architecture.md`         | High-level system design & product goals            |
 | **`crypto-protocol.md`**  | **This document – authoritative crypto rules**      |
 | **`packages/crypto`**     | **Reference TypeScript implementation of this spec** |
-| `threat-model.md`         | Attackers, assets, assumptions, residual risks      |
+| `threat-model.md`         | Attackers, assets, **malicious server**, residual risks |
+| **`webauthn-prf.md`**     | **PRF → HKDF → DWK → DK construction + fallback**   |
+| **`vault-revision.md`**   | **Snapshots, rollback detection, atomic rotation**  |
 | **`test-vectors.md`**     | **AES-256-GCM known-answer tests + AAD encoder**    |
 | **`test-vectors-argon2id.md`** | **Argon2id known-answer tests + KDF profiles** |
+| `test-vectors/device-prf-v1.json` | PRF / HKDF / Device-Key Envelope KATs     |
 | `recovery.md`             | Detailed Emergency Kit UX & operational guidance    |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
 

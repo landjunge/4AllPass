@@ -146,6 +146,20 @@ Evaluated in this order. Each step is a **lower** security level.
 | 2 | WebAuthn **largeBlob** storing the Device-Key Envelope | Yes (authenticator-held) |
 | 3 | **UV-gated local store** | **No** — policy only |
 
+### Rank 2 storage split
+
+There is no PRF output at rank 2, so the Device-Key Envelope is wrapped under a
+random 256-bit **Blob Wrapping Key**. The two halves are stored apart:
+
+| | Device-Key Envelope | Wrapping key |
+|---|---|---|
+| Rank 2 | authenticator `largeBlob` | local store |
+| Rank 3 | local store | local store |
+
+Unlocking at rank 2 therefore needs a UV assertion on that authenticator *and*
+this browser profile's local store. A stolen local store alone is not enough,
+which is what keeps rank 2 above rank 3.
+
 ### Rank 3 (must be documented to the user)
 
 - DK is wrapped under a random 256-bit **Local Storage Key** held in IndexedDB / platform storage.
@@ -176,5 +190,9 @@ Always send `userVerification: "required"`.
 
 ## 8. Tests
 
-`@4allpass/crypto` implements `prfEvalFirst`, `deriveDeviceWrappingKey`, `wrapDeviceKey`, `unwrapDeviceKey`.  
+`@4allpass/crypto` implements `prfEvalFirst`, `deriveDeviceWrappingKey`, `wrapDeviceKey`, `unwrapDeviceKey`, plus the zeroizing orchestration `bindDeviceWithPrfOutput` / `unwrapVaultKeyWithPrfOutput`.  
 It does **not** talk to an authenticator. Vectors use a fixed 32-byte stand-in for `prf.results.first`.
+
+`@4allpass/webauthn` owns the authenticator side: the UV-required ceremonies, the
+`rpIdHash` / UP / UV checks on `authenticatorData`, the rank selection of §5, and
+the local record. See [`packages/webauthn`](../packages/webauthn).

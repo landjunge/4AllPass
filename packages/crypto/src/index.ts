@@ -95,6 +95,7 @@ export type { EncryptEntryOptions } from "./entry.ts";
 
 export {
   bindDeviceWithPrfOutput,
+  bindDeviceWithWrappingKey,
   deriveDeviceWrappingKey,
   prfEvalFirst,
   unwrapDeviceKey,
@@ -107,6 +108,7 @@ export type {
   DeviceBinding,
   DeviceBindingInput,
   DeviceUnlockInput,
+  LocalDeviceBindingInput,
   WrapDeviceKeyOptions,
 } from "./device.ts";
 

@@ -1,0 +1,30 @@
+{
+  "name": "@4allpass/webauthn",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WebAuthn device unlock for 4AllPass: PRF > largeBlob > UV-gated local store",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@4allpass/crypto": "*",
+    "@noble/hashes": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

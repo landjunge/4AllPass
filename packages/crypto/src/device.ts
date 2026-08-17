@@ -153,7 +153,6 @@ function assertEnvelopePair(
  * WebAuthn path — the DWK is not an encryption oracle for it.
  */
 export function bindDeviceWithPrfOutput(input: DeviceBindingInput): DeviceBinding {
-  assertLength("vaultKey", input.vaultKey, KEY_BYTES);
   const cryptoVersion = input.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
   const dwk = deriveDeviceWrappingKey({
     prfOutput: input.prfOutput,
@@ -163,11 +162,47 @@ export function bindDeviceWithPrfOutput(input: DeviceBindingInput): DeviceBindin
     credentialId: input.credentialId,
     cryptoVersion,
   });
+  try {
+    return bindDeviceWithWrappingKey({
+      deviceWrappingKey: dwk,
+      vaultKey: input.vaultKey,
+      vaultId: input.vaultId,
+      deviceId: input.deviceId,
+      credentialId: input.credentialId,
+      cryptoVersion,
+    });
+  } finally {
+    zeroize(dwk, input.prfOutput);
+  }
+}
+
+export interface LocalDeviceBindingInput {
+  /**
+   * 32-byte wrapping key for the Device-Key Envelope. Owned by the caller,
+   * because fallback ranks 2 and 3 have to persist it (largeBlob or local
+   * store); it is not zeroized here.
+   */
+  deviceWrappingKey: Uint8Array;
+  vaultKey: Uint8Array;
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  cryptoVersion?: number;
+}
+
+/**
+ * Same envelope pair as `bindDeviceWithPrfOutput`, but for fallback ranks 2
+ * and 3 where the wrapping key is a stored random key instead of an HKDF
+ * output. The Device Key is generated here and zeroized before returning.
+ */
+export function bindDeviceWithWrappingKey(input: LocalDeviceBindingInput): DeviceBinding {
+  assertLength("vaultKey", input.vaultKey, KEY_BYTES);
+  const cryptoVersion = input.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
   const deviceKey = generateDeviceKey();
   try {
     const deviceKeyEnvelope = wrapDeviceKey({
       deviceKey,
-      deviceWrappingKey: dwk,
+      deviceWrappingKey: input.deviceWrappingKey,
       vaultId: input.vaultId,
       deviceId: input.deviceId,
       credentialId: input.credentialId,
@@ -183,7 +218,7 @@ export function bindDeviceWithPrfOutput(input: DeviceBindingInput): DeviceBindin
     });
     return { deviceKeyEnvelope, deviceEnvelope };
   } finally {
-    zeroize(deviceKey, dwk, input.prfOutput);
+    zeroize(deviceKey);
   }
 }
 

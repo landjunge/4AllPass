@@ -1,7 +1,14 @@
 import { argon2id } from "@noble/hashes/argon2.js";
-import { ARGON2_VERSION, HASH_LEN, SALT_BYTES_MAX, SALT_BYTES_MIN } from "../constants.ts";
+import {
+  ARGON2_MAXMEM_BYTES,
+  ARGON2_VERSION,
+  HASH_LEN,
+  SALT_BYTES_MAX,
+  SALT_BYTES_MIN,
+} from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
+import { assertKdfUpperBounds, assertProductionKdf } from "./profiles.ts";
 import type { Argon2idParams, KdfParams, KeyEnvelope } from "../types.ts";
 
 export interface DeriveRawOptions {
@@ -30,7 +37,9 @@ export function deriveArgon2idRaw(opts: DeriveRawOptions): Uint8Array {
     p: params.parallelism,
     dkLen,
     version: params.version ?? ARGON2_VERSION,
-    maxmem: Math.max(params.memory * 1024 * 2, 64 * 1024),
+    // Fixed backstop — must never scale with the caller-supplied `memory`,
+    // or a malicious value defeats the guard (see ARGON2_MAXMEM_BYTES).
+    maxmem: ARGON2_MAXMEM_BYTES,
     ...extra,
   });
 }
@@ -51,11 +60,28 @@ export function deriveMasterKey(
   });
 }
 
-export function deriveMasterKeyFromEnvelope(password: string, envelope: KeyEnvelope): Uint8Array {
+export interface DeriveMasterKeyFromEnvelopeOptions {
+  /** Skip the production-floor check (test profiles only). Upper bounds are always enforced. */
+  allowTestProfile?: boolean;
+}
+
+export function deriveMasterKeyFromEnvelope(
+  password: string,
+  envelope: KeyEnvelope,
+  options: DeriveMasterKeyFromEnvelopeOptions = {},
+): Uint8Array {
   if (envelope.type !== "master" || !envelope.kdf) {
     throw new ProtocolError("master envelope is missing kdf parameters");
   }
   const { salt, ...params } = envelope.kdf;
+  // The envelope (and thus its kdf field) is untrusted server-provided data.
+  // Always enforce the upper bounds to prevent a resource-exhaustion DoS;
+  // enforce the production floor too unless a test profile is explicitly allowed.
+  if (options.allowTestProfile) {
+    assertKdfUpperBounds(params);
+  } else {
+    assertProductionKdf(params);
+  }
   return deriveMasterKey(password, salt, params);
 }
 

@@ -1,4 +1,5 @@
 import { deriveDeviceWrappingKey, unwrapDeviceKey, wrapDeviceKey } from "./device.ts";
+import type { WrapDeviceKeyOptions } from "./device.ts";
 import { zeroize } from "./memory.ts";
 import { ProtocolError } from "./errors.ts";
 import type { DeviceKeyEnvelope, DeviceUnlockMechanism } from "./types.ts";
@@ -46,14 +47,15 @@ export function wrapDeviceKeyFromPrf(
 ): DeviceKeyEnvelope {
   const dwk = deriveDeviceWrappingKey(opts);
   try {
-    return wrapDeviceKey({
+    const wrapOpts: WrapDeviceKeyOptions = {
       deviceKey: opts.deviceKey,
       deviceWrappingKey: dwk,
       vaultId: opts.vaultId,
       deviceId: opts.deviceId,
       credentialId: opts.credentialId,
-      cryptoVersion: opts.cryptoVersion,
-    });
+    };
+    if (opts.cryptoVersion !== undefined) wrapOpts.cryptoVersion = opts.cryptoVersion;
+    return wrapDeviceKey(wrapOpts);
   } finally {
     zeroize(opts.prfOutput, dwk);
   }

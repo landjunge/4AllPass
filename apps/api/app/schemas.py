@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -34,7 +34,7 @@ class KeyEnvelopeWire(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def type_fields(self) -> KeyEnvelopeWire:
+    def type_fields(self) -> Self:
         if self.type == "device":
             if not self.deviceId:
                 raise ValueError("device envelope requires deviceId")

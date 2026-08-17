@@ -8,6 +8,8 @@ This document is the authoritative cryptographic specification for 4AllPass.
 All implementations (Web, Extension, PWA, future Mobile) **must** follow this protocol exactly.  
 `docs/architecture.md` provides the high-level system overview; this document defines the concrete crypto rules.
 
+AES-256-GCM known-answer tests (including the canonical AAD encoding) live in **[docs/test-vectors.md](test-vectors.md)**.
+
 ---
 
 ## 1. Goals & Hard Invariants
@@ -22,7 +24,7 @@ All implementations (Web, Extension, PWA, future Mobile) **must** follow this pr
 ### Hard Invariants (never violate)
 1. The **Vault Key is always pure random** (never derived from the Master Password).
 2. AES-256-GCM nonces are **never reused** with the same key. Nonce generation is owned exclusively by the crypto library.
-3. Every encryption operation uses **Associated Authenticated Data (AAD)**.
+3. Every encryption operation uses **Associated Authenticated Data (AAD)** encoded as specified in §3.1.
 4. The Master Password **never leaves the client** and is zeroized as soon as possible after key derivation.
 5. Social Login / OAuth / Account Password have **zero influence** on vault decryption.
 6. Crypto version is present on every envelope and every encrypted entry.
@@ -86,16 +88,36 @@ interface KeyEnvelope {
   // Common fields
   encryption: "AES-256-GCM";
   nonce: Uint8Array;                             // 12 bytes, library-generated
-  ciphertext: Uint8Array;                        // encrypted Vault Key + auth tag
+  ciphertext: Uint8Array;                        // raw GCM ciphertext (no tag)
+  tag: Uint8Array;                               // 16-byte auth tag
 }
 ```
 
-### AAD for KeyEnvelope encryption
+Storage / WebCrypto concatenation is `ciphertext || tag` (tag last). Test vectors list the two fields separately.
+
+### 3.1 Canonical AAD encoding
+
+Naive concatenation of variable-length strings is **forbidden** (it is ambiguous).  
+v1 AAD is a sequence of length-prefixed fields:
+
 ```
-AAD = vault_id || type || version || (deviceId if present)
+field  = uint16be(byte_length) || bytes
+AAD    = field+
+```
+
+- Strings are UTF-8 without a trailing NUL.
+- Integer versions are encoded as **uint32be** (4 bytes), then length-prefixed (`len = 4`).
+- An absent optional string is an empty field (`len = 0`).
+
+**Envelope AAD** (exact order):
+
+```
+"4allpass-envelope-v1" || vault_id || type || crypto_version_u32be || device_id_or_empty
 ```
 
 This binds the envelope to a specific vault and prevents cross-vault or type-confusion attacks.
+
+Worked hex and encrypt/decrypt known-answer tests: **[docs/test-vectors.md](test-vectors.md)** (`TV-ENV-*`, `TV-TAMPER-TYPE`).
 
 ---
 
@@ -203,18 +225,24 @@ interface EncryptedEntry {
   id: string;                 // stable entry identifier
   version: number;            // schema / crypto version
   nonce: Uint8Array;          // 12 bytes
-  ciphertext: Uint8Array;     // AES-256-GCM output (includes auth tag)
+  ciphertext: Uint8Array;     // raw GCM ciphertext (no tag)
+  tag: Uint8Array;            // 16-byte auth tag
 }
 ```
 
 ### Rules
 - Public library API must **not** accept a caller-supplied nonce.
 - Nonce is always generated inside the library (`crypto.getRandomValues` or equivalent CSPRNG).
-- Mandatory AAD for every entry encryption:
+- A test-only hook may accept a nonce solely to reproduce [docs/test-vectors.md](test-vectors.md).
+- Mandatory AAD for every entry encryption, using the encoder in §3.1:
+
   ```
-  AAD = vault_id || entry_id || schema_version || crypto_version
+  "4allpass-entry-v1" || vault_id || entry_id || schema_version_u32be || crypto_version_u32be
   ```
+
 - Plaintext is only ever present on the client after successful unlock.
+
+Worked hex: **TV-ENTRY-01**. Cross-vault rejection: **TV-TAMPER-CROSS-VAULT**.
 
 ---
 
@@ -271,9 +299,11 @@ The server must **never** store:
 
 Before any production use the following must pass:
 
-- Known-answer / test-vector tests for Argon2id + AES-GCM wrapping
+- **AES-256-GCM known-answer tests** in [docs/test-vectors.md](test-vectors.md) / [`docs/test-vectors/aes-gcm-v1.json`](test-vectors/aes-gcm-v1.json)  
+  Run: `node scripts/verify-aes-gcm-vectors.mjs`
+- Known-answer / test-vector tests for Argon2id wrapping (separate file, not yet published)
 - Property-based tests (random keys, random plaintexts)
-- Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure)
+- Tampering tests (modified ciphertext, modified AAD, wrong nonce → authentication failure) — covered by `TV-TAMPER-*`
 - Wrong-password / wrong-recovery-key tests
 - Nonce uniqueness under concurrent encryption
 - Key rotation end-to-end test
@@ -289,6 +319,7 @@ Before any production use the following must pass:
 | `architecture.md`         | High-level system design & product goals            |
 | **`crypto-protocol.md`**  | **This document – authoritative crypto rules**      |
 | `threat-model.md`         | Attackers, assets, assumptions, residual risks      |
+| **`test-vectors.md`**     | **AES-256-GCM known-answer tests + AAD encoder**    |
 | `recovery.md`             | Detailed Emergency Kit UX & operational guidance    |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
 

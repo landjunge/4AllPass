@@ -1,0 +1,268 @@
+{
+  "protocol": "4AllPass Crypto Protocol v1",
+  "primitive": "AES-256-GCM",
+  "generated": "2026-08-17T19:35:00Z",
+  "generator": "node:crypto createCipheriv aes-256-gcm (OpenSSL)",
+  "conventions": {
+    "hex": "lowercase, no 0x prefix, no separators",
+    "nonce_bytes": 12,
+    "tag_bytes": 16,
+    "key_bytes": 32,
+    "ciphertext_excludes_tag": true,
+    "aad_encoding": "concat(uint16be(len) || field_bytes) for each field"
+  },
+  "constants": {
+    "vault_id": "vault_01HZX4ALLPASS000000000001",
+    "entry_id": "entry_01HZX4ALLPASS0000000000A1",
+    "device_id": "dev_macbook_chrome_profile_1",
+    "crypto_version": 1,
+    "schema_version": 1,
+    "vault_key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+    "master_key": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+    "device_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recovery_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "aad_construction": {
+    "envelope_fields": [
+      "4allpass-envelope-v1",
+      "vault_id",
+      "type",
+      "crypto_version_u32be",
+      "device_id_or_empty"
+    ],
+    "entry_fields": [
+      "4allpass-entry-v1",
+      "vault_id",
+      "entry_id",
+      "schema_version_u32be",
+      "crypto_version_u32be"
+    ],
+    "hex": {
+      "envelope_master": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c5041535330303030303030303030303100066d61737465720004000000010000",
+      "envelope_device": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c504153533030303030303030303030310006646576696365000400000001001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f31",
+      "envelope_recovery": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c5041535330303030303030303030303100087265636f766572790004000000010000",
+      "entry": "001134616c6c706173732d656e7472792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001f656e7472795f3031485a5834414c4c50415353303030303030303030304131000400000001000400000001"
+    }
+  },
+  "success": [
+    {
+      "id": "TV-GCM-01",
+      "purpose": "Primitive interop: AES-256-GCM, empty AAD, short plaintext",
+      "expect": "decrypt_ok",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000001",
+      "aad": "",
+      "plaintext": "68656c6c6f2034416c6c50617373",
+      "ciphertext": "bdc0febeb527aafe2ef40818372c",
+      "tag": "335d23b66c40ad31b2de9e7fe133a149",
+      "notes": null
+    },
+    {
+      "id": "TV-GCM-02",
+      "purpose": "Auth-only: empty plaintext, nonempty AAD",
+      "expect": "decrypt_ok",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000002",
+      "aad": "001234616c6c706173732d617574682d6f6e6c79",
+      "plaintext": "",
+      "ciphertext": "",
+      "tag": "ed46ba427b8de7313814735d9f4a337d",
+      "notes": null
+    },
+    {
+      "id": "TV-GCM-03",
+      "purpose": "Longer payload (1024 bytes, repeating 0x00-0xff)",
+      "expect": "decrypt_ok",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000003",
+      "aad": "001034616c6c706173732d62756c6b2d7631",
+      "plaintext": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "ciphertext": "1e047cbc36140bdb01d9c52a5bfb144bc6b43240d0d602d16b754119114f8e40053891346073edcb2c5c60ed20c539ed2a22fe72cda7fd742dbf20e5be5572d56f4bb0aac8f441cb199cd9fa0074082d6b35dc17f83385d5138b1cb7917abb9108ed6464ce868a3e3a12668a88535d29a2191d1bb170dcc24b3bf8cebac27622ca790389bfbc5890cc2d078df30042e8d9c349e7cc770347a0ee026e821dd1cfc7c52239fa3a3dc734d6be7201f33517eee529d4e577de4c66c2b29b7a054b4161df2552f6833ac4f3c216a7efe19aa7f79b7673265f2d842950b35479fb74e76b751428020a404b3e623624d89694e6fd5ee60fa79fdab69c5e67bbeb91f2551cebb6a8ef15b40f1673b3c0c89d3b89c13f81bbd66f477ba03c66792fe2938cc58ab8dc071aabbbaad1c805a22c796b461c67eb8b4eef431209a672591d5ea4487a00edfede442487237d4981911ae08407a062afb0b65ad1ee8e57daf84706ef515d2b56fce4cbaa57764d8d7a98f296d7c2e9794033b6743de769e5b9504023fa88434c5d5efa0d823ab1d6a5e07c9db668de339d45e989a8bcfbb35a35d957427fc36ea76c719a676f73620b3dedce65fb5997e0c4bb1c82a8b175b417b68745e311d2f39db8e2ff45cb2e98e6bf5a8a4a186387227b8cafe9ea2e68726d002710a1b63e2e05935e84bc94cfa9d930d5a8f80b1071bf1b2e2d4ae13df245a9fdf169a3a15b627015580f83e95a4ef13b2530b5c1a0aca427dd8142ad06a940bd3a5866f50b4826be47f1477ff506a63f0126cae01ff15f61aa754978f5cabf3e65e0438b3c41e8c1f8195b0c8ee9eace1a19ac4301e018a48fb868e1a3639900171ef9d57811c277eabec1a99808b375ae7fccf1c4efa5f05c84b5283c687f2359489a7b1e0809d4f112bd8a4c5275832d8086ee6b23bf9943c58fa645780ae8f41b263499b288fa49eab820816daa9167326faaa260ccdae65c70b8712c75f0c16b7d42eb388b61f17a5775b339636a5186b70e49a565e79a74c7e91d50d61a40eb68caedfc66d027a1b29c4822a94e391d9c21221bf372a5038d808f18818204fffb39350e2567c7c70272a1535e1e9b7f31ed6c264257f414ce807120a8d4470f73bc2043b603ca62a76c886e46eceafd7f1c6cdd76b9e5b9c54c9cb0eb25c7ae0bb1e6f8d93cac5b71b7c3233358366118dc9cbb51430a79dcaefc469aa29c2c0b79c0af98057bf70fa21fa1caa1c4d3f7d36f620d6fb6ffda7e936e1fb11799732e5fdc2aa597795f9d6d0256de8b1aa5f45f85b2116c0afff24966d392749faeef9d3381effe317f07ebe64dd2a09be635206ede048bc606c451365ba15493c19db19c368415f8943214aefd6e5decfc5508d2607849bde8e31b7587a5274a6745131c9adcde1f718f9ab6cc156e3a77361cf17950ead050954c64",
+      "tag": "39895d685ad7265230146959f55aead4",
+      "notes": null
+    },
+    {
+      "id": "TV-ENV-MASTER",
+      "purpose": "Master envelope: wrap Vault Key under Master Key + envelope AAD",
+      "expect": "decrypt_ok",
+      "key": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "nonce": "0102030405060708090a0b0c",
+      "aad": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c5041535330303030303030303030303100066d61737465720004000000010000",
+      "plaintext": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "ciphertext": "04f1ec9da095f69a91497c81814c49e47f0c3fb76221f107d6787549ef5d4bbf",
+      "tag": "e763408a5116fa8ebb42c89d7d72f834",
+      "notes": {
+        "envelope_type": "master",
+        "vault_id": "vault_01HZX4ALLPASS000000000001",
+        "device_id": "",
+        "wrapped": "vault_key"
+      }
+    },
+    {
+      "id": "TV-ENV-DEVICE",
+      "purpose": "Device envelope: wrap Vault Key under Device Key + deviceId AAD",
+      "expect": "decrypt_ok",
+      "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "nonce": "ffffffffffffffffffffffff",
+      "aad": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c504153533030303030303030303030310006646576696365000400000001001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f31",
+      "plaintext": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "ciphertext": "08eb0673c38c3f7aad95fbe123d66e16daf37e5446bedf96a57168928ea422ea",
+      "tag": "501f81b10d20ca3e69ded3f7909b9f05",
+      "notes": {
+        "envelope_type": "device",
+        "vault_id": "vault_01HZX4ALLPASS000000000001",
+        "device_id": "dev_macbook_chrome_profile_1",
+        "wrapped": "vault_key"
+      }
+    },
+    {
+      "id": "TV-ENV-RECOVERY",
+      "purpose": "Recovery envelope: wrap Vault Key under Recovery Key",
+      "expect": "decrypt_ok",
+      "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "nonce": "deadbeefdeadbeefdeadbeef",
+      "aad": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c5041535330303030303030303030303100087265636f766572790004000000010000",
+      "plaintext": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "ciphertext": "c8d07ffc0db334fbb0b924fc7ffe6fd05ca1a4e7f3cecf8d4f09134255253b8b",
+      "tag": "3025f525fd2e6f40b386627e7fb46c34",
+      "notes": {
+        "envelope_type": "recovery",
+        "vault_id": "vault_01HZX4ALLPASS000000000001",
+        "device_id": "",
+        "wrapped": "vault_key"
+      }
+    },
+    {
+      "id": "TV-ENTRY-01",
+      "purpose": "Vault entry: AES-256-GCM of canonical JSON under Vault Key + entry AAD",
+      "expect": "decrypt_ok",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "111111111111111111111111",
+      "aad": "001134616c6c706173732d656e7472792d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031001f656e7472795f3031485a5834414c4c50415353303030303030303030304131000400000001000400000001",
+      "plaintext": "7b227469746c65223a224578616d706c65222c22757365726e616d65223a2264616e69656c222c2270617373776f7264223a22636f72726563742d686f7273652d626174746572792d737461706c65222c2275726c223a2268747470733a2f2f6578616d706c652e636f6d222c226e6f746573223a22222c22746f7470223a6e756c6c2c22637573746f6d223a5b5d7d",
+      "ciphertext": "014de9a037b76db4090a41b1f480f3483109f2011f3a23b6c9a1565468b794235165b603292705206f0c1bb588e4377fb004f39881dc2aec613a1e774593244f4965eaccd5d3612059a7f415d7f0b7f22cf611d34730e62f4b288be34abd599612b72055f238816a94520860380430932c8f45300b99cab3b4a8a431b90021604630fc4f44fc071cbf5a1262a13f46f6",
+      "tag": "d886ec507526387c422bd8a8c15764ac",
+      "notes": {
+        "vault_id": "vault_01HZX4ALLPASS000000000001",
+        "entry_id": "entry_01HZX4ALLPASS0000000000A1",
+        "schema_version": 1,
+        "crypto_version": 1,
+        "plaintext_utf8": "{\"title\":\"Example\",\"username\":\"daniel\",\"password\":\"correct-horse-battery-staple\",\"url\":\"https://example.com\",\"notes\":\"\",\"totp\":null,\"custom\":[]}"
+      }
+    }
+  ],
+  "tamper": [
+    {
+      "id": "TV-TAMPER-CT",
+      "purpose": "Single-bit flip in ciphertext must fail authentication",
+      "expect": "auth_fail",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000001",
+      "ciphertext": "bcc0febeb527aafe2ef40818372c",
+      "tag": "335d23b66c40ad31b2de9e7fe133a149",
+      "aad": ""
+    },
+    {
+      "id": "TV-TAMPER-TAG",
+      "purpose": "Single-bit flip in auth tag must fail authentication",
+      "expect": "auth_fail",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000001",
+      "ciphertext": "bdc0febeb527aafe2ef40818372c",
+      "tag": "325d23b66c40ad31b2de9e7fe133a149",
+      "aad": ""
+    },
+    {
+      "id": "TV-TAMPER-AAD",
+      "purpose": "Wrong AAD must fail authentication (empty vs protocol AAD)",
+      "expect": "auth_fail",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000001",
+      "ciphertext": "bdc0febeb527aafe2ef40818372c",
+      "tag": "335d23b66c40ad31b2de9e7fe133a149",
+      "aad": "000577726f6e67"
+    },
+    {
+      "id": "TV-TAMPER-TYPE",
+      "purpose": "Master envelope ciphertext must not unwrap under device AAD",
+      "expect": "auth_fail",
+      "key": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "nonce": "0102030405060708090a0b0c",
+      "ciphertext": "04f1ec9da095f69a91497c81814c49e47f0c3fb76221f107d6787549ef5d4bbf",
+      "tag": "e763408a5116fa8ebb42c89d7d72f834",
+      "aad": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c504153533030303030303030303030310006646576696365000400000001001c6465765f6d6163626f6f6b5f6368726f6d655f70726f66696c655f31"
+    },
+    {
+      "id": "TV-TAMPER-NONCE",
+      "purpose": "Wrong nonce must fail authentication",
+      "expect": "auth_fail",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "000000000000000000000002",
+      "ciphertext": "bdc0febeb527aafe2ef40818372c",
+      "tag": "335d23b66c40ad31b2de9e7fe133a149",
+      "aad": ""
+    },
+    {
+      "id": "TV-TAMPER-KEY",
+      "purpose": "Wrong key must fail authentication",
+      "expect": "auth_fail",
+      "key": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "nonce": "000000000000000000000001",
+      "ciphertext": "bdc0febeb527aafe2ef40818372c",
+      "tag": "335d23b66c40ad31b2de9e7fe133a149",
+      "aad": ""
+    },
+    {
+      "id": "TV-TAMPER-CROSS-VAULT",
+      "purpose": "Entry from vault A must not decrypt under vault B AAD",
+      "expect": "auth_fail",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "111111111111111111111111",
+      "ciphertext": "014de9a037b76db4090a41b1f480f3483109f2011f3a23b6c9a1565468b794235165b603292705206f0c1bb588e4377fb004f39881dc2aec613a1e774593244f4965eaccd5d3612059a7f415d7f0b7f22cf611d34730e62f4b288be34abd599612b72055f238816a94520860380430932c8f45300b99cab3b4a8a431b90021604630fc4f44fc071cbf5a1262a13f46f6",
+      "tag": "d886ec507526387c422bd8a8c15764ac",
+      "aad": "001134616c6c706173732d656e7472792d763100207661756c745f4f544845525f5641554c545f49445f3030303030303030303032001f656e7472795f3031485a5834414c4c50415353303030303030303030304131000400000001000400000001"
+    }
+  ],
+  "nist": [
+    {
+      "id": "TV-NIST-01",
+      "source": "McGrew/Viega GCM spec + NIST CAVS (AES-256, 96-bit IV, empty PT, empty AAD)",
+      "purpose": "External interop: empty PT and AAD",
+      "expect": "decrypt_ok",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "nonce": "000000000000000000000000",
+      "aad": "",
+      "plaintext": "",
+      "ciphertext": "",
+      "tag": "530f8afbc74536b9a963b4f1c4cb738b"
+    },
+    {
+      "id": "TV-NIST-02",
+      "source": "McGrew/Viega Test Case 13 / NIST CAVS (AES-256, 16-byte PT, empty AAD)",
+      "purpose": "External interop: 16-byte zero PT, empty AAD",
+      "expect": "decrypt_ok",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "nonce": "000000000000000000000000",
+      "aad": "",
+      "plaintext": "00000000000000000000000000000000",
+      "ciphertext": "cea7403d4d606b6e074ec5d3baf39d18",
+      "tag": "d0d1c8a799996bf0265b98b5d48ab919"
+    },
+    {
+      "id": "TV-NIST-03",
+      "source": "McGrew/Viega Test Case 14 / NIST CAVS (AES-256, 16-byte PT, 16-byte AAD)",
+      "purpose": "External interop: 16-byte zero PT and AAD — tag differs from TV-NIST-02, CT does not",
+      "expect": "decrypt_ok",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "nonce": "000000000000000000000000",
+      "aad": "00000000000000000000000000000000",
+      "plaintext": "00000000000000000000000000000000",
+      "ciphertext": "cea7403d4d606b6e074ec5d3baf39d18",
+      "tag": "ae9b1771dba9cf62b39be017940330b4"
+    }
+  ],
+  "verified_with": [
+    "node:crypto createCipheriv aes-256-gcm (OpenSSL, Node 22)",
+    "Web Crypto SubtleCrypto AES-GCM tagLength=128"
+  ]
+}

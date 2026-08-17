@@ -94,17 +94,26 @@ export function evaluateRevision(
     if (incoming.vaultKeyVersion !== lastSeen.vaultKeyVersion) {
       return reject("mismatch", new IntegrityError("same revision but different vaultKeyVersion"));
     }
-    if (
-      lastSeen.manifestDigest !== undefined &&
-      incoming.manifestDigest !== undefined &&
-      bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)
-    ) {
-      return reject(
-        "mismatch",
-        new IntegrityError(
-          `revision ${incoming.revision} was served with two different manifests (server equivocation)`,
-        ),
-      );
+    if (lastSeen.manifestDigest !== undefined) {
+      // Once a revision has been pinned with a verified manifest, an answer for
+      // that same revision must come with the same manifest — and must come with
+      // one at all, otherwise the check could simply be dropped.
+      if (incoming.manifestDigest === undefined) {
+        return reject(
+          "mismatch",
+          new IntegrityError(
+            `revision ${incoming.revision} was pinned with a verified manifest; incoming state has none`,
+          ),
+        );
+      }
+      if (bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)) {
+        return reject(
+          "mismatch",
+          new IntegrityError(
+            `revision ${incoming.revision} was served with two different manifests (server equivocation)`,
+          ),
+        );
+      }
     }
     return { ok: true, action: "same" };
   }

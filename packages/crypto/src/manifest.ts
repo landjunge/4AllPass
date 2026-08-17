@@ -72,11 +72,38 @@ function compare(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+function assertSorted(label: string, keys: readonly string[]): void {
+  for (let i = 1; i < keys.length; i++) {
+    if (compare(keys[i - 1] as string, keys[i] as string) >= 0) {
+      throw new ProtocolError(`manifest ${label} are not in canonical order`);
+    }
+  }
+}
+
 function assertEnvelopeType(value: unknown): EnvelopeType {
   if (typeof value !== "string" || !ENVELOPE_TYPES.includes(value as EnvelopeType)) {
     throw new ProtocolError(`unsupported envelope type: ${String(value)}`);
   }
   return value as EnvelopeType;
+}
+
+/**
+ * Digesting happens before anything else looks at these buffers, so the shape
+ * check has to happen here: a digest over malformed input is a well-formed
+ * commitment to garbage.
+ */
+function assertSealedShape(
+  label: string,
+  sealed: { nonce: unknown; ciphertext: unknown; tag: unknown },
+  ciphertextBytes?: number,
+): void {
+  assertBytes(`${label}.nonce`, sealed.nonce, { exact: NONCE_BYTES });
+  assertBytes(
+    `${label}.ciphertext`,
+    sealed.ciphertext,
+    ciphertextBytes === undefined ? {} : { exact: ciphertextBytes },
+  );
+  assertBytes(`${label}.tag`, sealed.tag, { exact: TAG_BYTES });
 }
 
 function assertSnapshotHeader(header: {
@@ -119,6 +146,7 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
   }
 
   const entries: ManifestEntryRef[] = opts.entries.map((entry) => {
+    assertSealedShape(`entry ${String(entry?.id)}`, entry);
     requireSameNumber(
       `entry ${String(entry.id)} vaultKeyVersion`,
       header.vaultKeyVersion,
@@ -134,7 +162,8 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
   });
 
   const envelopes: ManifestEnvelopeRef[] = opts.envelopes.map((envelope) => {
-    const type = assertEnvelopeType(envelope.type);
+    const type = assertEnvelopeType(envelope?.type);
+    assertSealedShape(`${type} envelope`, envelope, KEY_BYTES);
     requireSameNumber(
       `envelope ${type} vaultKeyVersion`,
       header.vaultKeyVersion,
@@ -347,6 +376,18 @@ export function decodeManifest(bytes: Uint8Array): SnapshotManifest {
     });
   }
   reader.end();
+
+  // The wire order must already be canonical. Silently re-sorting would let two
+  // different byte strings decode to the same manifest, so a holder of VK could
+  // produce a second encoding of "the same" snapshot with a different digest.
+  assertSorted(
+    "entries",
+    entries.map((entry) => entry.id),
+  );
+  assertSorted(
+    "envelopes",
+    envelopes.map((envelope) => envelopeKey(envelope.type, envelope.deviceId)),
+  );
   return validateManifest({ ...header, entries, envelopes });
 }
 

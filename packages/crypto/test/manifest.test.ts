@@ -16,7 +16,41 @@ import {
   sealManifest,
   verifySnapshot,
 } from "../src/index.ts";
+import { buildManifest, concat, frame, type SnapshotManifest } from "../src/index.ts";
+import { MANIFEST_CONTENT_LABEL } from "../src/constants.ts";
 import { aesSuite, C, VKV, fixtureSealedManifest, fixtureSnapshot, vaultKey, vec } from "./fixtures.ts";
+
+/** Like `encodeManifest`, but keeps the caller's record order instead of canonicalizing. */
+function encodeManifestPreservingOrder(manifest: SnapshotManifest): Uint8Array {
+  const parts = [
+    frame([
+      MANIFEST_CONTENT_LABEL,
+      manifest.vaultId,
+      manifest.cryptoProtocolVersion,
+      manifest.revision,
+      manifest.vaultKeyVersion,
+      manifest.entries.length,
+      manifest.envelopes.length,
+    ]),
+  ];
+  for (const entry of manifest.entries) {
+    parts.push(
+      frame([entry.id, entry.schemaVersion, entry.cryptoVersion, entry.vaultKeyVersion, entry.digest]),
+    );
+  }
+  for (const envelope of manifest.envelopes) {
+    parts.push(
+      frame([
+        envelope.type,
+        envelope.deviceId,
+        envelope.vaultKeyVersion,
+        envelope.deviceKeyVersion,
+        envelope.digest,
+      ]),
+    );
+  }
+  return concat(...parts);
+}
 
 describe("snapshot manifest", () => {
   it("reproduces the pinned manifest body byte for byte", () => {
@@ -78,6 +112,49 @@ describe("snapshot manifest", () => {
     const { manifest } = fixtureSnapshot();
     const body = encodeManifest(manifest);
     assert.throws(() => decodeManifest(body.slice(0, body.length - 4)), ProtocolError);
+  });
+
+  it("refuses a manifest body whose records are not in canonical order", () => {
+    const { entries, envelopes } = fixtureSnapshot();
+    const second = encryptEntry({
+      vaultKey,
+      vaultId: C.vault_id,
+      entryId: "entry_zzz_last",
+      vaultKeyVersion: VKV,
+      plaintext: new TextEncoder().encode("{}"),
+    });
+    const manifest = buildManifest({
+      vaultId: C.vault_id,
+      revision: C.revision,
+      vaultKeyVersion: VKV,
+      entries: [...entries, second],
+      envelopes,
+    });
+    const shuffled = {
+      ...manifest,
+      entries: [...manifest.entries].reverse(),
+      envelopes: [...manifest.envelopes].reverse(),
+    };
+    // encodeManifest canonicalizes, so a hand-built wire encoding is needed:
+    const wire = encodeManifestPreservingOrder(shuffled);
+    assert.throws(() => decodeManifest(wire), ProtocolError);
+    assert.deepEqual(decodeManifest(encodeManifest(shuffled)), manifest);
+  });
+
+  it("refuses to digest a record whose byte fields are malformed", () => {
+    const { entry, envelopes } = fixtureSnapshot();
+    const broken = { ...entry, tag: entry.tag.slice(0, 8) };
+    assert.throws(
+      () =>
+        buildManifest({
+          vaultId: C.vault_id,
+          revision: C.revision,
+          vaultKeyVersion: VKV,
+          entries: [broken],
+          envelopes,
+        }),
+      ProtocolError,
+    );
   });
 
   it("refuses a manifest whose entries span two vault key generations", () => {

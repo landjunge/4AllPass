@@ -134,6 +134,20 @@ describe("attack: revision rollback", () => {
     assert.equal(evaluateRevision(pinnedFirst, { ...pinnedFirst }).ok, true);
   });
 
+  it("refuses to drop the manifest check once a revision was pinned with one", () => {
+    const current = snapshotAt(42);
+    const pinned = revisionFromManifest(current.manifest, current.sealed);
+    const withoutDigest: VaultRevision = {
+      vaultId: pinned.vaultId,
+      revision: pinned.revision,
+      vaultKeyVersion: pinned.vaultKeyVersion,
+      cryptoProtocolVersion: pinned.cryptoProtocolVersion,
+    };
+    const decision = evaluateRevision(pinned, withoutDigest);
+    assert.equal(decision.ok, false);
+    if (!decision.ok) assert.equal(decision.action, "mismatch");
+  });
+
   it("refuses a pin poisoned beyond the uint32 revision range", () => {
     assert.throws(
       () => assertFreshSnapshot(null, { ...pin, revision: REVISION_MAX + 1 }),

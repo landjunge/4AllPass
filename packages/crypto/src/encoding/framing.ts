@@ -19,9 +19,19 @@ export function frame(fields: readonly FramedField[]): Uint8Array {
   }
   const parts: Uint8Array[] = [];
   for (const field of fields) {
-    const bytes =
-      typeof field === "string" ? utf8(field) : typeof field === "number" ? u32be(field) : field;
-    parts.push(u32be(bytes.length), bytes);
+    if (typeof field === "string") {
+      parts.push(...framePart(utf8(field)));
+    } else if (typeof field === "number") {
+      parts.push(...framePart(u32be(field)));
+    } else if (field instanceof Uint8Array) {
+      parts.push(...framePart(field));
+    } else {
+      throw new ProtocolError("framed field must be a string, a uint32 or a Uint8Array");
+    }
   }
   return concat(...parts);
+}
+
+function framePart(bytes: Uint8Array): [Uint8Array, Uint8Array] {
+  return [u32be(bytes.length), bytes];
 }

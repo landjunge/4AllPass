@@ -36,9 +36,31 @@ export type {
   KdfParams,
   KeyEnvelope,
   VaultRevision,
+  VaultSnapshot,
 } from "./types.ts";
 
 export { bytesToHex, concat, equalBytes, hexToBytes, u16be, u32be, utf8 } from "./encoding/bytes.ts";
+export { base64ToBytes, bytesToBase64 } from "./encoding/base64.ts";
+
+export {
+  decodeDeviceKeyEnvelope,
+  decodeEncryptedEntry,
+  decodeKdfParams,
+  decodeKeyEnvelope,
+  decodeVaultSnapshot,
+  encodeDeviceKeyEnvelope,
+  encodeEncryptedEntry,
+  encodeKdfParams,
+  encodeKeyEnvelope,
+  encodeVaultSnapshot,
+} from "./wire.ts";
+export type {
+  WireDeviceKeyEnvelope,
+  WireEncryptedEntry,
+  WireKdfParams,
+  WireKeyEnvelope,
+  WireVaultSnapshot,
+} from "./wire.ts";
 export {
   deviceKeyAad,
   dwkHkdfInfo,
@@ -72,12 +94,24 @@ export { encryptEntry, decryptEntry } from "./entry.ts";
 export type { EncryptEntryOptions } from "./entry.ts";
 
 export {
+  bindDeviceWithPrfOutput,
   deriveDeviceWrappingKey,
   prfEvalFirst,
   unwrapDeviceKey,
+  unwrapVaultKeyWithDeviceWrappingKey,
+  unwrapVaultKeyWithPrfOutput,
   wrapDeviceKey,
 } from "./device.ts";
-export type { DeriveDeviceWrappingKeyOptions, WrapDeviceKeyOptions } from "./device.ts";
+export type {
+  DeriveDeviceWrappingKeyOptions,
+  DeviceBinding,
+  DeviceBindingInput,
+  DeviceUnlockInput,
+  WrapDeviceKeyOptions,
+} from "./device.ts";
+
+export { verifySnapshotIntegrity } from "./snapshot.ts";
+export type { SnapshotIntegrityOptions } from "./snapshot.ts";
 
 export { assertFreshSnapshot, evaluateRevision } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

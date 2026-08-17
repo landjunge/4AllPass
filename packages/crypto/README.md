@@ -11,6 +11,7 @@ src/
   errors.ts
   encoding/
     aad.ts              length-prefixed AAD + envelope/entry/device builders
+    base64.ts           strict base64 for the JSON wire format
     bytes.ts
     unicode.ts          NFC → UTF-8
   kdf/
@@ -20,8 +21,11 @@ src/
     aes-gcm.ts          encrypt (library nonce) / decrypt
   envelope.ts           wrapVaultKey / unwrapVaultKey (AAD version from the envelope)
   entry.ts              encryptEntry / decryptEntry (schemaVersion stored on the entry)
-  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope
+  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope,
+                        bindDeviceWithPrfOutput / unwrapVaultKeyWithPrfOutput
+  snapshot.ts           verifySnapshotIntegrity (vault-revision.md §6)
   revision.ts           evaluateRevision / rollback detection
+  wire.ts               JSON encode/decode for server transport (strict)
   random.ts             CSPRNG helpers
   memory.ts             best-effort zeroize
 ```
@@ -33,6 +37,11 @@ src/
 - Envelope AAD `crypto_version` is the envelope's own `version`, never a global default.
 - `decryptEntry` reads `schemaVersion` / `cryptoVersion` from the entry.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory.
+- `bindDeviceWithPrfOutput` / `unwrapVaultKeyWithPrfOutput` zeroize the PRF
+  output, the DWK, and the Device Key before returning. Only the Vault Key
+  survives a device unlock.
+- Envelopes decoded with `wire.ts` are validated structurally (lengths,
+  versions, type/field combinations) because they come from an untrusted server.
 - `ci` profile cannot be persisted unless `allowTestProfile: true`.
 - Master password is NFC-normalized, then UTF-8.
 

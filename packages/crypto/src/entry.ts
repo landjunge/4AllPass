@@ -1,5 +1,5 @@
 import { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION, KEY_BYTES } from "./constants.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { entryAad } from "./encoding/aad.ts";
 import { assertLength } from "./encoding/bytes.ts";
 import { ProtocolError } from "./errors.ts";
@@ -69,6 +69,7 @@ export function decryptEntry(
     throw new ProtocolError(`invalid schemaVersion: ${entry.schemaVersion}`);
   }
   assertLength("vaultKey", vaultKey, KEY_BYTES);
+  assertAeadFraming(entry.nonce, entry.tag);
   const aad = entryAad(vaultId, entry.id, entry.schemaVersion, entry.cryptoVersion);
   return decrypt(vaultKey, entry.nonce, entry.ciphertext, entry.tag, aad);
 }

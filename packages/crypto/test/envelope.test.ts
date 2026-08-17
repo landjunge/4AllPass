@@ -12,6 +12,7 @@ import {
   kdfParamsFrom,
   unwrapVaultKey,
   wrapVaultKey,
+  AuthFailureError,
   ProtocolError,
 } from "../src/index.ts";
 import { wrapVaultKeyWithNonce, encryptEntryWithNonce } from "../src/test-only.ts";
@@ -163,7 +164,7 @@ describe("encryptEntry / decryptEntry", () => {
     assert.equal(entry.cryptoVersion, 1);
     assert.deepEqual(decryptEntry(entry, vk, C.vault_id), plaintext);
     const forged = { ...entry, schemaVersion: 1 };
-    assert.throws(() => decryptEntry(forged, vk, C.vault_id));
+    assert.throws(() => decryptEntry(forged, vk, C.vault_id), AuthFailureError);
   });
 
   it("round-trips with a library-owned nonce", () => {

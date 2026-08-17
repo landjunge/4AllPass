@@ -2,7 +2,7 @@ import { CRYPTO_PROTOCOL_VERSION, KEY_BYTES } from "./constants.ts";
 import { envelopeAad } from "./encoding/aad.ts";
 import { assertLength } from "./encoding/bytes.ts";
 import { ProtocolError } from "./errors.ts";
-import { decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
+import { assertAeadFraming, decrypt, encrypt, encryptWithNonce } from "./aead/aes-gcm.ts";
 import { assertProductionKdf } from "./kdf/profiles.ts";
 import type { EnvelopeType, KdfParams, KeyEnvelope } from "./types.ts";
 
@@ -104,6 +104,7 @@ export function unwrapVaultKey(
   if (envelope.type === "device" && !deviceId) {
     throw new ProtocolError("device envelope is missing deviceId");
   }
+  assertAeadFraming(envelope.nonce, envelope.tag);
   const aad = envelopeAad(vaultId, envelope.type, deviceId, envelope.version);
   const vk = decrypt(
     wrappingKey,

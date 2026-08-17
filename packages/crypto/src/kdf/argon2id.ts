@@ -2,6 +2,8 @@ import { argon2id } from "@noble/hashes/argon2.js";
 import { ARGON2_VERSION, HASH_LEN, SALT_BYTES_MAX, SALT_BYTES_MIN } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
+import { zeroize } from "../memory.ts";
+import { assertProductionKdf, assertSaneKdf } from "./profiles.ts";
 import type { Argon2idParams, KdfParams, KeyEnvelope } from "../types.ts";
 
 export interface DeriveRawOptions {
@@ -44,18 +46,39 @@ export function deriveMasterKey(
   if (salt.length !== SALT_BYTES_MIN && salt.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
-  return deriveArgon2idRaw({
-    password: utf8Nfc(password),
-    salt,
-    params,
-  });
+  const passwordBytes = utf8Nfc(password);
+  try {
+    return deriveArgon2idRaw({ password: passwordBytes, salt, params });
+  } finally {
+    zeroize(passwordBytes);
+  }
 }
 
-export function deriveMasterKeyFromEnvelope(password: string, envelope: KeyEnvelope): Uint8Array {
+export interface DeriveMasterKeyFromEnvelopeOptions {
+  /** Allow sub-production KDF params (the `ci` profile) in tests. */
+  allowTestProfile?: boolean;
+}
+
+/**
+ * The kdf block of a master envelope is NOT covered by the GCM tag (the
+ * wrapping key is derived from it, so it cannot be). A malicious server can
+ * therefore hand out arbitrary params. Validate them before spending memory
+ * and CPU on Argon2id.
+ */
+export function deriveMasterKeyFromEnvelope(
+  password: string,
+  envelope: KeyEnvelope,
+  opts?: DeriveMasterKeyFromEnvelopeOptions,
+): Uint8Array {
   if (envelope.type !== "master" || !envelope.kdf) {
     throw new ProtocolError("master envelope is missing kdf parameters");
   }
   const { salt, ...params } = envelope.kdf;
+  if (opts?.allowTestProfile === true) {
+    assertSaneKdf(params);
+  } else {
+    assertProductionKdf(params);
+  }
   return deriveMasterKey(password, salt, params);
 }
 

@@ -7,8 +7,11 @@ export {
   ENTRY_AAD_LABEL,
   ENVELOPE_AAD_LABEL,
   HASH_LEN,
+  ITERATIONS_MAX,
   KEY_BYTES,
+  MEMORY_KIB_MAX,
   NONCE_BYTES,
+  PARALLELISM_MAX,
   PRF_EVAL_LABEL,
   PRODUCTION_MEMORY_KIB_MIN,
   SALT_BYTES_MAX,
@@ -55,6 +58,7 @@ export {
   ARGON2ID_PROFILES,
   DEFAULT_PROFILE,
   assertProductionKdf,
+  assertSaneKdf,
   resolveProfile,
 } from "./kdf/profiles.ts";
 export {
@@ -62,6 +66,7 @@ export {
   deriveMasterKeyFromEnvelope,
   kdfParamsFrom,
 } from "./kdf/argon2id.ts";
+export type { DeriveMasterKeyFromEnvelopeOptions } from "./kdf/argon2id.ts";
 
 export { decrypt, decryptBox, encrypt } from "./aead/aes-gcm.ts";
 

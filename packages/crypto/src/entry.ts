@@ -18,10 +18,15 @@ function resolveVersions(opts: EncryptEntryOptions): {
   schemaVersion: number;
   cryptoVersion: number;
 } {
-  return {
-    schemaVersion: opts.schemaVersion ?? DEFAULT_SCHEMA_VERSION,
-    cryptoVersion: opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION,
-  };
+  const schemaVersion = opts.schemaVersion ?? DEFAULT_SCHEMA_VERSION;
+  const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(`this library only writes entry cryptoVersion ${CRYPTO_PROTOCOL_VERSION}`);
+  }
+  if (!Number.isInteger(schemaVersion) || schemaVersion < 1) {
+    throw new ProtocolError(`invalid schemaVersion: ${schemaVersion}`);
+  }
+  return { schemaVersion, cryptoVersion };
 }
 
 export function encryptEntry(opts: EncryptEntryOptions): EncryptedEntry {

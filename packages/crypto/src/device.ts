@@ -83,6 +83,9 @@ export function wrapDeviceKeyWithNonce(
   assertLength("deviceKey", opts.deviceKey, KEY_BYTES);
   assertLength("deviceWrappingKey", opts.deviceWrappingKey, KEY_BYTES);
   const cryptoVersion = opts.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  if (cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(`this library only writes device-key envelope version ${CRYPTO_PROTOCOL_VERSION}`);
+  }
   const aad = deviceKeyAad(opts.vaultId, opts.deviceId, opts.credentialId, cryptoVersion);
   const box = encryptWithNonce(opts.deviceWrappingKey, opts.nonce, opts.deviceKey, aad);
   return {
@@ -100,6 +103,9 @@ export function wrapDeviceKeyWithNonce(
 export function unwrapDeviceKey(envelope: DeviceKeyEnvelope, deviceWrappingKey: Uint8Array): Uint8Array {
   if (envelope.version !== CRYPTO_PROTOCOL_VERSION) {
     throw new ProtocolError(`unsupported device-key envelope version: ${envelope.version}`);
+  }
+  if (envelope.encryption !== "AES-256-GCM") {
+    throw new ProtocolError(`unsupported device-key envelope encryption: ${envelope.encryption}`);
   }
   assertLength("deviceWrappingKey", deviceWrappingKey, KEY_BYTES);
   const aad = deviceKeyAad(

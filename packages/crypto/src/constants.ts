@@ -18,3 +18,12 @@ export const HASH_LEN = 32;
 
 /** Production KDF memory floor (KiB). `ci` is 32 KiB and is below this. */
 export const PRODUCTION_MEMORY_KIB_MIN = 32 * 1024;
+
+/**
+ * KDF parameter ceilings. A malicious server controls the (unauthenticated)
+ * kdf block of a master envelope; without ceilings it can request multi-GiB
+ * allocations or absurd iteration counts and DoS the client at unlock.
+ */
+export const MEMORY_KIB_MAX = 1024 * 1024; // 1 GiB
+export const ITERATIONS_MAX = 32;
+export const PARALLELISM_MAX = 16;

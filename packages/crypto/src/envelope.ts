@@ -100,6 +100,15 @@ export function unwrapVaultKey(
     throw new ProtocolError(`unsupported envelope encryption: ${envelope.encryption}`);
   }
   assertLength("wrappingKey", wrappingKey, KEY_BYTES);
+  if (envelope.type === "master" && !envelope.kdf) {
+    throw new ProtocolError("master envelope is missing kdf parameters");
+  }
+  if (envelope.type !== "master" && envelope.kdf) {
+    throw new ProtocolError(`${envelope.type} envelope must not carry kdf parameters`);
+  }
+  if (envelope.type !== "device" && envelope.deviceId) {
+    throw new ProtocolError(`${envelope.type} envelope must not carry deviceId`);
+  }
   const deviceId = envelope.type === "device" ? (envelope.deviceId ?? "") : "";
   if (envelope.type === "device" && !deviceId) {
     throw new ProtocolError("device envelope is missing deviceId");

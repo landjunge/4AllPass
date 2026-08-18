@@ -110,7 +110,9 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock |
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
 | Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
-| No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
+| No browser / WebAuthn end-to-end test | Open at the app layer | `packages/crypto` never talks to an authenticator; Playwright + virtual authenticator covers the PWA path |
+| Soft device revoke ≠ crypto erase | Documented | `DELETE /devices/{id}` does not rotate `vaultKeyVersion`; see `security-boundary.md` |
+| Server does not verify WebAuthn assertions | Documented | Credential rows are client-attested metadata; `serverVerified` stays false |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
 | Quantum attacks on AES            | Out of scope for v1                               | Future protocol version |

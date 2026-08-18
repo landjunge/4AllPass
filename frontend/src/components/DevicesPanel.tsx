@@ -90,6 +90,9 @@ export function DevicesPanel(): ReactNode {
                   {device.credentials.map((credential) => (
                     <span key={credential.id} className="muted small">
                       {MECHANISM_LABEL[credential.mechanism] ?? credential.mechanism}
+                      {credential.serverVerified
+                        ? " · server-verified assertion"
+                        : " · client-attested metadata only"}
                       {credential.hasMirroredDeviceKeyEnvelope ? " · envelope mirrored" : ""}
                       {credential.revokedAt ? " · revoked" : ""}
                     </span>

@@ -12,6 +12,8 @@ TEST_DATABASE_URL = os.environ.get(
 os.environ.setdefault("FOURALLPASS_DATABASE_URL", TEST_DATABASE_URL)
 os.environ.setdefault("FOURALLPASS_SESSION_BACKEND", "memory")
 os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
+os.environ.setdefault("FOURALLPASS_AUTH_LOGIN_RATE_LIMIT", "1000")
+os.environ.setdefault("FOURALLPASS_WRITE_RATE_LIMIT", "1000")
 
 from app.api.deps import get_db  # noqa: E402
 from app.core.config import get_settings  # noqa: E402

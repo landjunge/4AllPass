@@ -110,12 +110,12 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await enableDeviceUnlock(page);
 
     const snapshot = await page.evaluate(async () => {
-      const token = sessionStorage.getItem("4allpass.session");
-      const authorized = { headers: { Authorization: `Bearer ${token}` } };
-      const vaults = (await (await fetch("/api/v1/vaults", authorized)).json()) as Array<{
-        vaultId: string;
-      }>;
-      const response = await fetch(`/api/v1/vaults/${vaults[0]?.vaultId}/snapshot`, authorized);
+      const vaults = (await (
+        await fetch("/api/v1/vaults", { credentials: "same-origin" })
+      ).json()) as Array<{ vaultId: string }>;
+      const response = await fetch(`/api/v1/vaults/${vaults[0]?.vaultId}/snapshot`, {
+        credentials: "same-origin",
+      });
       return await response.text();
     });
 
@@ -123,6 +123,8 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     expect(snapshot).not.toContain(ENTRY.username);
     expect(snapshot).not.toContain(ENTRY.title);
     expect(snapshot).not.toContain(MASTER_PASSWORD);
+    expect(snapshot).toContain('"manifest"');
+    expect(await page.evaluate(() => sessionStorage.getItem("4allpass.session"))).toBeNull();
     // What it does contain: one master, one recovery, and one device envelope.
     expect(snapshot).toContain('"type":"master"');
     expect(snapshot).toContain('"type":"recovery"');

@@ -100,7 +100,24 @@ async def get_owned_vault(
     return vault
 
 
+async def enforce_write_rate_limit(
+    request: Request,
+    store: Annotated[SessionStore, Depends(get_session_store)],
+) -> None:
+    settings = get_settings()
+    ip = request.client.host if request.client else "unknown"
+    action = request.url.path
+    if await store.hit_rate_limit(
+        f"write:{action}:{ip}",
+        settings.write_rate_limit,
+        settings.write_rate_window_seconds,
+    ):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="too many attempts")
+
+
 __all__ = [
+    "CurrentSession",
+    "enforce_write_rate_limit",
     "get_db",
     "get_redis",
     "get_current_session",

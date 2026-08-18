@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     auth_min_password_length: int = 12
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
+    write_rate_limit: int = 30
+    write_rate_window_seconds: int = 60
 
 
 @lru_cache

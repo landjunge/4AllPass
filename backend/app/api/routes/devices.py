@@ -8,7 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_owned_vault
+from app.api.deps import enforce_write_rate_limit, get_db, get_owned_vault
+from app.core.config import get_settings
 from app.core.encoding import b64decode, b64encode, b64url_decode
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
@@ -53,6 +54,7 @@ def _credential_out(cred: WebAuthnCredential, mirrored_for: set) -> CredentialSu
         prf_supported=cred.prf_supported,
         large_blob_supported=cred.large_blob_supported,
         user_verification_required=cred.user_verification == "required",
+        server_verified=cred.public_key is not None,
         has_mirrored_device_key_envelope=cred.id in mirrored_for,
         created_at=cred.created_at,
         last_used_at=cred.last_used_at,
@@ -101,6 +103,7 @@ async def register_device(
     payload: RegisterDeviceRequest,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> DeviceSummary:
     result = await db.execute(
         select(Device)
@@ -122,11 +125,15 @@ async def register_device(
         await db.flush()
         device = await _get_device(db, vault, payload.device_id)
     else:
+        if device.revoked_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="revoked device ids cannot be reactivated; register a new device id",
+            )
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
         device.user_agent_summary = payload.user_agent_summary or device.user_agent_summary
         device.last_seen_at = now
-        device.revoked_at = None
         await db.flush()
     return _device_out(device, await _device_envelope_ids(db, vault))
 
@@ -148,11 +155,12 @@ async def revoke_device(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DeviceSummary:
     device = await _get_device(db, vault, device_id)
-    device.revoked_at = datetime.now(timezone.utc)
-    for cred in device.webauthn_credentials:
-        if cred.revoked_at is None:
-            cred.revoked_at = device.revoked_at
-    await db.flush()
+    if device.revoked_at is None:
+        device.revoked_at = datetime.now(timezone.utc)
+        for cred in device.webauthn_credentials:
+            if cred.revoked_at is None:
+                cred.revoked_at = device.revoked_at
+        await db.flush()
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 
@@ -162,8 +170,13 @@ async def register_credential(
     payload: RegisterCredentialRequest,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> CredentialSummary:
     device = await _get_device(db, vault, device_id)
+    if device.revoked_at is not None:
+        raise HTTPException(status_code=409, detail="cannot register a credential on a revoked device")
+    if payload.rp_id != get_settings().webauthn_rp_id:
+        raise HTTPException(status_code=422, detail="rpId does not match the configured relying party")
     try:
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
@@ -187,10 +200,11 @@ async def register_credential(
     else:
         if cred.device_id != device.id:
             raise HTTPException(status_code=409, detail="credential already bound to another device")
+        if cred.revoked_at is not None:
+            raise HTTPException(status_code=409, detail="cannot reactivate a revoked credential")
         cred.mechanism = payload.mechanism
         cred.prf_supported = payload.prf_supported
         cred.large_blob_supported = payload.large_blob_supported
-        cred.revoked_at = None
         await db.flush()
     return _credential_out(cred, set())
 
@@ -204,10 +218,14 @@ async def put_device_key_envelope(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
+    if device.revoked_at is not None:
+        raise HTTPException(status_code=410, detail="device is revoked")
     raw_id = _decode_credential_path(credential_id)
     cred = next((c for c in device.webauthn_credentials if c.credential_id == raw_id), None)
     if cred is None:
         raise HTTPException(status_code=404, detail="credential not found")
+    if cred.revoked_at is not None:
+        raise HTTPException(status_code=410, detail="credential is revoked")
     if payload.device_id != device.device_id or payload.vault_id != vault.id:
         raise HTTPException(status_code=422, detail="envelope identity does not match path")
 
@@ -242,6 +260,13 @@ async def put_device_key_envelope(
         )
         db.add(row)
     else:
+        if row.webauthn_credential_id != cred.id:
+            raise HTTPException(
+                status_code=409,
+                detail="device-key envelope is bound to another credential",
+            )
+        if payload.device_key_version < row.device_key_version:
+            raise HTTPException(status_code=409, detail="deviceKeyVersion cannot decrease")
         row.webauthn_credential_id = cred.id
         row.credential_id = raw_id
         row.encryption = payload.encryption
@@ -262,6 +287,8 @@ async def get_device_key_envelope(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
+    if device.revoked_at is not None:
+        raise HTTPException(status_code=410, detail="device is revoked")
     raw_id = _decode_credential_path(credential_id)
     result = await db.execute(
         select(DeviceKeyEnvelope).where(
@@ -273,6 +300,11 @@ async def get_device_key_envelope(
     row = result.scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="device-key envelope not found")
+    credential = next((c for c in device.webauthn_credentials if c.credential_id == raw_id), None)
+    if credential is None:
+        raise HTTPException(status_code=404, detail="credential not found")
+    if credential.revoked_at is not None:
+        raise HTTPException(status_code=410, detail="credential is revoked")
     return WireDeviceKeyEnvelope(
         version=row.crypto_version,
         vault_id=vault.id,

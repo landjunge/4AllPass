@@ -39,11 +39,20 @@ class WireEncryptedEntry(CamelModel):
     tag: str
 
 
+class WireSealedManifest(CamelModel):
+    version: Literal[1]
+    encryption: Literal["AES-256-GCM"]
+    nonce: str
+    ciphertext: str
+    tag: str
+
+
 class WireVaultSnapshot(CamelModel):
     vault_id: UUID
     revision: int
     vault_key_version: int
     crypto_protocol_version: int
+    manifest: WireSealedManifest
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry]
 
@@ -53,6 +62,7 @@ class SnapshotCommit(CamelModel):
     revision: int = Field(ge=1)
     vault_key_version: int = Field(ge=1)
     crypto_protocol_version: Literal[1]
+    manifest: WireSealedManifest
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry] = []
 

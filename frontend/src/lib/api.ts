@@ -5,7 +5,12 @@
  * account session lives in an HttpOnly cookie. A separate, non-secret CSRF
  * cookie is echoed in a header for state-changing requests.
  */
-import type { WireDeviceKeyEnvelope, WireKeyEnvelope, WireVaultSnapshot } from "@4allpass/crypto";
+import type {
+  WireDeviceKeyEnvelope,
+  WireKeyEnvelope,
+  WireSealedManifest,
+  WireVaultSnapshot,
+} from "@4allpass/crypto";
 
 const API_BASE = "/api/v1";
 const CSRF_COOKIE = "4allpass_csrf";
@@ -33,6 +38,7 @@ export interface CredentialSummary {
   prfSupported: boolean;
   largeBlobSupported: boolean;
   userVerificationRequired: boolean;
+  serverVerified: boolean;
   hasMirroredDeviceKeyEnvelope: boolean;
   createdAt: string;
   lastUsedAt: string | null;
@@ -56,6 +62,7 @@ export interface SnapshotCommit {
   revision: number;
   vaultKeyVersion: number;
   cryptoProtocolVersion: 1;
+  manifest: WireSealedManifest;
   envelopes: WireKeyEnvelope[];
   entries: WireVaultSnapshot["entries"];
 }

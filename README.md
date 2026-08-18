@@ -81,8 +81,10 @@ POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
          /api/v1/vaults/{id}/devices…     # owner-only
 ```
 
-Every vault/device/snapshot route requires `Authorization: Bearer`. Foreign
-vaults return **404** (no id enumeration).
+The browser uses an HttpOnly session cookie plus a CSRF header. `Authorization:
+Bearer` remains valid for non-browser clients. Foreign vaults return **404**
+(no id enumeration). Snapshots include a sealed manifest. Soft device revoke
+is not Vault Key rotation — see [`docs/security-boundary.md`](docs/security-boundary.md).
 
 ```sh
 cd backend

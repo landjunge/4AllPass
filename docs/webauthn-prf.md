@@ -56,7 +56,11 @@ After the vault is unlocked with the Master Password:
 
 1. `navigator.credentials.create` with `authenticatorSelection.userVerification = "required"`.
 2. Request extension `prf` (and `hmac-secret` where needed as the CTAP equivalent).
-3. Persist `credentialId`, `rpId`, `deviceId`.
+3. Persist `credentialId`, `rpId`, `deviceId`. The server may store these as
+   metadata. That is **not** a verified WebAuthn ceremony: `prfSupported` and
+   related flags are client claims until the server verifies an assertion
+   (not implemented). Cryptographic possession is proven later by unwrapping
+   the Device-Key Envelope under a DWK derived from the real PRF output.
 4. Generate random **DK**.
 5. Perform an assertion (or use the create-time PRF results if the platform returns them).
 6. Derive **DWK** as in §3.

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   ARGON2ID_PROFILES,
   base64ToBytes,
+  buildManifest,
   bytesToBase64,
   decodeDeviceKeyEnvelope,
   decodeEncryptedEntry,
@@ -19,6 +20,7 @@ import {
   hexToBytes,
   kdfParamsFrom,
   ProtocolError,
+  sealManifest,
   wrapDeviceKey,
   wrapVaultKey,
 } from "../src/index.ts";
@@ -246,25 +248,48 @@ describe("entry and snapshot wire format", () => {
   });
 
   it("round-trips a full snapshot", () => {
+    const envelopes = [masterEnvelope(), deviceEnvelope()];
+    const entries = [entry("entry_1"), entry("entry_2")];
     const snapshot = {
       vaultId: VAULT_ID,
       revision: 7,
       vaultKeyVersion: VAULT_KEY_VERSION,
       cryptoProtocolVersion: 1 as const,
-      envelopes: [masterEnvelope(), deviceEnvelope()],
-      entries: [entry("entry_1"), entry("entry_2")],
+      manifest: sealManifest({
+        vaultKey,
+        manifest: buildManifest({
+          vaultId: VAULT_ID,
+          revision: 7,
+          vaultKeyVersion: VAULT_KEY_VERSION,
+          envelopes,
+          entries,
+        }),
+      }),
+      envelopes,
+      entries,
     };
     const decoded = decodeVaultSnapshot(roundTrip(encodeVaultSnapshot(snapshot)));
     assert.deepEqual(decoded, snapshot);
   });
 
   it("rejects snapshots with revision 0 or a foreign protocol version", () => {
+    const envelopes = [masterEnvelope()];
     const wire = encodeVaultSnapshot({
       vaultId: VAULT_ID,
       revision: 1,
       vaultKeyVersion: 1,
       cryptoProtocolVersion: 1,
-      envelopes: [masterEnvelope()],
+      manifest: sealManifest({
+        vaultKey,
+        manifest: buildManifest({
+          vaultId: VAULT_ID,
+          revision: 1,
+          vaultKeyVersion: 1,
+          envelopes,
+          entries: [],
+        }),
+      }),
+      envelopes,
       entries: [],
     });
     assert.throws(() => decodeVaultSnapshot({ ...wire, revision: 0 }), ProtocolError);

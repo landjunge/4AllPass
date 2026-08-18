@@ -126,6 +126,7 @@ export interface SealedManifest {
 
 /** An immutable server snapshot: all envelopes plus all entries of one revision. */
 export interface VaultSnapshot extends VaultRevision {
+  manifest: SealedManifest;
   envelopes: KeyEnvelope[];
   entries: EncryptedEntry[];
 }

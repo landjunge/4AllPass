@@ -99,3 +99,77 @@ async def test_cookie_authenticated_write_requires_csrf(client):
 
     accepted = await client.post("/api/v1/vaults", headers=_csrf(client))
     assert accepted.status_code == 201
+
+
+async def test_invalid_and_expired_sessions_are_rejected(client):
+    client.cookies.clear()
+    invalid = await client.get("/api/v1/auth/me", headers={"Authorization": "Bearer not-a-session"})
+    assert invalid.status_code == 401
+
+    from app.core.security import new_session_token
+    from app.core.sessions import SessionRecord, get_session_store
+
+    token = new_session_token()
+    await get_session_store().put(
+        token,
+        SessionRecord(user_id=uuid.uuid4(), email="expired@example.com", csrf_token="csrf"),
+        ttl_seconds=0,
+    )
+    expired = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert expired.status_code == 401
+
+
+async def test_concurrent_sessions_survive_second_login(client):
+    email = _email()
+    first = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "account-password-1234"},
+    )
+    first_token = first.cookies["4allpass_session"]
+    second = await client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "account-password-1234"},
+    )
+    assert second.status_code == 200
+    still_valid = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {first_token}"},
+    )
+    assert still_valid.status_code == 200
+    assert still_valid.json()["email"] == email
+
+
+async def test_bearer_writes_do_not_need_csrf(client):
+    register = await client.post(
+        "/api/v1/auth/register",
+        json={"email": _email(), "password": "account-password-1234"},
+    )
+    token = register.cookies["4allpass_session"]
+    client.cookies.clear()
+    created = await client.post(
+        "/api/v1/vaults",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert created.status_code == 201
+
+
+async def test_me_never_returns_password_hash(client):
+    email = _email()
+    await client.post("/api/v1/auth/register", json={"email": email, "password": "account-password-1234"})
+    me = await client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert "accountPasswordHash" not in me.json()
+    assert "password" not in me.json()
+
+
+async def test_register_rejects_mass_assignment(client):
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": _email(),
+            "password": "account-password-1234",
+            "isAdmin": True,
+            "ownerUserId": str(uuid.uuid4()),
+        },
+    )
+    assert response.status_code == 422

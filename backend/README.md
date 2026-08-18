@@ -16,15 +16,20 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
   users, vaults, immutable vault snapshots, key envelopes, encrypted entries,
   devices, WebAuthn credentials, and the Device-Key Envelope mirror.
 - Account auth (register / login / logout / me) with Argon2id *account*
-  passwords and revocable Redis (or in-memory) bearer sessions. This is
+  passwords and revocable Redis (or in-memory) sessions. The browser uses an
+  HttpOnly cookie plus CSRF; Bearer remains for non-browser clients. This is
   **not** the Master Password and cannot decrypt a vault.
-- Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
+- Ownership: every vault/device/snapshot route requires a valid session
   and returns 404 for vaults the caller does not own.
 - Snapshot GET + POST with compare-and-swap on `expectedRevision`
-  (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
-- Device register / list / revoke, credential metadata, Device-Key Envelope
-  mirror. Soft revoke is bookkeeping; cryptographic revoke is the next snapshot
-  without that device envelope.
+  (`docs/vault-revision.md` §4). The server stores opaque ciphertext **and**
+  the sealed snapshot manifest; it never opens either.
+- Device register / list / revoke, client-attested credential metadata,
+  Device-Key Envelope mirror. `prfSupported` is a client claim;
+  `serverVerified` is false until assertion verification exists.
+- Soft revoke is bookkeeping plus an API boundary (no envelope re-attach,
+  no convenience-unlock mirror). It does **not** rotate the Vault Key.
+  See [`../docs/security-boundary.md`](../docs/security-boundary.md).
 
 ## Local setup
 

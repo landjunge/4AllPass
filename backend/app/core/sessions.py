@@ -48,7 +48,7 @@ class MemorySessionStore:
         if item is None:
             return None
         expires_at, record = item
-        if expires_at < time.time():
+        if expires_at <= time.time():
             self._sessions.pop(token_lookup_key(token), None)
             return None
         return record

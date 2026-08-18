@@ -15,6 +15,7 @@ class CredentialSummary(CamelModel):
     prf_supported: bool
     large_blob_supported: bool
     user_verification_required: bool
+    server_verified: bool = False
     has_mirrored_device_key_envelope: bool = False
     created_at: datetime
     last_used_at: datetime | None

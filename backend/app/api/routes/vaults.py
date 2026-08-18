@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db, get_owned_vault
+from app.api.deps import enforce_write_rate_limit, get_current_user, get_db, get_owned_vault
 from app.core.config import get_settings
 from app.models.user import User
 from app.models.vault import Vault
@@ -50,6 +48,7 @@ async def list_vaults(
 async def create_vault(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> VaultSummary:
     vault = Vault(
         owner_user_id=user.id,
@@ -81,6 +80,7 @@ async def post_snapshot(
     payload: SnapshotCommit,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> WireVaultSnapshot | JSONResponse:
     try:
         snapshot = await commit_snapshot(db, vault, payload)

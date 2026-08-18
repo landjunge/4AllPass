@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import pytest
@@ -13,6 +14,7 @@ async def _signup(client, email: str | None = None) -> tuple[str, dict[str, str]
     assert response.status_code == 200, response.text
     session = response.cookies["4allpass_session"]
     csrf = response.cookies["4allpass_csrf"]
+    client.cookies.clear()
     return email, {
         "Cookie": f"4allpass_session={session}; 4allpass_csrf={csrf}",
         "X-CSRF-Token": csrf,
@@ -41,6 +43,16 @@ def _master_envelope() -> dict:
             "hashLen": 32,
             "salt": "ABEiM0RVZneImaq7zN3u/w==",
         },
+    }
+
+
+def _manifest() -> dict:
+    return {
+        "version": 1,
+        "encryption": "AES-256-GCM",
+        "nonce": "AAAAAAAAAAAAAAAA",
+        "ciphertext": "AQEBAQEBAQEBAQEBAQEBAQ==",
+        "tag": "AgICAgICAgICAgICAgICAg==",
     }
 
 
@@ -87,6 +99,7 @@ async def test_snapshot_cas_and_ownership(client):
             "revision": 1,
             "vaultKeyVersion": 1,
             "cryptoProtocolVersion": 1,
+            "manifest": _manifest(),
             "envelopes": [_master_envelope()],
             "entries": [],
         },
@@ -108,6 +121,7 @@ async def test_snapshot_cas_and_ownership(client):
             "revision": 1,
             "vaultKeyVersion": 1,
             "cryptoProtocolVersion": 1,
+            "manifest": _manifest(),
             "envelopes": [_master_envelope()],
             "entries": [],
         },
@@ -123,12 +137,44 @@ async def test_snapshot_cas_and_ownership(client):
             "revision": 2,
             "vaultKeyVersion": 1,
             "cryptoProtocolVersion": 1,
+            "manifest": _manifest(),
             "envelopes": [_master_envelope()],
             "entries": [],
         },
     )
     assert second.status_code == 200, second.text
     assert second.json()["revision"] == 2
+
+    next_payload = {
+        "expectedRevision": 2,
+        "revision": 3,
+        "vaultKeyVersion": 1,
+        "cryptoProtocolVersion": 1,
+        "manifest": _manifest(),
+        "envelopes": [_master_envelope()],
+        "entries": [],
+    }
+    concurrent = await asyncio.gather(
+        client.post(
+            f"/api/v1/vaults/{vault_id}/snapshots",
+            headers=_auth(alice),
+            json=next_payload,
+        ),
+        client.post(
+            f"/api/v1/vaults/{vault_id}/snapshots",
+            headers=_auth(alice),
+            json=next_payload,
+        ),
+    )
+    assert sorted(response.status_code for response in concurrent) == [200, 409]
+    winner = next(response for response in concurrent if response.status_code == 200)
+    loser = next(response for response in concurrent if response.status_code == 409)
+    assert winner.json()["revision"] == 3
+    assert loser.json()["detail"] == "revision conflict"
+    assert loser.json()["currentRevision"] in {2, 3}
+    active = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=_auth(alice))
+    assert active.status_code == 200
+    assert active.json()["revision"] == 3
 
 
 async def test_register_device_roundtrip(client):

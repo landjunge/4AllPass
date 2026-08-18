@@ -24,6 +24,7 @@ import type {
   EnvelopeType,
   KdfParams,
   KeyEnvelope,
+  SealedManifest,
   VaultSnapshot,
 } from "./types.ts";
 
@@ -77,8 +78,17 @@ export interface WireVaultSnapshot {
   revision: number;
   vaultKeyVersion: number;
   cryptoProtocolVersion: number;
+  manifest: WireSealedManifest;
   envelopes: WireKeyEnvelope[];
   entries: WireEncryptedEntry[];
+}
+
+export interface WireSealedManifest {
+  version: number;
+  encryption: "AES-256-GCM";
+  nonce: string;
+  ciphertext: string;
+  tag: string;
 }
 
 const ENVELOPE_TYPES: readonly EnvelopeType[] = ["master", "device", "recovery"];
@@ -323,12 +333,36 @@ export function decodeEncryptedEntry(value: unknown): EncryptedEntry {
   };
 }
 
+export function encodeSealedManifest(manifest: SealedManifest): WireSealedManifest {
+  return {
+    version: manifest.version,
+    encryption: manifest.encryption,
+    nonce: bytesToBase64(manifest.nonce),
+    ciphertext: bytesToBase64(manifest.ciphertext),
+    tag: bytesToBase64(manifest.tag),
+  };
+}
+
+export function decodeSealedManifest(value: unknown): SealedManifest {
+  const source = asRecord(value, "manifest");
+  requireVersion(source, "version", "manifest");
+  requireGcm(source, "manifest");
+  return {
+    version: CRYPTO_PROTOCOL_VERSION,
+    encryption: "AES-256-GCM",
+    nonce: requireBytes(source, "nonce", "manifest", NONCE_BYTES),
+    ciphertext: requireBytes(source, "ciphertext", "manifest"),
+    tag: requireBytes(source, "tag", "manifest", TAG_BYTES),
+  };
+}
+
 export function encodeVaultSnapshot(snapshot: VaultSnapshot): WireVaultSnapshot {
   return {
     vaultId: snapshot.vaultId,
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
     cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    manifest: encodeSealedManifest(snapshot.manifest),
     envelopes: snapshot.envelopes.map(encodeKeyEnvelope),
     entries: snapshot.entries.map(encodeEncryptedEntry),
   };
@@ -351,6 +385,7 @@ export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
     revision,
     vaultKeyVersion,
     cryptoProtocolVersion: requireVersion(source, "cryptoProtocolVersion", "snapshot") as 1,
+    manifest: decodeSealedManifest(source.manifest),
     envelopes: envelopes.map(decodeKeyEnvelope),
     entries: entries.map(decodeEncryptedEntry),
   };

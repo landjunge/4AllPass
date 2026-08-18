@@ -21,8 +21,10 @@ Differenzierung:
 ## Aktueller Stand
 
 - Crypto-Protokoll und Reference Implementation (`packages/crypto`) sind weit fortgeschritten
-- Starke Specs vorhanden (crypto-protocol, webauthn-prf, vault-revision, threat-model)
-- Noch kein Backend, kein Frontend, keine Extension
+- Backend: Account-Session, Ownership, Snapshot-CAS, sealed Manifest, Device-Metadaten
+- Frontend: echter encrypted-vault flow (Register → Unlock → Snapshot → Manifest)
+- Nächster Fokus: Vault-Key-Rotation (hard revoke) und server-seitige WebAuthn-Assertions
+- Extension ist noch offen
 
 Die Crypto-Basis ist inzwischen gut genug, dass man aufhören kann, an der Architektur zu zweifeln. Ab hier entscheiden Umsetzung und UX.
 

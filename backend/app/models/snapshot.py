@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, LargeBinary, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,6 +38,11 @@ class VaultSnapshot(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False)
     crypto_protocol_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    manifest_encryption: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    manifest_nonce: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    manifest_ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    manifest_tag: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    manifest_crypto_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     vault: Mapped["Vault"] = relationship(back_populates="snapshots", foreign_keys=[vault_id])
     envelopes: Mapped[list["KeyEnvelope"]] = relationship(

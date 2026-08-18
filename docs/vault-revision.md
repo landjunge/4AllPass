@@ -141,6 +141,8 @@ Pin-on-first-use is intentional: a brand-new client has no prior revision. After
 2. Client verifies and checks freshness (§3, §3.1).
 3. Client produces snapshot `N+1` (new nonces, same AAD rules) **including a sealed manifest for `N+1`**.
 4. Server writes snapshot `N+1` **in full** (envelopes + entries + manifest). It is not active yet.
+   The backend stores the sealed manifest as opaque bytes and does not
+   interpret or rewrite them.
 5. Server CAS: `if active_revision == N then active_revision = N+1`.
 6. On CAS failure the client re-fetches and retries.
 

@@ -8,7 +8,7 @@ PASSWORD = "account-password-1234"
 
 
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@test.example.com"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
     return email, response.json()["token"]
@@ -123,6 +123,68 @@ async def test_snapshot_cas_and_ownership(client):
     )
     assert second.status_code == 200, second.text
     assert second.json()["revision"] == 2
+
+
+async def test_forged_owner_id_in_vault_creation_is_ignored(client):
+    """Vault creation must derive ownership only from the session, never the body."""
+    _, alice = await _signup(client)
+    _, bob = await _signup(client)
+
+    created = await client.post(
+        "/api/v1/vaults",
+        headers=_auth(alice),
+        json={"ownerId": str(uuid.uuid4()), "owner_user_id": str(uuid.uuid4())},
+    )
+    assert created.status_code == 201, created.text
+    vault_id = created.json()["vaultId"]
+
+    # Only Alice (the session owner) can see it; the forged owner id had no effect.
+    own = await client.get(f"/api/v1/vaults/{vault_id}", headers=_auth(alice))
+    assert own.status_code == 200
+
+    foreign = await client.get(f"/api/v1/vaults/{vault_id}", headers=_auth(bob))
+    assert foreign.status_code == 404
+
+
+async def test_device_id_cannot_be_used_across_vaults(client):
+    """A device id is only ever resolvable inside the vault that registered it."""
+    _, alice = await _signup(client)
+    _, bob = await _signup(client)
+
+    alice_vault = (await client.post("/api/v1/vaults", headers=_auth(alice))).json()["vaultId"]
+    bob_vault = (await client.post("/api/v1/vaults", headers=_auth(bob))).json()["vaultId"]
+
+    device_id = "dev_shared-looking-id-0001"
+    registered = await client.post(
+        f"/api/v1/vaults/{alice_vault}/devices",
+        headers=_auth(alice),
+        json={"deviceId": device_id, "label": "Alice's laptop"},
+    )
+    assert registered.status_code == 200, registered.text
+
+    # Bob owns a *different* vault; the same device id must not resolve there.
+    via_bobs_vault = await client.get(
+        f"/api/v1/vaults/{bob_vault}/devices/{device_id}", headers=_auth(bob)
+    )
+    assert via_bobs_vault.status_code == 404
+
+    # Bob also cannot reach it through Alice's vault, since he does not own it.
+    via_alices_vault = await client.get(
+        f"/api/v1/vaults/{alice_vault}/devices/{device_id}", headers=_auth(bob)
+    )
+    assert via_alices_vault.status_code == 404
+
+    # Bob cannot revoke a device that is not in a vault he owns.
+    revoke_attempt = await client.delete(
+        f"/api/v1/vaults/{bob_vault}/devices/{device_id}", headers=_auth(bob)
+    )
+    assert revoke_attempt.status_code == 404
+
+    # Alice can still see and manage her own device.
+    own_view = await client.get(
+        f"/api/v1/vaults/{alice_vault}/devices/{device_id}", headers=_auth(alice)
+    )
+    assert own_view.status_code == 200
 
 
 async def test_register_device_roundtrip(client):

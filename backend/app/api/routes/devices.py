@@ -120,7 +120,10 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
+        await db.refresh(
+            device,
+            attribute_names=["webauthn_credentials", "device_key_envelopes"],
+        )
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform

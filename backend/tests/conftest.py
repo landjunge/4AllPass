@@ -13,8 +13,9 @@ os.environ.setdefault("FOURALLPASS_DATABASE_URL", TEST_DATABASE_URL)
 os.environ.setdefault("FOURALLPASS_SESSION_BACKEND", "memory")
 os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
 
-from app.api.deps import get_db  # noqa: E402
+from app.api.deps import get_db, get_session_store  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.core.sessions import MemorySessionStore  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -49,6 +50,7 @@ async def db_session(engine) -> AsyncIterator[AsyncSession]:
 @pytest_asyncio.fixture(loop_scope="session")
 async def client(engine) -> AsyncIterator[AsyncClient]:
     factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False)
+    session_store = MemorySessionStore()
 
     async def override_get_db() -> AsyncIterator[AsyncSession]:
         async with factory() as session:
@@ -60,6 +62,7 @@ async def client(engine) -> AsyncIterator[AsyncClient]:
                 raise
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_session_store] = lambda: session_store
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

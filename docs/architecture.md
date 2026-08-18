@@ -50,6 +50,9 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
+- Backend-Umsetzung (Sessions, Autorisierung, Vault-Ownership):
+  → **[docs/backend-security.md](backend-security.md)** — Authentication ≠ Vault Decryption:
+  der Server authentifiziert den Nutzer, erhält aber niemals den Vault Key
 
 ---
 

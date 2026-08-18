@@ -9,17 +9,23 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
+- [`../docs/backend-security.md`](../docs/backend-security.md) — **the security boundary
+  implemented by this service** (authentication, sessions, authorization, ownership)
 
-## What lives here (v1 scaffold)
+## What lives here
 
 - SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
   users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
   encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
   (`docs/webauthn-prf.md` §4).
-- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
-  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
-  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
-  "project structure + crypto-core + DB schema" per the initial brief.
+- **Security Boundary v1** (`docs/backend-security.md`): account authentication
+  (`/auth/register|login|logout|me`, Argon2id account-password hashing in
+  `app/core/security.py`), Redis-backed HttpOnly-cookie sessions
+  (`app/core/sessions.py`), and the authorization chain *authenticated user →
+  owns vault → device belongs to vault* (`app/api/deps.py`). Vault creation
+  (`POST /vaults`) stores ownership metadata only — the server never generates
+  or receives the Vault Key. **Authentication ≠ vault decryption.**
+- WebAuthn ceremony endpoints, vault snapshot commit/CAS, and rotation are follow-up work.
 
 ## Local setup
 

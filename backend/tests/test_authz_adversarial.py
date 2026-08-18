@@ -22,11 +22,14 @@ import uuid
 from dataclasses import dataclass
 
 import pytest
+from fastapi.routing import APIRoute
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user, get_owned_vault
 from app.core.config import get_settings
 from app.core.sessions import get_session_store
+from app.main import app
 from app.models.user import User
 from tests.helpers import (
     API,
@@ -172,6 +175,62 @@ def _protected_requests(victim: Victim) -> list[tuple[str, str, dict | None]]:
 # --------------------------------------------------------------------------
 # Missing authentication
 # --------------------------------------------------------------------------
+
+# Reachable without a session, on purpose: liveness probes and the three ways
+# in. Anything not on this list must sit behind the boundary.
+PUBLIC_ROUTES = {
+    ("GET", "/health"),
+    ("GET", "/health/db"),
+    ("GET", "/api/v1/health"),
+    ("POST", "/auth/register"),
+    ("POST", "/auth/login"),
+    ("POST", "/auth/logout"),
+}
+
+
+def _api_routes(routes):
+    """Walk the route tree, including routers FastAPI wraps on inclusion."""
+    for route in routes:
+        if isinstance(route, APIRoute):
+            yield route
+            continue
+        nested = getattr(route, "routes", None)
+        if nested is None:
+            included = getattr(route, "original_router", None) or getattr(route, "router", None)
+            nested = getattr(included, "routes", None)
+        if nested:
+            yield from _api_routes(nested)
+
+
+def _depends_on(dependant, target, seen=None) -> bool:
+    seen = set() if seen is None else seen
+    if id(dependant) in seen:
+        return False
+    seen.add(id(dependant))
+    if dependant.call is target:
+        return True
+    return any(_depends_on(sub, target, seen) for sub in dependant.dependencies)
+
+
+async def test_no_route_reaches_data_without_passing_the_boundary():
+    """Structural check: a new endpoint cannot silently skip authentication.
+
+    The per-route tests below prove the current endpoints are guarded. This
+    one proves the *next* one will be noticed, which is the failure mode that
+    actually happens — someone adds a route and forgets the dependency.
+    """
+    unguarded = set()
+    for route in _api_routes(app.routes):
+        guarded = _depends_on(route.dependant, get_current_user) or _depends_on(
+            route.dependant, get_owned_vault
+        )
+        if guarded:
+            continue
+        for method in route.methods:
+            if (method, route.path) not in PUBLIC_ROUTES:
+                unguarded.add((method, route.path))
+
+    assert not unguarded, f"routes reachable without authentication: {sorted(unguarded)}"
 
 
 async def test_every_vault_route_rejects_anonymous_callers(client_factory, anonymous_client):

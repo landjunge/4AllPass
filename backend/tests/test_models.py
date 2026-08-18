@@ -23,7 +23,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
 def _unique_email() -> str:
-    return f"user-{uuid.uuid4().hex[:12]}@example.test"
+    return f"user-{uuid.uuid4().hex[:12]}@example.com"
 
 
 async def _make_vault_with_snapshot(db_session, *, revision: int = 1, vault_key_version: int = 1) -> tuple[User, Vault, VaultSnapshot]:

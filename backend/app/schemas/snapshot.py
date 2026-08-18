@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, WriteModel
 
 
 class WireKdfParams(CamelModel):
@@ -39,6 +39,16 @@ class WireEncryptedEntry(CamelModel):
     tag: str
 
 
+class WireSealedManifest(WriteModel):
+    """Opaque sealed snapshot manifest. The server stores these bytes as-is."""
+
+    version: int
+    encryption: Literal["AES-256-GCM"]
+    nonce: str
+    ciphertext: str
+    tag: str
+
+
 class WireVaultSnapshot(CamelModel):
     vault_id: UUID
     revision: int
@@ -46,18 +56,20 @@ class WireVaultSnapshot(CamelModel):
     crypto_protocol_version: int
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry]
+    sealed_manifest: WireSealedManifest | None = None
 
 
-class SnapshotCommit(CamelModel):
+class SnapshotCommit(WriteModel):
     expected_revision: int | None = None
     revision: int = Field(ge=1)
     vault_key_version: int = Field(ge=1)
     crypto_protocol_version: Literal[1]
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry] = []
+    sealed_manifest: WireSealedManifest | None = None
 
 
-class WireDeviceKeyEnvelope(CamelModel):
+class WireDeviceKeyEnvelope(WriteModel):
     version: int
     vault_id: UUID
     device_id: str

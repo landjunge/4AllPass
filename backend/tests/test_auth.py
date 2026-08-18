@@ -6,7 +6,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
 def _email() -> str:
-    return f"user-{uuid.uuid4().hex[:10]}@example.test"
+    return f"user-{uuid.uuid4().hex[:10]}@example.com"
 
 
 async def test_register_login_me_logout(client):

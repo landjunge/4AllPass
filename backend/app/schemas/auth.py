@@ -3,15 +3,15 @@ from uuid import UUID
 
 from pydantic import EmailStr, Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, WriteModel
 
 
-class RegisterRequest(CamelModel):
+class RegisterRequest(WriteModel):
     email: EmailStr
     password: str = Field(min_length=12)
 
 
-class LoginRequest(CamelModel):
+class LoginRequest(WriteModel):
     email: EmailStr
     password: str = Field(min_length=1)
 

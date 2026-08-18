@@ -25,9 +25,11 @@ class Device(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     It is *not* the surrogate primary key: the AAD needs a caller-chosen
     stable string, independent of storage concerns.
 
-    Revocation is cryptographic, not just a flag: soft revocation deletes
-    this device's ``KeyEnvelope`` (type="device") from the next snapshot;
-    ``revoked_at`` here is bookkeeping/audit only (architecture.md §4).
+    ``DELETE /devices/{id}`` only sets ``revoked_at`` (bookkeeping). That
+    does **not** erase key material. Soft cryptographic revocation is the
+    next snapshot without this device's ``KeyEnvelope`` (type="device").
+    Hard revocation is Vault Key rotation (``vault_key_version + 1``),
+    which the PWA does not implement yet. See docs/security-boundary.md.
     """
 
     __tablename__ = "devices"

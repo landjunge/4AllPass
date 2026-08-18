@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     crypto_protocol_version: int = 1
     webauthn_rp_id: str = "localhost"
+    webauthn_challenge_ttl_seconds: int = 120
+    webauthn_challenge_rate_limit: int = 20
+    webauthn_challenge_rate_window_seconds: int = 60
 
     auth_min_password_length: int = 12
     auth_login_rate_limit: int = 10

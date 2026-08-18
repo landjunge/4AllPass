@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +13,7 @@ from app.core.config import get_settings
 from app.models.user import User
 from app.models.vault import Vault
 from app.schemas.snapshot import SnapshotCommit, WireVaultSnapshot
-from app.schemas.vault import VaultSummary
+from app.schemas.vault import CreateVaultRequest, VaultSummary
 from app.services.snapshots import RevisionConflict, commit_snapshot, load_active_snapshot, snapshot_to_wire
 
 router = APIRouter(prefix="/vaults", tags=["vaults"])
@@ -50,6 +48,7 @@ async def list_vaults(
 async def create_vault(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    _payload: CreateVaultRequest | None = None,
 ) -> VaultSummary:
     vault = Vault(
         owner_user_id=user.id,

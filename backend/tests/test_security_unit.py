@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from app.core.config import Settings
 from app.core.security import hash_account_password, new_session_token, token_lookup_key, verify_account_password
 from app.core.sessions import MemorySessionStore, SessionRecord
 
@@ -21,12 +22,19 @@ def test_token_lookup_is_not_the_bearer_token():
 async def test_memory_session_roundtrip_and_delete():
     store = MemorySessionStore()
     token = new_session_token()
-    record = SessionRecord(user_id=uuid4(), email="a@example.test")
+    record = SessionRecord(user_id=uuid4())
     await store.put(token, record, ttl_seconds=60)
     loaded = await store.get(token)
     assert loaded is not None
-    assert loaded.email == "a@example.test"
+    assert loaded.user_id == record.user_id
     await store.delete(token)
+    assert await store.get(token) is None
+
+
+async def test_expired_memory_session_is_rejected():
+    store = MemorySessionStore()
+    token = new_session_token()
+    await store.put(token, SessionRecord(user_id=uuid4()), ttl_seconds=-1)
     assert await store.get(token) is None
 
 
@@ -35,3 +43,12 @@ async def test_rate_limit_trips():
     for _ in range(10):
         assert await store.hit_rate_limit("login:1.2.3.4", limit=10, window_seconds=60) is False
     assert await store.hit_rate_limit("login:1.2.3.4", limit=10, window_seconds=60) is True
+
+
+def test_production_session_cookie_is_always_secure():
+    assert Settings(environment="production").use_secure_session_cookie is True
+    assert Settings(environment="development").use_secure_session_cookie is False
+    assert (
+        Settings(environment="development", session_cookie_secure=True).use_secure_session_cookie
+        is True
+    )

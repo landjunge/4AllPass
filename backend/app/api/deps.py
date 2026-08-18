@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.core.sessions import SessionStore, get_session_store
 from app.db.redis import get_redis
 from app.db.session import get_db
@@ -16,30 +17,27 @@ from app.models.vault import Vault
 
 
 async def get_current_user(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
-    authorization: Annotated[str | None, Header()] = None,
 ) -> User:
-    if not authorization or not authorization.lower().startswith("bearer "):
+    token = request.cookies.get(get_settings().session_cookie_name)
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
         )
-    token = authorization.split(" ", 1)[1].strip()
     record = await store.get(token)
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid or expired session",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     user = await db.get(User, record.user_id)
     if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid or expired session",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     return user
 

@@ -35,9 +35,9 @@ def new_session_token() -> str:
 
 
 def token_lookup_key(token: str) -> str:
-    """Hash the bearer token before it touches Redis.
+    """Hash the opaque session token before it touches Redis.
 
-    A Redis dump then cannot be replayed as Authorization headers.
+    A Redis dump then cannot be replayed as a session cookie.
     HMAC with session_secret so a leaked hash still needs the server secret
     to be useful as an offline oracle; the token itself stays unrecoverable.
     """

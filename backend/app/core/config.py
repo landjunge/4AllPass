@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,6 +25,9 @@ class Settings(BaseSettings):
     # Account-level session auth (unrelated to vault crypto — see architecture.md §3).
     session_secret: str = "change-me-in-production"
     session_ttl_seconds: int = 60 * 60 * 24 * 14
+    session_cookie_name: str = "4allpass_session"
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "strict"
+    session_cookie_secure: bool = False
     # "redis" in deployment; "memory" for pytest / single-process dev without Redis.
     session_backend: str = "redis"
 
@@ -35,6 +39,11 @@ class Settings(BaseSettings):
     auth_min_password_length: int = 12
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
+
+    @property
+    def use_secure_session_cookie(self) -> bool:
+        """Production cookies are always HTTPS-only; dev may opt in too."""
+        return self.session_cookie_secure or self.environment.lower() == "production"
 
 
 @lru_cache

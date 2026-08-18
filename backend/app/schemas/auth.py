@@ -17,7 +17,6 @@ class LoginRequest(CamelModel):
 
 
 class AccountSession(CamelModel):
-    token: str
     expires_in: int
     account_id: UUID
     email: str

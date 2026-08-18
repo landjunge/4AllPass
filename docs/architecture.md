@@ -48,8 +48,31 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 ### Account-Login
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
+- Das Account-Passwort wird ausschließlich für die Anmeldung mit Argon2id
+  gehasht; es ist kein Input der Vault-KDF.
+- Der Browser erhält eine zufällige, widerrufbare Server-Session in einem
+  host-only `HttpOnly`-Cookie (`SameSite=Strict`, in Produktion `Secure`).
+- Die Session läuft ab und wird beim Logout serverseitig widerrufen. Der
+  Browser speichert keine langlebigen Auth-Tokens in Web Storage.
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
+
+### Autorisierungsgrenze
+- `get_current_user()` bestimmt die Identität ausschließlich aus der
+  serverseitigen Session, niemals aus `user_id`- oder `owner_id`-Feldern des
+  Clients.
+- Vault-Zugriffe werden per `(vault_id, owner_user_id)` auf den angemeldeten
+  Nutzer eingeschränkt. Fehlende und fremde Vaults liefern dieselbe
+  404-Antwort, damit IDs nicht enumeriert werden können.
+- Device-, Credential- und Snapshot-Zugriffe erfolgen erst nach dieser
+  Ownership-Prüfung und bleiben auf den gewählten Vault begrenzt.
+- Request- und Response-Schemas sind explizit; unbekannte Felder werden
+  abgewiesen und ORM-Objekte nicht ungefiltert serialisiert.
+
+**Authentifizierung ≠ Vault-Entschlüsselung.** Der Server sieht Identität,
+Ownership, Device-/Credential-Metadaten, Revisionen und verschlüsselte Blobs.
+Er sieht niemals Master-Passwort, Klartext-Einträge, VK, DK, DWK,
+WebAuthn-PRF-Output oder entschlüsselte Envelopes.
 
 ---
 

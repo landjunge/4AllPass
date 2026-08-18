@@ -4,6 +4,10 @@ from uuid import UUID
 from app.schemas.common import CamelModel
 
 
+class CreateVaultRequest(CamelModel):
+    """Intentionally empty: ownership always comes from the session."""
+
+
 class VaultSummary(CamelModel):
     vault_id: UUID
     crypto_protocol_version: int

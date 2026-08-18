@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,13 +21,36 @@ def _client_bucket(request: Request, action: str) -> str:
     return f"{action}:{ip}"
 
 
-def _session_out(token: str, user: User) -> AccountSession:
+def _session_out(user: User) -> AccountSession:
     settings = get_settings()
     return AccountSession(
-        token=token,
         expires_in=settings.session_ttl_seconds,
         account_id=user.id,
         email=user.email,
+    )
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    settings = get_settings()
+    response.set_cookie(
+        key=settings.session_cookie_name,
+        value=token,
+        max_age=settings.session_ttl_seconds,
+        httponly=True,
+        secure=settings.use_secure_session_cookie,
+        samesite=settings.session_cookie_samesite,
+        path="/api/v1",
+    )
+
+
+def _clear_session_cookie(response: Response) -> None:
+    settings = get_settings()
+    response.delete_cookie(
+        key=settings.session_cookie_name,
+        httponly=True,
+        secure=settings.use_secure_session_cookie,
+        samesite=settings.session_cookie_samesite,
+        path="/api/v1",
     )
 
 
@@ -45,6 +68,7 @@ async def _rate_limit(store: SessionStore, request: Request, action: str) -> Non
 async def register(
     payload: RegisterRequest,
     request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
@@ -61,16 +85,18 @@ async def register(
     token = new_session_token()
     await store.put(
         token,
-        SessionRecord(user_id=user.id, email=user.email),
+        SessionRecord(user_id=user.id),
         get_settings().session_ttl_seconds,
     )
-    return _session_out(token, user)
+    _set_session_cookie(response, token)
+    return _session_out(user)
 
 
 @router.post("/login", response_model=AccountSession)
 async def login(
     payload: LoginRequest,
     request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
@@ -89,20 +115,24 @@ async def login(
     token = new_session_token()
     await store.put(
         token,
-        SessionRecord(user_id=user.id, email=user.email),
+        SessionRecord(user_id=user.id),
         get_settings().session_ttl_seconds,
     )
-    return _session_out(token, user)
+    _set_session_cookie(response, token)
+    return _session_out(user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     request: Request,
+    response: Response,
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> None:
-    authorization = request.headers.get("authorization")
-    if authorization and authorization.lower().startswith("bearer "):
-        await store.delete(authorization.split(" ", 1)[1].strip())
+    settings = get_settings()
+    token = request.cookies.get(settings.session_cookie_name)
+    if token:
+        await store.delete(token)
+    _clear_session_cookie(response)
 
 
 @router.get("/me", response_model=AccountMe)

@@ -5,17 +5,18 @@ import pytest
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 PASSWORD = "account-password-1234"
+COOKIE_NAME = "4allpass_session"
 
 
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.com"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
-    return email, response.json()["token"]
+    return email, response.cookies[COOKIE_NAME]
 
 
 def _auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
+    return {"Cookie": f"{COOKIE_NAME}={token}"}
 
 
 def _master_envelope() -> dict:
@@ -148,3 +149,74 @@ async def test_register_device_roundtrip(client):
     assert listed.status_code == 200
     assert len(listed.json()) == 1
     assert listed.json()[0]["hasDeviceEnvelope"] is False
+
+
+async def test_device_id_cannot_cross_vault_or_owner_boundaries(client):
+    _, alice = await _signup(client)
+    _, bob = await _signup(client)
+    alice_vault = (
+        await client.post("/api/v1/vaults", headers=_auth(alice))
+    ).json()["vaultId"]
+    bob_vault = (
+        await client.post("/api/v1/vaults", headers=_auth(bob))
+    ).json()["vaultId"]
+    device_id = "dev_shared_public_identifier"
+
+    registered = await client.post(
+        f"/api/v1/vaults/{alice_vault}/devices",
+        headers=_auth(alice),
+        json={"deviceId": device_id, "label": "Alice device"},
+    )
+    assert registered.status_code == 200
+
+    foreign_device = await client.get(
+        f"/api/v1/vaults/{alice_vault}/devices/{device_id}",
+        headers=_auth(bob),
+    )
+    assert foreign_device.status_code == 404
+
+    wrong_vault = await client.get(
+        f"/api/v1/vaults/{bob_vault}/devices/{device_id}",
+        headers=_auth(bob),
+    )
+    assert wrong_vault.status_code == 404
+
+
+async def test_foreign_and_random_vault_ids_are_indistinguishable(client):
+    _, alice = await _signup(client)
+    _, bob = await _signup(client)
+    alice_vault = (
+        await client.post("/api/v1/vaults", headers=_auth(alice))
+    ).json()["vaultId"]
+
+    foreign = await client.get(f"/api/v1/vaults/{alice_vault}", headers=_auth(bob))
+    random = await client.get(f"/api/v1/vaults/{uuid.uuid4()}", headers=_auth(bob))
+
+    assert foreign.status_code == random.status_code == 404
+    assert foreign.json() == random.json() == {"detail": "vault not found"}
+
+
+async def test_client_cannot_assign_owner_or_user_identity(client):
+    _, alice = await _signup(client)
+    _, bob = await _signup(client)
+
+    forged_vault = await client.post(
+        "/api/v1/vaults",
+        headers=_auth(alice),
+        json={"ownerId": str(uuid.uuid4())},
+    )
+    assert forged_vault.status_code == 422
+
+    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    vault_id = created.json()["vaultId"]
+    forged_device = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(alice),
+        json={
+            "deviceId": "dev_no_mass_assignment",
+            "label": "Alice device",
+            "userId": bob,
+            "ownerId": bob,
+        },
+    )
+    assert forged_device.status_code == 422

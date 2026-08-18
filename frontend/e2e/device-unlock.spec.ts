@@ -110,12 +110,10 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await enableDeviceUnlock(page);
 
     const snapshot = await page.evaluate(async () => {
-      const token = sessionStorage.getItem("4allpass.session");
-      const authorized = { headers: { Authorization: `Bearer ${token}` } };
-      const vaults = (await (await fetch("/api/v1/vaults", authorized)).json()) as Array<{
+      const vaults = (await (await fetch("/api/v1/vaults")).json()) as Array<{
         vaultId: string;
       }>;
-      const response = await fetch(`/api/v1/vaults/${vaults[0]?.vaultId}/snapshot`, authorized);
+      const response = await fetch(`/api/v1/vaults/${vaults[0]?.vaultId}/snapshot`);
       return await response.text();
     });
 

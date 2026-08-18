@@ -16,10 +16,11 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
   users, vaults, immutable vault snapshots, key envelopes, encrypted entries,
   devices, WebAuthn credentials, and the Device-Key Envelope mirror.
 - Account auth (register / login / logout / me) with Argon2id *account*
-  passwords and revocable Redis (or in-memory) bearer sessions. This is
+  passwords and revocable Redis (or in-memory) opaque sessions delivered in a
+  host-only, HttpOnly, SameSite=Strict cookie (`Secure` in production). This is
   **not** the Master Password and cannot decrypt a vault.
-- Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
-  and returns 404 for vaults the caller does not own.
+- Ownership: every vault/device/snapshot route requires an authenticated
+  session and returns the same 404 for missing and foreign vaults.
 - Snapshot GET + POST with compare-and-swap on `expectedRevision`
   (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
 - Device register / list / revoke, credential metadata, Device-Key Envelope
@@ -71,6 +72,26 @@ browser session on an already-trusted device recover the same convenience-unlock
 Supporting tables: `devices` (stable `device_id` bound into both envelopes' AAD) and
 `webauthn_credentials` (credential id, RP id, COSE public key, PRF/largeBlob capability
 flags — never key material).
+
+## Authentication and authorization boundary
+
+The browser submits an account e-mail and a distinct account password only to
+`/auth/register` and `/auth/login`. The password is Argon2id-hashed for account
+verification. A successful request issues a fresh random session value;
+only its keyed digest is stored by the session backend. JavaScript cannot read
+the session cookie, and logout revokes the server-side record before expiring
+the cookie. Sessions expire after the configured TTL.
+
+`get_current_user()` resolves identity exclusively from that server-side
+session. Vault ownership is then queried as `(vault_id, owner_user_id)`;
+device and snapshot lookups are scoped through the resulting owned vault.
+Client-supplied owner or user identifiers are rejected by strict request
+schemas. Missing and foreign vaults deliberately have the same response.
+
+**Authentication is not vault decryption.** The server can see account
+identity, ownership metadata, device/credential metadata, revisions, and
+encrypted blobs. It cannot see the Master Password, plaintext entries, VK, DK,
+DWK, WebAuthn PRF output, or decrypted envelopes.
 
 ## Migrations
 

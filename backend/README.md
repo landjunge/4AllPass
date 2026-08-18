@@ -9,6 +9,9 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
+- [`../docs/backend-security-boundary.md`](../docs/backend-security-boundary.md) — the
+  authentication / session / authorization layer described in this README, in detail, including
+  why sessions are bearer tokens rather than `HttpOnly` cookies for v1.
 
 ## What lives here (v1)
 

@@ -51,6 +51,14 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 
+### Backend Security Boundary (Session / Authorization / Vault Ownership)
+
+Die vollständige Spezifikation der Server-seitigen Auth-/AuthZ-Schicht (Session-Modell,
+`get_current_user`, `get_owned_vault`, Device-Autorisierung, was der Server sehen kann/nicht
+sehen kann) steht in:
+
+→ **[docs/backend-security-boundary.md](backend-security-boundary.md)**
+
 ---
 
 ## 4. Geräte- und Profil-Management

@@ -19,8 +19,13 @@ def get_redis_client() -> Redis:
 async def get_redis() -> AsyncIterator[Redis]:
     """FastAPI dependency yielding the shared Redis client.
 
-    Redis is used for account-level sessions, rate limiting, and WebAuthn
-    challenge storage (short-lived, non-secret-key-material state only —
-    see docs/webauthn-prf.md). It never stores Vault Key material.
+    Redis holds ephemeral, reconstructible state: rate limiting and WebAuthn
+    challenge storage (short-lived, non-secret-key-material only — see
+    docs/webauthn-prf.md). It never stores Vault Key material.
+
+    Account sessions deliberately live in Postgres instead
+    (docs/backend-security-boundary.md §2): a Redis restart must not sign
+    every user out, and session revocation has to be as durable as the
+    account it belongs to.
     """
     yield get_redis_client()

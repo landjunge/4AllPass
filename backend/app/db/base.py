@@ -15,6 +15,7 @@ from app.models import (  # noqa: E402,F401
     device_key_envelope,
     entry,
     key_envelope,
+    session,
     snapshot,
     user,
     vault,

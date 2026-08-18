@@ -9,6 +9,7 @@ from app.db.base import Base
 from app.models.mixins import CreatedUpdatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
+    from app.models.session import UserSession
     from app.models.vault import Vault
 
 
@@ -33,4 +34,7 @@ class User(UUIDPrimaryKeyMixin, CreatedUpdatedAtMixin, Base):
 
     vaults: Mapped[list["Vault"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
+    )
+    sessions: Mapped[list["UserSession"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
     )

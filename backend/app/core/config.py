@@ -28,7 +28,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://fourallpass:fourallpass@localhost:5432/fourallpass"
     redis_url: str = "redis://localhost:6379/0"
 
-    # Account-level session auth (unrelated to vault crypto — see architecture.md §3).
+    # Reserved for a future cookie-based session flow. **Currently unused**:
+    # sessions are the access token (signed with `jwt_private_key`) plus the
+    # Redis-backed refresh tokens, so rotating this value has no effect and must
+    # not be mistaken for a way to invalidate sessions.
     session_secret: str = "change-me-in-production"
     session_ttl_seconds: int = 60 * 60 * 24 * 14
 

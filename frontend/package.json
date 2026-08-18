@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@4allpass/crypto": "*",
+    "@4allpass/webauthn": "*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

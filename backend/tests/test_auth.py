@@ -62,6 +62,15 @@ async def test_login_wrong_password(client):
     assert response.json()["detail"] == "invalid credentials"
 
 
+async def test_unknown_email_is_indistinguishable_from_wrong_password(client):
+    unknown = await client.post(
+        "/api/v1/auth/login",
+        json={"email": _email(), "password": "definitely-wrong-password"},
+    )
+    assert unknown.status_code == 401
+    assert unknown.json() == {"detail": "invalid credentials"}
+
+
 async def test_register_duplicate_email(client):
     email = _email()
     first = await client.post(

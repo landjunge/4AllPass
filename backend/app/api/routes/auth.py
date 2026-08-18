@@ -104,11 +104,15 @@ async def login(
     email = str(payload.email).strip().lower()
     result = await db.execute(select(User).where(func.lower(User.email) == email))
     user = result.scalar_one_or_none()
+    password_valid = verify_account_password(
+        payload.password,
+        user.account_password_hash if user is not None and user.is_active else None,
+    )
     if (
         user is None
         or not user.is_active
         or not user.account_password_hash
-        or not verify_account_password(payload.password, user.account_password_hash)
+        or not password_valid
     ):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
 

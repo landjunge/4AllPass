@@ -87,6 +87,8 @@ session. Vault ownership is then queried as `(vault_id, owner_user_id)`;
 device and snapshot lookups are scoped through the resulting owned vault.
 Client-supplied owner or user identifiers are rejected by strict request
 schemas. Missing and foreign vaults deliberately have the same response.
+Production startup rejects the example session secret, so deployments must
+provide a unique `FOURALLPASS_SESSION_SECRET`.
 
 **Authentication is not vault decryption.** The server can see account
 identity, ownership metadata, device/credential metadata, revisions, and

@@ -17,15 +17,17 @@ from argon2.exceptions import InvalidHash, VerifyMismatchError
 from app.core.config import get_settings
 
 _hasher = PasswordHasher(time_cost=3, memory_cost=64 * 1024, parallelism=2, hash_len=32)
+_dummy_account_password_hash = _hasher.hash(secrets.token_urlsafe(32))
 
 
 def hash_account_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def verify_account_password(password: str, password_hash: str) -> bool:
+def verify_account_password(password: str, password_hash: str | None) -> bool:
+    """Verify with equal Argon2 work even when no account hash exists."""
     try:
-        return _hasher.verify(password_hash, password)
+        return _hasher.verify(password_hash or _dummy_account_password_hash, password)
     except (VerifyMismatchError, InvalidHash):
         return False
 

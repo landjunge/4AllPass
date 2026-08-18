@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+import pytest
+
 from app.core.config import Settings
 from app.core.security import hash_account_password, new_session_token, token_lookup_key, verify_account_password
 from app.core.sessions import MemorySessionStore, SessionRecord
@@ -11,6 +13,7 @@ def test_account_password_is_not_reversible():
     assert hashed.startswith("$argon2id$")
     assert verify_account_password("account-password-1234", hashed)
     assert not verify_account_password("wrong-password-1234", hashed)
+    assert not verify_account_password("unknown-account-password", None)
 
 
 def test_token_lookup_is_not_the_bearer_token():
@@ -46,9 +49,25 @@ async def test_rate_limit_trips():
 
 
 def test_production_session_cookie_is_always_secure():
-    assert Settings(environment="production").use_secure_session_cookie is True
+    assert (
+        Settings(
+            environment="production",
+            session_secret="production-test-secret",
+        ).use_secure_session_cookie
+        is True
+    )
     assert Settings(environment="development").use_secure_session_cookie is False
     assert (
         Settings(environment="development", session_cookie_secure=True).use_secure_session_cookie
         is True
     )
+
+
+def test_production_rejects_default_session_secret():
+    with pytest.raises(ValueError, match="SESSION_SECRET"):
+        Settings(environment="production")
+
+
+def test_samesite_none_requires_secure_cookie():
+    with pytest.raises(ValueError, match="SameSite=None"):
+        Settings(environment="development", session_cookie_samesite="none")

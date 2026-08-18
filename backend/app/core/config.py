@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -44,6 +45,17 @@ class Settings(BaseSettings):
     def use_secure_session_cookie(self) -> bool:
         """Production cookies are always HTTPS-only; dev may opt in too."""
         return self.session_cookie_secure or self.environment.lower() == "production"
+
+    @model_validator(mode="after")
+    def validate_session_security(self) -> "Settings":
+        if (
+            self.environment.lower() == "production"
+            and self.session_secret == "change-me-in-production"
+        ):
+            raise ValueError("FOURALLPASS_SESSION_SECRET must be configured in production")
+        if self.session_cookie_samesite == "none" and not self.use_secure_session_cookie:
+            raise ValueError("SameSite=None requires a Secure session cookie")
+        return self
 
 
 @lru_cache

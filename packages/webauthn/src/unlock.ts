@@ -30,6 +30,10 @@ export interface UnlockWithDeviceOptions {
   store: DeviceUnlockStore;
   vaultId: string;
   deviceId: string;
+  /** Vault-Key generation of the snapshot being unlocked. */
+  vaultKeyVersion: number;
+  /** Device-Key generation this device expects to open. */
+  deviceKeyVersion: number;
   /** The Device Envelope of the active snapshot, for this deviceId. */
   deviceEnvelope: KeyEnvelope;
   /**
@@ -110,6 +114,9 @@ async function runMechanism(
       deviceKeyEnvelope,
       deviceEnvelope: options.deviceEnvelope,
       rpId: record.rpId,
+      vaultId: options.vaultId,
+      vaultKeyVersion: options.vaultKeyVersion,
+      deviceKeyVersion: options.deviceKeyVersion,
       credentialId,
     });
     return { vaultKey, mechanism: "prf" };
@@ -123,11 +130,14 @@ async function runMechanism(
     });
     const wrappingKey = storedWrappingKey(record);
     try {
-      const vaultKey = unwrapVaultKeyWithDeviceWrappingKey(
+      const vaultKey = unwrapVaultKeyWithDeviceWrappingKey({
         deviceKeyEnvelope,
-        options.deviceEnvelope,
+        deviceEnvelope: options.deviceEnvelope,
         wrappingKey,
-      );
+        vaultId: options.vaultId,
+        vaultKeyVersion: options.vaultKeyVersion,
+        deviceKeyVersion: options.deviceKeyVersion,
+      });
       return { vaultKey, mechanism: "large_blob" };
     } finally {
       zeroize(wrappingKey);
@@ -145,11 +155,14 @@ async function runMechanism(
   const deviceKeyEnvelope = localDeviceKeyEnvelope(record);
   const wrappingKey = storedWrappingKey(record);
   try {
-    const vaultKey = unwrapVaultKeyWithDeviceWrappingKey(
+    const vaultKey = unwrapVaultKeyWithDeviceWrappingKey({
       deviceKeyEnvelope,
-      options.deviceEnvelope,
+      deviceEnvelope: options.deviceEnvelope,
       wrappingKey,
-    );
+      vaultId: options.vaultId,
+      vaultKeyVersion: options.vaultKeyVersion,
+      deviceKeyVersion: options.deviceKeyVersion,
+    });
     return { vaultKey, mechanism: "uv_gated_local" };
   } finally {
     zeroize(wrappingKey);

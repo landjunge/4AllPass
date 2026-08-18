@@ -1,4 +1,8 @@
+import { CRYPTO_PROTOCOL_VERSION, DIGEST_BYTES } from "./constants.ts";
+import { bytesToHex } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError, RollbackError } from "./errors.ts";
+import { assertBytes, assertId, assertRevision, assertVersion } from "./validate.ts";
+import type { VerifiedManifest } from "./manifest.ts";
 import type { VaultRevision } from "./types.ts";
 
 export type RevisionAction = "first_seen" | "same" | "advance" | "rotation";
@@ -17,18 +21,28 @@ export interface RevisionReject {
 export type RevisionDecision = RevisionAccept | RevisionReject;
 
 function assertRevisionFields(state: VaultRevision, label: string): void {
-  if (!state.vaultId) {
-    throw new ProtocolError(`${label} vaultId is required`);
+  if (state === null || typeof state !== "object") {
+    throw new ProtocolError(`${label} must be an object`);
   }
-  if (!Number.isInteger(state.revision) || state.revision < 1) {
-    throw new ProtocolError(`${label} revision must be an integer >= 1`);
+  assertId(`${label} vaultId`, state.vaultId);
+  assertRevision(`${label} revision`, state.revision);
+  assertVersion(`${label} vaultKeyVersion`, state.vaultKeyVersion);
+  const protocolVersion = assertVersion(`${label} cryptoProtocolVersion`, state.cryptoProtocolVersion);
+  if (protocolVersion > CRYPTO_PROTOCOL_VERSION) {
+    throw new ProtocolError(
+      `${label} cryptoProtocolVersion ${protocolVersion} is newer than this client supports (${CRYPTO_PROTOCOL_VERSION})`,
+    );
   }
-  if (!Number.isInteger(state.vaultKeyVersion) || state.vaultKeyVersion < 1) {
-    throw new ProtocolError(`${label} vaultKeyVersion must be an integer >= 1`);
+  if (state.manifestDigest !== undefined) {
+    assertBytes(`${label} manifestDigest`, state.manifestDigest, { exact: DIGEST_BYTES });
   }
-  if (state.cryptoProtocolVersion !== 1) {
-    throw new ProtocolError(`${label} unsupported cryptoProtocolVersion`);
-  }
+}
+
+function reject(
+  action: RevisionReject["action"],
+  error: RollbackError | IntegrityError,
+): RevisionReject {
+  return { ok: false, action, error };
 }
 
 /**
@@ -36,7 +50,14 @@ function assertRevisionFields(state: VaultRevision, label: string): void {
  *
  * AES-GCM authenticity does not imply freshness. A malicious server can
  * replay an older *valid* snapshot. The client must refuse any incoming
- * revision or vaultKeyVersion that goes backwards.
+ * revision, vaultKeyVersion or protocol version that goes backwards.
+ *
+ * `revision` is only trustworthy once it has been verified cryptographically —
+ * see `openManifest` and `revisionFromManifest`. Pinning a number the server
+ * merely asserted lets a hostile server poison the pin (claim revision
+ * 4 294 967 295 once and every honest snapshot afterwards looks like a
+ * rollback), which is why the bounds in `assertRevisionFields` are enforced and
+ * why the pin should be written from a verified manifest.
  */
 export function evaluateRevision(
   lastSeen: VaultRevision | null,
@@ -48,35 +69,51 @@ export function evaluateRevision(
   }
   assertRevisionFields(lastSeen, "lastSeen");
   if (incoming.vaultId !== lastSeen.vaultId) {
-    return {
-      ok: false,
-      action: "mismatch",
-      error: new IntegrityError("incoming vaultId does not match pinned vault"),
-    };
+    return reject("mismatch", new IntegrityError("incoming vaultId does not match pinned vault"));
+  }
+  if (incoming.cryptoProtocolVersion < lastSeen.cryptoProtocolVersion) {
+    return reject(
+      "downgrade",
+      new IntegrityError(
+        `cryptoProtocolVersion downgrade: ${incoming.cryptoProtocolVersion} < ${lastSeen.cryptoProtocolVersion}`,
+      ),
+    );
   }
   if (incoming.revision < lastSeen.revision) {
-    return {
-      ok: false,
-      action: "rollback",
-      error: new RollbackError(lastSeen.revision, incoming.revision),
-    };
+    return reject("rollback", new RollbackError(lastSeen.revision, incoming.revision));
   }
   if (incoming.vaultKeyVersion < lastSeen.vaultKeyVersion) {
-    return {
-      ok: false,
-      action: "downgrade",
-      error: new IntegrityError(
+    return reject(
+      "downgrade",
+      new IntegrityError(
         `vaultKeyVersion downgrade: ${incoming.vaultKeyVersion} < ${lastSeen.vaultKeyVersion}`,
       ),
-    };
+    );
   }
   if (incoming.revision === lastSeen.revision) {
     if (incoming.vaultKeyVersion !== lastSeen.vaultKeyVersion) {
-      return {
-        ok: false,
-        action: "mismatch",
-        error: new IntegrityError("same revision but different vaultKeyVersion"),
-      };
+      return reject("mismatch", new IntegrityError("same revision but different vaultKeyVersion"));
+    }
+    if (lastSeen.manifestDigest !== undefined) {
+      // Once a revision has been pinned with a verified manifest, an answer for
+      // that same revision must come with the same manifest — and must come with
+      // one at all, otherwise the check could simply be dropped.
+      if (incoming.manifestDigest === undefined) {
+        return reject(
+          "mismatch",
+          new IntegrityError(
+            `revision ${incoming.revision} was pinned with a verified manifest; incoming state has none`,
+          ),
+        );
+      }
+      if (bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)) {
+        return reject(
+          "mismatch",
+          new IntegrityError(
+            `revision ${incoming.revision} was served with two different manifests (server equivocation)`,
+          ),
+        );
+      }
     }
     return { ok: true, action: "same" };
   }
@@ -93,4 +130,29 @@ export function assertFreshSnapshot(
   const decision = evaluateRevision(lastSeen, incoming);
   if (!decision.ok) throw decision.error;
   return decision.action;
+}
+
+/**
+ * Build the pinnable revision state from a manifest that has already been
+ * verified under the Vault Key. This is the only pin a client should store.
+ *
+ * It takes the whole `VerifiedManifest` — manifest plus the digest of the blob
+ * that was actually authenticated — rather than the two separately. Passing them
+ * separately made it possible to pin the digest of a blob that was never
+ * verified, which would turn the equivocation check into noise: the honest
+ * snapshot is then rejected as a fork, and a digest of the attacker's choosing is
+ * blessed instead.
+ */
+export function revisionFromManifest(verified: VerifiedManifest): VaultRevision {
+  const { manifest } = verified;
+  return {
+    vaultId: assertId("manifest.vaultId", manifest.vaultId),
+    revision: assertRevision("manifest.revision", manifest.revision),
+    vaultKeyVersion: assertVersion("manifest.vaultKeyVersion", manifest.vaultKeyVersion),
+    cryptoProtocolVersion: assertVersion(
+      "manifest.cryptoProtocolVersion",
+      manifest.cryptoProtocolVersion,
+    ),
+    manifestDigest: assertBytes("manifest digest", verified.sealedDigest, { exact: DIGEST_BYTES }),
+  };
 }

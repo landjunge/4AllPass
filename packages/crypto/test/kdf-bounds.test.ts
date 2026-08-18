@@ -68,6 +68,7 @@ describe("deriveMasterKeyFromEnvelope validates untrusted kdf params", () => {
       wrappingKey: randomBytes(32),
       vaultId: "v",
       type: "master",
+      vaultKeyVersion: 1,
       kdf: kdfParamsFrom(ARGON2ID_PROFILES.ci, generateSalt()),
       allowTestProfile: true,
     });

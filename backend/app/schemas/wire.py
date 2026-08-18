@@ -112,11 +112,13 @@ class KdfParams(WireModel):
 class KeyEnvelope(WireModel):
     version: Literal[CRYPTO_PROTOCOL_VERSION]
     type: Literal["master", "device", "recovery"]
+    vault_key_version: int = Field(ge=1)
     encryption: Literal["AES-256-GCM"]
     nonce: Nonce
     ciphertext: WrappedKey
     tag: Tag
     device_id: str | None = Field(default=None, max_length=128)
+    device_key_version: int | None = Field(default=None, ge=1)
     kdf: KdfParams | None = None
 
     @model_validator(mode="after")
@@ -129,6 +131,10 @@ class KeyEnvelope(WireModel):
             raise ValueError("device envelope requires deviceId")
         if self.type != "device" and self.device_id is not None:
             raise ValueError(f"{self.type} envelope must not carry deviceId")
+        if self.type == "device" and self.device_key_version is None:
+            raise ValueError("device envelope requires deviceKeyVersion")
+        if self.type != "device" and self.device_key_version is not None:
+            raise ValueError(f"{self.type} envelope must not carry deviceKeyVersion")
         return self
 
 
@@ -136,6 +142,7 @@ class EncryptedEntry(WireModel):
     id: str = Field(min_length=1, max_length=128)
     schema_version: int = Field(ge=1)
     crypto_version: Literal[CRYPTO_PROTOCOL_VERSION]
+    vault_key_version: int = Field(ge=1)
     nonce: Nonce
     ciphertext: Annotated[Base64Bytes, Field(min_length=1)]
     tag: Tag
@@ -148,6 +155,7 @@ class DeviceKeyEnvelope(WireModel):
     vault_id: str = Field(min_length=1, max_length=64)
     device_id: str = Field(min_length=1, max_length=128)
     credential_id: CredentialId
+    device_key_version: int = Field(ge=1)
     encryption: Literal["AES-256-GCM"]
     nonce: Nonce
     ciphertext: WrappedKey

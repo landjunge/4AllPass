@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   AuthFailureError,
+  IntegrityError,
   ProtocolError,
   bytesToHex,
   deriveDeviceWrappingKey,
@@ -15,6 +16,10 @@ const VAULT = "vault_dev";
 const DEVICE = "dev-1";
 const PRF = new Uint8Array(32).fill(0xaa);
 const CRED = new Uint8Array(16).fill(0xbe);
+const DKV = 1;
+
+/** What the caller expects to be opening. A mismatch is an IntegrityError. */
+const EXPECTED = { vaultId: VAULT, deviceId: DEVICE, credentialId: CRED, deviceKeyVersion: DKV };
 
 function baselineDwk() {
   return deriveDeviceWrappingKey({
@@ -88,30 +93,65 @@ describe("Device-Key Envelope — tamper", () => {
       vaultId: VAULT,
       deviceId: DEVICE,
       credentialId: CRED,
+      deviceKeyVersion: DKV,
     });
     return { env, dwk, deviceKey };
   }
 
   it("unwraps cleanly when untampered", () => {
     const { env, dwk, deviceKey } = envelope();
-    assert.deepEqual(unwrapDeviceKey(env, dwk), deviceKey);
+    assert.deepEqual(unwrapDeviceKey(env, { deviceWrappingKey: dwk, ...EXPECTED }), deviceKey);
   });
 
   it("a tampered deviceId in the envelope fails to unwrap", () => {
     const { env, dwk } = envelope();
-    assert.throws(() => unwrapDeviceKey({ ...env, deviceId: "evil-device" }, dwk), AuthFailureError);
+    // The caller states the device it expects, so a relabelled envelope is
+    // rejected as a substitution before the tag is even checked.
+    assert.throws(
+      () => unwrapDeviceKey({ ...env, deviceId: "evil-device" }, { deviceWrappingKey: dwk, ...EXPECTED }),
+      IntegrityError,
+    );
+    // Lying to the caller as well only moves the failure to the AAD.
+    assert.throws(
+      () =>
+        unwrapDeviceKey(
+          { ...env, deviceId: "evil-device" },
+          { deviceWrappingKey: dwk, ...EXPECTED, deviceId: "evil-device" },
+        ),
+      AuthFailureError,
+    );
   });
 
   it("a tampered credentialId in the envelope fails to unwrap", () => {
     const { env, dwk } = envelope();
+    const swapped = new Uint8Array(16).fill(0x00);
     assert.throws(
-      () => unwrapDeviceKey({ ...env, credentialId: new Uint8Array(16).fill(0x00) }, dwk),
+      () => unwrapDeviceKey({ ...env, credentialId: swapped }, { deviceWrappingKey: dwk, ...EXPECTED }),
+      IntegrityError,
+    );
+    assert.throws(
+      () =>
+        unwrapDeviceKey(
+          { ...env, credentialId: swapped },
+          { deviceWrappingKey: dwk, ...EXPECTED, credentialId: swapped },
+        ),
       AuthFailureError,
     );
   });
 
   it("a tampered vaultId in the envelope fails to unwrap", () => {
     const { env, dwk } = envelope();
-    assert.throws(() => unwrapDeviceKey({ ...env, vaultId: "vault_OTHER" }, dwk), AuthFailureError);
+    assert.throws(
+      () => unwrapDeviceKey({ ...env, vaultId: "vault_OTHER" }, { deviceWrappingKey: dwk, ...EXPECTED }),
+      IntegrityError,
+    );
+    assert.throws(
+      () =>
+        unwrapDeviceKey(
+          { ...env, vaultId: "vault_OTHER" },
+          { deviceWrappingKey: dwk, ...EXPECTED, vaultId: "vault_OTHER" },
+        ),
+      AuthFailureError,
+    );
   });
 });

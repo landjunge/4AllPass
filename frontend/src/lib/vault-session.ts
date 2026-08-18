@@ -20,14 +20,17 @@ import {
   decryptEntry,
   deriveMasterKey,
   deriveMasterKeyFromEnvelope,
+  deriveRecoveryWrappingKey,
   encodeEncryptedEntry,
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
   encryptEntry,
+  formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
   generateVaultKey,
   kdfParamsFrom,
+  parseRecoveryKey,
   unwrapVaultKey,
   verifySnapshot,
   wrapVaultKey,
@@ -53,7 +56,6 @@ import {
   ENTRY_SCHEMA_VERSION,
   type VaultEntry,
 } from "./entries.ts";
-import { formatRecoveryKey, parseRecoveryKey } from "./recovery-key.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
@@ -127,11 +129,17 @@ function openSnapshot(
   verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
     entries: snapshot.entries,
     crossCheckEnvelopes: crossChecks,
   });
   const entries: VaultEntry[] = snapshot.entries.map((entry) => {
-    const plaintext = decryptEntry(entry, vaultKey, snapshot.vaultId);
+    const plaintext = decryptEntry(entry, {
+      vaultKey,
+      vaultId: snapshot.vaultId,
+      entryId: entry.id,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+    });
     try {
       return decodeEntryPlaintext(entry.id, plaintext);
     } finally {
@@ -173,19 +181,22 @@ export async function createVault(
   const salt = generateSalt(16);
   const masterKey = deriveMasterKey(masterPassword, salt, profile);
   const recoveryKey = generateRecoveryKey();
+  const recoveryWrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
   try {
     const masterEnvelope = wrapVaultKey({
       vaultKey,
       wrappingKey: masterKey,
       vaultId,
       type: "master",
+      vaultKeyVersion: 1,
       kdf: kdfParamsFrom(profile, salt),
     });
     const recoveryEnvelope = wrapVaultKey({
       vaultKey,
-      wrappingKey: recoveryKey,
+      wrappingKey: recoveryWrappingKey,
       vaultId,
       type: "recovery",
+      vaultKeyVersion: 1,
     });
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vaultId, {
@@ -201,7 +212,7 @@ export async function createVault(
     ]);
     return { vault, recoveryKey: formatRecoveryKey(recoveryKey) };
   } finally {
-    zeroize(masterKey, recoveryKey);
+    zeroize(masterKey, recoveryKey, recoveryWrappingKey);
   }
 }
 
@@ -213,7 +224,12 @@ export async function unlockWithMasterPassword(
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
   try {
-    const vaultKey = unwrapVaultKey(masterEnvelope, masterKey, vaultId);
+    const vaultKey = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
     return openSnapshot(snapshot, vaultKey, "master_password", [
       { envelope: masterEnvelope, wrappingKey: masterKey },
     ]);
@@ -230,11 +246,19 @@ export async function unlockWithRecoveryKey(
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "recovery");
   if (!envelope) throw new Error("this vault has no recovery envelope");
   const recoveryKey = parseRecoveryKey(recoveryKeyText);
+  const recoveryWrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
   try {
-    const vaultKey = unwrapVaultKey(envelope, recoveryKey, vaultId);
-    return openSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey: recoveryKey }]);
+    const vaultKey = unwrapVaultKey(envelope, {
+      wrappingKey: recoveryWrappingKey,
+      vaultId,
+      expectType: "recovery",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
+    return openSnapshot(snapshot, vaultKey, "recovery_key", [
+      { envelope, wrappingKey: recoveryWrappingKey },
+    ]);
   } finally {
-    zeroize(recoveryKey);
+    zeroize(recoveryKey, recoveryWrappingKey);
   }
 }
 
@@ -284,6 +308,8 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
       store: store(),
       vaultId,
       deviceId: id,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+      deviceKeyVersion: deviceEnvelope.deviceKeyVersion ?? 1,
       deviceEnvelope,
       ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
     });
@@ -318,6 +344,7 @@ async function commitSnapshot(
           vaultId: vault.vaultId,
           entryId: entry.id,
           plaintext,
+          vaultKeyVersion: vault.vaultKeyVersion,
           schemaVersion: ENTRY_SCHEMA_VERSION,
         }),
       );
@@ -374,6 +401,8 @@ export async function enableDeviceUnlockForVault(
     vaultKey: vault.vaultKey,
     vaultId: vault.vaultId,
     deviceId: id,
+    vaultKeyVersion: vault.vaultKeyVersion,
+    deviceKeyVersion: 1,
     rpId: rpId(),
     user: {
       id: new TextEncoder().encode(accountEmail),

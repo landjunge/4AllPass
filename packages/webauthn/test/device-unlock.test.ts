@@ -30,6 +30,8 @@ import type { FakeAuthenticatorOptions } from "./fake-authenticator.ts";
 const RP_ID = "pass.example.local";
 const VAULT_ID = "vault_01HZX4ALLPASS000000000001";
 const DEVICE_ID = "dev_macbook_chrome_profile_1";
+const VKV = 1;
+const DKV = 1;
 
 const USER = {
   id: new TextEncoder().encode("account_1"),
@@ -59,6 +61,8 @@ async function enable(
     vaultKey,
     vaultId: VAULT_ID,
     deviceId: DEVICE_ID,
+    vaultKeyVersion: VKV,
+    deviceKeyVersion: DKV,
     rpId: RP_ID,
     user: USER,
     ...(allowedMechanisms ? { allowedMechanisms } : {}),
@@ -84,6 +88,8 @@ describe("enableDeviceUnlock", () => {
       vaultKey,
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
+      vaultKeyVersion: VKV,
+      deviceKeyVersion: DKV,
       rpId: RP_ID,
       user: USER,
     });
@@ -119,6 +125,8 @@ describe("enableDeviceUnlock", () => {
       vaultKey: generateVaultKey(),
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
+      vaultKeyVersion: VKV,
+      deviceKeyVersion: DKV,
       rpId: RP_ID,
       user: USER,
     });
@@ -190,6 +198,8 @@ describe("unlockWithDevice", () => {
         store: fixture.store,
         vaultId: VAULT_ID,
         deviceId: DEVICE_ID,
+        vaultKeyVersion: VKV,
+        deviceKeyVersion: DKV,
         deviceEnvelope: fixture.deviceEnvelope,
       });
       assert.deepEqual(result.vaultKey, fixture.vaultKey);
@@ -208,6 +218,8 @@ describe("unlockWithDevice", () => {
       vaultKey,
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
+      vaultKeyVersion: VKV,
+      deviceKeyVersion: DKV,
       rpId: RP_ID,
       user: USER,
     });
@@ -222,6 +234,8 @@ describe("unlockWithDevice", () => {
       store,
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
+      vaultKeyVersion: VKV,
+      deviceKeyVersion: DKV,
       deviceEnvelope: enabled.deviceEnvelope,
       mirroredDeviceKeyEnvelope: enabled.mirrorableDeviceKeyEnvelope!,
     });
@@ -237,12 +251,16 @@ describe("unlockWithDevice", () => {
           store: memoryDeviceUnlockStore(),
           vaultId: VAULT_ID,
           deviceId: DEVICE_ID,
+          vaultKeyVersion: VKV,
+          deviceKeyVersion: DKV,
           deviceEnvelope: wrapVaultKey({
             vaultKey: generateVaultKey(),
             wrappingKey: generateVaultKey(),
             vaultId: VAULT_ID,
             type: "device",
+            vaultKeyVersion: VKV,
             deviceId: DEVICE_ID,
+            deviceKeyVersion: DKV,
           }),
         }),
       (error: unknown) =>
@@ -262,6 +280,8 @@ describe("unlockWithDevice", () => {
           store: fixture.store,
           vaultId: VAULT_ID,
           deviceId: DEVICE_ID,
+          vaultKeyVersion: VKV,
+          deviceKeyVersion: DKV,
           deviceEnvelope: fixture.deviceEnvelope,
         }),
       DeviceUnlockUnavailableError,
@@ -275,7 +295,9 @@ describe("unlockWithDevice", () => {
       wrappingKey: generateVaultKey(),
       vaultId: "vault_other",
       type: "device",
+      vaultKeyVersion: VKV,
       deviceId: DEVICE_ID,
+      deviceKeyVersion: DKV,
     });
     await assert.rejects(
       () =>
@@ -284,6 +306,8 @@ describe("unlockWithDevice", () => {
           store: fixture.store,
           vaultId: VAULT_ID,
           deviceId: DEVICE_ID,
+          vaultKeyVersion: VKV,
+          deviceKeyVersion: DKV,
           deviceEnvelope: foreign,
         }),
       DeviceUnlockUnavailableError,
@@ -300,6 +324,8 @@ describe("unlockWithDevice", () => {
           store: fixture.store,
           vaultId: VAULT_ID,
           deviceId: DEVICE_ID,
+          vaultKeyVersion: VKV,
+          deviceKeyVersion: DKV,
           deviceEnvelope: fixture.deviceEnvelope,
         }),
       DeviceUnlockUnavailableError,
@@ -324,6 +350,8 @@ describe("unlockWithDevice", () => {
           store: fixture.store,
           vaultId: VAULT_ID,
           deviceId: DEVICE_ID,
+          vaultKeyVersion: VKV,
+          deviceKeyVersion: DKV,
           deviceEnvelope: fixture.deviceEnvelope,
         }),
       (error: unknown) =>
@@ -343,6 +371,7 @@ describe("unlockWithDevice", () => {
       wrappingKey: masterKey,
       vaultId: VAULT_ID,
       type: "master",
+      vaultKeyVersion: VKV,
       kdf: kdfParamsFrom(ARGON2ID_PROFILES.ci, salt),
       allowTestProfile: true,
     });
@@ -353,11 +382,22 @@ describe("unlockWithDevice", () => {
       vaultKey,
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
+      vaultKeyVersion: VKV,
+      deviceKeyVersion: DKV,
       rpId: RP_ID,
       user: USER,
     });
 
-    assert.deepEqual(unwrapVaultKey(masterEnvelope, masterKey, VAULT_ID), vaultKey);
+    assert.deepEqual(
+      unwrapVaultKey(masterEnvelope, {
+        wrappingKey: masterKey,
+        vaultId: VAULT_ID,
+        expectType: "master",
+        expectVaultKeyVersion: VKV,
+        allowTestProfile: true,
+      }),
+      vaultKey,
+    );
   });
 });
 

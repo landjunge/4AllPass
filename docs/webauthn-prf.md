@@ -67,11 +67,15 @@ After the vault is unlocked with the Master Password:
 
 1. `navigator.credentials.get` with `userVerification = "required"`.
 2. `publicKey.extensions.prf.eval.first = prfEvalFirst(rpId, vaultId)`.
-3. Read `clientExtensionResults.prf.results.first` (32 bytes). Missing or short output → abort, fall back to Master Password.
+3. Read `clientExtensionResults.prf.results.first` (32 bytes). Missing, short, or all-zero output → abort, fall back to Master Password.
 4. `DWK = deriveDeviceWrappingKey({ prfOutput, rpId, vaultId, deviceId, credentialId })`.
-5. Unwrap Device-Key Envelope → DK.
-6. Unwrap Device Envelope → VK.
+5. Unwrap Device-Key Envelope → DK, stating the expected vault, device, credential and `deviceKeyVersion`.
+6. Unwrap Device Envelope → VK, stating the expected `deviceId`, `deviceKeyVersion` and `vaultKeyVersion`.
 7. Zeroize PRF output and DWK.
+
+An all-zero `results.first` is treated as "no PRF material", not as a key: a
+32-byte zero buffer is what a mis-wired fallback produces, and deriving from it
+would yield a publicly computable DWK.
 
 v1 uses **only** `eval.first` / `results.first`. `eval.second` is reserved.
 
@@ -124,7 +128,8 @@ AAD = encodeAad([
   vault_id,
   device_id,
   credential_id,
-  crypto_version_u32be
+  crypto_version_u32be,
+  device_key_version_u32be
 ])
 
 ciphertext || tag = AES-256-GCM(DWK, DK, AAD)
@@ -132,15 +137,53 @@ ciphertext || tag = AES-256-GCM(DWK, DK, AAD)
 
 Nonce is library-generated. Test hook only for KATs (**TV-DKE-01**).
 
-`decrypt` uses the versions and ids stored on the envelope. Nothing is guessed.
+The envelope stores `vaultId`, `deviceId`, `credentialId` and `deviceKeyVersion`,
+and the AAD is built from them. That makes it self-consistent but **not**
+self-authenticating: an envelope belonging to another vault, device or credential
+unwraps perfectly well as long as the matching DWK is derived from the same fields.
+The caller must therefore state what it expects:
 
-### 4.1 Freshness (no independent rollback)
+```
+unwrapDeviceKey(envelope, {
+  deviceWrappingKey,
+  vaultId, deviceId, credentialId, deviceKeyVersion,   // all required
+})
+```
 
-The Device-Key Envelope has **no revision field of its own**, and the DWK is
-derived deterministically from `(rpId, vault_id, device_id, credential_id)` —
-so re-wrapping a *new* Device Key for the same credential produces an envelope
-with the **same AAD** as the old one. Nothing inside the blob distinguishes a
-current Device-Key Envelope from a superseded one.
+A disagreement is an `IntegrityError` before decryption. Rejections:
+**TV-DKE-CREDENTIAL-SWAP**, **TV-DKE-VERSION-ROLLBACK**, **TV-DKE-WRONG-DWK**.
+
+### 4.1 `deviceKeyVersion` and Device-Key rotation
+
+`deviceKeyVersion` counts generations of **this device's** Device Key. It is
+independent of `vault_key_version`, which counts generations of the Vault Key.
+
+| Event | `deviceKeyVersion` | `vault_key_version` |
+|---|---|---|
+| Vault Key rotation (hard revocation) | unchanged | +1 |
+| This device re-enrols / replaces its WebAuthn credential | +1 | unchanged |
+| Device-Key Envelope re-wrapped under a new DWK for the *same* DK | unchanged | unchanged |
+
+Rotating a Device Key:
+
+1. Generate a new random DK, `deviceKeyVersion = n+1`.
+2. `wrapDeviceKey({ …, deviceKeyVersion: n+1 })` → replace the local Device-Key Envelope.
+3. `wrapVaultKey({ type: "device", deviceId, deviceKeyVersion: n+1, vaultKeyVersion })` → publish in the next snapshot.
+4. The old Device Envelope disappears with the snapshot it belonged to; replaying it
+   fails both the expectation check and the snapshot manifest.
+
+Because the version is inside both AADs, a server cannot hand back generation `n`
+after the device has moved to `n+1`.
+
+### 4.2 Freshness (no independent rollback)
+
+`deviceKeyVersion` (§4.1) makes a *superseded* Device-Key Envelope
+distinguishable: it is inside the AAD, so an envelope from generation `n` cannot
+be opened by a client that expects `n+1`. What the version alone does not supply
+is the knowledge of which generation is current — the DWK is derived
+deterministically from `(rpId, vault_id, device_id, credential_id)`, so a stale
+envelope is still a perfectly valid blob for anyone who does not know better.
+That knowledge comes from the snapshot.
 
 Therefore the Device-Key Envelope **must not** be rolled back or updated
 independently of the vault snapshot it belongs to:
@@ -152,9 +195,10 @@ independently of the vault snapshot it belongs to:
   replayable channel.
 - Freshness of the Device-Key Envelope is thus inherited from the snapshot's
   `evaluateRevision` check. A malicious server that replays only an old
-  Device-Key Envelope blob (e.g. to resurrect a rotated-out Device Key)
-  either fails the snapshot freshness check or fails to unwrap the current
-  Device Envelope under the stale Device Key — it never yields the Vault Key.
+  Device-Key Envelope blob (e.g. to resurrect a rotated-out Device Key) fails on
+  any of three counts: the snapshot freshness check, the `deviceKeyVersion` the
+  caller states when opening it, or the current Device Envelope refusing to
+  unwrap under the stale Device Key — it never yields the Vault Key.
 
 Implementations that store the mirror in a table separate from the snapshot
 (as an optimization) still MUST gate serving it on the current

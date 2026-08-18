@@ -37,6 +37,7 @@ function masterEnvelope() {
     wrappingKey: generateDeviceKey(),
     vaultId: VAULT_ID,
     type: "master",
+    vaultKeyVersion: 1,
     kdf: kdfParamsFrom(ARGON2ID_PROFILES.standard, generateSalt(32)),
   });
 }
@@ -47,7 +48,9 @@ function deviceEnvelope() {
     wrappingKey: generateDeviceKey(),
     vaultId: VAULT_ID,
     type: "device",
+    vaultKeyVersion: 1,
     deviceId: DEVICE_ID,
+    deviceKeyVersion: 1,
   });
 }
 
@@ -165,6 +168,7 @@ describe("device-key envelope wire format", () => {
       vaultId: VAULT_ID,
       deviceId: DEVICE_ID,
       credentialId: CRED,
+      deviceKeyVersion: 1,
     });
     const decoded = decodeDeviceKeyEnvelope(roundTrip(encodeDeviceKeyEnvelope(envelope)));
     assert.deepEqual(decoded, envelope);
@@ -178,6 +182,7 @@ describe("device-key envelope wire format", () => {
         vaultId: VAULT_ID,
         deviceId: DEVICE_ID,
         credentialId: CRED,
+        deviceKeyVersion: 1,
       }),
     );
     assert.throws(() => decodeDeviceKeyEnvelope({ ...wire, credentialId: "" }), ProtocolError);
@@ -194,6 +199,7 @@ describe("entry and snapshot wire format", () => {
       vaultId: VAULT_ID,
       entryId: id,
       plaintext: new TextEncoder().encode(`{"title":"${id}"}`),
+      vaultKeyVersion: 2,
       ...(schemaVersion === undefined ? {} : { schemaVersion }),
     });
   }

@@ -117,10 +117,15 @@ async def register_device(
             platform=payload.platform,
             user_agent_summary=payload.user_agent_summary,
             last_seen_at=now,
+            # A brand-new device provably has no credentials or mirrored
+            # envelopes yet. Set these explicitly instead of leaving them
+            # unset, so serializing the response below does not trigger a
+            # lazy load (there is no greenlet to run one in this async path).
+            webauthn_credentials=[],
+            device_key_envelopes=[],
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform

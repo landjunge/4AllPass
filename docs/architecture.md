@@ -63,8 +63,13 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Jedes Browser-Profil und jedes Mobilgerät erhält eine eigene stabile Identität.
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
 - `DELETE /devices/{id}` is **metadata-only** (`revocation: "metadata_only"`).
-  Soft cryptographic revoke = next snapshot without that device envelope.
-  Hard revoke = Vault Key rotation. The PWA does not rotate keys yet.
+  Soft cryptographic revoke = PWA `revokeDevice` (DELETE, then next snapshot without
+  that device envelope, same `vaultKeyVersion`).
+  Hard revoke = PWA `hardRevokeDevice` (Vault Key rotation, re-encrypt, omit target,
+  CAS commit, then metadata DELETE). Foreign device envelopes are not rewrapped;
+  this device’s envelope is included only when its Device Key is recoverable
+  locally without a WebAuthn ceremony — otherwise every device re-enrols after
+  master unlock. See [`docs/security-boundary.md`](security-boundary.md) §4.
 - WebAuthn credential rows are client-asserted metadata (`verification: "client_asserted"`).
   The server does not verify assertions or PRF output.
 
@@ -100,9 +105,9 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 - Master-Passwort wird nie übertragen
 - Biometrie nur als Geräte-gebundene Komfortschicht
 - Social-Login nur für den Account
-- Geräte können metadatenseitig widerrufen werden; kryptografische Revocation
-  ist der nächste Snapshot ohne Device Envelope (Key Rotation: Spec + crypto
-  library; PWA noch nicht)
+- Geräte: Soft-Revoke = Metadata + Snapshot ohne Device Envelope (gleiche VK);
+  Hard-Revoke = Vault-Key-Rotation in der PWA (`hardRevokeDevice`). Soft DELETE
+  bleibt `metadata_only`.
 - Recovery über Recovery Key / Emergency Kit spezifiziert
 
 ---

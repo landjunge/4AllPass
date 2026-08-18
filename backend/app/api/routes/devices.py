@@ -153,6 +153,7 @@ async def revoke_device(
     device_id: str,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> DeviceSummary:
     device = await _get_device(db, vault, device_id)
     if device.revoked_at is None:
@@ -216,6 +217,7 @@ async def put_device_key_envelope(
     payload: WireDeviceKeyEnvelope,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[None, Depends(enforce_write_rate_limit)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
     if device.revoked_at is not None:

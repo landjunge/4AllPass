@@ -25,20 +25,27 @@ def _client_bucket(request: Request, action: str) -> str:
 def _set_session_cookies(response: Response, token: str, csrf_token: str) -> None:
     settings = get_settings()
     secure = settings.environment.lower() in {"production", "prod"}
-    common = {
+    session_cookie = {
         "max_age": settings.session_ttl_seconds,
         "secure": secure,
         "samesite": "lax",
         "path": "/api/v1",
     }
-    response.set_cookie(settings.session_cookie_name, token, httponly=True, **common)
-    response.set_cookie(settings.csrf_cookie_name, csrf_token, httponly=False, **common)
+    # Readable by the SPA at `/`. Path=/api/v1 would hide it from document.cookie.
+    csrf_cookie = {
+        "max_age": settings.session_ttl_seconds,
+        "secure": secure,
+        "samesite": "lax",
+        "path": "/",
+    }
+    response.set_cookie(settings.session_cookie_name, token, httponly=True, **session_cookie)
+    response.set_cookie(settings.csrf_cookie_name, csrf_token, httponly=False, **csrf_cookie)
 
 
 def _clear_session_cookies(response: Response) -> None:
     settings = get_settings()
     response.delete_cookie(settings.session_cookie_name, path="/api/v1")
-    response.delete_cookie(settings.csrf_cookie_name, path="/api/v1")
+    response.delete_cookie(settings.csrf_cookie_name, path="/")
 
 
 def _session_out(user: User) -> AccountSession:

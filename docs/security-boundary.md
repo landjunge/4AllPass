@@ -44,9 +44,9 @@ The browser application uses cookie authentication, not a JavaScript-readable
 Bearer token.
 
 - Session cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in production, explicit
-  `Max-Age`, path `/api/v1`.
-- CSRF cookie: readable by the page, echoed as `X-CSRF-Token` on
-  `POST` / `PUT` / `PATCH` / `DELETE`.
+  `Max-Age`, path `/api/v1` (not readable by JavaScript).
+- CSRF cookie: path `/` so the SPA can read it via `document.cookie`, echoed as
+  `X-CSRF-Token` on `POST` / `PUT` / `PATCH` / `DELETE`. It is not a secret.
 - Logout deletes the server-side session and clears both cookies.
 - SameSite alone is not the CSRF control. Cross-site attackers who can still
   cause credentialed requests (older browsers, some embedded webviews) are

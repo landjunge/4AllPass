@@ -173,3 +173,33 @@ async def test_register_rejects_mass_assignment(client):
         },
     )
     assert response.status_code == 422
+
+
+async def test_csrf_mismatch_is_rejected(client):
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": _email(), "password": "account-password-1234"},
+    )
+    assert response.status_code == 200
+    set_cookie = response.headers.get_list("set-cookie")
+    csrf_header = next(value for value in set_cookie if "4allpass_csrf=" in value)
+    session_header = next(value for value in set_cookie if "4allpass_session=" in value)
+    assert "Path=/" in csrf_header
+    assert "HttpOnly" not in csrf_header
+    assert "Path=/api/v1" in session_header
+    assert "HttpOnly" in session_header
+
+    rejected = await client.post("/api/v1/vaults", headers={"X-CSRF-Token": "forged"})
+    assert rejected.status_code == 403
+
+
+async def test_logout_revokes_cookie_session(client):
+    register = await client.post(
+        "/api/v1/auth/register",
+        json={"email": _email(), "password": "account-password-1234"},
+    )
+    assert register.status_code == 200
+    logout = await client.post("/api/v1/auth/logout", headers=_csrf(client))
+    assert logout.status_code == 204
+    after = await client.get("/api/v1/auth/me")
+    assert after.status_code == 401

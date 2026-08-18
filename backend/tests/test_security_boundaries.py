@@ -444,3 +444,27 @@ async def test_snapshot_preserves_opaque_manifest_bytes(client):
     fetched = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=alice)
     assert fetched.json()["manifest"] == manifest
     assert "password" not in fetched.text
+
+
+async def test_snapshot_requires_manifest_and_rejects_body_ownership_override(client):
+    alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    missing = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        headers=alice,
+        json={
+            "revision": 1,
+            "vaultKeyVersion": 1,
+            "cryptoProtocolVersion": 1,
+            "envelopes": [_master_envelope()],
+            "entries": [],
+        },
+    )
+    assert missing.status_code == 422
+
+    created = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        headers=alice,
+        json=_snapshot_body(1, vaultId=str(uuid.uuid4())),
+    )
+    assert created.status_code == 422

@@ -10,16 +10,19 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
 
-## What lives here (v1 scaffold)
+## What lives here (Backend Security Boundary v1)
 
 - SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
   users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
   encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
   (`docs/webauthn-prf.md` §4).
-- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
-  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
-  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
-  "project structure + crypto-core + DB schema" per the initial brief.
+- FastAPI backend application (`app/main.py`) implementing the Security Boundary v1:
+  - **Authentication**: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` with Argon2id password hashing and dummy hash timing attack protection.
+  - **Session Management**: Server-side Redis sessions (`session:<token>`), HttpOnly/SameSite/Secure cookie management, session revocation on logout, and session fixation defense.
+  - **Authorization**: `get_current_user` and `require_vault_owner` dependencies enforcing strict authentication and vault ownership checks before returning metadata.
+  - **Vault Management**: `POST /vaults` (server metadata container creation only; server never sees or creates VK), `GET /vaults`, `GET /vaults/{vault_id}`.
+  - **Device Authorization**: `GET /vaults/{vault_id}/devices` and `GET /vaults/{vault_id}/devices/{device_id}` enforcing authenticated caller + vault ownership + device scoping with IDOR protection (consistent 404s).
+  - **Health checks**: `GET /health` and `GET /health/db`.
 
 ## Local setup
 

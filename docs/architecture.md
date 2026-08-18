@@ -35,7 +35,39 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 ---
 
-## 3. Authentifizierung
+## 3. Authentifizierung & Backend Security Boundary v1
+
+### Wichtig: Authentication ≠ Vault Decryption
+Die Account-Authentifizierung am Server und die clientseitige Vault-Entschlüsselung sind **vollständig entkoppelt**:
+- **Authentication**: Der Server prüft Identität (E-Mail + Account-Passwort-Hash) und vergibt eine serverseitige Session.
+- **Vault Crypto**: Der Client generiert den Vault Key (VK), leitet den Master Key (MK) aus dem Master-Passwort via Argon2id ab und entschlüsselt die Daten lokal.
+- Der Server sieht **niemals**: Master-Passwort, Vault Key (VK), Device Key (DK), Device Wrapping Key (DWK), WebAuthn PRF Output oder Klartext-Einträge.
+
+```
+Client
+  ↓
+Authentication (/auth/login, /auth/register)
+  ↓
+Authenticated User (get_current_user via HttpOnly Session Cookie)
+  ↓
+Vault Ownership / Authorization (require_vault_owner)
+  ↓
+Device Authorization (/vaults/{vault_id}/devices)
+  ↓
+Encrypted Blobs & Metadata only (PostgreSQL)
+```
+
+### Account-Login & Session-Management
+- **Registrierung & Login**: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`.
+- **Passwort-Hashing**: Server-seitiges Argon2id (`argon2-cffi`) mit standardisierten OWASP-Parametern für Account-Passwörter (unabhängig von der Vault KDF). Inklusive Dummy-Hash-Verifikation gegen Timing-basierte E-Mail-Enumeration.
+- **Sessions**: Serverseitig in Redis (`session:<token>`) mit 256-Bit kryptografisch zufälligen Tokens.
+- **Cookies**: `HttpOnly`, `SameSite=Lax`, `Secure` in Produktion, konfigurierbares TTL (Standard 14 Tage), sofortige Invalidierung bei Logout und Schutz vor Session Fixation.
+
+### Autorisierung & IDOR-Schutz
+- `get_current_user()` validiert Session und aktiven Benutzerstatus.
+- `require_vault_owner()` erzwingt, dass der Aufrufer Eigentümer des angeforderten Vaults ist (`Vault.owner_user_id == current_user.id`).
+- Einheitliche 404-Fehler bei nicht existierenden oder fremden Vault-IDs verhindern Vault-Enumeration.
+- Geräte-Endpunkte (`/vaults/{vault_id}/devices`) sind strikt an den autorisierten Vault gebunden.
 
 ### Master-Passwort
 - Pflicht und zentrale Sicherheitsgrundlage
@@ -45,11 +77,6 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Pro Gerät aktivierbar
 - Schützt Device Key Material (siehe crypto-protocol.md)
 - Fallback immer auf Master-Passwort
-
-### Account-Login
-- E-Mail + Account-Passwort (getrennt vom Master-Passwort)
-- Optional: Google-Login und „Sign in with Apple“
-- Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 
 ---
 

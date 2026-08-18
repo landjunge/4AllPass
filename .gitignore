@@ -7,6 +7,7 @@ dist-ssr/
 *.log
 
 # Python / backend
+.venv/
 backend/.venv/
 backend/__pycache__/
 **/__pycache__/

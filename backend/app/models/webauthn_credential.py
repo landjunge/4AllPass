@@ -35,10 +35,15 @@ class WebAuthnCredential(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     rp_id: Mapped[str] = mapped_column(String(255), nullable=False)
     credential_id: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True, index=True)
-    public_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # COSE public key — required once the server verifies assertions.
+    # Device-unlock registration from the PWA currently sends ceremony
+    # metadata only (frontend registerCredential); assertion verification
+    # is a follow-up. Nullable until that lands.
+    public_key: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     sign_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     transports: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
+    mechanism: Mapped[str | None] = mapped_column(String(32), nullable=True)
     prf_supported: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     large_blob_supported: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     user_verification: Mapped[str] = mapped_column(String(16), nullable=False, default="required")

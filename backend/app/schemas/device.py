@@ -1,35 +1,48 @@
-import uuid
 from datetime import datetime
+from typing import Literal
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import Field
+
+from app.schemas.common import CamelModel
 
 
-class WebAuthnCredentialOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
+class CredentialSummary(CamelModel):
+    id: UUID
+    credential_id: str
     rp_id: str
+    mechanism: Literal["prf", "large_blob", "uv_gated_local"] | None = None
     prf_supported: bool
     large_blob_supported: bool
-    user_verification: str
+    user_verification_required: bool
+    has_mirrored_device_key_envelope: bool = False
+    created_at: datetime
     last_used_at: datetime | None
     revoked_at: datetime | None
 
 
-class DeviceOut(BaseModel):
-    """Device summary — never includes key material.
-
-    Only metadata the server is allowed to store (crypto-protocol.md §11):
-    device id, display name, last seen, revocation status, and whether a
-    Device-Key Envelope mirror / WebAuthn credential is on file.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
+class DeviceSummary(CamelModel):
     device_id: str
-    display_name: str | None
+    label: str | None = None
+    platform: str | None = None
+    user_agent_summary: str | None = None
+    created_at: datetime
     last_seen_at: datetime | None
     revoked_at: datetime | None
-    webauthn_credentials: list[WebAuthnCredentialOut] = []
-    has_device_key_envelope: bool = False
+    has_device_envelope: bool = False
+    credentials: list[CredentialSummary] = []
+
+
+class RegisterDeviceRequest(CamelModel):
+    device_id: str = Field(min_length=1, max_length=128)
+    label: str | None = Field(default=None, max_length=255)
+    platform: str | None = Field(default=None, max_length=64)
+    user_agent_summary: str | None = Field(default=None, max_length=512)
+
+
+class RegisterCredentialRequest(CamelModel):
+    credential_id: str
+    rp_id: str
+    mechanism: Literal["prf", "large_blob", "uv_gated_local"]
+    prf_supported: bool
+    large_blob_supported: bool

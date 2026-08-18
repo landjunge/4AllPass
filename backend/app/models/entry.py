@@ -36,6 +36,7 @@ class EncryptedEntry(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     entry_id: Mapped[str] = mapped_column(String(128), nullable=False)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     crypto_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     nonce: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     ciphertext: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

@@ -38,6 +38,7 @@ class Device(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     device_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    platform: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent_summary: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

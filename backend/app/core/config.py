@@ -24,10 +24,17 @@ class Settings(BaseSettings):
     # Account-level session auth (unrelated to vault crypto — see architecture.md §3).
     session_secret: str = "change-me-in-production"
     session_ttl_seconds: int = 60 * 60 * 24 * 14
+    # "redis" in deployment; "memory" for pytest / single-process dev without Redis.
+    session_backend: str = "redis"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
     crypto_protocol_version: int = 1
+    webauthn_rp_id: str = "localhost"
+
+    auth_min_password_length: int = 12
+    auth_login_rate_limit: int = 10
+    auth_login_rate_window_seconds: int = 60
 
 
 @lru_cache

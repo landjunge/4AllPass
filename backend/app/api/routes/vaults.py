@@ -26,7 +26,11 @@ async def get_vault(vault: VaultDep) -> VaultResponse:
     return vault_to_response(vault)
 
 
-@router.get("/{vault_id}/snapshot", response_model=SnapshotResponse, response_model_exclude_none=True)
+@router.get(
+    "/{vault_id}/snapshot",
+    response_model=SnapshotResponse,
+    response_model_exclude_none=True,
+)
 async def get_active_snapshot(vault: VaultDep, session: SessionDep) -> SnapshotResponse:
     """The snapshot named by `active_revision`, never a mix of revisions."""
     snapshot = await vault_service.get_active_snapshot(session, vault)

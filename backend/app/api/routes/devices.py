@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_owned_vault
+from app.api.deps import get_db, require_vault_owner
 from app.core.encoding import b64decode, b64encode, b64url_decode
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
@@ -89,7 +89,7 @@ async def _get_device(db: AsyncSession, vault: Vault, device_id: str) -> Device:
 
 @router.get("", response_model=list[DeviceSummary])
 async def list_devices(
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[DeviceSummary]:
     envelope_ids = await _device_envelope_ids(db, vault)
@@ -99,7 +99,7 @@ async def list_devices(
 @router.post("", response_model=DeviceSummary)
 async def register_device(
     payload: RegisterDeviceRequest,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DeviceSummary:
     result = await db.execute(
@@ -134,7 +134,7 @@ async def register_device(
 @router.get("/{device_id}", response_model=DeviceSummary)
 async def get_device(
     device_id: str,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DeviceSummary:
     device = await _get_device(db, vault, device_id)
@@ -144,7 +144,7 @@ async def get_device(
 @router.delete("/{device_id}", response_model=DeviceSummary)
 async def revoke_device(
     device_id: str,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DeviceSummary:
     device = await _get_device(db, vault, device_id)
@@ -160,7 +160,7 @@ async def revoke_device(
 async def register_credential(
     device_id: str,
     payload: RegisterCredentialRequest,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CredentialSummary:
     device = await _get_device(db, vault, device_id)
@@ -200,7 +200,7 @@ async def put_device_key_envelope(
     device_id: str,
     credential_id: str,
     payload: WireDeviceKeyEnvelope,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
@@ -258,7 +258,7 @@ async def put_device_key_envelope(
 async def get_device_key_envelope(
     device_id: str,
     credential_id: str,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)

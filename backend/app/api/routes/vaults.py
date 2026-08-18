@@ -3,19 +3,17 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db, get_owned_vault
+from app.api.deps import get_current_user, get_db, require_vault_owner
 from app.core.config import get_settings
 from app.models.user import User
 from app.models.vault import Vault
 from app.schemas.snapshot import SnapshotCommit, WireVaultSnapshot
-from app.schemas.vault import VaultSummary
+from app.schemas.vault import VaultCreate, VaultSummary
 from app.services.snapshots import RevisionConflict, commit_snapshot, load_active_snapshot, snapshot_to_wire
 
 router = APIRouter(prefix="/vaults", tags=["vaults"])
@@ -50,6 +48,7 @@ async def list_vaults(
 async def create_vault(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    _payload: VaultCreate | None = None,
 ) -> VaultSummary:
     vault = Vault(
         owner_user_id=user.id,
@@ -61,13 +60,13 @@ async def create_vault(
 
 
 @router.get("/{vault_id}", response_model=VaultSummary)
-async def get_vault(vault: Annotated[Vault, Depends(get_owned_vault)]) -> VaultSummary:
+async def get_vault(vault: Annotated[Vault, Depends(require_vault_owner)]) -> VaultSummary:
     return _summary(vault)
 
 
 @router.get("/{vault_id}/snapshot", response_model=WireVaultSnapshot)
 async def get_snapshot(
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireVaultSnapshot:
     snapshot = await load_active_snapshot(db, vault)
@@ -79,7 +78,7 @@ async def get_snapshot(
 @router.post("/{vault_id}/snapshots", response_model=WireVaultSnapshot)
 async def post_snapshot(
     payload: SnapshotCommit,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(require_vault_owner)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireVaultSnapshot | JSONResponse:
     try:

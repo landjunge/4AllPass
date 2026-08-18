@@ -10,3 +10,13 @@ class CamelModel(BaseModel):
         populate_by_name=True,
         from_attributes=True,
     )
+
+
+class RequestModel(CamelModel):
+    """Incoming bodies reject unknown fields (mass assignment)."""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        extra="forbid",
+    )

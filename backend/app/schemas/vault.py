@@ -1,7 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, RequestModel
+
+
+class VaultCreate(RequestModel):
+    """Ownership is taken from the session, never from the body."""
 
 
 class VaultSummary(CamelModel):

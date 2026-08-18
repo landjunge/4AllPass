@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, RequestModel
 
 
 class WireKdfParams(CamelModel):
@@ -48,7 +48,7 @@ class WireVaultSnapshot(CamelModel):
     entries: list[WireEncryptedEntry]
 
 
-class SnapshotCommit(CamelModel):
+class SnapshotCommit(RequestModel):
     expected_revision: int | None = None
     revision: int = Field(ge=1)
     vault_key_version: int = Field(ge=1)

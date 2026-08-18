@@ -16,10 +16,11 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
   users, vaults, immutable vault snapshots, key envelopes, encrypted entries,
   devices, WebAuthn credentials, and the Device-Key Envelope mirror.
 - Account auth (register / login / logout / me) with Argon2id *account*
-  passwords and revocable Redis (or in-memory) bearer sessions. This is
-  **not** the Master Password and cannot decrypt a vault.
-- Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
-  and returns 404 for vaults the caller does not own.
+  password hashes and revocable Redis (or in-memory) **HttpOnly cookie**
+  sessions. This is **not** the Master Password and cannot decrypt a vault.
+  See [`../docs/backend-security-boundary.md`](../docs/backend-security-boundary.md).
+- Ownership: every vault/device/snapshot route uses `get_current_user()` and
+  `require_vault_owner()` and returns 404 for vaults the caller does not own.
 - Snapshot GET + POST with compare-and-swap on `expectedRevision`
   (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
 - Device register / list / revoke, credential metadata, Device-Key Envelope

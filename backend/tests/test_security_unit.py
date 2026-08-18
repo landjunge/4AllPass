@@ -1,7 +1,13 @@
 from uuid import uuid4
 
-from app.core.security import hash_account_password, new_session_token, token_lookup_key, verify_account_password
-from app.core.sessions import MemorySessionStore, SessionRecord
+from app.core.security import (
+    dummy_verify_account_password,
+    hash_account_password,
+    new_session_token,
+    token_lookup_key,
+    verify_account_password,
+)
+from app.core.sessions import MemorySessionStore, SessionRecord, issue_session
 
 
 def test_account_password_is_not_reversible():
@@ -21,7 +27,7 @@ def test_token_lookup_is_not_the_bearer_token():
 async def test_memory_session_roundtrip_and_delete():
     store = MemorySessionStore()
     token = new_session_token()
-    record = SessionRecord(user_id=uuid4(), email="a@example.test")
+    record = SessionRecord(user_id=uuid4(), email="a@example.com")
     await store.put(token, record, ttl_seconds=60)
     loaded = await store.get(token)
     assert loaded is not None
@@ -35,3 +41,17 @@ async def test_rate_limit_trips():
     for _ in range(10):
         assert await store.hit_rate_limit("login:1.2.3.4", limit=10, window_seconds=60) is False
     assert await store.hit_rate_limit("login:1.2.3.4", limit=10, window_seconds=60) is True
+
+
+def test_dummy_verify_does_not_raise():
+    dummy_verify_account_password("any-password-at-all")
+
+
+async def test_issue_session_revokes_previous_token():
+    store = MemorySessionStore()
+    record = SessionRecord(user_id=uuid4(), email="a@example.com")
+    first = await issue_session(store, record)
+    second = await issue_session(store, record, previous_token=first)
+    assert first != second
+    assert await store.get(first) is None
+    assert await store.get(second) is not None

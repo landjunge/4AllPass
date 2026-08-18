@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 60 * 60 * 24 * 14
     # "redis" in deployment; "memory" for pytest / single-process dev without Redis.
     session_backend: str = "redis"
+    session_cookie_name: str = "fourallpass_session"
+    # "lax" is correct for same-site self-hosting (PWA and API share an origin
+    # behind the reverse proxy / Vite `/api` proxy). Use "none" only if the
+    # API is ever served from a different site — that also requires Secure.
+    session_cookie_samesite: str = "lax"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 

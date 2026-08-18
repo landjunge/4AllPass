@@ -1,8 +1,17 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, devices, health, vaults
 from app.core.config import get_settings
+from app.core.sessions import assert_production_session_secret
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    assert_production_session_secret()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -16,6 +25,7 @@ def create_app() -> FastAPI:
             "see docs/crypto-protocol.md and docs/threat-model.md."
         ),
         version="0.1.0",
+        lifespan=lifespan,
     )
 
     app.add_middleware(

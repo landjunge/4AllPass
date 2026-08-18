@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, RequestModel
 
 
 class CredentialSummary(CamelModel):
@@ -33,14 +33,14 @@ class DeviceSummary(CamelModel):
     credentials: list[CredentialSummary] = []
 
 
-class RegisterDeviceRequest(CamelModel):
+class RegisterDeviceRequest(RequestModel):
     device_id: str = Field(min_length=1, max_length=128)
     label: str | None = Field(default=None, max_length=255)
     platform: str | None = Field(default=None, max_length=64)
     user_agent_summary: str | None = Field(default=None, max_length=512)
 
 
-class RegisterCredentialRequest(CamelModel):
+class RegisterCredentialRequest(RequestModel):
     credential_id: str
     rp_id: str
     mechanism: Literal["prf", "large_blob", "uv_gated_local"]

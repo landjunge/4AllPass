@@ -15,6 +15,7 @@ os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
 
 from app.api.deps import get_db  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.core.sessions import reset_memory_store  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -59,8 +60,10 @@ async def client(engine) -> AsyncIterator[AsyncClient]:
                 await session.rollback()
                 raise
 
+    reset_memory_store()
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+    reset_memory_store()

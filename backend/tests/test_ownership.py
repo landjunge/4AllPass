@@ -5,17 +5,21 @@ import pytest
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 PASSWORD = "account-password-1234"
+SESSION_COOKIE = "fourallpass_session"
 
 
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.com"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
-    return email, response.json()["token"]
+    token = response.cookies.get(SESSION_COOKIE)
+    assert token
+    client.cookies.clear()
+    return email, token
 
 
-def _auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
+def _cookies(token: str) -> dict[str, str]:
+    return {SESSION_COOKIE: token}
 
 
 def _master_envelope() -> dict:
@@ -43,27 +47,29 @@ async def test_user_cannot_read_foreign_vault_or_devices(client):
     _, alice = await _signup(client)
     _, bob = await _signup(client)
 
-    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    created = await client.post("/api/v1/vaults", cookies=_cookies(alice))
     assert created.status_code == 201
     vault_id = created.json()["vaultId"]
+    assert "ownerUserId" not in created.json()
 
-    forbidden_get = await client.get(f"/api/v1/vaults/{vault_id}", headers=_auth(bob))
+    forbidden_get = await client.get(f"/api/v1/vaults/{vault_id}", cookies=_cookies(bob))
     assert forbidden_get.status_code == 404
+    assert forbidden_get.json()["detail"] == "vault not found"
 
-    forbidden_devices = await client.get(f"/api/v1/vaults/{vault_id}/devices", headers=_auth(bob))
+    forbidden_devices = await client.get(f"/api/v1/vaults/{vault_id}/devices", cookies=_cookies(bob))
     assert forbidden_devices.status_code == 404
 
-    forbidden_snapshot = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=_auth(bob))
+    forbidden_snapshot = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", cookies=_cookies(bob))
     assert forbidden_snapshot.status_code == 404
 
-    listed = await client.get("/api/v1/vaults", headers=_auth(bob))
+    listed = await client.get("/api/v1/vaults", cookies=_cookies(bob))
     assert listed.status_code == 200
     assert listed.json() == []
 
 
 async def test_devices_require_auth(client):
     _, alice = await _signup(client)
-    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    created = await client.post("/api/v1/vaults", cookies=_cookies(alice))
     vault_id = created.json()["vaultId"]
     anon = await client.get(f"/api/v1/vaults/{vault_id}/devices")
     assert anon.status_code == 401
@@ -71,12 +77,12 @@ async def test_devices_require_auth(client):
 
 async def test_snapshot_cas_and_ownership(client):
     _, alice = await _signup(client)
-    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    created = await client.post("/api/v1/vaults", cookies=_cookies(alice))
     vault_id = created.json()["vaultId"]
 
     first = await client.post(
         f"/api/v1/vaults/{vault_id}/snapshots",
-        headers=_auth(alice),
+        cookies=_cookies(alice),
         json={
             "revision": 1,
             "vaultKeyVersion": 1,
@@ -90,13 +96,13 @@ async def test_snapshot_cas_and_ownership(client):
     assert first.json()["vaultId"] == vault_id
     assert first.json()["envelopes"][0]["type"] == "master"
 
-    fetched = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=_auth(alice))
+    fetched = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", cookies=_cookies(alice))
     assert fetched.status_code == 200
     assert fetched.json()["revision"] == 1
 
     conflict = await client.post(
         f"/api/v1/vaults/{vault_id}/snapshots",
-        headers=_auth(alice),
+        cookies=_cookies(alice),
         json={
             "expectedRevision": 0,
             "revision": 1,
@@ -111,7 +117,7 @@ async def test_snapshot_cas_and_ownership(client):
 
     second = await client.post(
         f"/api/v1/vaults/{vault_id}/snapshots",
-        headers=_auth(alice),
+        cookies=_cookies(alice),
         json={
             "expectedRevision": 1,
             "revision": 2,
@@ -127,12 +133,12 @@ async def test_snapshot_cas_and_ownership(client):
 
 async def test_register_device_roundtrip(client):
     _, alice = await _signup(client)
-    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    created = await client.post("/api/v1/vaults", cookies=_cookies(alice))
     vault_id = created.json()["vaultId"]
 
     registered = await client.post(
         f"/api/v1/vaults/{vault_id}/devices",
-        headers=_auth(alice),
+        cookies=_cookies(alice),
         json={
             "deviceId": "dev_aabbccddeeff001122334455",
             "label": "Chrome on Linux",
@@ -144,7 +150,7 @@ async def test_register_device_roundtrip(client):
     assert registered.json()["deviceId"] == "dev_aabbccddeeff001122334455"
     assert registered.json()["label"] == "Chrome on Linux"
 
-    listed = await client.get(f"/api/v1/vaults/{vault_id}/devices", headers=_auth(alice))
+    listed = await client.get(f"/api/v1/vaults/{vault_id}/devices", cookies=_cookies(alice))
     assert listed.status_code == 200
     assert len(listed.json()) == 1
     assert listed.json()[0]["hasDeviceEnvelope"] is False

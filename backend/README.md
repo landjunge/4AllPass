@@ -20,11 +20,14 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
   **not** the Master Password and cannot decrypt a vault.
 - Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
   and returns 404 for vaults the caller does not own.
-- Snapshot GET + POST with compare-and-swap on `expectedRevision`
-  (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
+- Snapshot GET + POST with row-locked compare-and-swap on `expectedRevision`
+  (`docs/vault-revision.md` §4) plus the opaque sealed manifest. The server
+  stores ciphertext only and never opens the manifest.
 - Device register / list / revoke, credential metadata, Device-Key Envelope
-  mirror. Soft revoke is bookkeeping; cryptographic revoke is the next snapshot
-  without that device envelope.
+  mirror. `DELETE` is bookkeeping; a later snapshot must omit that device
+  envelope for soft revoke. Hard revoke (Vault Key rotation) is not implemented.
+  `prf_supported` is a client claim, not a server-verified WebAuthn proof.
+  See [`../docs/security-boundary.md`](../docs/security-boundary.md).
 
 ## Local setup
 

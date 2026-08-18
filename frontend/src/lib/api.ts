@@ -2,10 +2,16 @@
  * Typed client for the 4AllPass API.
  *
  * Everything crossing this boundary is already encrypted or is metadata. The
- * session token lives in memory plus sessionStorage; it authenticates the
- * account, not the vault.
+ * session token lives in memory plus sessionStorage (Bearer). That is a
+ * deliberate choice: the header is not sent automatically, so cookie CSRF
+ * does not apply. It authenticates the account, not the vault.
  */
-import type { WireDeviceKeyEnvelope, WireKeyEnvelope, WireVaultSnapshot } from "@4allpass/crypto";
+import type {
+  WireDeviceKeyEnvelope,
+  WireKeyEnvelope,
+  WireSealedManifest,
+  WireVaultSnapshot,
+} from "@4allpass/crypto";
 
 const API_BASE = "/api/v1";
 const TOKEN_KEY = "4allpass.session";
@@ -58,6 +64,7 @@ export interface SnapshotCommit {
   cryptoProtocolVersion: 1;
   envelopes: WireKeyEnvelope[];
   entries: WireVaultSnapshot["entries"];
+  manifest: WireSealedManifest;
 }
 
 export class ApiError extends Error {

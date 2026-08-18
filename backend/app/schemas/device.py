@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, StrictCamelModel
 
 
 class CredentialSummary(CamelModel):
@@ -33,14 +33,21 @@ class DeviceSummary(CamelModel):
     credentials: list[CredentialSummary] = []
 
 
-class RegisterDeviceRequest(CamelModel):
+class RegisterDeviceRequest(StrictCamelModel):
     device_id: str = Field(min_length=1, max_length=128)
     label: str | None = Field(default=None, max_length=255)
     platform: str | None = Field(default=None, max_length=64)
     user_agent_summary: str | None = Field(default=None, max_length=512)
 
 
-class RegisterCredentialRequest(CamelModel):
+class RegisterCredentialRequest(StrictCamelModel):
+    """Client-asserted WebAuthn *metadata*. Not a possession proof.
+
+    `prf_supported` / `rp_id` / `mechanism` are claims the client makes after
+    a local ceremony. The server stores them for bookkeeping and must not
+    treat them as cryptographic verification that this credential exists.
+    """
+
     credential_id: str
     rp_id: str
     mechanism: Literal["prf", "large_blob", "uv_gated_local"]

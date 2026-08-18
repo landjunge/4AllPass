@@ -62,6 +62,10 @@ class MemorySessionStore:
         self._rates[bucket] = window
         return len(window) > limit
 
+    def clear(self) -> None:
+        self._sessions.clear()
+        self._rates.clear()
+
 
 class RedisSessionStore:
     async def put(self, token: str, record: SessionRecord, ttl_seconds: int) -> None:

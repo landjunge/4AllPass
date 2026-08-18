@@ -24,6 +24,7 @@ import type {
   EnvelopeType,
   KdfParams,
   KeyEnvelope,
+  SealedManifest,
   VaultSnapshot,
 } from "./types.ts";
 
@@ -72,6 +73,14 @@ export interface WireEncryptedEntry {
   tag: string;
 }
 
+export interface WireSealedManifest {
+  version: number;
+  encryption: "AES-256-GCM";
+  nonce: string;
+  ciphertext: string;
+  tag: string;
+}
+
 export interface WireVaultSnapshot {
   vaultId: string;
   revision: number;
@@ -79,6 +88,8 @@ export interface WireVaultSnapshot {
   cryptoProtocolVersion: number;
   envelopes: WireKeyEnvelope[];
   entries: WireEncryptedEntry[];
+  /** Required by the current backend; optional on the wire type for older fixtures. */
+  manifest?: WireSealedManifest;
 }
 
 const ENVELOPE_TYPES: readonly EnvelopeType[] = ["master", "device", "recovery"];
@@ -294,6 +305,29 @@ export function decodeDeviceKeyEnvelope(value: unknown): DeviceKeyEnvelope {
   };
 }
 
+export function encodeSealedManifest(manifest: SealedManifest): WireSealedManifest {
+  return {
+    version: manifest.version,
+    encryption: manifest.encryption,
+    nonce: bytesToBase64(manifest.nonce),
+    ciphertext: bytesToBase64(manifest.ciphertext),
+    tag: bytesToBase64(manifest.tag),
+  };
+}
+
+export function decodeSealedManifest(value: unknown): SealedManifest {
+  const source = asRecord(value, "manifest");
+  requireVersion(source, "version", "manifest");
+  requireGcm(source, "manifest");
+  return {
+    version: CRYPTO_PROTOCOL_VERSION,
+    encryption: "AES-256-GCM",
+    nonce: requireBytes(source, "nonce", "manifest", NONCE_BYTES),
+    ciphertext: requireBytes(source, "ciphertext", "manifest"),
+    tag: requireBytes(source, "tag", "manifest", TAG_BYTES),
+  };
+}
+
 export function encodeEncryptedEntry(entry: EncryptedEntry): WireEncryptedEntry {
   return {
     id: entry.id,
@@ -324,7 +358,7 @@ export function decodeEncryptedEntry(value: unknown): EncryptedEntry {
 }
 
 export function encodeVaultSnapshot(snapshot: VaultSnapshot): WireVaultSnapshot {
-  return {
+  const wire: WireVaultSnapshot = {
     vaultId: snapshot.vaultId,
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
@@ -332,6 +366,10 @@ export function encodeVaultSnapshot(snapshot: VaultSnapshot): WireVaultSnapshot 
     envelopes: snapshot.envelopes.map(encodeKeyEnvelope),
     entries: snapshot.entries.map(encodeEncryptedEntry),
   };
+  if (snapshot.manifest) {
+    wire.manifest = encodeSealedManifest(snapshot.manifest);
+  }
+  return wire;
 }
 
 export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
@@ -346,7 +384,7 @@ export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
   if (!Array.isArray(envelopes) || !Array.isArray(entries)) {
     throw new ProtocolError("snapshot.envelopes and snapshot.entries must be arrays");
   }
-  return {
+  const snapshot: VaultSnapshot = {
     vaultId: requireString(source, "vaultId", "snapshot"),
     revision,
     vaultKeyVersion,
@@ -354,4 +392,9 @@ export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
     envelopes: envelopes.map(decodeKeyEnvelope),
     entries: entries.map(decodeEncryptedEntry),
   };
+  const manifest = optional(source, "manifest");
+  if (manifest !== undefined) {
+    snapshot.manifest = decodeSealedManifest(manifest);
+  }
+  return snapshot;
 }

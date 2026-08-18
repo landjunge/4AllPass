@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, StrictCamelModel
 
 
-class WireKdfParams(CamelModel):
+class WireKdfParams(StrictCamelModel):
     algorithm: Literal["argon2id"]
     version: int
     memory: int
@@ -16,7 +16,7 @@ class WireKdfParams(CamelModel):
     salt: str
 
 
-class WireKeyEnvelope(CamelModel):
+class WireKeyEnvelope(StrictCamelModel):
     version: int
     type: Literal["master", "device", "recovery"]
     vault_key_version: int
@@ -29,11 +29,19 @@ class WireKeyEnvelope(CamelModel):
     kdf: WireKdfParams | None = None
 
 
-class WireEncryptedEntry(CamelModel):
+class WireEncryptedEntry(StrictCamelModel):
     id: str
     schema_version: int
     crypto_version: int
     vault_key_version: int
+    nonce: str
+    ciphertext: str
+    tag: str
+
+
+class WireSealedManifest(StrictCamelModel):
+    version: int
+    encryption: Literal["AES-256-GCM"]
     nonce: str
     ciphertext: str
     tag: str
@@ -46,18 +54,20 @@ class WireVaultSnapshot(CamelModel):
     crypto_protocol_version: int
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry]
+    manifest: WireSealedManifest | None = None
 
 
-class SnapshotCommit(CamelModel):
+class SnapshotCommit(StrictCamelModel):
     expected_revision: int | None = None
     revision: int = Field(ge=1)
     vault_key_version: int = Field(ge=1)
     crypto_protocol_version: Literal[1]
     envelopes: list[WireKeyEnvelope]
     entries: list[WireEncryptedEntry] = []
+    manifest: WireSealedManifest
 
 
-class WireDeviceKeyEnvelope(CamelModel):
+class WireDeviceKeyEnvelope(StrictCamelModel):
     version: int
     vault_id: UUID
     device_id: str

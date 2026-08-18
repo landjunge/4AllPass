@@ -5,8 +5,8 @@
  * - The Vault Key is random and only ever appears here after a successful
  *   unwrap. The master password and the derived Master Key are zeroized as soon
  *   as the envelope is open.
- * - Every snapshot is checked for freshness against the local pin *and* for
- *   internal consistency before anything is decrypted into the UI.
+ * - The sealed manifest is verified under VK, then freshness is checked
+ *   against the local pin (vault-revision.md §3.1), then entries decrypt.
  * - WebAuthn only ever produces a Device Wrapping Key; the Vault Key path is
  *   DWK → Device Key → Vault Key.
  * - Master-password unlock is never disabled by anything here.
@@ -14,6 +14,7 @@
 import {
   ARGON2ID_PROFILES,
   assertFreshSnapshot,
+  buildManifest,
   bytesToBase64,
   decodeDeviceKeyEnvelope,
   decodeVaultSnapshot,
@@ -23,6 +24,7 @@ import {
   encodeEncryptedEntry,
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
+  encodeSealedManifest,
   encryptEntry,
   formatRecoveryKey,
   generateRecoveryKey,
@@ -30,15 +32,20 @@ import {
   generateVaultKey,
   kdfParamsFrom,
   parseRecoveryKey,
+  revisionFromManifest,
+  sealManifest,
   unwrapVaultKey,
   verifySnapshot,
+  verifySnapshotManifest,
   wrapVaultKey,
   zeroize,
 } from "@4allpass/crypto";
 import type {
   Argon2idProfileName,
   CrossCheckEnvelope,
+  EncryptedEntry,
   KeyEnvelope,
+  SealedManifest,
   VaultSnapshot,
 } from "@4allpass/crypto";
 import {
@@ -109,19 +116,20 @@ function deviceEnvelopeOf(snapshot: VaultSnapshot, id: string): KeyEnvelope | nu
   );
 }
 
-/** Fetch the active snapshot and refuse a rollback before touching any key. */
-async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
+/** Fetch the active snapshot. Freshness is checked only after the manifest verifies. */
+async function fetchSnapshot(vaultId: string): Promise<VaultSnapshot> {
   const snapshot = decodeVaultSnapshot(await api.getSnapshot(vaultId));
   if (snapshot.vaultId !== vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
-  assertFreshSnapshot(loadPin(vaultId), {
-    vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
-  });
   return snapshot;
+}
+
+function requireManifest(snapshot: VaultSnapshot): SealedManifest {
+  if (!snapshot.manifest) {
+    throw new Error("snapshot is missing the sealed manifest");
+  }
+  return snapshot.manifest;
 }
 
 function openSnapshot(
@@ -130,14 +138,23 @@ function openSnapshot(
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
 ): UnlockedVault {
+  const verified = verifySnapshotManifest(requireManifest(snapshot), snapshot, {
+    vaultKey,
+    vaultId: snapshot.vaultId,
+    revision: snapshot.revision,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+  });
+  const pin = revisionFromManifest(verified);
+  assertFreshSnapshot(loadPin(snapshot.vaultId), pin);
   // verifySnapshot returns the plaintext it already had to produce to prove the
   // snapshot is not mixed; decrypting a second time would only widen the window
   // in which entry plaintext exists.
   const entries: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    entries: snapshot.entries,
+    vaultKeyVersion: verified.manifest.vaultKeyVersion,
+    entries: verified.entries,
     crossCheckEnvelopes: crossChecks,
   }).map((entry) => {
     try {
@@ -146,21 +163,36 @@ function openSnapshot(
       zeroize(entry.plaintext);
     }
   });
-  savePin({
-    vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    cryptoProtocolVersion: 1,
-  });
+  savePin(pin);
   return {
     vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
+    revision: verified.manifest.revision,
+    vaultKeyVersion: verified.manifest.vaultKeyVersion,
     vaultKey,
-    envelopes: snapshot.envelopes,
+    envelopes: verified.envelopes,
     entries: entries.sort((a, b) => a.title.localeCompare(b.title)),
     unlockedWith,
   };
+}
+
+function sealSnapshotManifest(
+  vaultId: string,
+  revision: number,
+  vaultKeyVersion: number,
+  vaultKey: Uint8Array,
+  envelopes: readonly KeyEnvelope[],
+  entries: readonly EncryptedEntry[],
+): SealedManifest {
+  return sealManifest({
+    vaultKey,
+    manifest: buildManifest({
+      vaultId,
+      revision,
+      vaultKeyVersion,
+      envelopes: [...envelopes],
+      entries: [...entries],
+    }),
+  });
 }
 
 export interface CreatedVault {
@@ -198,13 +230,24 @@ export async function createVault(
       type: "recovery",
       vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
     });
+    const envelopes = [masterEnvelope, recoveryEnvelope];
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vaultId, {
         revision: 1,
         vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
         cryptoProtocolVersion: 1,
-        envelopes: [encodeKeyEnvelope(masterEnvelope), encodeKeyEnvelope(recoveryEnvelope)],
+        envelopes: envelopes.map(encodeKeyEnvelope),
         entries: [],
+        manifest: encodeSealedManifest(
+          sealSnapshotManifest(
+            vaultId,
+            1,
+            INITIAL_VAULT_KEY_VERSION,
+            vaultKey,
+            envelopes,
+            [],
+          ),
+        ),
       }),
     );
     const vault = openSnapshot(committed, vaultKey, "master_password", [
@@ -220,7 +263,7 @@ export async function unlockWithMasterPassword(
   vaultId: string,
   masterPassword: string,
 ): Promise<UnlockedVault> {
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const snapshot = await fetchSnapshot(vaultId);
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
   try {
@@ -242,7 +285,7 @@ export async function unlockWithRecoveryKey(
   vaultId: string,
   recoveryKeyText: string,
 ): Promise<UnlockedVault> {
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const snapshot = await fetchSnapshot(vaultId);
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "recovery");
   if (!envelope) throw new Error("this vault has no recovery envelope");
   const recoveryKey = parseRecoveryKey(recoveryKeyText);
@@ -279,7 +322,7 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
   if (!record) {
     throw new DeviceUnlockNotPossible("device unlock is not set up in this browser profile");
   }
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const snapshot = await fetchSnapshot(vaultId);
   const deviceEnvelope = deviceEnvelopeOf(snapshot, id);
   if (!deviceEnvelope) {
     throw new DeviceUnlockNotPossible(
@@ -332,33 +375,43 @@ async function commitSnapshot(
   entries: VaultEntry[],
   envelopes: KeyEnvelope[],
 ): Promise<UnlockedVault> {
-  const sealed = entries.map((entry) => {
+  const encrypted = entries.map((entry) => {
     const plaintext = encodeEntryPlaintext(entry);
     try {
-      return encodeEncryptedEntry(
-        encryptEntry({
-          vaultKey: vault.vaultKey,
-          vaultId: vault.vaultId,
-          entryId: entry.id,
-          plaintext,
-          vaultKeyVersion: vault.vaultKeyVersion,
-          schemaVersion: ENTRY_SCHEMA_VERSION,
-        }),
-      );
+      return encryptEntry({
+        vaultKey: vault.vaultKey,
+        vaultId: vault.vaultId,
+        entryId: entry.id,
+        plaintext,
+        vaultKeyVersion: vault.vaultKeyVersion,
+        schemaVersion: ENTRY_SCHEMA_VERSION,
+      });
     } finally {
       zeroize(plaintext);
     }
   });
+  const nextRevision = vault.revision + 1;
+  const manifest = encodeSealedManifest(
+    sealSnapshotManifest(
+      vault.vaultId,
+      nextRevision,
+      vault.vaultKeyVersion,
+      vault.vaultKey,
+      envelopes,
+      encrypted,
+    ),
+  );
 
   try {
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vault.vaultId, {
         expectedRevision: vault.revision,
-        revision: vault.revision + 1,
+        revision: nextRevision,
         vaultKeyVersion: vault.vaultKeyVersion,
         cryptoProtocolVersion: 1,
         envelopes: envelopes.map(encodeKeyEnvelope),
-        entries: sealed,
+        entries: encrypted.map(encodeEncryptedEntry),
+        manifest,
       }),
     );
     return openSnapshot(committed, vault.vaultKey, vault.unlockedWith);

@@ -8,7 +8,7 @@ PASSWORD = "account-password-1234"
 
 
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@vault.example"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
     return email, response.json()["token"]
@@ -16,6 +16,16 @@ async def _signup(client, email: str | None = None) -> tuple[str, str]:
 
 def _auth(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+def _manifest() -> dict:
+    return {
+        "version": 1,
+        "encryption": "AES-256-GCM",
+        "nonce": "AAAAAAAAAAAAAAAA",
+        "ciphertext": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+        "tag": "AgICAgICAgICAgICAgICAg==",
+    }
 
 
 def _master_envelope() -> dict:
@@ -83,6 +93,7 @@ async def test_snapshot_cas_and_ownership(client):
             "cryptoProtocolVersion": 1,
             "envelopes": [_master_envelope()],
             "entries": [],
+            "manifest": _manifest(),
         },
     )
     assert first.status_code == 200, first.text
@@ -104,6 +115,7 @@ async def test_snapshot_cas_and_ownership(client):
             "cryptoProtocolVersion": 1,
             "envelopes": [_master_envelope()],
             "entries": [],
+            "manifest": _manifest(),
         },
     )
     assert conflict.status_code == 409
@@ -119,6 +131,7 @@ async def test_snapshot_cas_and_ownership(client):
             "cryptoProtocolVersion": 1,
             "envelopes": [_master_envelope()],
             "entries": [],
+            "manifest": _manifest(),
         },
     )
     assert second.status_code == 200, second.text

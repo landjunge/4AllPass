@@ -22,6 +22,7 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 - Vault revision / rotation / snapshot manifest: [`docs/vault-revision.md`](docs/vault-revision.md)
 - Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
+- Security boundary (what is actually enforced): [`docs/security-boundary.md`](docs/security-boundary.md)
 - Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
@@ -82,7 +83,10 @@ POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
 ```
 
 Every vault/device/snapshot route requires `Authorization: Bearer`. Foreign
-vaults return **404** (no id enumeration).
+vaults return **404** (no id enumeration). Snapshot writes are row-locked CAS
+and store an opaque sealed manifest. Device `DELETE` is metadata; cryptographic
+soft-revoke is the next snapshot without that device envelope. See
+[`docs/security-boundary.md`](docs/security-boundary.md).
 
 ```sh
 cd backend

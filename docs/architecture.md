@@ -49,7 +49,8 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 ### Account-Login
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
 - Implementiert: `POST /api/v1/auth/register|login|logout`, `GET /api/v1/auth/me`
-- Session: revocable Bearer-Token (Redis; Token wird gehasht gespeichert)
+- Session: widerrufbares Bearer-Token (Redis; Token wird gehasht gespeichert).
+  Kein Cookie, daher kein klassisches CSRF; Begründung: `docs/security-boundary.md`
 - Jede Vault-/Device-/Snapshot-Route prüft Ownership (`get_owned_vault` → 404)
 - Optional später: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
@@ -60,8 +61,10 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 - Jedes Browser-Profil und jedes Mobilgerät erhält eine eigene stabile Identität.
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
-- Soft-Revocation: Envelope entfernen
-- Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt
+- Soft-Revocation: Device-Envelope im *nächsten* Snapshot weglassen.
+  `DELETE /devices/{id}` setzt nur `revoked_at` — das ist keine kryptografische Löschung.
+- Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt.
+  Spezifiziert, im Client **noch nicht** ausgeführt.
 
 Details: siehe crypto-protocol.md Abschnitt 7.
 
@@ -111,4 +114,4 @@ Details: siehe crypto-protocol.md Abschnitt 7.
 
 **Stand:** 18. August 2026  
 **Crypto Protocol:** v1 (siehe crypto-protocol.md)  
-**Backend security boundary:** account session + vault ownership + snapshot CAS (main, #10)
+**Backend security boundary:** account session + vault ownership + snapshot CAS + sealed manifest store. See `docs/security-boundary.md`.

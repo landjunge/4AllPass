@@ -10,3 +10,14 @@ class CamelModel(BaseModel):
         populate_by_name=True,
         from_attributes=True,
     )
+
+
+class StrictCamelModel(CamelModel):
+    """Request body: reject unknown fields so clients cannot mass-assign."""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+        extra="forbid",
+    )

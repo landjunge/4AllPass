@@ -13,12 +13,26 @@ os.environ.setdefault("FOURALLPASS_DATABASE_URL", TEST_DATABASE_URL)
 os.environ.setdefault("FOURALLPASS_SESSION_BACKEND", "memory")
 os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
 
+import pytest
+
 from app.api.deps import get_db  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.core.sessions import get_session_store  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
 
 get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def reset_memory_sessions():
+    store = get_session_store()
+    clear = getattr(store, "clear", None)
+    if callable(clear):
+        clear()
+    yield
+    if callable(clear):
+        clear()
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")

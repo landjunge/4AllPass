@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, LargeBinary, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,10 +39,21 @@ class VaultSnapshot(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False)
     crypto_protocol_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
+    # Opaque sealed manifest (docs/vault-revision.md §2). Stored as ciphertext
+    # only; the server cannot open it and must not rewrite these bytes.
+    manifest_crypto_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    manifest_nonce: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    manifest_ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    manifest_tag: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
     vault: Mapped["Vault"] = relationship(back_populates="snapshots", foreign_keys=[vault_id])
     envelopes: Mapped[list["KeyEnvelope"]] = relationship(
-        back_populates="snapshot", cascade="all, delete-orphan"
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="KeyEnvelope.type",
     )
     entries: Mapped[list["EncryptedEntry"]] = relationship(
-        back_populates="snapshot", cascade="all, delete-orphan"
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="EncryptedEntry.entry_id",
     )

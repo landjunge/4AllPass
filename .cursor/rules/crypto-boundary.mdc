@@ -1,0 +1,36 @@
+---
+description: Protect the adversarially-reviewed crypto core from incidental changes
+globs:
+  - "packages/crypto/**"
+alwaysApply: true
+---
+
+# `packages/crypto` is frozen unless you are fixing a real integration bug
+
+`packages/crypto` implements the 4AllPass Zero-Knowledge crypto protocol
+(`docs/crypto-protocol.md`, `docs/threat-model.md`, `docs/webauthn-prf.md`,
+`docs/vault-revision.md`) and has already been through multiple rounds of
+adversarial review (`docs/adversarial-review.md`). Treat it as authoritative
+and stable.
+
+**Do not modify `packages/crypto` unless required to fix an actual
+integration bug** — i.e. the calling code (backend or frontend) cannot
+correctly use the package as specified, and the fix is on the
+`packages/crypto` side, not the caller's.
+
+Concretely, this means:
+
+- Never touch `packages/crypto` "to simplify" building an unrelated feature
+  (auth, sessions, authorization, backend routes, UI). If a task in another
+  part of the repo seems to require a crypto change, stop and explain the
+  conflict instead of changing the protocol.
+- Never redesign the crypto protocol, invent new primitives, change
+  AES-256-GCM usage, change the HKDF construction, change the WebAuthn PRF
+  construction, or change the DWK/DK/VK key hierarchy.
+- Never weaken or bypass Zero-Knowledge guarantees (e.g. adding server-side
+  decryption, sending plaintext or key material to the backend).
+- Never change existing public wire/crypto formats without an explicit,
+  documented protocol version bump.
+- If you do fix a genuine integration bug in `packages/crypto`, keep the
+  change minimal, add/update the adversarial or unit tests that would have
+  caught it, and document the fix and its rationale.

@@ -89,27 +89,27 @@ That is **not** cryptographic erase.
 
 | What DELETE does | What DELETE does not do |
 |---|---|
-| Sets `revoked_at` | Remove the device envelope from the active snapshot |
+| Sets `revoked_at` | Remove the device envelope from the active snapshot by itself |
 | Blocks GET/PUT of the Device-Key Envelope mirror | Increment `vault_key_version` |
 | Blocks new credential metadata on that row | Invalidate an already-unwrapped VK cached in a browser |
-| Leaves `hasDeviceEnvelope` reflecting the snapshot | Bind the account session to a device |
+| Leaves `hasDeviceEnvelope` reflecting the snapshot until the client commits | Bind the account session to a device |
 
-The expected model remains:
+The PWA implements both layers:
 
-```
-metadata revoke
-    → client commits snapshot N+1 without that device envelope   (soft)
-    → if the device may already know VK: rotate vaultKeyVersion  (hard)
-```
+| Path | Client | Crypto effect |
+|---|---|---|
+| **Soft** `revokeDevice` | Metadata DELETE, then commit revision N+1 **without** that device envelope, **same** `vaultKeyVersion` | Device can no longer unwrap via sync; a client that already holds VK still can |
+| **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery (device envelopes only if DK is locally recoverable without WebAuthn) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
 
-Hard rotation is implemented and tested in `packages/crypto`. The PWA does
-**not** rotate keys yet (`frontend/src/lib/vault-session.ts`). A revoked
-device that still holds VK can decrypt any snapshot still sealed under that
-VK, including ones it downloads with a still-valid *account* session
-(sessions are per account, not per device).
+Foreign Device Keys are never available to the acting client. This device’s DK is
+only rewrapped when it is already recoverable from local material (no new
+WebAuthn `get` inside hard revoke). Otherwise the rotated snapshot has no
+device envelopes and every device — including this one — re-enrols with the
+master password via `enableDeviceUnlockForVault`.
 
 Re-POSTing the same `deviceId` clears `revoked_at`. That is metadata
-re-enrolment only. It does not put an envelope back.
+re-enrolment only. It does not put an envelope back. The server also rejects
+commits that re-attach a revoked device’s envelope (HTTP 422).
 
 ---
 
@@ -120,9 +120,11 @@ re-enrolment only. It does not put an envelope back.
 1. `SELECT … FOR UPDATE` on the vault row (writers serialize).
 2. Compare `expectedRevision` / `revision` against the active snapshot.
 3. Reject `vaultKeyVersion` decreases.
-4. Insert a new immutable snapshot row (envelopes + entries + optional sealed
+4. When `current_revision >= 1`, require `sealedManifest` (stored opaque; not decrypted).
+5. Reject any `type == device` envelope whose `device_id` has `revoked_at` set.
+6. Insert a new immutable snapshot row (envelopes + entries + sealed
    manifest), then flip `active_snapshot_id`.
-5. A unique `(vault_id, revision)` constraint is the last line of defence.
+7. A unique `(vault_id, revision)` constraint is the last line of defence.
    A colliding write becomes HTTP 409 `revision conflict`, not 500.
 
 Two clients both at revision 10 → 11: exactly one wins; the loser gets 409
@@ -137,7 +139,8 @@ object and returns it unchanged. The client verifies it under VK
 ## 6. Remaining limitations (honest)
 
 - No server-side WebAuthn assertion verification.
-- No PWA Vault Key rotation (hard revoke).
+- Hard revoke does not rewrap foreign device envelopes (or this device’s when
+  the DK needs a WebAuthn ceremony); those devices re-enrol after master unlock.
 - Account session is not bound to a device identity.
 - Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
   `active_revision` (a stale DK generation can still be served until the
@@ -145,7 +148,9 @@ object and returns it unchanged. The client verifies it under VK
 - Bearer token lives in `sessionStorage` (XSS = account takeover, not vault
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
+- Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
 
-Recommended next milestone: **Vault Key rotation in the PWA** (hard
-revocation) and, optionally, server-side WebAuthn assertion verification
-as device-ceremony integrity — not as a replacement for client-side PRF.
+Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`). Optional
+follow-ups: post-CAS “re-enable biometrics” UX, and server-side WebAuthn
+assertion verification as device-ceremony integrity — not as a replacement for
+client-side PRF.

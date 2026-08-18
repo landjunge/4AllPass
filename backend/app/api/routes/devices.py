@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -25,6 +26,10 @@ from app.schemas.snapshot import WireDeviceKeyEnvelope
 from app.services.snapshots import load_active_snapshot
 
 router = APIRouter(prefix="/vaults/{vault_id}/devices", tags=["devices"])
+
+# One wording for every "this credential id is spoken for" case, so the caller
+# cannot tell an in-vault collision from one in an account they cannot see.
+_CREDENTIAL_TAKEN = "credential already registered"
 
 
 async def _devices_for_vault(db: AsyncSession, vault: Vault) -> list[Device]:
@@ -110,17 +115,21 @@ async def register_device(
     device = result.scalar_one_or_none()
     now = datetime.now(timezone.utc)
     if device is None:
-        device = Device(
-            vault_id=vault.id,
-            device_id=payload.device_id,
-            display_name=payload.label,
-            platform=payload.platform,
-            user_agent_summary=payload.user_agent_summary,
-            last_seen_at=now,
+        db.add(
+            Device(
+                vault_id=vault.id,
+                device_id=payload.device_id,
+                display_name=payload.label,
+                platform=payload.platform,
+                user_agent_summary=payload.user_agent_summary,
+                last_seen_at=now,
+            )
         )
-        db.add(device)
         await db.flush()
-        await db.refresh(device)
+        # Re-read through the eager-loading query rather than refreshing the
+        # instance: `refresh()` expires the relationship collections, and
+        # serializing the result would then lazy-load them from async context.
+        device = await _get_device(db, vault, payload.device_id)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
@@ -168,30 +177,46 @@ async def register_credential(
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Look only inside the caller's own vault. A global lookup would let this
+    # endpoint answer "does this credential id exist anywhere on this server",
+    # across accounts, from a response the caller is allowed to see.
     existing = await db.execute(
-        select(WebAuthnCredential).where(WebAuthnCredential.credential_id == credential_id)
+        select(WebAuthnCredential)
+        .join(Device, WebAuthnCredential.device_id == Device.id)
+        .where(WebAuthnCredential.credential_id == credential_id, Device.vault_id == vault.id)
     )
     cred = existing.scalar_one_or_none()
-    if cred is None:
-        cred = WebAuthnCredential(
-            device_id=device.id,
-            rp_id=payload.rp_id,
-            credential_id=credential_id,
-            mechanism=payload.mechanism,
-            prf_supported=payload.prf_supported,
-            large_blob_supported=payload.large_blob_supported,
-            user_verification="required",
-        )
-        db.add(cred)
-        await db.flush()
-    else:
+
+    if cred is not None:
         if cred.device_id != device.id:
-            raise HTTPException(status_code=409, detail="credential already bound to another device")
+            raise HTTPException(status_code=409, detail=_CREDENTIAL_TAKEN)
         cred.mechanism = payload.mechanism
         cred.prf_supported = payload.prf_supported
         cred.large_blob_supported = payload.large_blob_supported
         cred.revoked_at = None
         await db.flush()
+        return _credential_out(cred, set())
+
+    cred = WebAuthnCredential(
+        device_id=device.id,
+        rp_id=payload.rp_id,
+        credential_id=credential_id,
+        mechanism=payload.mechanism,
+        prf_supported=payload.prf_supported,
+        large_blob_supported=payload.large_blob_supported,
+        user_verification="required",
+    )
+    db.add(cred)
+    try:
+        # `webauthn_credentials.credential_id` is globally unique, so this
+        # fails when the id is already registered under a different account.
+        # The response is the same one an in-vault collision produces, so it
+        # says nothing about whose credential it is.
+        async with db.begin_nested():
+            await db.flush()
+    except IntegrityError as exc:
+        raise HTTPException(status_code=409, detail=_CREDENTIAL_TAKEN) from exc
     return _credential_out(cred, set())
 
 

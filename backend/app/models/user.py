@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, CheckConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,9 +19,17 @@ class User(UUIDPrimaryKeyMixin, CreatedUpdatedAtMixin, Base):
     hash, optional OAuth identifiers). None of it can decrypt a vault:
     Social Login / OAuth / Account Password have zero influence on vault
     decryption (crypto-protocol.md, Hard Invariant #5).
+
+    ``email`` is stored lower-cased and the check constraint keeps it that
+    way, which is what turns the unique index into a case-insensitive one and
+    lets logins look the address up through that index instead of scanning
+    with ``lower()``. Normalization happens in ``app.core.emails``.
     """
 
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("email = lower(email)", name="ck_users_email_is_lowercase"),
+    )
 
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
     account_password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)

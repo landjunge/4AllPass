@@ -87,12 +87,11 @@ async def logout(
     request: Request,
     response: Response,
     sessions: Annotated[SessionStore, Depends(get_session_store)],
-) -> Response:
+) -> None:
     session_id = request.cookies.get(get_settings().session_cookie_name)
     if session_id:
         await sessions.revoke(session_id)
     _delete_session_cookie(response)
-    return response
 
 
 @router.get("/me", response_model=UserOut)

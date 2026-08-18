@@ -116,10 +116,13 @@ async def test_login_me_logout_and_invalidated_session(api_client):
 async def test_missing_invalid_and_expired_sessions_are_rejected(api_client):
     assert (await api_client.get("/auth/me")).status_code == 401
 
+    api_client.cookies.clear()
     api_client.cookies.set("fourallpass_session", "unknown-session")
     assert (await api_client.get("/auth/me")).status_code == 401
 
+    api_client.cookies.clear()
     await register(api_client, "alice@example.test")
+    api_client.cookies.clear()
     api_client.cookies.set("fourallpass_session", "expired-session")
     assert (await api_client.get("/auth/me")).status_code == 401
 
@@ -159,7 +162,8 @@ async def test_vault_and_device_idor_protection(api_client, db_session):
     assert bob_vault.status_code == 201
     bob_device = Device(vault_id=uuid.UUID(bob_vault.json()["id"]), device_id="bob-laptop")
     db_session.add(bob_device)
-    await db_session.commit()
+    await db_session.flush()
+    bob_device_id = bob_device.id
 
     # Foreign and nonexistent IDs both return 404 after successful authentication.
     foreign = await api_client.get(f"/vaults/{alice_vault.json()['id']}/devices")
@@ -167,7 +171,7 @@ async def test_vault_and_device_idor_protection(api_client, db_session):
     assert foreign.status_code == random.status_code == 404
 
     foreign_device = await api_client.get(
-        f"/vaults/{alice_vault.json()['id']}/devices/{bob_device.id}"
+        f"/vaults/{alice_vault.json()['id']}/devices/{bob_device_id}"
     )
     assert foreign_device.status_code == 404
 
@@ -181,7 +185,7 @@ async def test_vault_and_device_idor_protection(api_client, db_session):
 
     # A device ID cannot be substituted across otherwise authorized vaults.
     cross_vault_device = await api_client.get(
-        f"/vaults/{alice_vault.json()['id']}/devices/{bob_device.id}"
+        f"/vaults/{alice_vault.json()['id']}/devices/{bob_device_id}"
     )
     assert cross_vault_device.status_code == 404
     assert alice["id"] != bob["id"]

@@ -23,6 +23,7 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 - Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
 - Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- Backend security boundary (auth, sessions, ownership): [`docs/backend-security.md`](docs/backend-security.md)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 
@@ -36,6 +37,22 @@ WebAuthn assertion + PRF ──HKDF──► DWK ──unwraps──► Device-K
 ```
 
 The Vault Key is always random, never derived from a password. Raw PRF output is never used as a key.
+
+## Trust boundary
+
+```
+Browser                          Backend                     Database
+  authentication  ──────────►  authenticate                 accounts
+  session cookie  ──────────►  authorize (own this vault?)  ownership
+  API call        ──────────►  device belongs to vault?     metadata
+                               sync                         encrypted blobs
+                                     encrypted only ───────►
+
+Client-side only: master password, VK, DK, DWK, PRF output, plaintext
+```
+
+Signing in proves *who is asking*; it never yields the Vault Key. See
+[`docs/backend-security.md`](docs/backend-security.md).
 
 ## Project structure
 

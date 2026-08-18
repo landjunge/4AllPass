@@ -1,6 +1,6 @@
 # 4AllPass Threat Model (v1)
 
-**Companion to:** `docs/crypto-protocol.md`, `docs/vault-revision.md`, `docs/webauthn-prf.md`, `docs/recovery.md`, `docs/adversarial-review.md`  
+**Companion to:** `docs/crypto-protocol.md`, `docs/vault-revision.md`, `docs/webauthn-prf.md`, `docs/recovery.md`, `docs/adversarial-review.md`, `docs/backend-security.md`  
 **Date:** 2026-08-17
 
 ---
@@ -41,7 +41,10 @@
    Same powers as (2) plus OS access to the host. Collapses into Malicious Server for vault confidentiality.
 
 7. **Remote Attacker with Account Access**  
-   Compromised account password or OAuth token (but no Master Password).
+   Compromised account password or OAuth token (but no Master Password). They
+   reach exactly one account's metadata and encrypted blobs — never another
+   account's, and never any plaintext. What the server enforces here is
+   specified in `backend-security.md`; what it still cannot do is §3 below.
 
 ---
 
@@ -109,6 +112,8 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | Compromised device already holds VK | Requires hard rotation                            | Atomic snapshot + `vault_key_version` |
 | Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock |
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
+| Account registration reveals that an address is taken | Accepted | `409` is required for usable self-hosted signup; login does not distinguish and both paths are throttled (`backend-security.md` §7) |
+| Stolen account session             | Bounded | HttpOnly + `SameSite=strict` cookie, absolute expiry, server-side revocation; yields metadata only, never vault plaintext |
 | Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
 | No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |

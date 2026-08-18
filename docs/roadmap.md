@@ -22,7 +22,8 @@ Differenzierung:
 
 - Crypto-Protokoll und Reference Implementation (`packages/crypto`) sind weit fortgeschritten
 - Starke Specs vorhanden (crypto-protocol, webauthn-prf, vault-revision, threat-model)
-- Noch kein Backend, kein Frontend, keine Extension
+- Backend mit vollständiger Sicherheitsgrenze (Auth, Session, Ownership,
+  Device-Autorisierung) und PWA-Client vorhanden; noch keine Extension
 
 Die Crypto-Basis ist inzwischen gut genug, dass man aufhören kann, an der Architektur zu zweifeln. Ab hier entscheiden Umsetzung und UX.
 
@@ -42,10 +43,16 @@ Ziel: Den Crypto-Core stabil und auditierbar machen.
 
 ### Phase 2 – Minimales Backend
 
-- FastAPI + PostgreSQL
-- Snapshot-Modell mit Revisionen
-- Device-Envelope-Verwaltung
-- Basis-Account-System (noch ohne Social Login)
+- FastAPI + PostgreSQL ✅
+- Snapshot-Modell mit Revisionen (CAS auf `expectedRevision`) ✅
+- Device-Envelope-Verwaltung ✅
+- Basis-Account-System (noch ohne Social Login) ✅
+- Security Boundary: Authentication → Session → Ownership → Device
+  Authorization → [`docs/backend-security.md`](backend-security.md) ✅
+
+Offen in dieser Phase: WebAuthn-Ceremony-Endpunkte (Attestation/Assertion
+serverseitig verifizieren), Vault-Key-Rotation, Passwortwechsel,
+„überall abmelden“.
 
 ### Phase 3 – Erster nutzbarer Client
 

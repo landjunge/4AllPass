@@ -9,6 +9,11 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
+- [`../docs/backend-security.md`](../docs/backend-security.md) — **what this
+  service enforces: authentication, sessions, ownership, device authorization**
+
+> **Authentication ≠ vault decryption.** Signing in proves who is asking. It
+> never yields the Vault Key, and no code path here can decrypt a vault.
 
 ## What lives here (v1)
 
@@ -16,15 +21,40 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
   users, vaults, immutable vault snapshots, key envelopes, encrypted entries,
   devices, WebAuthn credentials, and the Device-Key Envelope mirror.
 - Account auth (register / login / logout / me) with Argon2id *account*
-  passwords and revocable Redis (or in-memory) bearer sessions. This is
-  **not** the Master Password and cannot decrypt a vault.
-- Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
-  and returns 404 for vaults the caller does not own.
+  passwords and revocable Redis (or in-memory) sessions. This is **not** the
+  Master Password and cannot decrypt a vault.
+- Sessions ride an **HttpOnly, `SameSite=strict` cookie** for browsers, with a
+  session-bound CSRF token on unsafe methods. `Authorization: Bearer` remains
+  available as an opt-in (`issueBearerToken: true`) for CLIs and scripts.
+- Ownership: every vault/device/snapshot route runs through `get_current_user`
+  then `get_owned_vault`, and answers 404 — identically to a vault that does
+  not exist — for vaults the caller does not own.
 - Snapshot GET + POST with compare-and-swap on `expectedRevision`
   (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
 - Device register / list / revoke, credential metadata, Device-Key Envelope
   mirror. Soft revoke is bookkeeping; cryptographic revoke is the next snapshot
   without that device envelope.
+- Explicit response models in `app/schemas/`. Nothing returns an ORM object
+  directly, and `CamelModel` sets `extra="forbid"`, so a request body carrying
+  `ownerId` is rejected rather than quietly dropped.
+
+Remaining follow-up: WebAuthn ceremony endpoints (attestation / assertion
+verification), Vault Key rotation, account password change, and
+"sign out everywhere".
+
+## Configuration
+
+Beyond the database and Redis URLs (see `.env.example`):
+
+| Variable | Default | Notes |
+|---|---|---|
+| `FOURALLPASS_SESSION_SECRET` | dev placeholder | Keys the session-token HMAC. Production refuses to start on the default, or on fewer than 32 characters. |
+| `FOURALLPASS_SESSION_BACKEND` | `redis` | `memory` for pytest / single-process dev. |
+| `FOURALLPASS_SESSION_TTL_SECONDS` | 14 days | Absolute; requests never extend it. |
+| `FOURALLPASS_SESSION_COOKIE_SECURE` | derived | Secure-only when `ENVIRONMENT=production`. |
+| `FOURALLPASS_SESSION_COOKIE_SAMESITE` | `strict` | The PWA is served same-origin with the API. |
+| `FOURALLPASS_TRUST_PROXY_CLIENT_IP` | `false` | Enable **only** behind a proxy that overwrites `X-Real-IP`, as `frontend/nginx.conf` does. |
+| `FOURALLPASS_CORS_ORIGINS` | vite dev server | Lock down in production; the bundled nginx serves the PWA same-origin, so no CORS origin is needed. |
 
 ## Local setup
 

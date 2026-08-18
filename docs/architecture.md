@@ -31,11 +31,16 @@ Zusammenfassung der wichtigsten Punkte:
 - Recovery Key + Emergency Kit (kein Server-Reset) → **[docs/recovery.md](recovery.md)**
 
 Threat Model: → **[docs/threat-model.md](threat-model.md)**  
-Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversarial-review.md)**
+Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversarial-review.md)**  
+Server-Sicherheitsgrenze (Auth / Session / Ownership): → **[docs/backend-security.md](backend-security.md)**
 
 ---
 
 ## 3. Authentifizierung
+
+> **Authentifizierung ≠ Vault-Entschlüsselung.**
+> Das Backend authentifiziert den Account, erhält dabei aber **niemals** den
+> Vault Key. Details: → **[docs/backend-security.md](backend-security.md)**
 
 ### Master-Passwort
 - Pflicht und zentrale Sicherheitsgrundlage
@@ -48,8 +53,21 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 ### Account-Login
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
+- Argon2id-Hash serverseitig; Session als HttpOnly-Cookie mit
+  session-gebundenem CSRF-Token (backend-security.md §2–3)
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
+
+### Autorisierung (Server)
+
+Jeder Vault-/Device-Request durchläuft die Kette
+
+```
+Authentication → Authenticated User → Vault Ownership → Device Authorization
+```
+
+Ein fremder Vault und ein nicht existierender Vault antworten identisch mit
+`404`, damit Vault-IDs nicht aufzählbar sind (backend-security.md §4).
 
 ---
 

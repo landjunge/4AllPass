@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db, get_session_store
+from app.api.deps import CurrentSession, get_current_session, get_current_user, get_db, get_session_store
 from app.core.config import get_settings
 from app.core.security import hash_account_password, new_session_token, verify_account_password
 from app.core.sessions import SessionRecord, SessionStore
@@ -21,11 +22,30 @@ def _client_bucket(request: Request, action: str) -> str:
     return f"{action}:{ip}"
 
 
-def _session_out(token: str, user: User) -> AccountSession:
+def _set_session_cookies(response: Response, token: str, csrf_token: str) -> None:
+    settings = get_settings()
+    secure = settings.environment.lower() in {"production", "prod"}
+    common = {
+        "max_age": settings.session_ttl_seconds,
+        "secure": secure,
+        "samesite": "lax",
+        "path": "/api/v1",
+    }
+    response.set_cookie(settings.session_cookie_name, token, httponly=True, **common)
+    response.set_cookie(settings.csrf_cookie_name, csrf_token, httponly=False, **common)
+
+
+def _clear_session_cookies(response: Response) -> None:
+    settings = get_settings()
+    response.delete_cookie(settings.session_cookie_name, path="/api/v1")
+    response.delete_cookie(settings.csrf_cookie_name, path="/api/v1")
+
+
+def _session_out(user: User) -> AccountSession:
     settings = get_settings()
     return AccountSession(
-        token=token,
         expires_in=settings.session_ttl_seconds,
+        expires_at=datetime.now(timezone.utc) + timedelta(seconds=settings.session_ttl_seconds),
         account_id=user.id,
         email=user.email,
     )
@@ -45,6 +65,7 @@ async def _rate_limit(store: SessionStore, request: Request, action: str) -> Non
 async def register(
     payload: RegisterRequest,
     request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
@@ -59,18 +80,21 @@ async def register(
     await db.flush()
 
     token = new_session_token()
+    csrf_token = new_session_token()
     await store.put(
         token,
-        SessionRecord(user_id=user.id, email=user.email),
+        SessionRecord(user_id=user.id, email=user.email, csrf_token=csrf_token),
         get_settings().session_ttl_seconds,
     )
-    return _session_out(token, user)
+    _set_session_cookies(response, token, csrf_token)
+    return _session_out(user)
 
 
 @router.post("/login", response_model=AccountSession)
 async def login(
     payload: LoginRequest,
     request: Request,
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
@@ -87,22 +111,24 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
 
     token = new_session_token()
+    csrf_token = new_session_token()
     await store.put(
         token,
-        SessionRecord(user_id=user.id, email=user.email),
+        SessionRecord(user_id=user.id, email=user.email, csrf_token=csrf_token),
         get_settings().session_ttl_seconds,
     )
-    return _session_out(token, user)
+    _set_session_cookies(response, token, csrf_token)
+    return _session_out(user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    request: Request,
+    response: Response,
+    session: Annotated[CurrentSession, Depends(get_current_session)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> None:
-    authorization = request.headers.get("authorization")
-    if authorization and authorization.lower().startswith("bearer "):
-        await store.delete(authorization.split(" ", 1)[1].strip())
+    await store.delete(session.token)
+    _clear_session_cookies(response)
 
 
 @router.get("/me", response_model=AccountMe)

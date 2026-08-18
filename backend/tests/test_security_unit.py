@@ -21,7 +21,7 @@ def test_token_lookup_is_not_the_bearer_token():
 async def test_memory_session_roundtrip_and_delete():
     store = MemorySessionStore()
     token = new_session_token()
-    record = SessionRecord(user_id=uuid4(), email="a@example.test")
+    record = SessionRecord(user_id=uuid4(), email="a@example.com", csrf_token="csrf-token")
     await store.put(token, record, ttl_seconds=60)
     loaded = await store.get(token)
     assert loaded is not None

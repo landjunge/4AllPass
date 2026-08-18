@@ -15,7 +15,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
+import { api, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
 import { deviceId } from "../lib/device-identity.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
@@ -123,14 +123,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
   useEffect(() => {
     void (async () => {
-      if (getToken()) {
-        try {
-          const account = await api.me();
-          setEmail(account.email);
-          await loadVaults();
-        } catch {
-          setEmail(null);
-        }
+      try {
+        const account = await api.me();
+        setEmail(account.email);
+        await loadVaults();
+      } catch {
+        setEmail(null);
       }
       setReady(true);
     })();

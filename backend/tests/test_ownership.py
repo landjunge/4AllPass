@@ -7,15 +7,20 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 PASSWORD = "account-password-1234"
 
 
-async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+async def _signup(client, email: str | None = None) -> tuple[str, dict[str, str]]:
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.com"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
-    return email, response.json()["token"]
+    session = response.cookies["4allpass_session"]
+    csrf = response.cookies["4allpass_csrf"]
+    return email, {
+        "Cookie": f"4allpass_session={session}; 4allpass_csrf={csrf}",
+        "X-CSRF-Token": csrf,
+    }
 
 
-def _auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
+def _auth(session: dict[str, str]) -> dict[str, str]:
+    return session
 
 
 def _master_envelope() -> dict:

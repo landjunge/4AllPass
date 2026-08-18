@@ -2,17 +2,17 @@
  * Typed client for the 4AllPass API.
  *
  * Everything crossing this boundary is already encrypted or is metadata. The
- * session token lives in memory plus sessionStorage; it authenticates the
- * account, not the vault.
+ * account session lives in an HttpOnly cookie. A separate, non-secret CSRF
+ * cookie is echoed in a header for state-changing requests.
  */
 import type { WireDeviceKeyEnvelope, WireKeyEnvelope, WireVaultSnapshot } from "@4allpass/crypto";
 
 const API_BASE = "/api/v1";
-const TOKEN_KEY = "4allpass.session";
+const CSRF_COOKIE = "4allpass_csrf";
 
 export interface AccountSession {
-  token: string;
   expiresIn: number;
+  expiresAt: string;
   accountId: string;
   email: string;
 }
@@ -77,22 +77,19 @@ export class ApiError extends Error {
   }
 }
 
-let token: string | null = sessionStorage.getItem(TOKEN_KEY);
-
-export function getToken(): string | null {
-  return token;
-}
-
-export function setToken(value: string | null): void {
-  token = value;
-  if (value) sessionStorage.setItem(TOKEN_KEY, value);
-  else sessionStorage.removeItem(TOKEN_KEY);
+function csrfToken(): string | null {
+  const prefix = `${CSRF_COOKIE}=`;
+  const item = document.cookie.split("; ").find((cookie) => cookie.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : null;
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    const csrf = csrfToken();
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+  }
   const init: RequestInit = { method, headers, credentials: "same-origin" };
   if (body !== undefined) init.body = JSON.stringify(body);
   const response = await fetch(`${API_BASE}${path}`, init);
@@ -115,23 +112,15 @@ export function toPathId(base64: string): string {
 
 export const api = {
   async register(email: string, password: string): Promise<AccountSession> {
-    const session = await request<AccountSession>("POST", "/auth/register", { email, password });
-    setToken(session.token);
-    return session;
+    return request<AccountSession>("POST", "/auth/register", { email, password });
   },
 
   async login(email: string, password: string): Promise<AccountSession> {
-    const session = await request<AccountSession>("POST", "/auth/login", { email, password });
-    setToken(session.token);
-    return session;
+    return request<AccountSession>("POST", "/auth/login", { email, password });
   },
 
   async logout(): Promise<void> {
-    try {
-      await request<void>("POST", "/auth/logout");
-    } finally {
-      setToken(null);
-    }
+    await request<void>("POST", "/auth/logout");
   },
 
   me(): Promise<{ id: string; email: string; createdAt: string }> {

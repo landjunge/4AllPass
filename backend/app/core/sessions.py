@@ -25,6 +25,7 @@ RATE_PREFIX = "auth:rl:"
 class SessionRecord:
     user_id: UUID
     email: str
+    csrf_token: str
 
 
 class SessionStore(Protocol):
@@ -65,7 +66,13 @@ class MemorySessionStore:
 
 class RedisSessionStore:
     async def put(self, token: str, record: SessionRecord, ttl_seconds: int) -> None:
-        payload = json.dumps({"user_id": str(record.user_id), "email": record.email})
+        payload = json.dumps(
+            {
+                "user_id": str(record.user_id),
+                "email": record.email,
+                "csrf_token": record.csrf_token,
+            }
+        )
         await get_redis_client().set(SESSION_PREFIX + token_lookup_key(token), payload, ex=ttl_seconds)
 
     async def get(self, token: str) -> SessionRecord | None:
@@ -73,7 +80,11 @@ class RedisSessionStore:
         if not raw:
             return None
         data = json.loads(raw)
-        return SessionRecord(user_id=UUID(data["user_id"]), email=data["email"])
+        return SessionRecord(
+            user_id=UUID(data["user_id"]),
+            email=data["email"],
+            csrf_token=data["csrf_token"],
+        )
 
     async def delete(self, token: str) -> None:
         await get_redis_client().delete(SESSION_PREFIX + token_lookup_key(token))

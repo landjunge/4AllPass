@@ -21,13 +21,25 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://fourallpass:fourallpass@localhost:5432/fourallpass"
     redis_url: str = "redis://localhost:6379/0"
 
-    # Account-level session auth (unrelated to vault crypto — see architecture.md §3).
-    session_secret: str = "change-me-in-production"
+    # Account-level session auth (unrelated to vault crypto — see architecture.md §3
+    # and docs/backend-security.md). Sessions are opaque random tokens stored
+    # server-side in Redis; there is no signing secret because tokens carry no claims.
     session_ttl_seconds: int = 60 * 60 * 24 * 14
+    session_cookie_name: str = "fourallpass_session"
+    # None = automatic: Secure everywhere except environment == "development".
+    session_cookie_secure: bool | None = None
+    session_cookie_samesite: str = "lax"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
     crypto_protocol_version: int = 1
+
+
+    @property
+    def resolved_session_cookie_secure(self) -> bool:
+        if self.session_cookie_secure is not None:
+            return self.session_cookie_secure
+        return self.environment != "development"
 
 
 @lru_cache

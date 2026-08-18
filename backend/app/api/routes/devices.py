@@ -3,13 +3,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_owned_vault
+from app.api.deps import get_db, get_owned_vault, get_session_store
 from app.core.encoding import b64decode, b64encode, b64url_decode
+from app.core.rate_limit import enforce_rate_limit
+from app.core.sessions import SessionStore
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
 from app.models.enums import EnvelopeType
@@ -54,6 +56,10 @@ def _credential_out(cred: WebAuthnCredential, mirrored_for: set) -> CredentialSu
         large_blob_supported=cred.large_blob_supported,
         user_verification_required=cred.user_verification == "required",
         has_mirrored_device_key_envelope=cred.id in mirrored_for,
+        # The server stores client-claimed ceremony metadata. It does not
+        # verify an authenticator assertion, so possession is unproven.
+        webauthn_possession_verified=False,
+        prf_verified_by_server=False,
         created_at=cred.created_at,
         last_used_at=cred.last_used_at,
         revoked_at=cred.revoked_at,
@@ -71,6 +77,7 @@ def _device_out(device: Device, envelope_ids: set[str]) -> DeviceSummary:
         last_seen_at=device.last_seen_at,
         revoked_at=device.revoked_at,
         has_device_envelope=device.device_id in envelope_ids,
+        revocation_kind="metadata_only" if device.revoked_at is not None else "none",
         credentials=[_credential_out(cred, mirrored) for cred in device.webauthn_credentials],
     )
 
@@ -87,6 +94,28 @@ async def _get_device(db: AsyncSession, vault: Vault, device_id: str) -> Device:
     return device
 
 
+def _require_active_device(device: Device) -> None:
+    if device.revoked_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="device is revoked",
+        )
+
+
+def _envelope_out(vault: Vault, device: Device, row: DeviceKeyEnvelope) -> WireDeviceKeyEnvelope:
+    return WireDeviceKeyEnvelope(
+        version=row.crypto_version,
+        vault_id=vault.id,
+        device_id=device.device_id,
+        credential_id=b64encode(row.credential_id),
+        device_key_version=row.device_key_version,
+        encryption=row.encryption,  # type: ignore[arg-type]
+        nonce=b64encode(row.nonce),
+        ciphertext=b64encode(row.ciphertext),
+        tag=b64encode(row.tag),
+    )
+
+
 @router.get("", response_model=list[DeviceSummary])
 async def list_devices(
     vault: Annotated[Vault, Depends(get_owned_vault)],
@@ -99,9 +128,12 @@ async def list_devices(
 @router.post("", response_model=DeviceSummary)
 async def register_device(
     payload: RegisterDeviceRequest,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
+    await enforce_rate_limit(store, request, "device_register")
     result = await db.execute(
         select(Device)
         .where(Device.vault_id == vault.id, Device.device_id == payload.device_id)
@@ -120,14 +152,20 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
     else:
+        if device.revoked_at is not None and not payload.reactivate:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="device is revoked",
+            )
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
         device.user_agent_summary = payload.user_agent_summary or device.user_agent_summary
         device.last_seen_at = now
-        device.revoked_at = None
+        if payload.reactivate:
+            device.revoked_at = None
         await db.flush()
+    device = await _get_device(db, vault, payload.device_id)
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 
@@ -147,12 +185,22 @@ async def revoke_device(
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DeviceSummary:
+    """Metadata revocation only.
+
+    This sets ``revoked_at`` and deletes the mirrored Device-Key Envelope so
+    the device cannot fetch convenience-unlock material. It does **not**
+    rotate the Vault Key and does **not** drop the Device Envelope from the
+    active snapshot. Cryptographic soft-revoke is a client snapshot write
+    that omits this device's envelope (crypto-protocol.md §7).
+    """
     device = await _get_device(db, vault, device_id)
     device.revoked_at = datetime.now(timezone.utc)
     for cred in device.webauthn_credentials:
         if cred.revoked_at is None:
             cred.revoked_at = device.revoked_at
+    await db.execute(delete(DeviceKeyEnvelope).where(DeviceKeyEnvelope.device_id == device.id))
     await db.flush()
+    device = await _get_device(db, vault, device_id)
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 
@@ -160,10 +208,14 @@ async def revoke_device(
 async def register_credential(
     device_id: str,
     payload: RegisterCredentialRequest,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> CredentialSummary:
+    await enforce_rate_limit(store, request, "credential_register")
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     try:
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
@@ -200,14 +252,20 @@ async def put_device_key_envelope(
     device_id: str,
     credential_id: str,
     payload: WireDeviceKeyEnvelope,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> WireDeviceKeyEnvelope:
+    await enforce_rate_limit(store, request, "device_key_envelope")
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)
     cred = next((c for c in device.webauthn_credentials if c.credential_id == raw_id), None)
     if cred is None:
         raise HTTPException(status_code=404, detail="credential not found")
+    if cred.revoked_at is not None:
+        raise HTTPException(status_code=409, detail="credential is revoked")
     if payload.device_id != device.device_id or payload.vault_id != vault.id:
         raise HTTPException(status_code=422, detail="envelope identity does not match path")
 
@@ -251,7 +309,8 @@ async def put_device_key_envelope(
         row.crypto_version = payload.version
         row.device_key_version = payload.device_key_version
     await db.flush()
-    return payload
+    await db.refresh(row)
+    return _envelope_out(vault, device, row)
 
 
 @router.get("/{device_id}/credentials/{credential_id}/device-key-envelope", response_model=WireDeviceKeyEnvelope)
@@ -262,6 +321,7 @@ async def get_device_key_envelope(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)
     result = await db.execute(
         select(DeviceKeyEnvelope).where(
@@ -273,17 +333,7 @@ async def get_device_key_envelope(
     row = result.scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="device-key envelope not found")
-    return WireDeviceKeyEnvelope(
-        version=row.crypto_version,
-        vault_id=vault.id,
-        device_id=device.device_id,
-        credential_id=b64encode(row.credential_id),
-        device_key_version=row.device_key_version,
-        encryption=row.encryption,  # type: ignore[arg-type]
-        nonce=b64encode(row.nonce),
-        ciphertext=b64encode(row.ciphertext),
-        tag=b64encode(row.tag),
-    )
+    return _envelope_out(vault, device, row)
 
 
 def _decode_credential_path(value: str) -> bytes:

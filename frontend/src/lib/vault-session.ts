@@ -390,6 +390,9 @@ export async function enableDeviceUnlockForVault(
     label: description.label,
     platform: description.platform,
     userAgentSummary: description.userAgentSummary,
+    // Re-enrolment after metadata revoke is explicit. Possession of VK on
+    // this unlocked session is what authorizes it — not the API call alone.
+    reactivate: true,
   });
 
   const result = await enableDeviceUnlock({

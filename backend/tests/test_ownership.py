@@ -8,7 +8,7 @@ PASSWORD = "account-password-1234"
 
 
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
-    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.test"
+    email = email or f"owner-{uuid.uuid4().hex[:10]}@example.com"
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
     return email, response.json()["token"]

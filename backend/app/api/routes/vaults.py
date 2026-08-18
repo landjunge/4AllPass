@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db, get_owned_vault
+from app.api.deps import get_current_user, get_db, get_owned_vault, get_session_store
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
+from app.core.sessions import SessionStore
 from app.models.user import User
 from app.models.vault import Vault
 from app.schemas.snapshot import SnapshotCommit, WireVaultSnapshot
@@ -79,9 +79,12 @@ async def get_snapshot(
 @router.post("/{vault_id}/snapshots", response_model=WireVaultSnapshot)
 async def post_snapshot(
     payload: SnapshotCommit,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> WireVaultSnapshot | JSONResponse:
+    await enforce_rate_limit(store, request, "snapshot_commit")
     try:
         snapshot = await commit_snapshot(db, vault, payload)
     except RevisionConflict as exc:

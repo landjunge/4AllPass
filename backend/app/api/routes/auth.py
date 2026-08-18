@@ -8,17 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, get_session_store
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.core.security import hash_account_password, new_session_token, verify_account_password
 from app.core.sessions import SessionRecord, SessionStore
 from app.models.user import User
 from app.schemas.auth import AccountMe, AccountSession, LoginRequest, RegisterRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-def _client_bucket(request: Request, action: str) -> str:
-    ip = request.client.host if request.client else "unknown"
-    return f"{action}:{ip}"
 
 
 def _session_out(token: str, user: User) -> AccountSession:
@@ -31,16 +27,6 @@ def _session_out(token: str, user: User) -> AccountSession:
     )
 
 
-async def _rate_limit(store: SessionStore, request: Request, action: str) -> None:
-    settings = get_settings()
-    if await store.hit_rate_limit(
-        _client_bucket(request, action),
-        settings.auth_login_rate_limit,
-        settings.auth_login_rate_window_seconds,
-    ):
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="too many attempts")
-
-
 @router.post("/register", response_model=AccountSession)
 async def register(
     payload: RegisterRequest,
@@ -48,7 +34,7 @@ async def register(
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
-    await _rate_limit(store, request, "register")
+    await enforce_rate_limit(store, request, "register")
     email = str(payload.email).strip().lower()
     existing = await db.execute(select(User.id).where(func.lower(User.email) == email))
     if existing.scalar_one_or_none() is not None:
@@ -74,7 +60,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
-    await _rate_limit(store, request, "login")
+    await enforce_rate_limit(store, request, "login")
     email = str(payload.email).strip().lower()
     result = await db.execute(select(User).where(func.lower(User.email) == email))
     user = result.scalar_one_or_none()
@@ -106,5 +92,5 @@ async def logout(
 
 
 @router.get("/me", response_model=AccountMe)
-async def me(user: Annotated[User, Depends(get_current_user)]) -> User:
-    return user
+async def me(user: Annotated[User, Depends(get_current_user)]) -> AccountMe:
+    return AccountMe(id=user.id, email=user.email, created_at=user.created_at)

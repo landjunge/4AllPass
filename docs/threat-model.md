@@ -111,6 +111,8 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
 | Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
 | No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
+| Server-side WebAuthn possession unverified | Documented | `prfSupported` is a client claim; see `security-boundary.md` §4 |
+| `DELETE /devices` is not cryptographic erase | Documented | Metadata + DKE mirror only; soft-revoke is the next snapshot without that envelope |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
 | Quantum attacks on AES            | Out of scope for v1                               | Future protocol version |

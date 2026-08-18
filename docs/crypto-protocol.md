@@ -639,6 +639,7 @@ Findings, decisions and residual risks: **[docs/adversarial-review.md](adversari
 | **`test-vectors-argon2id.md`** | **Argon2id known-answer tests + KDF profiles** |
 | `test-vectors/device-prf-v1.json` | PRF / HKDF / Device-Key Envelope KATs     |
 | **`recovery.md`**         | **Recovery Key encoding, RWK derivation, Emergency Kit** |
+| **`security-boundary.md`** | **Auth ≠ authorization ≠ crypto; session, IDOR, revocation honesty** |
 | `device-management.md`    | Device identity, registration UX, revocation flows  |
 
 ---

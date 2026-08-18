@@ -34,6 +34,8 @@ export interface CredentialSummary {
   largeBlobSupported: boolean;
   userVerificationRequired: boolean;
   hasMirroredDeviceKeyEnvelope: boolean;
+  webauthnPossessionVerified: boolean;
+  prfVerifiedByServer: boolean;
   createdAt: string;
   lastUsedAt: string | null;
   revokedAt: string | null;
@@ -48,6 +50,7 @@ export interface DeviceSummary {
   lastSeenAt: string | null;
   revokedAt: string | null;
   hasDeviceEnvelope: boolean;
+  revocationKind: "none" | "metadata_only";
   credentials: CredentialSummary[];
 }
 
@@ -164,7 +167,13 @@ export const api = {
 
   registerDevice(
     vaultId: string,
-    device: { deviceId: string; label: string; platform?: string; userAgentSummary?: string },
+    device: {
+      deviceId: string;
+      label: string;
+      platform?: string;
+      userAgentSummary?: string;
+      reactivate?: boolean;
+    },
   ): Promise<DeviceSummary> {
     return request("POST", `/vaults/${vaultId}/devices`, device);
   },

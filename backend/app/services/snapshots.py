@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -129,32 +130,43 @@ async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommi
     if not any(env.type == "master" for env in payload.envelopes):
         raise HTTPException(status_code=422, detail="snapshot must include a master envelope")
 
-    current = await load_active_snapshot(db, vault)
+    # Lock the vault row to serialize concurrent writes and prevent race conditions
+    vault_row = await db.execute(
+        select(Vault).where(Vault.id == vault.id).with_for_update()
+    )
+    locked_vault = vault_row.scalar_one()
+
+    current = await load_active_snapshot(db, locked_vault)
     current_revision = current.revision if current is not None else 0
     expected = current_revision if payload.expected_revision is None else payload.expected_revision
 
     if expected != current_revision or payload.revision != current_revision + 1:
         raise RevisionConflict(current_revision)
 
+    if current is not None and payload.vault_key_version < current.vault_key_version:
+        raise HTTPException(status_code=422, detail="vaultKeyVersion cannot decrease")
+
     snapshot = VaultSnapshot(
-        vault_id=vault.id,
+        vault_id=locked_vault.id,
         revision=payload.revision,
         vault_key_version=payload.vault_key_version,
         crypto_protocol_version=payload.crypto_protocol_version,
     )
-    db.add(snapshot)
-    await db.flush()
-
     try:
-        db.add_all([_envelope_from_wire(snapshot.id, env) for env in payload.envelopes])
-        db.add_all([_entry_from_wire(snapshot.id, entry) for entry in payload.entries])
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    await db.flush()
-    # Flip the CAS pointer only after the new snapshot is fully written.
-    vault.active_snapshot_id = snapshot.id
-    await db.flush()
+        async with db.begin_nested():
+            db.add(snapshot)
+            await db.flush()
+            try:
+                db.add_all([_envelope_from_wire(snapshot.id, env) for env in payload.envelopes])
+                db.add_all([_entry_from_wire(snapshot.id, entry) for entry in payload.entries])
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            await db.flush()
+            # Flip the CAS pointer only after the new snapshot is fully written.
+            locked_vault.active_snapshot_id = snapshot.id
+            await db.flush()
+    except IntegrityError as exc:
+        raise RevisionConflict(current_revision) from exc
 
     result = await db.execute(
         select(VaultSnapshot)

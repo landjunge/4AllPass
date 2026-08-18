@@ -51,6 +51,7 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Implementiert: `POST /api/v1/auth/register|login|logout`, `GET /api/v1/auth/me`
 - Session: revocable Bearer-Token (Redis; Token wird gehasht gespeichert)
 - Jede Vault-/Device-/Snapshot-Route prüft Ownership (`get_owned_vault` → 404)
+- Bearer bleibt bewusst erhalten — Begründung in [`security-boundary.md`](security-boundary.md) §3
 - Optional später: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 
@@ -60,10 +61,11 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 - Jedes Browser-Profil und jedes Mobilgerät erhält eine eigene stabile Identität.
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
-- Soft-Revocation: Envelope entfernen
-- Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt
+- Soft-Revocation: Envelope aus dem nächsten Snapshot entfernen
+- `DELETE /devices/{id}` ist nur Metadaten-Revocation (`revocationKind: metadata_only`)
+- Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt — client-seitig
 
-Details: siehe crypto-protocol.md Abschnitt 7.
+Details: [`crypto-protocol.md`](crypto-protocol.md) §7 und [`security-boundary.md`](security-boundary.md) §6.
 
 ---
 

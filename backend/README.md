@@ -23,8 +23,9 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - Snapshot GET + POST with compare-and-swap on `expectedRevision`
   (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
 - Device register / list / revoke, credential metadata, Device-Key Envelope
-  mirror. Soft revoke is bookkeeping; cryptographic revoke is the next snapshot
-  without that device envelope.
+  mirror. `DELETE /devices` is metadata revocation only (`revocationKind:
+  metadata_only`); cryptographic soft-revoke is the next snapshot without that
+  device envelope. See [`docs/security-boundary.md`](../docs/security-boundary.md).
 
 ## Local setup
 

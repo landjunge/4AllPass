@@ -20,11 +20,14 @@ Differenzierung:
 
 ## Aktueller Stand
 
-- Crypto-Protokoll und Reference Implementation (`packages/crypto`) sind weit fortgeschritten
-- Starke Specs vorhanden (crypto-protocol, webauthn-prf, vault-revision, threat-model)
-- Noch kein Backend, kein Frontend, keine Extension
+- Crypto-Protokoll und Reference Implementation (`packages/crypto`) sind eingefroren
+- Backend: Account-Auth, Ownership, Snapshot-CAS, Device-Metadaten, DKE-Mirror
+- Frontend-PWA: Register → Login → Vault anlegen → verschlüsselter Snapshot → Unlock
+- Security-Boundary-Review: [`docs/security-boundary.md`](security-boundary.md)
 
-Die Crypto-Basis ist inzwischen gut genug, dass man aufhören kann, an der Architektur zu zweifeln. Ab hier entscheiden Umsetzung und UX.
+Nächster Milestone ist **nicht** ein neues Feature, sondern der Abschluss der
+ehrlichen Grenzen: Server-seitige WebAuthn-Zeremonie *oder* assistierte
+Hard-Rotation — ohne Sicherheitsversprechen, die der Code nicht hält.
 
 ---
 

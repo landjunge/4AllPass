@@ -79,6 +79,7 @@ class DeviceKeyEnvelope(UUIDPrimaryKeyMixin, CreatedUpdatedAtMixin, Base):
     ciphertext: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     tag: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     crypto_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    device_key_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     vault: Mapped["Vault"] = relationship()
     device: Mapped["Device"] = relationship(back_populates="device_key_envelopes")

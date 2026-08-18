@@ -77,6 +77,10 @@ class KeyEnvelope(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     # Only for type == "device"; stable device/profile identifier, also part of the AAD.
     device_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
+    vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Only for type == "device"; which Device-Key generation wraps the Vault Key.
+    device_key_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     # Only for type == "master"; Argon2id parameters (algorithm, version, memory,
     # iterations, parallelism, hashLen, salt-as-hex). Never a key or password.
     # `none_as_null=True`: a Python `None` must become a SQL NULL here, not a

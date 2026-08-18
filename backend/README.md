@@ -10,16 +10,21 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
 
-## What lives here (v1 scaffold)
+## What lives here (v1)
 
-- SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
-  users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
-  encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
-  (`docs/webauthn-prf.md` §4).
-- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
-  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
-  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
-  "project structure + crypto-core + DB schema" per the initial brief.
+- SQLAlchemy 2.0 models + Alembic migrations for the server-storable schema:
+  users, vaults, immutable vault snapshots, key envelopes, encrypted entries,
+  devices, WebAuthn credentials, and the Device-Key Envelope mirror.
+- Account auth (register / login / logout / me) with Argon2id *account*
+  passwords and revocable Redis (or in-memory) bearer sessions. This is
+  **not** the Master Password and cannot decrypt a vault.
+- Ownership: every vault/device/snapshot route requires `Authorization: Bearer`
+  and returns 404 for vaults the caller does not own.
+- Snapshot GET + POST with compare-and-swap on `expectedRevision`
+  (`docs/vault-revision.md` §4). The server stores opaque ciphertext only.
+- Device register / list / revoke, credential metadata, Device-Key Envelope
+  mirror. Soft revoke is bookkeeping; cryptographic revoke is the next snapshot
+  without that device envelope.
 
 ## Local setup
 

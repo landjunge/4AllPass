@@ -49,10 +49,12 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 ### Account-Login
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
 - Implementiert: `POST /api/v1/auth/register|login|logout`, `GET /api/v1/auth/me`
-- Session: revocable Bearer-Token (Redis; Token wird gehasht gespeichert)
+- Session: revocable Bearer-Token (Redis; Token wird gehasht gespeichert).
+  Bearer is retained on purpose — see [`docs/security-boundary.md`](security-boundary.md).
 - Jede Vault-/Device-/Snapshot-Route prüft Ownership (`get_owned_vault` → 404)
 - Optional später: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
+- Authentication ≠ vault decryption. The account session never unwraps VK.
 
 ---
 
@@ -60,10 +62,13 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 - Jedes Browser-Profil und jedes Mobilgerät erhält eine eigene stabile Identität.
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
-- Soft-Revocation: Envelope entfernen
-- Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt
+- `DELETE /devices/{id}` is **metadata-only** (`revocation: "metadata_only"`).
+  Soft cryptographic revoke = next snapshot without that device envelope.
+  Hard revoke = Vault Key rotation. The PWA does not rotate keys yet.
+- WebAuthn credential rows are client-asserted metadata (`verification: "client_asserted"`).
+  The server does not verify assertions or PRF output.
 
-Details: siehe crypto-protocol.md Abschnitt 7.
+Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-boundary.md).
 
 ---
 
@@ -95,7 +100,9 @@ Details: siehe crypto-protocol.md Abschnitt 7.
 - Master-Passwort wird nie übertragen
 - Biometrie nur als Geräte-gebundene Komfortschicht
 - Social-Login nur für den Account
-- Geräte und Credentials können widerrufen werden (inkl. Key Rotation)
+- Geräte können metadatenseitig widerrufen werden; kryptografische Revocation
+  ist der nächste Snapshot ohne Device Envelope (Key Rotation: Spec + crypto
+  library; PWA noch nicht)
 - Recovery über Recovery Key / Emergency Kit spezifiziert
 
 ---
@@ -111,4 +118,4 @@ Details: siehe crypto-protocol.md Abschnitt 7.
 
 **Stand:** 18. August 2026  
 **Crypto Protocol:** v1 (siehe crypto-protocol.md)  
-**Backend security boundary:** account session + vault ownership + snapshot CAS (main, #10)
+**Backend security boundary:** account session + vault ownership + race-safe snapshot CAS + honest device/WebAuthn semantics (`docs/security-boundary.md`)

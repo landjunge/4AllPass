@@ -365,7 +365,9 @@ describe("unlockWithDevice", () => {
     const store = memoryDeviceUnlockStore();
     const vaultKey = generateVaultKey();
     const salt = generateSalt();
-    const masterKey = deriveMasterKey("correct-horse-battery-staple", salt, ARGON2ID_PROFILES.ci);
+    const masterKey = deriveMasterKey("correct-horse-battery-staple", salt, ARGON2ID_PROFILES.ci, {
+      allowTestProfile: true,
+    });
     const masterEnvelope = wrapVaultKey({
       vaultKey,
       wrappingKey: masterKey,

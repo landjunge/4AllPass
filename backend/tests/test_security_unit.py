@@ -65,7 +65,10 @@ def test_production_session_cookie_is_always_secure():
 
 def test_production_rejects_default_session_secret():
     with pytest.raises(ValueError, match="SESSION_SECRET"):
-        Settings(environment="production")
+        Settings(
+            environment="production",
+            session_secret="change-me-in-production",
+        )
 
 
 def test_samesite_none_requires_secure_cookie():

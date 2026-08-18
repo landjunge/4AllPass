@@ -2,8 +2,10 @@ import time
 from uuid import uuid4
 
 import pytest
+from starlette.requests import Request
 
-from app.core.config import DEFAULT_SESSION_SECRET, Settings
+from app.core.client_ip import client_ip
+from app.core.config import DEFAULT_SESSION_SECRET, Settings, get_settings
 from app.core.emails import normalize_account_email
 from app.core.security import (
     hash_account_password,
@@ -118,3 +120,32 @@ def test_development_cookies_are_not_secure_only():
     """A plain-HTTP dev box must still be able to hold a session."""
     settings = Settings(environment="development")
     assert not settings.cookies_require_secure
+
+
+def _request(headers: dict[str, str], *, peer: str = "10.0.0.1") -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/auth/login",
+            "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
+            "client": (peer, 51234),
+        }
+    )
+
+
+def test_client_ip_ignores_forwarded_headers_by_default():
+    """A directly-exposed server must not let callers choose their own bucket."""
+    assert get_settings().trust_proxy_client_ip is False
+    assert client_ip(_request({"x-real-ip": "203.0.113.9"})) == "10.0.0.1"
+    assert client_ip(_request({"x-forwarded-for": "203.0.113.9"})) == "10.0.0.1"
+
+
+def test_client_ip_uses_the_proxy_header_when_explicitly_trusted(monkeypatch):
+    trusting = Settings(environment="development", trust_proxy_client_ip=True)
+    monkeypatch.setattr("app.core.client_ip.get_settings", lambda: trusting)
+
+    assert client_ip(_request({"x-real-ip": "203.0.113.9"})) == "203.0.113.9"
+    assert client_ip(_request({"x-forwarded-for": "203.0.113.9, 10.0.0.1"})) == "203.0.113.9"
+    # Falls back to the socket peer when the proxy sent nothing.
+    assert client_ip(_request({})) == "10.0.0.1"

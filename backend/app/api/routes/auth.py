@@ -14,12 +14,14 @@ from app.api.deps import (
     get_session_store,
     read_presented_credential,
 )
+from app.core.client_ip import client_ip
 from app.core.config import get_settings
 from app.core.cookies import clear_session_cookies, set_session_cookies
 from app.core.security import (
     hash_account_password,
     new_csrf_token,
     new_session_token,
+    token_lookup_key,
     verify_account_password,
     verify_decoy_password,
 )
@@ -30,21 +32,29 @@ from app.schemas.auth import AccountMe, AccountSession, LoginRequest, RegisterRe
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _client_bucket(request: Request, action: str) -> str:
-    ip = request.client.host if request.client else "unknown"
-    return f"{action}:{ip}"
+async def _rate_limit(store: SessionStore, request: Request, action: str, *, subject: str) -> None:
+    """Throttle by source address *and* by the account being targeted.
 
+    Two buckets, because they stop different things. The address bucket limits
+    one attacker working through many accounts; the account bucket limits many
+    addresses working on one account, which is what a botnet password spray
+    looks like and what an address bucket alone never sees.
 
-async def _rate_limit(store: SessionStore, request: Request, action: str) -> None:
+    The subject is hashed into the key so the store never holds a list of
+    which addresses were tried.
+    """
     settings = get_settings()
-    if await store.hit_rate_limit(
-        _client_bucket(request, action),
-        settings.auth_login_rate_limit,
-        settings.auth_login_rate_window_seconds,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="too many attempts"
-        )
+    buckets = (
+        f"{action}:ip:{client_ip(request)}",
+        f"{action}:subject:{token_lookup_key(subject)}",
+    )
+    for bucket in buckets:
+        if await store.hit_rate_limit(
+            bucket, settings.auth_login_rate_limit, settings.auth_login_rate_window_seconds
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="too many attempts"
+            )
 
 
 async def _start_session(
@@ -82,7 +92,7 @@ async def register(
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
-    await _rate_limit(store, request, "register")
+    await _rate_limit(store, request, "register", subject=payload.email)
 
     user = User(email=payload.email, account_password_hash=hash_account_password(payload.password))
     db.add(user)
@@ -111,7 +121,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> AccountSession:
-    await _rate_limit(store, request, "login")
+    await _rate_limit(store, request, "login", subject=payload.email)
 
     result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()

@@ -15,7 +15,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
+import { api, hasSession, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
 import { deviceId } from "../lib/device-identity.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
@@ -123,7 +123,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
   useEffect(() => {
     void (async () => {
-      if (getToken()) {
+      // The session cookie is HttpOnly, so the only way to learn whether it is
+      // still valid is to ask the server.
+      if (hasSession()) {
         try {
           const account = await api.me();
           setEmail(account.email);

@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     auth_min_password_length: int = 12
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
+    # Enable only behind a reverse proxy that overwrites X-Real-IP /
+    # X-Forwarded-For; see app/core/client_ip.py.
+    trust_proxy_client_ip: bool = False
 
     @property
     def is_production(self) -> bool:

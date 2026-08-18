@@ -1,17 +1,26 @@
 /**
  * Typed client for the 4AllPass API.
  *
- * Everything crossing this boundary is already encrypted or is metadata. The
- * session token lives in memory plus sessionStorage; it authenticates the
- * account, not the vault.
+ * Everything crossing this boundary is already encrypted or is metadata.
+ *
+ * The account session is an HttpOnly cookie the browser attaches on its own,
+ * so no token is stored here and none is reachable from JavaScript. What this
+ * module does hold is the CSRF token, which the server requires on unsafe
+ * requests; it is not a credential on its own and is only accepted alongside
+ * the session cookie. See docs/backend-security.md §3.
+ *
+ * Authenticating an account is not unlocking a vault. Nothing in this file
+ * ever sees the Master Password, the Vault Key, or plaintext entries — those
+ * stay in vault-session.ts, client-side.
  */
 import type { WireDeviceKeyEnvelope, WireKeyEnvelope, WireVaultSnapshot } from "@4allpass/crypto";
 
 const API_BASE = "/api/v1";
-const TOKEN_KEY = "4allpass.session";
+const CSRF_COOKIE = "4allpass_csrf";
+const CSRF_HEADER = "X-CSRF-Token";
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export interface AccountSession {
-  token: string;
   expiresIn: number;
   accountId: string;
   email: string;
@@ -77,22 +86,33 @@ export class ApiError extends Error {
   }
 }
 
-let token: string | null = sessionStorage.getItem(TOKEN_KEY);
-
-export function getToken(): string | null {
-  return token;
+/** Read the CSRF cookie, which the server deliberately leaves script-readable. */
+function csrfToken(): string | null {
+  const prefix = `${CSRF_COOKIE}=`;
+  for (const entry of document.cookie.split(";")) {
+    const trimmed = entry.trim();
+    if (trimmed.startsWith(prefix)) return decodeURIComponent(trimmed.slice(prefix.length));
+  }
+  return null;
 }
 
-export function setToken(value: string | null): void {
-  token = value;
-  if (value) sessionStorage.setItem(TOKEN_KEY, value);
-  else sessionStorage.removeItem(TOKEN_KEY);
+/**
+ * Whether a session cookie is plausibly present.
+ *
+ * It cannot be read — that is the point of HttpOnly — so this only reports
+ * that a sign-in happened in this browser. `GET /auth/me` is the real check.
+ */
+export function hasSession(): boolean {
+  return csrfToken() !== null;
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (!SAFE_METHODS.has(method)) {
+    const csrf = csrfToken();
+    if (csrf) headers[CSRF_HEADER] = csrf;
+  }
   const init: RequestInit = { method, headers, credentials: "same-origin" };
   if (body !== undefined) init.body = JSON.stringify(body);
   const response = await fetch(`${API_BASE}${path}`, init);
@@ -114,24 +134,20 @@ export function toPathId(base64: string): string {
 }
 
 export const api = {
-  async register(email: string, password: string): Promise<AccountSession> {
-    const session = await request<AccountSession>("POST", "/auth/register", { email, password });
-    setToken(session.token);
-    return session;
+  // register/login return no token: the session arrives as an HttpOnly cookie
+  // on the same response, and the browser attaches it from then on.
+  register(email: string, password: string): Promise<AccountSession> {
+    return request<AccountSession>("POST", "/auth/register", { email, password });
   },
 
-  async login(email: string, password: string): Promise<AccountSession> {
-    const session = await request<AccountSession>("POST", "/auth/login", { email, password });
-    setToken(session.token);
-    return session;
+  login(email: string, password: string): Promise<AccountSession> {
+    return request<AccountSession>("POST", "/auth/login", { email, password });
   },
 
-  async logout(): Promise<void> {
-    try {
-      await request<void>("POST", "/auth/logout");
-    } finally {
-      setToken(null);
-    }
+  logout(): Promise<void> {
+    // The server revokes the session and clears both cookies; there is no
+    // client-side copy left to forget.
+    return request<void>("POST", "/auth/logout");
   },
 
   me(): Promise<{ id: string; email: string; createdAt: string }> {

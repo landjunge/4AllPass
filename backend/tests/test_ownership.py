@@ -119,6 +119,13 @@ async def test_snapshot_cas_and_ownership(client):
             "cryptoProtocolVersion": 1,
             "envelopes": [_master_envelope()],
             "entries": [],
+            "sealedManifest": {
+                "version": 1,
+                "encryption": "AES-256-GCM",
+                "nonce": "AAAAAAAAAAAAAAAA",
+                "ciphertext": "BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=",
+                "tag": "BQUFBQUFBQUFBQUFBQUFBQ==",
+            },
         },
     )
     assert second.status_code == 200, second.text

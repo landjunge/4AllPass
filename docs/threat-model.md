@@ -87,6 +87,12 @@ A **new** client has no pinned revision. The first snapshot it accepts is pin-on
 
 Client-side checks detect an inconsistent snapshot; they do not prevent one. Atomic publication (write the full snapshot including its manifest, then compare-and-swap `active_revision`, one snapshot per `(vault_id, revision)`) is a requirement on the storage layer, specified in `vault-revision.md` §4.1.
 
+Account auth and vault ownership are a separate boundary
+(`docs/backend-security-boundary.md`): they stop *other users* (and anonymous
+callers) from reading or writing a vault's ciphertext. They do not stop a
+malicious operator who already has the database. Session cookies authenticate
+the account only; they never carry VK / DK / DWK / PRF output.
+
 ---
 
 ## 4. Security Goals

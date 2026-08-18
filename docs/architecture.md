@@ -37,6 +37,10 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 ## 3. Authentifizierung
 
+**Authentication ≠ Vault Decryption.** The backend session proves *who is calling
+the API*. It does not unwrap the Vault Key. Details:
+[`backend-security-boundary.md`](backend-security-boundary.md).
+
 ### Master-Passwort
 - Pflicht und zentrale Sicherheitsgrundlage
 - Verlässt den Client nie
@@ -48,8 +52,12 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 
 ### Account-Login
 - E-Mail + Account-Passwort (getrennt vom Master-Passwort)
-- Optional: Google-Login und „Sign in with Apple“
-- Social-Login hat **keinen Einfluss** auf die Verschlüsselung
+- Session: opaque server-side id in an **HttpOnly** cookie (`fourallpass_session`),
+  not a JWT and not a token in `localStorage` / `sessionStorage`
+- Ownership: every vault/device/snapshot route uses `get_current_user()` then
+  `require_vault_owner()` — missing and foreign vaults are both `404`
+- Optional later: Google-Login and „Sign in with Apple“
+- Social-Login / Account-Passwort haben **keinen Einfluss** auf die Verschlüsselung
 
 ---
 
@@ -106,5 +114,6 @@ Details: siehe crypto-protocol.md Abschnitt 7.
 
 ---
 
-**Stand:** 17. August 2026  
-**Crypto Protocol:** v1 (siehe crypto-protocol.md)
+**Stand:** 18. August 2026  
+**Crypto Protocol:** v1 (siehe crypto-protocol.md)  
+**Security boundary:** v1 (siehe backend-security-boundary.md)

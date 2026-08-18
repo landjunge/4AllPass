@@ -5,7 +5,12 @@
  * session token lives in memory plus sessionStorage; it authenticates the
  * account, not the vault.
  */
-import type { WireDeviceKeyEnvelope, WireKeyEnvelope, WireVaultSnapshot } from "@4allpass/crypto";
+import type {
+  WireDeviceKeyEnvelope,
+  WireKeyEnvelope,
+  WireSealedManifest,
+  WireVaultSnapshot,
+} from "@4allpass/crypto";
 
 const API_BASE = "/api/v1";
 const TOKEN_KEY = "4allpass.session";
@@ -37,6 +42,8 @@ export interface CredentialSummary {
   createdAt: string;
   lastUsedAt: string | null;
   revokedAt: string | null;
+  serverVerified?: false;
+  verification?: "client_asserted";
 }
 
 export interface DeviceSummary {
@@ -48,6 +55,7 @@ export interface DeviceSummary {
   lastSeenAt: string | null;
   revokedAt: string | null;
   hasDeviceEnvelope: boolean;
+  revocation?: "none" | "metadata_only";
   credentials: CredentialSummary[];
 }
 
@@ -58,6 +66,7 @@ export interface SnapshotCommit {
   cryptoProtocolVersion: 1;
   envelopes: WireKeyEnvelope[];
   entries: WireVaultSnapshot["entries"];
+  sealedManifest?: WireSealedManifest;
 }
 
 export class ApiError extends Error {

@@ -14,6 +14,7 @@
 import {
   ARGON2ID_PROFILES,
   assertFreshSnapshot,
+  buildManifest,
   bytesToBase64,
   decodeDeviceKeyEnvelope,
   decodeVaultSnapshot,
@@ -23,6 +24,7 @@ import {
   encodeEncryptedEntry,
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
+  encodeSealedManifest,
   encryptEntry,
   formatRecoveryKey,
   generateRecoveryKey,
@@ -30,14 +32,19 @@ import {
   generateVaultKey,
   kdfParamsFrom,
   parseRecoveryKey,
+  revisionFromManifest,
+  sealManifest,
+  sealedManifestDigest,
   unwrapVaultKey,
   verifySnapshot,
+  verifySnapshotManifest,
   wrapVaultKey,
   zeroize,
 } from "@4allpass/crypto";
 import type {
   Argon2idProfileName,
   CrossCheckEnvelope,
+  EncryptedEntry,
   KeyEnvelope,
   VaultSnapshot,
 } from "@4allpass/crypto";
@@ -120,8 +127,31 @@ async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
     cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    ...(snapshot.sealedManifest
+      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
+      : {}),
   });
   return snapshot;
+}
+
+function sealSnapshotManifest(
+  vaultId: string,
+  revision: number,
+  vaultKeyVersion: number,
+  vaultKey: Uint8Array,
+  envelopes: readonly KeyEnvelope[],
+  entries: readonly EncryptedEntry[],
+) {
+  return sealManifest({
+    vaultKey,
+    manifest: buildManifest({
+      vaultId,
+      revision,
+      vaultKeyVersion,
+      envelopes,
+      entries,
+    }),
+  });
 }
 
 function openSnapshot(
@@ -133,6 +163,26 @@ function openSnapshot(
   // verifySnapshot returns the plaintext it already had to produce to prove the
   // snapshot is not mixed; decrypting a second time would only widen the window
   // in which entry plaintext exists.
+  if (snapshot.sealedManifest) {
+    const verified = verifySnapshotManifest(
+      snapshot.sealedManifest,
+      { entries: snapshot.entries, envelopes: snapshot.envelopes },
+      {
+        vaultKey,
+        vaultId: snapshot.vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+      },
+    );
+    savePin(revisionFromManifest(verified));
+  } else {
+    savePin({
+      vaultId: snapshot.vaultId,
+      revision: snapshot.revision,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+      cryptoProtocolVersion: 1,
+    });
+  }
   const entries: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
@@ -145,12 +195,6 @@ function openSnapshot(
     } finally {
       zeroize(entry.plaintext);
     }
-  });
-  savePin({
-    vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    cryptoProtocolVersion: 1,
   });
   return {
     vaultId: snapshot.vaultId,
@@ -198,13 +242,23 @@ export async function createVault(
       type: "recovery",
       vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
     });
+    const envelopes = [masterEnvelope, recoveryEnvelope];
+    const sealedManifest = sealSnapshotManifest(
+      vaultId,
+      1,
+      INITIAL_VAULT_KEY_VERSION,
+      vaultKey,
+      envelopes,
+      [],
+    );
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vaultId, {
         revision: 1,
         vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
         cryptoProtocolVersion: 1,
-        envelopes: [encodeKeyEnvelope(masterEnvelope), encodeKeyEnvelope(recoveryEnvelope)],
+        envelopes: envelopes.map(encodeKeyEnvelope),
         entries: [],
+        sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
     const vault = openSnapshot(committed, vaultKey, "master_password", [
@@ -332,33 +386,41 @@ async function commitSnapshot(
   entries: VaultEntry[],
   envelopes: KeyEnvelope[],
 ): Promise<UnlockedVault> {
-  const sealed = entries.map((entry) => {
+  const encrypted = entries.map((entry) => {
     const plaintext = encodeEntryPlaintext(entry);
     try {
-      return encodeEncryptedEntry(
-        encryptEntry({
-          vaultKey: vault.vaultKey,
-          vaultId: vault.vaultId,
-          entryId: entry.id,
-          plaintext,
-          vaultKeyVersion: vault.vaultKeyVersion,
-          schemaVersion: ENTRY_SCHEMA_VERSION,
-        }),
-      );
+      return encryptEntry({
+        vaultKey: vault.vaultKey,
+        vaultId: vault.vaultId,
+        entryId: entry.id,
+        plaintext,
+        vaultKeyVersion: vault.vaultKeyVersion,
+        schemaVersion: ENTRY_SCHEMA_VERSION,
+      });
     } finally {
       zeroize(plaintext);
     }
   });
+  const nextRevision = vault.revision + 1;
+  const sealedManifest = sealSnapshotManifest(
+    vault.vaultId,
+    nextRevision,
+    vault.vaultKeyVersion,
+    vault.vaultKey,
+    envelopes,
+    encrypted,
+  );
 
   try {
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vault.vaultId, {
         expectedRevision: vault.revision,
-        revision: vault.revision + 1,
+        revision: nextRevision,
         vaultKeyVersion: vault.vaultKeyVersion,
         cryptoProtocolVersion: 1,
         envelopes: envelopes.map(encodeKeyEnvelope),
-        entries: sealed,
+        entries: encrypted.map(encodeEncryptedEntry),
+        sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
     return openSnapshot(committed, vault.vaultKey, vault.unlockedWith);

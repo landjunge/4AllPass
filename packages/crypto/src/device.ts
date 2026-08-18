@@ -377,6 +377,14 @@ export interface LocalDeviceUnlockInput {
   vaultKeyVersion: number;
 }
 
+/**
+ * Caller-owned secret material to wipe on the way out. Anything that is not a
+ * byte array is not wipeable, and validation elsewhere is what rejects it.
+ */
+function secretBytes(value: unknown): Uint8Array | undefined {
+  return value instanceof Uint8Array ? value : undefined;
+}
+
 /** DK → VK, shared by every rank. The Device Key is zeroized before returning. */
 function openDeviceEnvelopes(
   deviceKeyEnvelope: DeviceKeyEnvelope,
@@ -415,9 +423,14 @@ function openDeviceEnvelopes(
  * DWK, and DK are zeroized before this returns; only the Vault Key survives.
  */
 export function unwrapVaultKeyWithPrfOutput(input: DeviceUnlockInput): Uint8Array {
-  const expect = resolveExpectations(input);
+  // Resolved before the try so that a malformed expectation — not just a failed
+  // unwrap — still leaves through the zeroization below. A non-Uint8Array is
+  // dropped here instead of thrown at in `finally`, where it would replace the
+  // real error with a TypeError.
+  const prfOutput = secretBytes(input.prfOutput);
   let dwk: Uint8Array | undefined;
   try {
+    const expect = resolveExpectations(input);
     dwk = deriveDeviceWrappingKey({
       prfOutput: input.prfOutput,
       rpId: input.rpId,
@@ -428,7 +441,7 @@ export function unwrapVaultKeyWithPrfOutput(input: DeviceUnlockInput): Uint8Arra
     });
     return openDeviceEnvelopes(input.deviceKeyEnvelope, input.deviceEnvelope, dwk, expect);
   } finally {
-    zeroize(dwk, input.prfOutput);
+    zeroize(dwk, prfOutput);
   }
 }
 
@@ -438,15 +451,15 @@ export function unwrapVaultKeyWithPrfOutput(input: DeviceUnlockInput): Uint8Arra
  * 32-byte key instead of a PRF output. The DK → VK half is identical.
  */
 export function unwrapVaultKeyWithDeviceWrappingKey(input: LocalDeviceUnlockInput): Uint8Array {
-  const expect = resolveExpectations(input);
+  const wrappingKey = secretBytes(input.deviceWrappingKey);
   try {
     return openDeviceEnvelopes(
       input.deviceKeyEnvelope,
       input.deviceEnvelope,
       input.deviceWrappingKey,
-      expect,
+      resolveExpectations(input),
     );
   } finally {
-    zeroize(input.deviceWrappingKey);
+    zeroize(wrappingKey);
   }
 }

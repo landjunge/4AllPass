@@ -139,6 +139,14 @@ describe("key envelope wire format", () => {
     delete withoutVaultKeyVersion.vaultKeyVersion;
     assert.throws(() => decodeKeyEnvelope(withoutVaultKeyVersion), ProtocolError);
     assert.throws(() => decodeKeyEnvelope({ ...device, deviceKeyVersion: 0 }), ProtocolError);
+
+    // Out of uint32 range: the AAD cannot encode it, so decoding must not claim
+    // to have validated it and leave the core to notice later.
+    assert.throws(() => decodeKeyEnvelope({ ...device, vaultKeyVersion: 2 ** 32 }), ProtocolError);
+    assert.throws(
+      () => decodeKeyEnvelope({ ...device, deviceKeyVersion: Number.MAX_SAFE_INTEGER }),
+      ProtocolError,
+    );
   });
 
   it("treats an explicit null optional field as absent", () => {

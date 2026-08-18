@@ -201,7 +201,7 @@ export async function createVault(
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vaultId, {
         revision: 1,
-        vaultKeyVersion: 1,
+        vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
         cryptoProtocolVersion: 1,
         envelopes: [encodeKeyEnvelope(masterEnvelope), encodeKeyEnvelope(recoveryEnvelope)],
         entries: [],

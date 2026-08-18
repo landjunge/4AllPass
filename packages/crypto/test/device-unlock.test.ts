@@ -167,6 +167,30 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
     assert.ok(isZeroed(bad), "PRF output must be zeroized after a failed unlock");
   });
 
+  it("zeroizes the PRF output even when the stated identity is rejected", () => {
+    const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
+    const prf = prfOutput();
+    assert.throws(
+      () => unlock({ prfOutput: prf, deviceKeyEnvelope, deviceEnvelope, deviceKeyVersion: 0 }),
+      ProtocolError,
+    );
+    assert.ok(isZeroed(prf), "a rejected expectation must not leave the PRF output behind");
+  });
+
+  it("reports a non-Uint8Array PRF output as such", () => {
+    const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
+    // Wiping the caller's material must not turn the real error into a TypeError.
+    assert.throws(
+      () =>
+        unlock({
+          prfOutput: "not-bytes" as unknown as Uint8Array,
+          deviceKeyEnvelope,
+          deviceEnvelope,
+        }),
+      ProtocolError,
+    );
+  });
+
   it("rejects a PRF output from another origin (rpId is bound into HKDF info)", () => {
     const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
     assert.throws(
@@ -320,6 +344,23 @@ describe("fallback ranks 2 and 3", () => {
         }),
       AuthFailureError,
     );
+  });
+
+  it("zeroizes the stored wrapping key even when the stated identity is rejected", () => {
+    const { deviceKeyEnvelope, deviceEnvelope, storageKey } = localBinding(generateVaultKey());
+    const copy = storageKey.slice();
+    assert.throws(
+      () =>
+        unwrapVaultKeyWithDeviceWrappingKey({
+          deviceKeyEnvelope,
+          deviceEnvelope,
+          deviceWrappingKey: copy,
+          ...EXPECT,
+          deviceKeyVersion: 0,
+        }),
+      ProtocolError,
+    );
+    assert.ok(isZeroed(copy), "a rejected expectation must not leave the wrapping key behind");
   });
 });
 

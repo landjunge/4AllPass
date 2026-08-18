@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { webauthnPrfAvailable } from "../lib/webauthnCapabilities.ts";
 
 const MECHANISM_LABEL: Record<string, string> = {
   prf: "WebAuthn PRF (rank 1)",
@@ -12,6 +13,7 @@ export function DevicesPanel(): ReactNode {
     useApp();
   const [busy, setBusy] = useState(false);
   const [mechanism, setMechanism] = useState<string | null>(null);
+  const [prfAvailable] = useState(() => webauthnPrfAvailable());
 
   useEffect(() => {
     void refreshDevices();
@@ -55,6 +57,12 @@ export function DevicesPanel(): ReactNode {
             Enabled via {MECHANISM_LABEL[mechanism] ?? mechanism}
           </p>
         ) : null}
+        {prfAvailable ? null : (
+          <p className="hint" data-testid="no-prf-hint">
+            This browser reports no WebAuthn PRF support, so enabling falls back to largeBlob or a
+            UV-gated local store (rank 2 or 3).
+          </p>
+        )}
         <p className="hint">
           WebAuthn unlocks a Device Wrapping Key, which unwraps a random Device Key, which unwraps
           the Vault Key. The PRF output is never used as a key and is wiped straight after use. The

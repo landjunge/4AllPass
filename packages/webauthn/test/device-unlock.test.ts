@@ -219,7 +219,41 @@ describe("unlockWithDevice", () => {
       assert.equal(result.mechanism, scenario.expected);
       assert.equal(fixture.client.lastUserVerification, "required");
     });
+
+    it(`refuses a snapshot from another Vault-Key generation over ${scenario.name}`, async () => {
+      // A rotation the server did not tell this device about, or an old
+      // snapshot replayed at it: the envelope is well-formed either way.
+      const fixture = await enable(scenario.options);
+      await assert.rejects(
+        () =>
+          unlockWithDevice({
+            client: fixture.client,
+            store: fixture.store,
+            vaultId: VAULT_ID,
+            deviceId: DEVICE_ID,
+            vaultKeyVersion: VAULT_KEY_VERSION + 1,
+            deviceEnvelope: fixture.deviceEnvelope,
+          }),
+        DeviceUnlockUnavailableError,
+      );
+    });
   }
+
+  it("refuses another device's Device Envelope", async () => {
+    const fixture = await enable({ supportsPrf: true });
+    await assert.rejects(
+      () =>
+        unlockWithDevice({
+          client: fixture.client,
+          store: fixture.store,
+          vaultId: VAULT_ID,
+          deviceId: DEVICE_ID,
+          vaultKeyVersion: VAULT_KEY_VERSION,
+          deviceEnvelope: deviceEnvelopeFor(VAULT_ID, "dev_other_profile"),
+        }),
+      DeviceUnlockUnavailableError,
+    );
+  });
 
   it("unlocks from the server mirror when the local envelope is gone", async () => {
     const client = new FakeAuthenticator({ supportsPrf: true });

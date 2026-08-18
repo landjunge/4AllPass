@@ -13,6 +13,7 @@ import {
   SALT_BYTES_MAX,
   SALT_BYTES_MIN,
   TAG_BYTES,
+  VERSION_MAX,
 } from "./constants.ts";
 import { base64ToBytes, bytesToBase64 } from "./encoding/base64.ts";
 import { ProtocolError } from "./errors.ts";
@@ -132,11 +133,15 @@ function requireVersion(source: Record<string, unknown>, key: string, label: str
   return version;
 }
 
-/** Key generations are 1-based: 0 is reserved for "not applicable" inside AAD. */
+/**
+ * Key generations are 1-based: 0 is reserved for "not applicable" inside AAD.
+ * The upper bound is the uint32 the AAD encodes, so a generation the core would
+ * refuse is refused here instead of being handed on as "validated".
+ */
 function requireGeneration(source: Record<string, unknown>, key: string, label: string): number {
   const value = requireInt(source, key, label);
-  if (value < 1) {
-    throw new ProtocolError(`${label}.${key} must be >= 1`);
+  if (value < 1 || value > VERSION_MAX) {
+    throw new ProtocolError(`${label}.${key} must be in [1, ${VERSION_MAX}], got ${value}`);
   }
   return value;
 }

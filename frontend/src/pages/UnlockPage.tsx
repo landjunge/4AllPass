@@ -74,7 +74,7 @@ export function UnlockPage(): ReactNode {
               value={recovery}
               onChange={(event) => setRecovery(event.target.value)}
               rows={3}
-              placeholder="XXXX-XXXX-XXXX-…"
+              placeholder="XXXXX-XXXXX-XXXXX-…"
               required
             />
           </label>

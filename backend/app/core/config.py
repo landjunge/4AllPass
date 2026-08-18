@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
 
+    # Only enable this behind a reverse proxy that you control and that
+    # overwrites/strips any client-supplied X-Forwarded-For before it reaches
+    # this service. If enabled without such a proxy, a client can spoof this
+    # header to pick an arbitrary rate-limit bucket and bypass throttling.
+    trust_forwarded_for: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

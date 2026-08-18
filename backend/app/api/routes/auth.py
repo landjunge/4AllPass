@@ -17,7 +17,21 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _client_bucket(request: Request, action: str) -> str:
-    ip = request.client.host if request.client else "unknown"
+    """Best-effort per-client key for the login/register rate limiter.
+
+    Not a security boundary by itself (an attacker who controls their source
+    IP, or sits behind the same NAT/proxy as other users, can still share a
+    bucket) — it only has to make credential-stuffing/enumeration slower, not
+    impossible. ``trust_forwarded_for`` must stay off unless a trusted reverse
+    proxy guarantees the header cannot be spoofed by the client.
+    """
+    ip = None
+    if get_settings().trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            ip = forwarded.split(",")[0].strip()
+    if not ip:
+        ip = request.client.host if request.client else "unknown"
     return f"{action}:{ip}"
 
 

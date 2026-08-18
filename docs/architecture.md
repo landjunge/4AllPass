@@ -24,12 +24,14 @@ Die vollständige und verbindliche kryptografische Spezifikation steht in:
 
 Zusammenfassung der wichtigsten Punkte:
 - Vault Key ist **immer pure random** (nie aus dem Master-Passwort abgeleitet)
-- Key Envelopes (Master / Device / Recovery)
+- Key Envelopes (Master / Device / Recovery), jeder mit authentifizierter `vaultKeyVersion`
 - AES-256-GCM mit Pflicht-AAD und library-generierten Nonces
-- Vault Key Rotation bei Hard-Revocation
-- Recovery Key + Emergency Kit (kein Server-Reset)
+- Snapshot-Manifest: `revision` ist kryptografisch gebunden, nicht nur Server-Metadatum
+- Vault Key Rotation bei Hard-Revocation, Device-Key Rotation über `deviceKeyVersion`
+- Recovery Key + Emergency Kit (kein Server-Reset) → **[docs/recovery.md](recovery.md)**
 
-Threat Model: → **[docs/threat-model.md](threat-model.md)**
+Threat Model: → **[docs/threat-model.md](threat-model.md)**  
+Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversarial-review.md)**
 
 ---
 

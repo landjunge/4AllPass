@@ -1,0 +1,80 @@
+{
+  "protocol": "4AllPass Crypto Protocol v1",
+  "primitive": "Recovery Key → HKDF-SHA-256 → Recovery Wrapping Key → AES-256-GCM",
+  "generated": "2026-08-17T22:37:26Z",
+  "generator": "node scripts/generate-vectors.mjs (node:crypto createCipheriv aes-256-gcm, OpenSSL)",
+  "verified_with": [
+    "node:crypto hkdfSync/sha256",
+    "@noble/hashes hkdf via packages/crypto tests"
+  ],
+  "constants": {
+    "vault_id": "vault_01HZX4ALLPASS000000000001",
+    "crypto_version": 1,
+    "vault_key_version": 3,
+    "vault_key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+    "recovery_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "encoding": {
+    "alphabet": "0123456789ABCDEFGHJKMNPQRSTVWXYZ",
+    "scheme": "Crockford Base32 of (recovery_key || checksum), groups of 5 joined with '-'",
+    "checksum_bytes": 2,
+    "checksum_fields": [
+      "4allpass-recovery-checksum-v1",
+      "recovery_key"
+    ],
+    "substitutions": {
+      "O": "0",
+      "I": "1",
+      "L": "1"
+    }
+  },
+  "success": [
+    {
+      "id": "TV-RK-FORMAT",
+      "purpose": "Emergency-Kit representation of a 256-bit Recovery Key",
+      "recovery_key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "checksum": "c860",
+      "encoded": "QEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXVQEXWGR0",
+      "formatted": "QEXVQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XWGR0"
+    },
+    {
+      "id": "TV-RWK-01",
+      "purpose": "HKDF-SHA-256 Recovery Wrapping Key, bound to the vault",
+      "hkdf_salt_preimage": "001434616c6c706173732d72776b2d73616c742d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031",
+      "hkdf_info": "001934616c6c706173732d7265636f766572792d777261702d7631001f7661756c745f3031485a5834414c4c50415353303030303030303030303031000400000001",
+      "recovery_wrapping_key": "edd5692bffc5c250bb8f6b5c28648b62dc8b4141dc5fc9c16f6197c792b89b3e"
+    },
+    {
+      "id": "TV-ENV-RECOVERY-RWK",
+      "purpose": "Recovery envelope: VK wrapped under RWK (not under the printed key)",
+      "expect": "decrypt_ok",
+      "key": "edd5692bffc5c250bb8f6b5c28648b62dc8b4141dc5fc9c16f6197c792b89b3e",
+      "nonce": "333333333333333333333333",
+      "aad": "001434616c6c706173732d656e76656c6f70652d7631001f7661756c745f3031485a5834414c4c5041535330303030303030303030303100087265636f7665727900040000000100040000000300000004000000000000",
+      "plaintext": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "ciphertext": "e105a89f9629aba3ba23a0dd8610d4bbd02f2647dfca66fb4b73116f710b843b",
+      "tag": "3de98ffb4947d6a226b7f00f6a996425"
+    }
+  ],
+  "negative": [
+    {
+      "id": "TV-RK-CHECKSUM",
+      "purpose": "One mistyped character must be reported as a checksum failure, not as a wrong key",
+      "formatted": "QE0VQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XWGR0",
+      "expect": "checksum_fail"
+    },
+    {
+      "id": "TV-RK-NONCANONICAL",
+      "purpose": "The padding bits of the last character must be zero",
+      "formatted": "QEXVQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XVQEX-VQEXV-QEXVQ-EXVQE-XWGR1",
+      "expect": "parse_fail"
+    },
+    {
+      "id": "TV-RWK-WRONG-VAULT",
+      "purpose": "The same Recovery Key must derive a different RWK for another vault",
+      "vault_id": "vault_OTHER",
+      "expect": "rwk_differs",
+      "differs_from": "TV-RWK-01"
+    }
+  ]
+}

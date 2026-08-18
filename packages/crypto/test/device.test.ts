@@ -10,22 +10,9 @@ import {
 } from "../src/index.ts";
 import { wrapDeviceKeyWithNonce } from "../src/test-only.ts";
 import { decrypt } from "../src/aead/aes-gcm.ts";
-import { loadJson } from "./helpers.ts";
+import { loadJson, type DeviceSuite } from "./helpers.ts";
 
-interface Suite {
-  constants: {
-    vault_id: string;
-    device_id: string;
-    rp_id: string;
-    credential_id: string;
-    prf_output: string;
-    device_key: string;
-  };
-  success: Array<Record<string, string>>;
-  negative: Array<Record<string, string>>;
-}
-
-const suite = loadJson<Suite>("device-prf-v1.json");
+const suite = loadJson<DeviceSuite>("device-prf-v1.json");
 const C = suite.constants;
 const cred = hexToBytes(C.credential_id);
 const prfOut = hexToBytes(C.prf_output);
@@ -38,6 +25,12 @@ function req(v: Record<string, string>, key: string): string {
 
 function find(id: string): Record<string, string> {
   const v = suite.success.find((x) => x.id === id);
+  assert.ok(v, id);
+  return v;
+}
+
+function negative(id: string): Record<string, string> {
+  const v = suite.negative.find((x) => x.id === id);
   assert.ok(v, id);
   return v;
 }
@@ -74,6 +67,13 @@ describe("WebAuthn PRF → DWK", () => {
 });
 
 describe("Device Key envelope", () => {
+  const expectations = {
+    vaultId: C.vault_id,
+    deviceId: C.device_id,
+    credentialId: cred,
+    deviceKeyVersion: C.device_key_version,
+  };
+
   it("TV-DKE-01 wrap / unwrap", () => {
     const v = find("TV-DKE-01");
     const dwk = hexToBytes(req(v, "key"));
@@ -83,26 +83,32 @@ describe("Device Key envelope", () => {
       vaultId: C.vault_id,
       deviceId: C.device_id,
       credentialId: cred,
+      deviceKeyVersion: C.device_key_version,
       nonce: hexToBytes(req(v, "nonce")),
     });
     assert.equal(bytesToHex(env.ciphertext), req(v, "ciphertext"));
     assert.equal(bytesToHex(env.tag), req(v, "tag"));
-    assert.deepEqual(unwrapDeviceKey(env, dwk), hexToBytes(C.device_key));
-  });
-
-  it("TV-DKE-WRONG-DWK fails", () => {
-    const v = suite.negative.find((x) => x.id === "TV-DKE-WRONG-DWK");
-    assert.ok(v);
-    assert.throws(
-      () =>
-        decrypt(
-          hexToBytes(req(v, "key")),
-          hexToBytes(req(v, "nonce")),
-          hexToBytes(req(v, "ciphertext")),
-          hexToBytes(req(v, "tag")),
-          hexToBytes(req(v, "aad")),
-        ),
-      AuthFailureError,
+    assert.equal(env.deviceKeyVersion, C.device_key_version);
+    assert.deepEqual(
+      unwrapDeviceKey(env, { deviceWrappingKey: dwk, ...expectations }),
+      hexToBytes(C.device_key),
     );
   });
+
+  for (const id of ["TV-DKE-WRONG-DWK", "TV-DKE-CREDENTIAL-SWAP", "TV-DKE-VERSION-ROLLBACK"]) {
+    it(`${id} fails authentication`, () => {
+      const v = negative(id);
+      assert.throws(
+        () =>
+          decrypt(
+            hexToBytes(req(v, "key")),
+            hexToBytes(req(v, "nonce")),
+            hexToBytes(req(v, "ciphertext")),
+            hexToBytes(req(v, "tag")),
+            hexToBytes(req(v, "aad")),
+          ),
+        AuthFailureError,
+      );
+    });
+  }
 });

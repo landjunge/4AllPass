@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_vault_for_user
+from app.api.deps import get_db, require_vault_owner
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
 from app.models.vault import Vault
@@ -13,7 +13,7 @@ from app.schemas.device import DeviceOut
 
 router = APIRouter(prefix="/vaults/{vault_id}/devices", tags=["devices"])
 
-# Authorization: `get_vault_for_user` resolves `vault_id` *and* proves the
+# Authorization: `require_vault_owner` resolves `vault_id` *and* proves the
 # authenticated account owns it, on every request. The path parameter is never
 # trusted on its own, and the token grants nothing by itself — see
 # app/api/deps.py. Responses stay metadata-only (crypto-protocol.md §11): no
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/vaults/{vault_id}/devices", tags=["devices"])
 
 @router.get("", response_model=list[DeviceOut])
 async def list_devices(
-    vault: Vault = Depends(get_vault_for_user),
+    vault: Vault = Depends(require_vault_owner),
     db: AsyncSession = Depends(get_db),
 ) -> list[DeviceOut]:
     result = await db.execute(
@@ -48,7 +48,7 @@ async def list_devices(
 @router.get("/{device_id}", response_model=DeviceOut)
 async def get_device(
     device_id: uuid.UUID,
-    vault: Vault = Depends(get_vault_for_user),
+    vault: Vault = Depends(require_vault_owner),
     db: AsyncSession = Depends(get_db),
 ) -> DeviceOut:
     result = await db.execute(

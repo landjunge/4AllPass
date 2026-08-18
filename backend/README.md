@@ -50,6 +50,13 @@ reaches this service (`docs/crypto-protocol.md`, Hard Invariant #5).
 | `GET /vaults/{vault_id}/devices` | access token + **ownership** | Metadata only |
 | `GET /vaults/{vault_id}/devices/{device_id}` | access token + **ownership** | Metadata only |
 
+### Dependencies
+
+| Dependency | Guarantees |
+|---|---|
+| `get_current_user` | A valid, non-revoked access token for an active account. Every failure mode — missing header, bad signature, expired, revoked by logout, unknown or deactivated account — returns the same 401 |
+| `require_vault_owner(vault_id)` | The calling account owns the vault, and returns that vault. Check and load are one `WHERE id = … AND owner_user_id = …`, so a route cannot re-fetch with a weaker predicate |
+
 ### Two decisions worth knowing about
 
 **A vault you do not own is a 404, not a 403.** A 403 would confirm that the id exists,
@@ -77,11 +84,32 @@ restart and two instances would sign with different keys.
 Losing this key means every account must log in again. It does **not** put any vault at
 risk — see `docs/threat-model.md` §3, "Remote Attacker with Account Access".
 
+### Relationship to the crypto protocol
+
+This layer does not import `packages/crypto` and never will: everything the server
+could compute with it would be over ciphertext it must treat as opaque, and having
+the import available invites the "just decrypt it here" change this design forbids.
+`tests/test_route_inventory.py` enforces that.
+
+It also stays out of snapshot state entirely — no route touches `VaultSnapshot`,
+`EncryptedEntry` or `KeyEnvelope`. Snapshot publication has requirements this
+boundary does not implement (`docs/vault-revision.md` §4: write the full snapshot,
+then compare-and-swap the active pointer; one snapshot per `(vault_id, revision)`),
+so a half-built endpoint here would be worse than none. When those endpoints land,
+they sit *behind* `require_vault_owner` and return the same opaque records a
+malicious server already holds.
+
+The `device_key_envelopes` mirror is queried for existence only — the route selects
+`device_id` / `id` and reports a boolean. The stored `nonce`, `ciphertext` and `tag`
+never enter a response, which is asserted in two ways: the schema's field list, and
+a check that none of the stored bytes appear in any encoding (hex, base64, latin-1).
+
 ### Not in this step
 
-Rate limiting / brute-force lockout on `/auth/login`, password change and reset flows,
-e-mail verification, OAuth sign-in (the `users.oauth_*` columns exist but no flow uses
-them yet), and anything vault- or sync-related.
+Rate limiting / brute-force lockout on `/auth/login` (see `docs/threat-model.md`
+§3.1), password change and reset flows, e-mail verification, OAuth sign-in (the
+`users.oauth_*` columns exist but no flow uses them yet), disabling `/docs` and
+`/openapi.json` in production, and anything vault- or sync-related.
 
 ## Local setup
 
@@ -116,6 +144,12 @@ flush it around each test, so they never touch a development database.
 | `tests/test_auth.py` | registration, login, token shape, rotation, reuse detection, logout |
 | `tests/test_device_authz.py` | 401 without a token, 404 for a vault you do not own, 200 for the owner, and that responses carry no key bytes |
 | `tests/test_security_config.py` | signing-key configuration, including the production guard and rejection of foreign/unsigned tokens |
+| `tests/test_route_inventory.py` | the API surface itself: the exact route list, that every vault-scoped route depends on `require_vault_owner`, that the token payload literal has exactly six claims, and that this layer does not import the crypto core or touch snapshot state |
+
+`test_route_inventory.py` is there because per-route tests cannot catch a route
+that is *added* later without protection. Its guards were verified by breaking
+the rules on purpose: adding a `scope` claim and dropping the ownership
+dependency each fail it.
 
 `tests/test_migrations.py` runs `alembic upgrade head` → `downgrade base` → `upgrade head` →
 `alembic check` against a scratch database to catch migration/model drift. Set

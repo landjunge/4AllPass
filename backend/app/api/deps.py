@@ -4,7 +4,7 @@ The two authorization rules of Security Boundary v1 live here:
 
 1. `get_current_user` — the caller must present a valid, non-revoked access
    token for an active account.
-2. `get_vault_for_user` — the vault named in the path must be owned by that
+2. `require_vault_owner` — the vault named in the path must be owned by that
    account, checked against the database on every request.
 
 Nothing is inferred from the token itself. A token carries no vault ids, no
@@ -68,12 +68,17 @@ async def get_current_user(
     return user
 
 
-async def get_vault_for_user(
+async def require_vault_owner(
     vault_id: uuid.UUID = Path(..., description="Vault the request applies to"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Vault:
-    """Load `vault_id`, but only if the calling account owns it.
+    """Require that the calling account owns `vault_id`, and return that vault.
+
+    The ownership check and the load are one operation on purpose: a route that
+    received only a boolean would have to fetch the vault again, and a second
+    query is a second chance to fetch it with the wrong predicate. The single
+    `WHERE id = … AND owner_user_id = …` cannot be got wrong that way.
 
     A vault owned by somebody else is reported as 404, not 403: 403 would
     confirm that the id exists, which is a membership oracle over other
@@ -94,5 +99,5 @@ __all__ = [
     "get_current_user",
     "get_db",
     "get_redis",
-    "get_vault_for_user",
+    "require_vault_owner",
 ]

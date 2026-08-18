@@ -47,7 +47,7 @@ class AccessClaims:
 
     In particular there are no vault ids, device ids, roles or scopes: a token
     never grants access to an object. Authorization is always a fresh database
-    lookup against the owning account (see `app.api.deps.get_vault_for_user`).
+    lookup against the owning account (see `app.api.deps.require_vault_owner`).
     """
 
     subject: uuid.UUID

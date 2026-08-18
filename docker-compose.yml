@@ -2,23 +2,20 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: fourallpass
-      POSTGRES_PASSWORD: fourallpass
-      POSTGRES_DB: fourallpass
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: 4allpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-4allpass}
+      POSTGRES_DB: 4allpass
     volumes:
-      - fourallpass-postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fourallpass"]
+      test: ["CMD-SHELL", "pg_isready -U 4allpass -d 4allpass"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -26,29 +23,29 @@ services:
       retries: 10
 
   backend:
-    build:
-      context: ./backend
+    build: ./backend
     environment:
-      FOURALLPASS_DATABASE_URL: postgresql+asyncpg://fourallpass:fourallpass@postgres:5432/fourallpass
+      FOURALLPASS_ENVIRONMENT: ${FOURALLPASS_ENVIRONMENT:-production}
+      FOURALLPASS_DATABASE_URL: postgresql+asyncpg://4allpass:${POSTGRES_PASSWORD:-4allpass}@postgres:5432/4allpass
       FOURALLPASS_REDIS_URL: redis://redis:6379/0
-    ports:
-      - "8000:8000"
+      FOURALLPASS_CORS_ORIGINS: ${FOURALLPASS_CORS_ORIGINS:-http://localhost:8080}
+      FOURALLPASS_WEBAUTHN_RP_ID: ${FOURALLPASS_WEBAUTHN_RP_ID:-localhost}
+    command:
+      - sh
+      - -c
+      - "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: >
-      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+  web:
+    build: ./frontend
     ports:
-      - "8080:8080"
+      - "${WEB_PORT:-8080}:8080"
     depends_on:
       - backend
 
 volumes:
-  fourallpass-postgres-data:
+  postgres-data:

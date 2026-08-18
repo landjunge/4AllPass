@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import devices, health
+from app.api.routes import auth, devices, health
 from app.core.config import get_settings
 
 
@@ -13,7 +13,9 @@ def create_app() -> FastAPI:
         description=(
             "4AllPass — self-hosted Zero-Knowledge password manager backend. "
             "This service never sees plaintext vault entries or key material; "
-            "see docs/crypto-protocol.md and docs/threat-model.md."
+            "see docs/crypto-protocol.md and docs/threat-model.md. "
+            "Authentication proves account identity only: a token is never a "
+            "capability over a vault, and never enables decryption."
         ),
         version="0.1.0",
     )
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(auth.router)
     app.include_router(devices.router)
 
     return app

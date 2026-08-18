@@ -10,16 +10,78 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
 
-## What lives here (v1 scaffold)
+## What lives here
 
 - SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
   users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
   encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
   (`docs/webauthn-prf.md` §4).
-- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
-  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
-  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
-  "project structure + crypto-core + DB schema" per the initial brief.
+- **Security Boundary v1** (below): account authentication and vault ownership, with the
+  device routes behind it.
+- Still follow-up work: WebAuthn ceremony endpoints, vault snapshot commit/CAS, and rotation.
+
+## Security Boundary v1
+
+### What a token means
+
+An access token proves **one** thing: this request comes from account X. It is not a
+capability. It contains no vault ids, no device ids, no scopes and no roles, so possession
+of a token can never *be* an authorization — every request re-checks ownership against the
+database. And no token, session or account secret can decrypt a vault: the Vault Key never
+reaches this service (`docs/crypto-protocol.md`, Hard Invariant #5).
+
+| Property | Choice | Why |
+|---|---|---|
+| Access token | JWT, EdDSA (Ed25519) or ES256, ~10 min | Asymmetric, so only this service needs the private half; short-lived, so a leaked token expires on its own |
+| Claims | exactly `sub`, `iat`, `exp`, `jti`, `iss`, `aud` | Nothing else can be mistaken for a permission |
+| Refresh token | opaque 256-bit random, Redis, rotating | Carries no claims; single-use with reuse detection |
+| Account password | Argon2id (64 MiB, t=3, p=4) | Separate from the vault KDF in parameters and purpose |
+| Logout | revokes the refresh family **and** deny-lists the access `jti` | Otherwise logout would be cosmetic for ~10 minutes |
+
+### Endpoints
+
+| Route | Auth | Notes |
+|---|---|---|
+| `POST /auth/register` | — | 201 with `{id, email}`; deliberately returns no tokens, so account creation is not implicitly a login |
+| `POST /auth/login` | — | Returns an access + refresh pair. Unknown email and wrong password are indistinguishable, in both response and work performed |
+| `POST /auth/refresh` | refresh token | Rotates: the presented token is consumed and a successor issued |
+| `POST /auth/logout` | access token (+ refresh token in the body) | 204. Requires authentication so one account cannot log another one out |
+| `GET /auth/me` | access token | Lets a client confirm a token is still live |
+| `GET /vaults/{vault_id}/devices` | access token + **ownership** | Metadata only |
+| `GET /vaults/{vault_id}/devices/{device_id}` | access token + **ownership** | Metadata only |
+
+### Two decisions worth knowing about
+
+**A vault you do not own is a 404, not a 403.** A 403 would confirm that the id exists,
+which is a membership oracle over other accounts' vaults. An unknown id and someone else's
+id return byte-identical responses (`tests/test_device_authz.py`).
+
+**Refresh-token reuse revokes the whole family.** A rotated token is kept as a tombstone
+rather than deleted, so presenting it twice is *detected* rather than merely refused. Since
+either the client replayed a token it should have dropped or somebody else holds a copy,
+every token in that family is revoked and both parties must re-authenticate.
+
+### Signing key
+
+```sh
+openssl genpkey -algorithm ed25519 -out jwt-signing-key.pem
+# ES256 alternative:
+openssl ecparam -genkey -name prime256v1 -noout | openssl pkcs8 -topk8 -nocrypt -out jwt-signing-key.pem
+```
+
+Set the PEM as `FOURALLPASS_JWT_PRIVATE_KEY`. In development it may be omitted, in which
+case an ephemeral key is generated per process and logged as a warning. In production the
+API **refuses to start** without one: an ephemeral key would invalidate every token on
+restart and two instances would sign with different keys.
+
+Losing this key means every account must log in again. It does **not** put any vault at
+risk — see `docs/threat-model.md` §3, "Remote Attacker with Account Access".
+
+### Not in this step
+
+Rate limiting / brute-force lockout on `/auth/login`, password change and reset flows,
+e-mail verification, OAuth sign-in (the `users.oauth_*` columns exist but no flow uses
+them yet), and anything vault- or sync-related.
 
 ## Local setup
 
@@ -45,6 +107,15 @@ createdb fourallpass_test -O fourallpass
 createdb fourallpass_migrations_test -O fourallpass   # used by tests/test_migrations.py
 pytest
 ```
+
+The auth tests need Redis as well; they use database 15 (`FOURALLPASS_TEST_REDIS_URL`) and
+flush it around each test, so they never touch a development database.
+
+| File | Covers |
+|---|---|
+| `tests/test_auth.py` | registration, login, token shape, rotation, reuse detection, logout |
+| `tests/test_device_authz.py` | 401 without a token, 404 for a vault you do not own, 200 for the owner, and that responses carry no key bytes |
+| `tests/test_security_config.py` | signing-key configuration, including the production guard and rejection of foreign/unsigned tokens |
 
 `tests/test_migrations.py` runs `alembic upgrade head` → `downgrade base` → `upgrade head` →
 `alembic check` against a scratch database to catch migration/model drift. Set

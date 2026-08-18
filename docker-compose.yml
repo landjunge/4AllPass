@@ -31,6 +31,11 @@ services:
     environment:
       FOURALLPASS_DATABASE_URL: postgresql+asyncpg://fourallpass:fourallpass@postgres:5432/fourallpass
       FOURALLPASS_REDIS_URL: redis://redis:6379/0
+      # Account-token signing key. Left empty for local development, where an
+      # ephemeral key is generated per start; a production compose deployment
+      # must supply one (see backend/.env.example) and set ENVIRONMENT=production,
+      # which then refuses to start without it.
+      FOURALLPASS_JWT_PRIVATE_KEY: ${FOURALLPASS_JWT_PRIVATE_KEY:-}
     ports:
       - "8000:8000"
     depends_on:

@@ -6,5 +6,12 @@ asyncpg==0.31.0
 psycopg[binary]==3.2.4
 pydantic==2.13.4
 pydantic-settings==2.15.0
+email-validator==2.2.0
 redis==5.2.1
+
+# Account-level auth only (never vault crypto — see app/core/security.py):
+# PyJWT signs short-lived access tokens with an Ed25519/ES256 key, argon2-cffi
+# hashes account passwords at rest.
+PyJWT[crypto]==2.10.1
+argon2-cffi==25.1.0
 python-dotenv==1.2.3

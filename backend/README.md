@@ -10,16 +10,32 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - [`../docs/vault-revision.md`](../docs/vault-revision.md)
 - [`../docs/threat-model.md`](../docs/threat-model.md)
 
-## What lives here (v1 scaffold)
+## Backend security boundary v1
+
+- `POST /auth/register`, `/auth/login`, `/auth/logout`, and `GET /auth/me` use
+  account-password hashes and opaque, server-side Redis sessions. The browser
+  receives only an `HttpOnly` cookie; production cookies are `Secure` and sessions
+  are revoked by deleting their Redis entry.
+- `get_current_user` is the only source of authenticated identity. It never trusts
+  a client-supplied user ID.
+- Protected vault routes use `require_vault_owner`, returning the same 404 for a
+  missing or foreign vault so device metadata cannot become an IDOR oracle.
+- `POST /vaults` creates ownership metadata only. It neither generates nor accepts
+  a plaintext Vault Key.
+
+Authentication is not vault decryption: the account password, session, and Redis
+state never provide the Master Password, VK, DK, DWK, WebAuthn PRF output, or
+plaintext vault data to the backend.
+
+## What lives here
 
 - SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
   users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
   encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
   (`docs/webauthn-prf.md` §4).
-- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
-  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
-  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
-  "project structure + crypto-core + DB schema" per the initial brief.
+- A FastAPI app (`app/main.py`) with a health check, account authentication, vault ownership
+  creation, and authorized read-only device metadata endpoints. WebAuthn ceremony endpoints,
+  vault snapshot commit/CAS, and rotation remain follow-up work.
 
 ## Local setup
 

@@ -24,10 +24,16 @@ class Settings(BaseSettings):
     # Account-level session auth (unrelated to vault crypto — see architecture.md §3).
     session_secret: str = "change-me-in-production"
     session_ttl_seconds: int = 60 * 60 * 24 * 14
+    session_cookie_name: str = "fourallpass_session"
+    session_cookie_samesite: str = "lax"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
     crypto_protocol_version: int = 1
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
 
 
 @lru_cache

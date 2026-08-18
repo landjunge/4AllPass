@@ -51,6 +51,26 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 
+### Backend Security Boundary v1
+- Account registration and login use a dedicated, modern password hash. This is
+  separate from the vault's Argon2id Master-Password KDF.
+- Browser sessions are opaque, random identifiers in `HttpOnly` cookies. Session
+  state (account ID and expiry) is held server-side in Redis, so logout revokes
+  the session immediately. Cookies are `Secure` in production and use deliberate
+  `SameSite=Lax` defaults; no authentication token is placed in a URL or
+  `localStorage`.
+- Every protected API route resolves the identity from the server-side session.
+  Request bodies and headers can never nominate an authenticated `user_id`.
+- Vault and device reads first require a matching `vault.owner_user_id`. Missing
+  and foreign vault IDs produce the same 404 response, reducing ID enumeration.
+- Device API responses contain only metadata and envelope presence. They never
+  return WebAuthn public-key internals, encrypted key-envelope bytes, DK, DWK,
+  VK, PRF output, or decrypted vault data.
+
+**Authentication ≠ Vault Decryption.** Authentication proves which account may
+access encrypted records. It does not provide the Master Password, Vault Key,
+Device Key, Device Wrapping Key, WebAuthn PRF output, or plaintext to the backend.
+
 ---
 
 ## 4. Geräte- und Profil-Management

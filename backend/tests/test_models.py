@@ -257,6 +257,13 @@ async def test_device_and_webauthn_credential_and_device_key_envelope(db_session
     assert device_key_envelope.credential_id == credential.credential_id
 
 
+async def test_users_email_must_be_stored_lowercase(db_session):
+    """The unique index on ``email`` is only case-insensitive because of this."""
+    db_session.add(User(email="MixedCase@Example.test"))
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
+
+
 async def test_device_key_envelope_unique_per_vault_device(db_session):
     _, vault, _snapshot = await _make_vault_with_snapshot(db_session)
 

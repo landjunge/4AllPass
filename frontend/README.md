@@ -5,6 +5,11 @@ architecture specs:
 
 - [`../docs/architecture.md`](../docs/architecture.md)
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
+- [`../docs/backend-security-boundary.md`](../docs/backend-security-boundary.md)
+
+Account auth is an HttpOnly session cookie. `src/lib/api.ts` sends
+`credentials: "include"` and does not store a session secret in
+`localStorage` or `sessionStorage`. That session is not vault decryption.
 
 ## Local setup
 

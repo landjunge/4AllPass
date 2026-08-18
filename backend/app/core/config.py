@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,7 +26,7 @@ class Settings(BaseSettings):
     session_secret: str = "change-me-in-production"
     session_ttl_seconds: int = 60 * 60 * 24 * 14
     session_cookie_name: str = "fourallpass_session"
-    session_cookie_samesite: str = "lax"
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 

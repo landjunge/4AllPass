@@ -128,6 +128,8 @@ export interface SealedManifest {
 export interface VaultSnapshot extends VaultRevision {
   envelopes: KeyEnvelope[];
   entries: EncryptedEntry[];
+  /** Sealed under VK. Absent on legacy snapshots that predate wire support. */
+  sealedManifest?: SealedManifest;
 }
 
 export interface GcmBox {

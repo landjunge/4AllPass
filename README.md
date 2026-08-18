@@ -23,6 +23,7 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 - Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
 - Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- Security boundary (what is actually implemented): [`docs/security-boundary.md`](docs/security-boundary.md)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 

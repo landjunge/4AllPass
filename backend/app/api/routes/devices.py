@@ -3,12 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_owned_vault
+from app.api.deps import get_db, get_owned_vault, get_session_store
+from app.api.rate_limit import enforce_write_rate_limit
+from app.core.sessions import SessionStore
 from app.core.encoding import b64decode, b64encode, b64url_decode
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
@@ -71,6 +73,7 @@ def _device_out(device: Device, envelope_ids: set[str]) -> DeviceSummary:
         last_seen_at=device.last_seen_at,
         revoked_at=device.revoked_at,
         has_device_envelope=device.device_id in envelope_ids,
+        revocation="metadata_only" if device.revoked_at is not None else "none",
         credentials=[_credential_out(cred, mirrored) for cred in device.webauthn_credentials],
     )
 
@@ -87,6 +90,17 @@ async def _get_device(db: AsyncSession, vault: Vault, device_id: str) -> Device:
     return device
 
 
+def _require_active_device(device: Device) -> None:
+    """Metadata revoke is not cryptographic erase, but the server must not
+    keep handing out or accepting unlock material for a revoked device row.
+    """
+    if device.revoked_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="device is revoked",
+        )
+
+
 @router.get("", response_model=list[DeviceSummary])
 async def list_devices(
     vault: Annotated[Vault, Depends(get_owned_vault)],
@@ -99,9 +113,12 @@ async def list_devices(
 @router.post("", response_model=DeviceSummary)
 async def register_device(
     payload: RegisterDeviceRequest,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
+    await enforce_write_rate_limit(store, request, "device")
     result = await db.execute(
         select(Device)
         .where(Device.vault_id == vault.id, Device.device_id == payload.device_id)
@@ -120,12 +137,15 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
+        device = await _get_device(db, vault, payload.device_id)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
         device.user_agent_summary = payload.user_agent_summary or device.user_agent_summary
         device.last_seen_at = now
+        # Re-enrolment of metadata only. This does not restore a device
+        # envelope or rotate keys; cryptographic access still depends on
+        # the active snapshot.
         device.revoked_at = None
         await db.flush()
     return _device_out(device, await _device_envelope_ids(db, vault))
@@ -160,10 +180,14 @@ async def revoke_device(
 async def register_credential(
     device_id: str,
     payload: RegisterCredentialRequest,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> CredentialSummary:
+    await enforce_write_rate_limit(store, request, "credential")
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     try:
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
@@ -204,8 +228,11 @@ async def put_device_key_envelope(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)
     cred = next((c for c in device.webauthn_credentials if c.credential_id == raw_id), None)
+    if cred is not None and cred.revoked_at is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="credential is revoked")
     if cred is None:
         raise HTTPException(status_code=404, detail="credential not found")
     if payload.device_id != device.device_id or payload.vault_id != vault.id:
@@ -262,6 +289,7 @@ async def get_device_key_envelope(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
+    _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)
     result = await db.execute(
         select(DeviceKeyEnvelope).where(

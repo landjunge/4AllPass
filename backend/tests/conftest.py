@@ -1,6 +1,7 @@
 import os
 from collections.abc import AsyncIterator
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -19,6 +20,17 @@ from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
 
 get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _reset_memory_session_store():
+    from app.core.sessions import get_session_store
+
+    store = get_session_store()
+    reset = getattr(store, "reset", None)
+    if callable(reset):
+        reset()
+    yield
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")

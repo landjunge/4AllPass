@@ -39,6 +39,11 @@ class MemorySessionStore:
         self._sessions: dict[str, tuple[float, SessionRecord]] = {}
         self._rates: dict[str, list[float]] = {}
 
+    def reset(self) -> None:
+        """Test helper: drop every session and rate-limit window."""
+        self._sessions.clear()
+        self._rates.clear()
+
     async def put(self, token: str, record: SessionRecord, ttl_seconds: int) -> None:
         self._sessions[token_lookup_key(token)] = (time.time() + ttl_seconds, record)
 

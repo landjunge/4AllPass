@@ -1,14 +1,16 @@
 """Persist and load opaque vault snapshots.
 
-The server never decrypts envelopes or entries. It only checks structure,
-CAS (docs/vault-revision.md §4), and that a master envelope is present so
-the vault cannot be committed into an unrecoverable state.
+The server never decrypts envelopes, entries, or the sealed manifest. It only
+checks structure, CAS (docs/vault-revision.md §4), vault-key-version
+monotonicity, and that a master envelope is present so the vault cannot be
+committed into an unrecoverable state.
 """
 
 from __future__ import annotations
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,6 +25,7 @@ from app.schemas.snapshot import (
     WireEncryptedEntry,
     WireKdfParams,
     WireKeyEnvelope,
+    WireSealedManifest,
     WireVaultSnapshot,
 )
 
@@ -70,6 +73,19 @@ def _entry_from_wire(snapshot_id, wire: WireEncryptedEntry) -> EncryptedEntry:
     )
 
 
+def _sealed_manifest_to_storage(wire: WireSealedManifest | None) -> dict | None:
+    if wire is None:
+        return None
+    # Persist the exact client-supplied strings. Do not decode/re-encode.
+    return wire.model_dump(by_alias=True)
+
+
+def _sealed_manifest_from_storage(value: dict | None) -> WireSealedManifest | None:
+    if not value:
+        return None
+    return WireSealedManifest.model_validate(value)
+
+
 def snapshot_to_wire(vault_id, snapshot: VaultSnapshot) -> WireVaultSnapshot:
     envelopes: list[WireKeyEnvelope] = []
     for env in snapshot.envelopes:
@@ -109,6 +125,7 @@ def snapshot_to_wire(vault_id, snapshot: VaultSnapshot) -> WireVaultSnapshot:
         crypto_protocol_version=snapshot.crypto_protocol_version,
         envelopes=envelopes,
         entries=entries,
+        sealed_manifest=_sealed_manifest_from_storage(snapshot.sealed_manifest),
     )
 
 
@@ -123,27 +140,54 @@ async def load_active_snapshot(db: AsyncSession, vault: Vault) -> VaultSnapshot 
     return result.scalar_one_or_none()
 
 
+async def _lock_vault_and_current(
+    db: AsyncSession, vault: Vault
+) -> tuple[Vault, VaultSnapshot | None]:
+    """Serialize writers and read the live CAS pointer (docs/vault-revision.md B7)."""
+    result = await db.execute(
+        select(Vault.active_snapshot_id).where(Vault.id == vault.id).with_for_update()
+    )
+    pointer = result.scalar_one()
+    vault.active_snapshot_id = pointer
+    if pointer is None:
+        return vault, None
+    snapshot = await db.execute(
+        select(VaultSnapshot)
+        .where(VaultSnapshot.id == pointer)
+        .options(selectinload(VaultSnapshot.envelopes), selectinload(VaultSnapshot.entries))
+    )
+    return vault, snapshot.scalar_one_or_none()
+
+
 async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommit) -> VaultSnapshot:
     if payload.crypto_protocol_version != 1:
         raise HTTPException(status_code=422, detail="unsupported cryptoProtocolVersion")
     if not any(env.type == "master" for env in payload.envelopes):
         raise HTTPException(status_code=422, detail="snapshot must include a master envelope")
 
-    current = await load_active_snapshot(db, vault)
+    vault, current = await _lock_vault_and_current(db, vault)
     current_revision = current.revision if current is not None else 0
+    current_vault_key_version = current.vault_key_version if current is not None else 0
     expected = current_revision if payload.expected_revision is None else payload.expected_revision
 
     if expected != current_revision or payload.revision != current_revision + 1:
         raise RevisionConflict(current_revision)
+    if payload.vault_key_version < current_vault_key_version:
+        raise HTTPException(status_code=422, detail="vaultKeyVersion must not decrease")
 
     snapshot = VaultSnapshot(
         vault_id=vault.id,
         revision=payload.revision,
         vault_key_version=payload.vault_key_version,
         crypto_protocol_version=payload.crypto_protocol_version,
+        sealed_manifest=_sealed_manifest_to_storage(payload.sealed_manifest),
     )
     db.add(snapshot)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise RevisionConflict(current_revision) from exc
 
     try:
         db.add_all([_envelope_from_wire(snapshot.id, env) for env in payload.envelopes])

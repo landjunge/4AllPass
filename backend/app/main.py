@@ -7,6 +7,10 @@ from app.core.config import get_settings
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if settings.environment == "production" and settings.session_secret_is_insecure_default():
+        raise RuntimeError(
+            "FOURALLPASS_SESSION_SECRET must be set to a non-default value in production"
+        )
 
     app = FastAPI(
         title=settings.app_name,

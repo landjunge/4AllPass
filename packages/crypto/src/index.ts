@@ -69,11 +69,13 @@ export {
   decodeEncryptedEntry,
   decodeKdfParams,
   decodeKeyEnvelope,
+  decodeSealedManifest,
   decodeVaultSnapshot,
   encodeDeviceKeyEnvelope,
   encodeEncryptedEntry,
   encodeKdfParams,
   encodeKeyEnvelope,
+  encodeSealedManifest,
   encodeVaultSnapshot,
 } from "./wire.ts";
 export type {
@@ -81,6 +83,7 @@ export type {
   WireEncryptedEntry,
   WireKdfParams,
   WireKeyEnvelope,
+  WireSealedManifest,
   WireVaultSnapshot,
 } from "./wire.ts";
 export {

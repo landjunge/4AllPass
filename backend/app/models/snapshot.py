@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import ForeignKey, Integer, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -38,6 +38,11 @@ class VaultSnapshot(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False)
     crypto_protocol_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    # Opaque sealed manifest (docs/vault-revision.md B3). Stored and returned
+    # as the client sent it. The server never opens or rebuilds it.
+    sealed_manifest: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
 
     vault: Mapped["Vault"] = relationship(back_populates="snapshots", foreign_keys=[vault_id])
     envelopes: Mapped[list["KeyEnvelope"]] = relationship(

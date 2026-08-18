@@ -63,6 +63,11 @@ After the vault is unlocked with the Master Password:
 7. `wrapDeviceKey(DK, DWK)` → **Device-Key Envelope** (stored locally; may be mirrored to the server as an opaque blob).
 8. `wrapVaultKey({ type: "device", wrappingKey: DK })` → **Device Envelope** (uploaded).
 
+The HTTP calls that persist `credentialId` / `rpId` / `prfSupported` are
+**metadata registration**. They do not prove possession to the server. The
+backend stores those fields as `verification: "client_asserted"` and never
+sees PRF output. See `docs/security-boundary.md`.
+
 ### 2.2 Unlock
 
 1. `navigator.credentials.get` with `userVerification = "required"`.

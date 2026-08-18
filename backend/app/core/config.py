@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     auth_min_password_length: int = 12
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
+    # Snapshot writes, device create, credential metadata. Separate from login
+    # so a write burst cannot lock an account out of authentication.
+    write_rate_limit: int = 30
+    write_rate_window_seconds: int = 60
+
+    def session_secret_is_insecure_default(self) -> bool:
+        return self.session_secret in {"", "change-me-in-production"}
 
 
 @lru_cache

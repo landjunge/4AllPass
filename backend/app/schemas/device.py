@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, WriteModel
 
 
 class CredentialSummary(CamelModel):
@@ -19,6 +19,10 @@ class CredentialSummary(CamelModel):
     created_at: datetime
     last_used_at: datetime | None
     revoked_at: datetime | None
+    # The server stores client-asserted ceremony metadata. It does not verify
+    # WebAuthn assertions or PRF output (docs/security-boundary.md).
+    server_verified: Literal[False] = False
+    verification: Literal["client_asserted"] = "client_asserted"
 
 
 class DeviceSummary(CamelModel):
@@ -30,17 +34,20 @@ class DeviceSummary(CamelModel):
     last_seen_at: datetime | None
     revoked_at: datetime | None
     has_device_envelope: bool = False
+    # DELETE /devices sets revoked_at only. Cryptographic revoke is a later
+    # snapshot without this device envelope (and hard rotation if needed).
+    revocation: Literal["none", "metadata_only"] = "none"
     credentials: list[CredentialSummary] = []
 
 
-class RegisterDeviceRequest(CamelModel):
+class RegisterDeviceRequest(WriteModel):
     device_id: str = Field(min_length=1, max_length=128)
     label: str | None = Field(default=None, max_length=255)
     platform: str | None = Field(default=None, max_length=64)
     user_agent_summary: str | None = Field(default=None, max_length=512)
 
 
-class RegisterCredentialRequest(CamelModel):
+class RegisterCredentialRequest(WriteModel):
     credential_id: str
     rp_id: str
     mechanism: Literal["prf", "large_blob", "uv_gated_local"]

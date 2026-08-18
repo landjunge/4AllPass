@@ -228,6 +228,25 @@ the comparison.
 
 ---
 
+## 6.1 Backend implementation status
+
+The FastAPI backend implements B1, B2, B4–B8:
+
+- Immutable snapshot rows; pointer flip after envelopes, entries, and the
+  optional sealed manifest are flushed.
+- `SELECT … FOR UPDATE` on the vault row serializes concurrent writers.
+- Unique `(vault_id, revision)` → HTTP 409, never a merge or a 500.
+- `vault_key_version` is rejected if it decreases.
+
+B3: the sealed manifest is stored opaquely when the client sends it. The
+server does not open it. Legacy snapshots without a manifest are still
+served; the client then falls back to `verifySnapshot` only.
+
+B9 is **client-driven**. `DELETE /devices/{id}` does not rewrite the snapshot.
+See `docs/security-boundary.md`.
+
+---
+
 ## 7. What the server can still do
 
 See `threat-model.md` §3. Freshness, an authenticated manifest and atomic snapshots

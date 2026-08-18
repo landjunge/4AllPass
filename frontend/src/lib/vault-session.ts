@@ -14,6 +14,7 @@
 import {
   ARGON2ID_PROFILES,
   assertFreshSnapshot,
+  base64ToBytes,
   buildManifest,
   bytesToBase64,
   decodeDeviceKeyEnvelope,
@@ -35,6 +36,7 @@ import {
   revisionFromManifest,
   sealManifest,
   sealedManifestDigest,
+  unwrapDeviceKey,
   unwrapVaultKey,
   verifySnapshot,
   verifySnapshotManifest,
@@ -98,7 +100,7 @@ export class CommitConflict extends Error {
 const store = () => indexedDbDeviceUnlockStore();
 const client = () => browserWebAuthnClient();
 
-/** Generations are 1-based; this client does not rotate keys yet. */
+/** Generations are 1-based. Soft commits keep the version; hard revoke bumps it. */
 const INITIAL_VAULT_KEY_VERSION = 1;
 const INITIAL_DEVICE_KEY_VERSION = 1;
 
@@ -385,16 +387,22 @@ async function commitSnapshot(
   vault: UnlockedVault,
   entries: VaultEntry[],
   envelopes: KeyEnvelope[],
+  options?: {
+    vaultKeyVersion?: number;
+    vaultKey?: Uint8Array;
+  },
 ): Promise<UnlockedVault> {
+  const vaultKey = options?.vaultKey ?? vault.vaultKey;
+  const vaultKeyVersion = options?.vaultKeyVersion ?? vault.vaultKeyVersion;
   const encrypted = entries.map((entry) => {
     const plaintext = encodeEntryPlaintext(entry);
     try {
       return encryptEntry({
-        vaultKey: vault.vaultKey,
+        vaultKey,
         vaultId: vault.vaultId,
         entryId: entry.id,
         plaintext,
-        vaultKeyVersion: vault.vaultKeyVersion,
+        vaultKeyVersion,
         schemaVersion: ENTRY_SCHEMA_VERSION,
       });
     } finally {
@@ -405,8 +413,8 @@ async function commitSnapshot(
   const sealedManifest = sealSnapshotManifest(
     vault.vaultId,
     nextRevision,
-    vault.vaultKeyVersion,
-    vault.vaultKey,
+    vaultKeyVersion,
+    vaultKey,
     envelopes,
     encrypted,
   );
@@ -416,19 +424,54 @@ async function commitSnapshot(
       await api.commitSnapshot(vault.vaultId, {
         expectedRevision: vault.revision,
         revision: nextRevision,
-        vaultKeyVersion: vault.vaultKeyVersion,
+        vaultKeyVersion,
         cryptoProtocolVersion: 1,
         envelopes: envelopes.map(encodeKeyEnvelope),
         entries: encrypted.map(encodeEncryptedEntry),
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
-    return openSnapshot(committed, vault.vaultKey, vault.unlockedWith);
+    return openSnapshot(committed, vaultKey, vault.unlockedWith);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new CommitConflict(error.currentRevision);
     }
     throw error;
+  }
+}
+
+/**
+ * Recover this device's Device Key only when it is already on disk — no
+ * WebAuthn ceremony. That means a local wrapping key plus a stored device-key
+ * envelope (typically `uv_gated_local`). PRF / largeBlob need an authenticator
+ * `get` and are skipped; the caller omits the device envelope and re-enrols.
+ */
+async function tryLocalDeviceKey(
+  vaultId: string,
+  currentDeviceId: string,
+): Promise<{ deviceKey: Uint8Array; deviceKeyVersion: number } | null> {
+  let record;
+  try {
+    record = await store().load(vaultId, currentDeviceId);
+  } catch {
+    return null;
+  }
+  if (!record?.wrappingKey || !record.deviceKeyEnvelope) return null;
+  const wrappingKey = base64ToBytes(record.wrappingKey);
+  try {
+    const deviceKeyEnvelope = decodeDeviceKeyEnvelope(record.deviceKeyEnvelope);
+    const deviceKey = unwrapDeviceKey(deviceKeyEnvelope, {
+      deviceWrappingKey: wrappingKey,
+      vaultId,
+      deviceId: currentDeviceId,
+      credentialId: base64ToBytes(record.credentialId),
+      deviceKeyVersion: record.deviceKeyVersion,
+    });
+    return { deviceKey, deviceKeyVersion: record.deviceKeyVersion };
+  } catch {
+    return null;
+  } finally {
+    zeroize(wrappingKey);
   }
 }
 
@@ -514,11 +557,154 @@ export async function revokeDevice(
   return commitSnapshot(vault, vault.entries, envelopes);
 }
 
-export function lock(vault: UnlockedVault | null): void {
-  if (!vault) return;
-  zeroize(vault.vaultKey);
-  for (const entry of vault.entries) {
-    entry.password = "";
-    entry.notes = "";
+/**
+ * Hard revocation: rotate the Vault Key so a device that already held VK₁
+ * cannot decrypt the next snapshot. Soft DELETE is metadata only; this is the
+ * cryptographic step (docs/security-boundary.md §4, vault-revision.md §5).
+ *
+ * Device envelopes are included only when this client can wrap them without a
+ * new WebAuthn ceremony (local DK). Otherwise the snapshot has master (+
+ * recovery) only and every device re-enrols after master unlock.
+ *
+ * Order is mandatory: CAS commit under VK₂ succeeds before metadata DELETE.
+ * On 409, DELETE is not called.
+ */
+export async function hardRevokeDevice(
+  vault: UnlockedVault,
+  options: {
+    targetDeviceId: string;
+    masterPassword: string;
+    recoveryKeyText?: string;
+  },
+): Promise<UnlockedVault> {
+  const { targetDeviceId, masterPassword, recoveryKeyText } = options;
+  const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
+  if (!masterEnvelope) throw new Error("snapshot has no master envelope");
+  if (!masterEnvelope.kdf) throw new Error("master envelope is missing kdf parameters");
+
+  const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  try {
+    const verified = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId: vault.vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: vault.vaultKeyVersion,
+    });
+    // Confirms the password opens the same VK we hold unlocked.
+    if (
+      verified.length !== vault.vaultKey.length ||
+      !verified.every((b, i) => b === vault.vaultKey[i])
+    ) {
+      zeroize(verified);
+      throw new Error("master password does not match the unlocked vault key");
+    }
+    zeroize(verified);
+  } catch (error) {
+    zeroize(masterKey);
+    throw error;
+  }
+
+  const recoveryEnvelope = vault.envelopes.find((candidate) => candidate.type === "recovery");
+  let recoveryKey: Uint8Array | null = null;
+  let recoveryWrappingKey: Uint8Array | null = null;
+  if (recoveryEnvelope) {
+    if (!recoveryKeyText) {
+      zeroize(masterKey);
+      throw new Error("recovery key is required because this vault has a recovery envelope");
+    }
+    recoveryKey = parseRecoveryKey(recoveryKeyText);
+    recoveryWrappingKey = deriveRecoveryWrappingKey({
+      recoveryKey,
+      vaultId: vault.vaultId,
+    });
+    try {
+      const opened = unwrapVaultKey(recoveryEnvelope, {
+        wrappingKey: recoveryWrappingKey,
+        vaultId: vault.vaultId,
+        expectType: "recovery",
+        expectVaultKeyVersion: vault.vaultKeyVersion,
+      });
+      zeroize(opened);
+    } catch (error) {
+      zeroize(masterKey, recoveryKey, recoveryWrappingKey);
+      throw error;
+    }
+  }
+
+  const nextVaultKeyVersion = vault.vaultKeyVersion + 1;
+  const vaultKey2 = generateVaultKey();
+  const { salt: _oldSalt, ...kdfParams } = masterEnvelope.kdf;
+  const salt2 = generateSalt(16);
+  const masterKey2 = deriveMasterKey(masterPassword, salt2, kdfParams);
+
+  const currentId = deviceId();
+  let localDevice: { deviceKey: Uint8Array; deviceKeyVersion: number } | null = null;
+  if (targetDeviceId !== currentId) {
+    localDevice = await tryLocalDeviceKey(vault.vaultId, currentId);
+  }
+
+  let transferredVaultKey = false;
+  try {
+    const envelopes: KeyEnvelope[] = [
+      wrapVaultKey({
+        vaultKey: vaultKey2,
+        wrappingKey: masterKey2,
+        vaultId: vault.vaultId,
+        type: "master",
+        vaultKeyVersion: nextVaultKeyVersion,
+        kdf: kdfParamsFrom(kdfParams, salt2),
+      }),
+    ];
+    if (recoveryWrappingKey) {
+      envelopes.push(
+        wrapVaultKey({
+          vaultKey: vaultKey2,
+          wrappingKey: recoveryWrappingKey,
+          vaultId: vault.vaultId,
+          type: "recovery",
+          vaultKeyVersion: nextVaultKeyVersion,
+        }),
+      );
+    }
+    if (localDevice) {
+      envelopes.push(
+        wrapVaultKey({
+          vaultKey: vaultKey2,
+          wrappingKey: localDevice.deviceKey,
+          vaultId: vault.vaultId,
+          type: "device",
+          vaultKeyVersion: nextVaultKeyVersion,
+          deviceId: currentId,
+          deviceKeyVersion: localDevice.deviceKeyVersion,
+        }),
+      );
+    }
+
+    const previousKey = vault.vaultKey;
+    // CAS under VK₂. On 409 CommitConflict propagates — DELETE must not run.
+    const updated = await commitSnapshot(vault, vault.entries, envelopes, {
+      vaultKey: vaultKey2,
+      vaultKeyVersion: nextVaultKeyVersion,
+    });
+    transferredVaultKey = true;
+
+    await api.revokeDevice(vault.vaultId, targetDeviceId);
+    zeroize(previousKey);
+
+    if (targetDeviceId === currentId) {
+      try {
+        await store().remove(vault.vaultId, currentId);
+      } catch {
+        // Best-effort local clear; server metadata is already revoked.
+      }
+      lock(updated);
+    }
+    return updated;
+  } finally {
+    zeroize(masterKey, masterKey2);
+    if (!transferredVaultKey) zeroize(vaultKey2);
+    if (recoveryKey) zeroize(recoveryKey);
+    if (recoveryWrappingKey) zeroize(recoveryWrappingKey);
+    if (localDevice) zeroize(localDevice.deviceKey);
   }
 }

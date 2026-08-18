@@ -70,6 +70,7 @@ async def test_devices_require_auth(client):
     _, alice = await _signup(client)
     created = await client.post("/api/v1/vaults", headers=_auth(alice))
     vault_id = created.json()["vaultId"]
+    client.cookies.clear()
     anon = await client.get(f"/api/v1/vaults/{vault_id}/devices")
     assert anon.status_code == 401
 

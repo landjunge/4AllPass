@@ -120,7 +120,7 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
+        device = await _get_device(db, vault, payload.device_id)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform

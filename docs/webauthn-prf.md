@@ -91,6 +91,35 @@ prf.eval.first = SHA-256(preimage)     // always 32 bytes
 
 Known-answer: **TV-PRF-EVAL-FIRST** in [`test-vectors/device-prf-v1.json`](test-vectors/device-prf-v1.json).
 
+### 2.4 Server-issued ceremony challenge
+
+`publicKey.challenge` is **not** generated on the client.
+
+```
+POST /api/v1/vaults/{vaultId}/webauthn/challenges
+Authorization: Bearer <account session>
+{ "purpose": "create" | "assert", "deviceId": "dev_…" }
+
+→ { challengeId, challenge, expiresIn, purpose }
+```
+
+Rules:
+
+| # | Rule |
+|---|---|
+| C1 | Caller must own the vault (`get_owned_vault`). |
+| C2 | `challenge` is 32 fresh random bytes, returned **once**, standard base64. |
+| C3 | The server stores only `SHA-256(challenge)` plus `(user, vault, purpose, deviceId)`. |
+| C4 | TTL is 120 seconds. |
+| C5 | One challenge is valid for **exactly one** `navigator.credentials.create` or `.get`. Enable/unlock that perform several ceremonies issue several challenges. |
+| C6 | `POST .../challenges/{challengeId}/consume` with the same bytes + purpose is single-use. Missing, expired, reused, or bound to another vault/user/purpose → 404. |
+| C7 | Rate-limited per account+vault. |
+| C8 | This is not vault-key material and is not mixed into HKDF. |
+
+The PWA injects a `ChallengeProvider` into `@4allpass/webauthn`. Unit tests may omit it and fall back to a local `newChallenge()`.
+
+Consuming the challenge does **not** verify the authenticator signature. That is a later step (`public_key` + `signCount`). The challenge exists so that step has something server-bound to verify against.
+
 ---
 
 ## 3. HKDF (mandatory — never use raw PRF output as a key)

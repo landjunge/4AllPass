@@ -14,6 +14,7 @@
 import {
   ARGON2ID_PROFILES,
   assertFreshSnapshot,
+  base64ToBytes,
   bytesToBase64,
   decodeDeviceKeyEnvelope,
   decodeVaultSnapshot,
@@ -47,7 +48,7 @@ import {
   indexedDbDeviceUnlockStore,
   unlockWithDevice as unlockWithDeviceCredential,
 } from "@4allpass/webauthn";
-import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
+import type { ChallengeProvider, DeviceUnlockMechanism } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
@@ -90,6 +91,36 @@ export class CommitConflict extends Error {
 
 const store = () => indexedDbDeviceUnlockStore();
 const client = () => browserWebAuthnClient();
+
+/** One server challenge per create/get; consume after the ceremony batch. */
+function serverChallenges(vaultId: string, deviceIdValue: string): {
+  provider: ChallengeProvider;
+  consumeAll: () => Promise<void>;
+} {
+  const issued: Array<{ challengeId: string; challenge: string; purpose: "create" | "assert" }> = [];
+  return {
+    provider: {
+      async next(purpose) {
+        const row = await api.issueWebAuthnChallenge(vaultId, { purpose, deviceId: deviceIdValue });
+        issued.push({ challengeId: row.challengeId, challenge: row.challenge, purpose: row.purpose });
+        return base64ToBytes(row.challenge);
+      },
+    },
+    async consumeAll() {
+      const pending = issued.splice(0);
+      await Promise.all(
+        pending.map((row) =>
+          api
+            .consumeWebAuthnChallenge(vaultId, row.challengeId, {
+              purpose: row.purpose,
+              challenge: row.challenge,
+            })
+            .catch(() => undefined),
+        ),
+      );
+    },
+  };
+}
 
 /** Generations are 1-based; this client does not rotate keys yet. */
 const INITIAL_VAULT_KEY_VERSION = 1;
@@ -301,16 +332,22 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
   }
 
   try {
-    const result = await unlockWithDeviceCredential({
-      client: client(),
-      store: store(),
-      vaultId,
-      deviceId: id,
-      vaultKeyVersion: snapshot.vaultKeyVersion,
-      deviceEnvelope,
-      ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
-    });
-    return openSnapshot(snapshot, result.vaultKey, result.mechanism);
+    const challenges = serverChallenges(vaultId, id);
+    try {
+      const result = await unlockWithDeviceCredential({
+        client: client(),
+        store: store(),
+        vaultId,
+        deviceId: id,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+        deviceEnvelope,
+        challenges: challenges.provider,
+        ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
+      });
+      return openSnapshot(snapshot, result.vaultKey, result.mechanism);
+    } finally {
+      await challenges.consumeAll();
+    }
   } catch (error) {
     throw new DeviceUnlockNotPossible(
       error instanceof Error ? error.message : "device unlock failed",
@@ -392,6 +429,7 @@ export async function enableDeviceUnlockForVault(
     userAgentSummary: description.userAgentSummary,
   });
 
+  const challenges = serverChallenges(vault.vaultId, id);
   const result = await enableDeviceUnlock({
     client: client(),
     store: store(),
@@ -401,12 +439,13 @@ export async function enableDeviceUnlockForVault(
     vaultKeyVersion: vault.vaultKeyVersion,
     deviceKeyVersion: INITIAL_DEVICE_KEY_VERSION,
     rpId: rpId(),
+    challenges: challenges.provider,
     user: {
       id: new TextEncoder().encode(accountEmail),
       name: accountEmail,
       displayName: accountEmail,
     },
-  });
+  }).finally(() => challenges.consumeAll());
 
   const credentialIdBase64 = bytesToBase64(result.credentialId);
   await api.registerCredential(vault.vaultId, id, {

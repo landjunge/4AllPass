@@ -60,6 +60,13 @@ export interface SnapshotCommit {
   entries: WireVaultSnapshot["entries"];
 }
 
+export interface WebAuthnChallenge {
+  challengeId: string;
+  challenge: string;
+  expiresIn: number;
+  purpose: "create" | "assert";
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly body: Record<string, unknown>;
@@ -204,6 +211,21 @@ export const api = {
 
   revokeDevice(vaultId: string, deviceId: string): Promise<DeviceSummary> {
     return request("DELETE", `/vaults/${vaultId}/devices/${deviceId}`);
+  },
+
+  issueWebAuthnChallenge(
+    vaultId: string,
+    body: { purpose: "create" | "assert"; deviceId?: string },
+  ): Promise<WebAuthnChallenge> {
+    return request("POST", `/vaults/${vaultId}/webauthn/challenges`, body);
+  },
+
+  consumeWebAuthnChallenge(
+    vaultId: string,
+    challengeId: string,
+    body: { purpose: "create" | "assert"; challenge: string },
+  ): Promise<void> {
+    return request("POST", `/vaults/${vaultId}/webauthn/challenges/${challengeId}/consume`, body);
   },
 
   health(): Promise<{ status: string; database: boolean; redis: boolean; webauthn_rp_id: string }> {

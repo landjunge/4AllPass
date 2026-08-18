@@ -13,6 +13,8 @@ import {
   encodeKeyEnvelope,
   encodeVaultSnapshot,
   encryptEntry,
+  buildManifest,
+  sealManifest,
   generateDeviceKey,
   generateSalt,
   generateVaultKey,
@@ -256,6 +258,44 @@ describe("entry and snapshot wire format", () => {
     };
     const decoded = decodeVaultSnapshot(roundTrip(encodeVaultSnapshot(snapshot)));
     assert.deepEqual(decoded, snapshot);
+  });
+
+  it("round-trips an optional sealed manifest without inventing one", () => {
+    const envelopes = [masterEnvelope()];
+    const entries = [entry("entry_1")];
+    const vaultKey = generateVaultKey();
+    const sealedManifest = sealManifest({
+      vaultKey,
+      manifest: buildManifest({
+        vaultId: VAULT_ID,
+        revision: 3,
+        vaultKeyVersion: VAULT_KEY_VERSION,
+        envelopes,
+        entries,
+      }),
+    });
+    const snapshot = {
+      vaultId: VAULT_ID,
+      revision: 3,
+      vaultKeyVersion: VAULT_KEY_VERSION,
+      cryptoProtocolVersion: 1 as const,
+      envelopes,
+      entries,
+      sealedManifest,
+    };
+    const decoded = decodeVaultSnapshot(roundTrip(encodeVaultSnapshot(snapshot)));
+    assert.deepEqual(decoded, snapshot);
+
+    const legacy = encodeVaultSnapshot({
+      vaultId: VAULT_ID,
+      revision: 1,
+      vaultKeyVersion: 1,
+      cryptoProtocolVersion: 1,
+      envelopes,
+      entries: [],
+    });
+    assert.equal("sealedManifest" in legacy, false);
+    assert.equal(decodeVaultSnapshot(legacy).sealedManifest, undefined);
   });
 
   it("rejects snapshots with revision 0 or a foreign protocol version", () => {

@@ -708,3 +708,12 @@ export async function hardRevokeDevice(
     if (localDevice) zeroize(localDevice.deviceKey);
   }
 }
+
+export function lock(vault: UnlockedVault | null): void {
+  if (!vault) return;
+  zeroize(vault.vaultKey);
+  for (const entry of vault.entries) {
+    entry.password = "";
+    entry.notes = "";
+  }
+}

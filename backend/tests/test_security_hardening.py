@@ -550,6 +550,7 @@ async def test_concurrent_revision_writes_one_wins(client):
         "cryptoProtocolVersion": 1,
         "envelopes": [_master_envelope()],
         "entries": [],
+        "sealedManifest": _sealed_manifest(),
     }
     first, second = await asyncio.gather(
         client.post(f"/api/v1/vaults/{vault_id}/snapshots", headers=_auth(alice), json=payload),
@@ -563,6 +564,105 @@ async def test_concurrent_revision_writes_one_wins(client):
     assert loser.json()["currentRevision"] == 2
     fetched = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=_auth(alice))
     assert fetched.json()["revision"] == 2
+
+
+async def test_commit_rejects_revoked_device_envelope(client):
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    assert (
+        await _commit(
+            client,
+            alice,
+            vault_id,
+            envelopes=[_master_envelope(), _device_envelope(DEVICE_A)],
+        )
+    ).status_code == 200
+    await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(alice),
+        json={"deviceId": DEVICE_A, "label": "Phone"},
+    )
+    revoked = await client.delete(f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}", headers=_auth(alice))
+    assert revoked.status_code == 200
+    assert revoked.json()["revocation"] == "metadata_only"
+
+    reattach = await _commit(
+        client,
+        alice,
+        vault_id,
+        expectedRevision=1,
+        revision=2,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert reattach.status_code == 422
+    assert "revoked" in reattach.json()["detail"].lower()
+
+
+async def test_commit_requires_sealed_manifest_after_first_revision(client):
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    assert (await _commit(client, alice, vault_id)).status_code == 200
+
+    missing = await _commit(
+        client,
+        alice,
+        vault_id,
+        expectedRevision=1,
+        revision=2,
+        envelopes=[_master_envelope()],
+    )
+    assert missing.status_code == 422
+    assert "sealedmanifest" in missing.json()["detail"].lower()
+
+    ok = await _commit(
+        client,
+        alice,
+        vault_id,
+        expectedRevision=1,
+        revision=2,
+        envelopes=[_master_envelope()],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert ok.status_code == 200, ok.text
+
+
+async def test_soft_revoke_commit_omitting_envelope_still_works(client):
+    """Soft path: metadata DELETE, then commit without that device envelope, same VKV."""
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    assert (
+        await _commit(
+            client,
+            alice,
+            vault_id,
+            envelopes=[_master_envelope(), _device_envelope(DEVICE_A), _device_envelope(DEVICE_B)],
+        )
+    ).status_code == 200
+    await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(alice),
+        json={"deviceId": DEVICE_A, "label": "Phone"},
+    )
+    await client.delete(f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}", headers=_auth(alice))
+
+    soft = await _commit(
+        client,
+        alice,
+        vault_id,
+        expectedRevision=1,
+        revision=2,
+        vaultKeyVersion=1,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_B)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert soft.status_code == 200, soft.text
+    body = soft.json()
+    assert body["revision"] == 2
+    assert body["vaultKeyVersion"] == 1
+    device_ids = [env["deviceId"] for env in body["envelopes"] if env["type"] == "device"]
+    assert DEVICE_A not in device_ids
+    assert DEVICE_B in device_ids
 
 
 async def test_snapshot_without_master_envelope_is_rejected(client):

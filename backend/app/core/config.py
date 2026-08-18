@@ -71,6 +71,19 @@ class Settings(BaseSettings):
             raise ValueError("session_cookie_samesite='none' requires session_cookie_secure=True")
         return self
 
+    @model_validator(mode="after")
+    def _reject_wildcard_cors_origin(self) -> "Settings":
+        # The API is credentialed, so a wildcard is not the harmless default it
+        # looks like: Starlette echoes the caller's own origin back when
+        # credentials are allowed, which lets any site read a signed-in user's
+        # vault metadata. Origins must be named.
+        if "*" in self.cors_origins:
+            raise ValueError(
+                "cors_origins must name explicit origins; '*' with credentialed "
+                "requests would let any site read a signed-in user's data"
+            )
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -11,6 +11,7 @@ Selektives Profil-Sharing, Argon2id, WebAuthn-Biometrie, PWA.
 - Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
 - Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- Backend Security Boundary (auth, sessions, vault ownership, device authorization): [`docs/backend-security-boundary.md`](docs/backend-security-boundary.md)
 - Crypto core: [`packages/crypto`](packages/crypto)
 - Backend (FastAPI + PostgreSQL + Redis): [`backend`](backend)
 - Frontend (React + TypeScript + PWA): [`frontend`](frontend)
@@ -54,9 +55,14 @@ uvicorn app.main:app --reload
 pytest
 ```
 
-See [`backend/README.md`](backend/README.md) for the database schema (including the
-**Device Envelope** / **Device-Key Envelope** tables from `docs/webauthn-prf.md`) and test
-setup details.
+See [`backend/README.md`](backend/README.md) for the API surface, the database schema
+(including the **Device Envelope** / **Device-Key Envelope** tables from
+`docs/webauthn-prf.md`) and test setup details.
+
+The service authenticates accounts and enforces vault ownership, and it still never
+receives the Master Password, the Vault Key, the Device Key, the Device Wrapping Key or
+the WebAuthn PRF output — **authentication is not vault decryption**. The boundary is
+specified in [`docs/backend-security-boundary.md`](docs/backend-security-boundary.md).
 
 ## Everything via Docker Compose
 

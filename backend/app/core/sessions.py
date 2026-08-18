@@ -144,26 +144,16 @@ async def _touch(db: AsyncSession, session: UserSession, now: datetime) -> None:
     await db.commit()
 
 
-async def revoke_session(db: AsyncSession, session: UserSession) -> None:
+async def revoke_session_by_token(db: AsyncSession, token: str) -> None:
     """Delete a session outright rather than tombstoning it.
 
     A revoked session has no further use, and keeping its digest around would
     only extend how long a stale credential is worth attacking.
     """
-    await db.delete(session)
-    await db.flush()
-
-
-async def revoke_session_by_token(db: AsyncSession, token: str) -> None:
     await db.execute(delete(UserSession).where(UserSession.token_hash == hash_session_token(token)))
     await db.flush()
 
 
 async def revoke_all_sessions_for_user(db: AsyncSession, user_id: uuid.UUID) -> None:
     await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
-    await db.flush()
-
-
-async def delete_expired_sessions(db: AsyncSession) -> None:
-    await db.execute(delete(UserSession).where(UserSession.expires_at <= datetime.now(UTC)))
     await db.flush()

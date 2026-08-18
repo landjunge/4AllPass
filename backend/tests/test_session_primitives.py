@@ -71,6 +71,20 @@ def test_samesite_none_without_secure_is_refused_at_startup():
         )
 
 
+def test_a_wildcard_cors_origin_is_refused_at_startup():
+    """The API is credentialed, so `*` is not a harmless default.
+
+    Starlette echoes the caller's own origin when credentials are allowed, so a
+    wildcard would let any site read a signed-in user's vault metadata.
+    """
+    with pytest.raises(ValidationError):
+        _settings(cors_origins=["*"])
+
+    assert _settings(cors_origins=["https://vault.example"]).cors_origins == [
+        "https://vault.example"
+    ]
+
+
 def test_clearing_the_cookie_keeps_the_same_attributes():
     response = Response()
     clear_session_cookie(response, settings=_settings())

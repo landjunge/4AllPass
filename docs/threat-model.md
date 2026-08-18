@@ -15,7 +15,8 @@
 | Plaintext vault entries  | Critical    | Client only (unlocked) |
 | Device Key (DK)          | High        | Client; wrapped under DWK |
 | Device Wrapping Key      | High        | Derived from WebAuthn PRF, ephemeral |
-| Account credentials      | Medium      | Server (hashed)       |
+| Account credentials      | Medium      | Server (Argon2id hash) |
+| Account session token    | Medium      | Client cookie (`HttpOnly`); server stores only its SHA-256 digest |
 | Encrypted vault snapshots| Medium      | Server                |
 
 ---
@@ -89,6 +90,33 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 
 ---
 
+## 3.1 Remote attacker with account access
+
+Actor (7) has a session cookie or the account password, but no Master Password.
+The account layer is a *separate* boundary from the crypto layer, and it is
+specified in `backend-security-boundary.md`.
+
+| Action | Outcome |
+|---|---|
+| Read the account's own encrypted snapshots, envelopes and device metadata | Succeeds — and yields ciphertext only |
+| Decrypt any of it | Cannot: the account password has zero influence on vault decryption (`crypto-protocol.md`, Hard Invariant #5) |
+| Read another account's vault or devices | `404`, identical to a vault that does not exist — ownership is matched in the query, not after loading |
+| Enumerate vault ids | No signal: missing and foreign ids give one identical answer |
+| Present a user id in a body, query string or header as an identity | Ignored or rejected; identity comes only from the session row |
+| Keep access after the victim logs out or is deactivated | No: sessions are server-side state and are checked on every request |
+| Ride a victim's cookie from another site | `SameSite=Lax` plus a server-side origin check on state-changing requests |
+| Read the session token from script | `HttpOnly` |
+| Recover a usable session token from a database dump | Only SHA-256 digests are stored |
+
+The boundary's whole claim is therefore narrow and checkable: **account
+compromise is an authorization event, never a confidentiality event.** What it
+costs the victim is metadata and availability, not plaintext.
+
+Not yet closed at this layer: there is no rate limiting or lockout on login (see
+§5), and registration still reveals whether an e-mail is taken.
+
+---
+
 ## 4. Security Goals
 
 - Full server compromise or a malicious operator → only offline dictionary / brute-force against Argon2id (Master Password) or the Recovery Key remain.
@@ -110,6 +138,8 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock |
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
 | Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
+| No rate limiting on account login | **Open**                                          | Argon2id makes each attempt expensive; a Redis-backed limiter is the next backend step (`backend-security-boundary.md` §7) |
+| Registration reveals whether an e-mail is taken | Accepted for v1                     | Unavoidable without e-mail confirmation; the alternative leaves the caller unable to log in |
 | No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |

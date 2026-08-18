@@ -17,7 +17,6 @@ that verifies many concurrent logins.
 from __future__ import annotations
 
 import hashlib
-import hmac
 import secrets
 from functools import lru_cache
 
@@ -105,7 +104,3 @@ def hash_session_token(token: str) -> bytes:
     cheap enough to run on every authenticated request.
     """
     return hashlib.sha256(token.encode("utf-8")).digest()
-
-
-def tokens_equal(a: bytes, b: bytes) -> bool:
-    return hmac.compare_digest(a, b)

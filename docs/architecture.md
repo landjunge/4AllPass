@@ -51,6 +51,16 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Optional: Google-Login und „Sign in with Apple“
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 
+Die Server-Seite dieser Schicht — Authentifizierung, Sessions, Vault-Ownership,
+Device-Autorisierung — ist spezifiziert in:
+
+→ **[docs/backend-security-boundary.md](backend-security-boundary.md)**
+
+Kernaussage: **Authentifizierung ≠ Vault-Entschlüsselung.** Der Server
+authentifiziert den Nutzer, erhält dabei aber niemals den Vault Key. Sessions
+sind opake Zufallstoken in einem `HttpOnly`-Cookie; gespeichert wird nur deren
+SHA-256-Digest.
+
 ---
 
 ## 4. Geräte- und Profil-Management
@@ -59,6 +69,10 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
 - Soft-Revocation: Envelope entfernen
 - Hard-Revocation (bei Kompromittierungsverdacht): Vault Key Rotation + Re-Encrypt
+- Serverseitig gilt zusätzlich: authentifizierter Account → besitzt den Vault →
+  Gerät gehört zu diesem Vault (backend-security-boundary.md §5). Das ersetzt die
+  kryptografische Bindung nicht, es verhindert, dass ein fremder Account die
+  Metadaten überhaupt anfragen kann.
 
 Details: siehe crypto-protocol.md Abschnitt 7.
 

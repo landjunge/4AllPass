@@ -26,7 +26,8 @@ async function createVault(page: Page): Promise<string> {
   await page.getByLabel("Argon2id profile").selectOption("mobile_safe");
   await page.getByRole("button", { name: "Create vault" }).click();
   const recoveryKey = await page.getByTestId("recovery-key").textContent();
-  expect(recoveryKey?.replace(/-/g, "")).toHaveLength(52);
+  // Crockford Base32 over the 32-byte key plus its 2-byte checksum.
+  expect(recoveryKey?.replace(/-/g, "")).toHaveLength(55);
   await page.getByRole("checkbox").check();
   await page.getByTestId("dismiss-kit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");

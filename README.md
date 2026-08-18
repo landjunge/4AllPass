@@ -19,9 +19,10 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 - Architecture: [`docs/architecture.md`](docs/architecture.md)
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
-- Vault revision / rotation: [`docs/vault-revision.md`](docs/vault-revision.md)
+- Vault revision / rotation / snapshot manifest: [`docs/vault-revision.md`](docs/vault-revision.md)
+- Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
-- Database schema: [`docs/db-schema.md`](docs/db-schema.md)
+- Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 
@@ -53,10 +54,13 @@ The Vault Key is always random, never derived from a password. Raw PRF output is
 
 ```sh
 npm install
-npm test
+npm test                    # KATs + adversarial suite
 npm run test:crypto:heavy   # includes 32–128 MiB Argon2id profiles
 npm run test:webauthn
 npm run test -w @4allpass/frontend
+npm run test:e2e -w @4allpass/frontend   # needs Postgres, Redis and a running backend
+npm run typecheck
+node scripts/generate-vectors.mjs           # regenerate the KAT JSON (independent impl)
 node scripts/verify-aes-gcm-vectors.mjs
 pip install -r scripts/requirements-dev.txt
 python3 scripts/verify-argon2id-vectors.py

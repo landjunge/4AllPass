@@ -22,10 +22,13 @@ import {
   wrapDeviceKey,
   wrapVaultKey,
 } from "../src/index.ts";
+import type { WireEncryptedEntry, WireKeyEnvelope } from "../src/index.ts";
 
 const VAULT_ID = "vault_01HZX4ALLPASS000000000001";
 const DEVICE_ID = "dev_macbook_chrome_profile_1";
 const CRED = hexToBytes("cafebabecafebabecafebabecafebabe");
+const VAULT_KEY_VERSION = 1;
+const DEVICE_KEY_VERSION = 1;
 
 function roundTrip<T>(value: unknown): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -37,6 +40,7 @@ function masterEnvelope() {
     wrappingKey: generateDeviceKey(),
     vaultId: VAULT_ID,
     type: "master",
+    vaultKeyVersion: VAULT_KEY_VERSION,
     kdf: kdfParamsFrom(ARGON2ID_PROFILES.standard, generateSalt(32)),
   });
 }
@@ -47,7 +51,20 @@ function deviceEnvelope() {
     wrappingKey: generateDeviceKey(),
     vaultId: VAULT_ID,
     type: "device",
+    vaultKeyVersion: VAULT_KEY_VERSION,
     deviceId: DEVICE_ID,
+    deviceKeyVersion: DEVICE_KEY_VERSION,
+  });
+}
+
+function deviceKeyEnvelope() {
+  return wrapDeviceKey({
+    deviceKey: generateDeviceKey(),
+    deviceWrappingKey: generateDeviceKey(),
+    vaultId: VAULT_ID,
+    deviceId: DEVICE_ID,
+    credentialId: CRED,
+    deviceKeyVersion: DEVICE_KEY_VERSION,
   });
 }
 
@@ -105,6 +122,25 @@ describe("key envelope wire format", () => {
     assert.throws(() => decodeKeyEnvelope({ ...wire, deviceId: null }), ProtocolError);
   });
 
+  it("carries both key generations, and only where they belong", () => {
+    const device = encodeKeyEnvelope(deviceEnvelope());
+    assert.equal(device.vaultKeyVersion, VAULT_KEY_VERSION);
+    assert.equal(device.deviceKeyVersion, DEVICE_KEY_VERSION);
+
+    const master = encodeKeyEnvelope(masterEnvelope());
+    assert.equal(master.deviceKeyVersion, undefined);
+    assert.throws(
+      () => decodeKeyEnvelope({ ...master, deviceKeyVersion: 1 }),
+      ProtocolError,
+    );
+
+    // A generation the AAD authenticates must not be droppable on the wire.
+    const withoutVaultKeyVersion: Partial<WireKeyEnvelope> = { ...device };
+    delete withoutVaultKeyVersion.vaultKeyVersion;
+    assert.throws(() => decodeKeyEnvelope(withoutVaultKeyVersion), ProtocolError);
+    assert.throws(() => decodeKeyEnvelope({ ...device, deviceKeyVersion: 0 }), ProtocolError);
+  });
+
   it("treats an explicit null optional field as absent", () => {
     const master = masterEnvelope();
     const decoded = decodeKeyEnvelope({ ...encodeKeyEnvelope(master), deviceId: null });
@@ -158,30 +194,18 @@ describe("key envelope wire format", () => {
 });
 
 describe("device-key envelope wire format", () => {
-  it("round-trips including the raw credential id", () => {
-    const envelope = wrapDeviceKey({
-      deviceKey: generateDeviceKey(),
-      deviceWrappingKey: generateDeviceKey(),
-      vaultId: VAULT_ID,
-      deviceId: DEVICE_ID,
-      credentialId: CRED,
-    });
+  it("round-trips including the raw credential id and the Device-Key generation", () => {
+    const envelope = deviceKeyEnvelope();
     const decoded = decodeDeviceKeyEnvelope(roundTrip(encodeDeviceKeyEnvelope(envelope)));
     assert.deepEqual(decoded, envelope);
+    assert.equal(decoded.deviceKeyVersion, DEVICE_KEY_VERSION);
   });
 
-  it("rejects a missing credential id or vault id", () => {
-    const wire = encodeDeviceKeyEnvelope(
-      wrapDeviceKey({
-        deviceKey: generateDeviceKey(),
-        deviceWrappingKey: generateDeviceKey(),
-        vaultId: VAULT_ID,
-        deviceId: DEVICE_ID,
-        credentialId: CRED,
-      }),
-    );
+  it("rejects a missing credential id, vault id, or Device-Key generation", () => {
+    const wire = encodeDeviceKeyEnvelope(deviceKeyEnvelope());
     assert.throws(() => decodeDeviceKeyEnvelope({ ...wire, credentialId: "" }), ProtocolError);
     assert.throws(() => decodeDeviceKeyEnvelope({ ...wire, vaultId: "" }), ProtocolError);
+    assert.throws(() => decodeDeviceKeyEnvelope({ ...wire, deviceKeyVersion: 0 }), ProtocolError);
   });
 });
 
@@ -194,6 +218,7 @@ describe("entry and snapshot wire format", () => {
       vaultId: VAULT_ID,
       entryId: id,
       plaintext: new TextEncoder().encode(`{"title":"${id}"}`),
+      vaultKeyVersion: VAULT_KEY_VERSION,
       ...(schemaVersion === undefined ? {} : { schemaVersion }),
     });
   }
@@ -203,13 +228,20 @@ describe("entry and snapshot wire format", () => {
     const decoded = decodeEncryptedEntry(roundTrip(encodeEncryptedEntry(original)));
     assert.deepEqual(decoded, original);
     assert.equal(decoded.schemaVersion, 3);
+    assert.equal(decoded.vaultKeyVersion, VAULT_KEY_VERSION);
+  });
+
+  it("rejects an entry whose Vault-Key generation was dropped", () => {
+    const wire = { ...encodeEncryptedEntry(entry("entry_1")) } as Partial<WireEncryptedEntry>;
+    delete wire.vaultKeyVersion;
+    assert.throws(() => decodeEncryptedEntry(wire), ProtocolError);
   });
 
   it("round-trips a full snapshot", () => {
     const snapshot = {
       vaultId: VAULT_ID,
       revision: 7,
-      vaultKeyVersion: 2,
+      vaultKeyVersion: VAULT_KEY_VERSION,
       cryptoProtocolVersion: 1 as const,
       envelopes: [masterEnvelope(), deviceEnvelope()],
       entries: [entry("entry_1"), entry("entry_2")],

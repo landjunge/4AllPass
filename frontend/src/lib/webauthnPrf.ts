@@ -38,6 +38,17 @@ export interface DeviceIdentity {
   credentialId: Uint8Array
 }
 
+/**
+ * The key generations this device is operating on. Crypto Protocol v1 never
+ * defaults them: `vaultKeyVersion` comes from the snapshot being unlocked and
+ * `deviceKeyVersion` from this device's own Device-Key generation
+ * (webauthn-prf.md §4.1).
+ */
+export interface KeyGenerations {
+  vaultKeyVersion: number
+  deviceKeyVersion: number
+}
+
 export interface DeviceRegistrationResult {
   /** Wraps DK under DWK — kept locally, optionally mirrored to the server as an opaque blob. */
   deviceKeyEnvelope: DeviceKeyEnvelope
@@ -56,6 +67,7 @@ export interface DeviceRegistrationResult {
  */
 export function buildDeviceRegistration(
   identity: DeviceIdentity,
+  generations: KeyGenerations,
   vaultKey: Uint8Array,
   prfOutput: Uint8Array,
 ): DeviceRegistrationResult {
@@ -69,6 +81,7 @@ export function buildDeviceRegistration(
       vaultId: identity.vaultId,
       deviceId: identity.deviceId,
       credentialId: identity.credentialId,
+      deviceKeyVersion: generations.deviceKeyVersion,
     })
 
     const deviceEnvelope = wrapVaultKey({
@@ -76,7 +89,9 @@ export function buildDeviceRegistration(
       wrappingKey: deviceKey,
       vaultId: identity.vaultId,
       type: 'device',
+      vaultKeyVersion: generations.vaultKeyVersion,
       deviceId: identity.deviceId,
+      deviceKeyVersion: generations.deviceKeyVersion,
     })
 
     return { deviceKeyEnvelope, deviceEnvelope }
@@ -93,14 +108,30 @@ export function buildDeviceRegistration(
  */
 export function unlockVaultKey(
   identity: DeviceIdentity,
+  generations: KeyGenerations,
   envelopes: DeviceRegistrationResult,
   prfOutput: Uint8Array,
 ): Uint8Array {
   const deviceWrappingKey = deriveDeviceWrappingKey({ prfOutput, ...identity })
   let deviceKey: Uint8Array | undefined
   try {
-    deviceKey = unwrapDeviceKey(envelopes.deviceKeyEnvelope, deviceWrappingKey)
-    return unwrapVaultKey(envelopes.deviceEnvelope, deviceKey, identity.vaultId)
+    // Both open calls state what this device expects: an envelope for another
+    // vault, device, credential or key generation is refused rather than opened.
+    deviceKey = unwrapDeviceKey(envelopes.deviceKeyEnvelope, {
+      deviceWrappingKey,
+      vaultId: identity.vaultId,
+      deviceId: identity.deviceId,
+      credentialId: identity.credentialId,
+      deviceKeyVersion: generations.deviceKeyVersion,
+    })
+    return unwrapVaultKey(envelopes.deviceEnvelope, {
+      wrappingKey: deviceKey,
+      vaultId: identity.vaultId,
+      expectType: 'device',
+      expectVaultKeyVersion: generations.vaultKeyVersion,
+      expectDeviceId: identity.deviceId,
+      expectDeviceKeyVersion: generations.deviceKeyVersion,
+    })
   } finally {
     zeroize(deviceWrappingKey)
     if (deviceKey) zeroize(deviceKey)

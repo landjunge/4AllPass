@@ -30,6 +30,8 @@ export interface UnlockWithDeviceOptions {
   store: DeviceUnlockStore;
   vaultId: string;
   deviceId: string;
+  /** Vault-Key generation of the snapshot being opened. */
+  vaultKeyVersion: number;
   /** The Device Envelope of the active snapshot, for this deviceId. */
   deviceEnvelope: KeyEnvelope;
   /**
@@ -93,6 +95,16 @@ async function runMechanism(
   options: UnlockWithDeviceOptions,
 ): Promise<DeviceUnlockResult> {
   const credentialId = base64ToBytes(record.credentialId);
+  // What this device believes it is unlocking. Neither envelope is allowed to
+  // supply these: an envelope opened against its own fields proves only that it
+  // is internally consistent, not that it is the right one.
+  const expect = {
+    vaultId: options.vaultId,
+    deviceId: options.deviceId,
+    credentialId,
+    deviceKeyVersion: record.deviceKeyVersion,
+    vaultKeyVersion: options.vaultKeyVersion,
+  };
 
   if (record.mechanism === "prf") {
     const deviceKeyEnvelope = record.deviceKeyEnvelope
@@ -110,7 +122,7 @@ async function runMechanism(
       deviceKeyEnvelope,
       deviceEnvelope: options.deviceEnvelope,
       rpId: record.rpId,
-      credentialId,
+      ...expect,
     });
     return { vaultKey, mechanism: "prf" };
   }
@@ -123,11 +135,12 @@ async function runMechanism(
     });
     const wrappingKey = storedWrappingKey(record);
     try {
-      const vaultKey = unwrapVaultKeyWithDeviceWrappingKey(
+      const vaultKey = unwrapVaultKeyWithDeviceWrappingKey({
         deviceKeyEnvelope,
-        options.deviceEnvelope,
-        wrappingKey,
-      );
+        deviceEnvelope: options.deviceEnvelope,
+        deviceWrappingKey: wrappingKey,
+        ...expect,
+      });
       return { vaultKey, mechanism: "large_blob" };
     } finally {
       zeroize(wrappingKey);
@@ -145,11 +158,12 @@ async function runMechanism(
   const deviceKeyEnvelope = localDeviceKeyEnvelope(record);
   const wrappingKey = storedWrappingKey(record);
   try {
-    const vaultKey = unwrapVaultKeyWithDeviceWrappingKey(
+    const vaultKey = unwrapVaultKeyWithDeviceWrappingKey({
       deviceKeyEnvelope,
-      options.deviceEnvelope,
-      wrappingKey,
-    );
+      deviceEnvelope: options.deviceEnvelope,
+      deviceWrappingKey: wrappingKey,
+      ...expect,
+    });
     return { vaultKey, mechanism: "uv_gated_local" };
   } finally {
     zeroize(wrappingKey);

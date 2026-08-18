@@ -1,6 +1,6 @@
 # 4AllPass Threat Model (v1)
 
-**Companion to:** `docs/crypto-protocol.md`, `docs/vault-revision.md`, `docs/webauthn-prf.md`  
+**Companion to:** `docs/crypto-protocol.md`, `docs/vault-revision.md`, `docs/webauthn-prf.md`, `docs/recovery.md`, `docs/adversarial-review.md`  
 **Date:** 2026-08-17
 
 ---
@@ -53,25 +53,39 @@
 |---|---|
 | Refuse reads or writes | User-visible sync error |
 | Serve an older authentic snapshot | `evaluateRevision` → `RollbackError` once a newer revision was pinned |
-| Serve snapshot `N` envelopes with snapshot `M` entries | Decrypt of some/all entries fails → `IntegrityError`; snapshot refused |
-| Flip `vault_key_version` backwards | `downgrade` / `mismatch` |
-| Change `deviceId`, envelope `type`, `vault_id`, or crypto version on an existing blob | AES-GCM AAD mismatch → `AuthFailureError` |
-| Truncate or flip bits in ciphertext / tag | `AuthFailureError` |
+| Attach a false `revision` to a snapshot | Manifest AAD binds `revision` → `AuthFailureError` (`crypto-protocol.md` §8.1) |
+| Serve snapshot `N` envelopes with snapshot `M` entries | Manifest digest set mismatch → `IntegrityError`; snapshot refused |
+| Drop entries (truncation) or inject extra records | Manifest declares the complete set → `IntegrityError` |
+| Re-attach a revoked device's envelope | Not in the manifest of the current snapshot → `IntegrityError` |
+| Serve two different snapshots under one revision | Pinned `manifestDigest` → `mismatch` (equivocation) |
+| Flip `vault_key_version` or `device_key_version` backwards | `downgrade` / `IntegrityError`; both are in AAD |
+| Change `deviceId`, envelope `type`, `vault_id`, crypto version, or the Argon2id parameters on an existing blob | AES-GCM AAD mismatch → `AuthFailureError` |
+| Hand a Device-Key Envelope of another vault / device / credential to a client | Expectation check → `IntegrityError` |
+| Serve entry X in the slot the client requested for entry Y | Expected `entryId` check → `IntegrityError` |
+| Ask the client for weak or absurd Argon2id parameters | Read-path validation → `ProtocolError` (`crypto-protocol.md` §4.1) |
+| Truncate or flip bits in ciphertext / tag | `AuthFailureError` (or `ProtocolError` for a truncated tag) |
 | Drop a device envelope (unauthorized soft revoke) | That device can no longer unlock via DK; Master Password / Recovery still work |
 | Add a *new* device envelope | Cannot: they do not have VK, so they cannot wrap a valid envelope under a key they choose |
+| Poison the client's revision pin with an absurd number | `revision` bounded to uint32 → `ProtocolError` |
 
 ### Cannot do
 
 - Recover VK, DK, DWK, Master Password, or Recovery Key from stored data alone.
-- Forge a new entry or envelope that decrypts under the real VK.
+- Forge a new entry, envelope, or manifest that verifies under the real VK.
 - Turn an account-password / OAuth compromise into vault plaintext.
 - Silently roll a client **back** after that client has pinned a newer revision.
+- Make a revision number mean something other than the snapshot it was sealed with.
+- Assemble a snapshot from records of two different revisions or two Vault-Key generations.
 
 Confidentiality under a malicious server therefore reduces to: offline attack on Argon2id (Master Password) or theft of the Emergency Kit / an unlocked client.
 
 ### First-use caveat
 
-A **new** client has no pinned revision. The first snapshot it accepts is pin-on-first-use. An active server can choose *which* historical snapshot that new client sees first. After the first successful unlock, further rollback is detected.
+A **new** client has no pinned revision. The first snapshot it accepts is pin-on-first-use. An active server can choose *which* historical snapshot that new client sees first. Manifest verification makes that snapshot internally consistent — it cannot be a mixture — but it cannot make it *fresh*. After the first successful unlock, further rollback is detected.
+
+### Backend duty
+
+Client-side checks detect an inconsistent snapshot; they do not prevent one. Atomic publication (write the full snapshot including its manifest, then compare-and-swap `active_revision`, one snapshot per `(vault_id, revision)`) is a requirement on the storage layer, specified in `vault-revision.md` §4.1.
 
 ---
 
@@ -95,6 +109,8 @@ A **new** client has no pinned revision. The first snapshot it accepts is pin-on
 | Compromised device already holds VK | Requires hard rotation                            | Atomic snapshot + `vault_key_version` |
 | Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock |
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
+| Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
+| No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
 | Quantum attacks on AES            | Out of scope for v1                               | Future protocol version |

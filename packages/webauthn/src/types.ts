@@ -28,6 +28,12 @@ export interface DeviceUnlockRecord {
   /** base64 raw WebAuthn credential id */
   credentialId: string;
   mechanism: DeviceUnlockMechanism;
+  /**
+   * Device-Key generation this device holds. Kept here rather than read from
+   * the envelope: for `large_blob` the envelope comes back from the
+   * authenticator, and an envelope may not vouch for its own generation.
+   */
+  deviceKeyVersion: number;
   /** Absent for `large_blob`: the authenticator holds the envelope. */
   deviceKeyEnvelope?: WireDeviceKeyEnvelope;
   /** base64 32-byte local wrapping key. Absent for `prf`. */

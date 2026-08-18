@@ -4,6 +4,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // The client calls the API same-origin (`/api/v1`), so the service worker
+  // scope and the API share one origin in production too.
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.API_ORIGIN ?? 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

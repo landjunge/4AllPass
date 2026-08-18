@@ -4,7 +4,7 @@ COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY frontend ./frontend
 RUN npm ci
-RUN npm run build -w @4allpass/web
+RUN npm run build -w @4allpass/frontend
 
 FROM nginx:1.27-alpine
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf

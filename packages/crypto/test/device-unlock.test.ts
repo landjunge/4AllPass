@@ -8,6 +8,7 @@ import {
   generateDeviceKey,
   generateVaultKey,
   hexToBytes,
+  IntegrityError,
   ProtocolError,
   prfEvalFirst,
   unwrapDeviceKey,
@@ -31,6 +32,17 @@ interface Suite {
 
 const C = loadJson<Suite>("device-prf-v1.json").constants;
 const CRED = hexToBytes(C.credential_id);
+const VAULT_KEY_VERSION = 1;
+const DEVICE_KEY_VERSION = 1;
+
+/** What an honest caller states about the device it is unlocking. */
+const EXPECT = {
+  vaultId: C.vault_id,
+  deviceId: C.device_id,
+  credentialId: CRED,
+  deviceKeyVersion: DEVICE_KEY_VERSION,
+  vaultKeyVersion: VAULT_KEY_VERSION,
+};
 
 function prfOutput(fill = 0xaa): Uint8Array {
   return new Uint8Array(32).fill(fill);
@@ -40,7 +52,10 @@ function isZeroed(bytes: Uint8Array): boolean {
   return bytes.every((b) => b === 0);
 }
 
-function bind(vaultKey: Uint8Array, overrides: Partial<Parameters<typeof bindDeviceWithPrfOutput>[0]> = {}) {
+function bind(
+  vaultKey: Uint8Array,
+  overrides: Partial<Parameters<typeof bindDeviceWithPrfOutput>[0]> = {},
+) {
   return bindDeviceWithPrfOutput({
     prfOutput: prfOutput(),
     vaultKey,
@@ -48,8 +63,19 @@ function bind(vaultKey: Uint8Array, overrides: Partial<Parameters<typeof bindDev
     vaultId: C.vault_id,
     deviceId: C.device_id,
     credentialId: CRED,
+    vaultKeyVersion: VAULT_KEY_VERSION,
+    deviceKeyVersion: DEVICE_KEY_VERSION,
     ...overrides,
   });
+}
+
+function unlock(overrides: Partial<Parameters<typeof unwrapVaultKeyWithPrfOutput>[0]>) {
+  return unwrapVaultKeyWithPrfOutput({
+    prfOutput: prfOutput(),
+    rpId: C.rp_id,
+    ...EXPECT,
+    ...overrides,
+  } as Parameters<typeof unwrapVaultKeyWithPrfOutput>[0]);
 }
 
 describe("bindDeviceWithPrfOutput", () => {
@@ -59,18 +85,14 @@ describe("bindDeviceWithPrfOutput", () => {
 
     assert.equal(deviceKeyEnvelope.vaultId, C.vault_id);
     assert.equal(deviceKeyEnvelope.deviceId, C.device_id);
+    assert.equal(deviceKeyEnvelope.deviceKeyVersion, DEVICE_KEY_VERSION);
     assert.equal(deviceEnvelope.type, "device");
     assert.equal(deviceEnvelope.deviceId, C.device_id);
+    assert.equal(deviceEnvelope.vaultKeyVersion, VAULT_KEY_VERSION);
+    assert.equal(deviceEnvelope.deviceKeyVersion, DEVICE_KEY_VERSION);
     assert.equal(deviceEnvelope.kdf, undefined);
 
-    const unlocked = unwrapVaultKeyWithPrfOutput({
-      prfOutput: prfOutput(),
-      deviceKeyEnvelope,
-      deviceEnvelope,
-      rpId: C.rp_id,
-      credentialId: CRED,
-    });
-    assert.deepEqual(unlocked, vaultKey);
+    assert.deepEqual(unlock({ deviceKeyEnvelope, deviceEnvelope }), vaultKey);
   });
 
   it("zeroizes the PRF output it was handed", () => {
@@ -91,11 +113,27 @@ describe("bindDeviceWithPrfOutput", () => {
     });
 
     // The DWK opens the Device-Key Envelope and nothing else.
-    const deviceKey = unwrapDeviceKey(deviceKeyEnvelope, dwk);
+    const deviceKey = unwrapDeviceKey(deviceKeyEnvelope, {
+      deviceWrappingKey: dwk,
+      vaultId: C.vault_id,
+      deviceId: C.device_id,
+      credentialId: CRED,
+      deviceKeyVersion: DEVICE_KEY_VERSION,
+    });
     assert.notDeepEqual(bytesToHex(deviceKey), bytesToHex(dwk));
     assert.notDeepEqual(bytesToHex(deviceKey), bytesToHex(vaultKey));
-    assert.throws(() => unwrapVaultKey(deviceEnvelope, dwk, C.vault_id), AuthFailureError);
-    assert.deepEqual(unwrapVaultKey(deviceEnvelope, deviceKey, C.vault_id), vaultKey);
+
+    const openDeviceEnvelope = (wrappingKey: Uint8Array) =>
+      unwrapVaultKey(deviceEnvelope, {
+        wrappingKey,
+        vaultId: C.vault_id,
+        expectType: "device",
+        expectVaultKeyVersion: VAULT_KEY_VERSION,
+        expectDeviceId: C.device_id,
+        expectDeviceKeyVersion: DEVICE_KEY_VERSION,
+      });
+    assert.throws(() => openDeviceEnvelope(dwk), AuthFailureError);
+    assert.deepEqual(openDeviceEnvelope(deviceKey), vaultKey);
   });
 
   it("gives every device its own Device Key", () => {
@@ -118,23 +156,12 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
     const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
 
     const good = prfOutput();
-    unwrapVaultKeyWithPrfOutput({
-      prfOutput: good,
-      deviceKeyEnvelope,
-      deviceEnvelope,
-      rpId: C.rp_id,
-    });
+    unlock({ prfOutput: good, deviceKeyEnvelope, deviceEnvelope });
     assert.ok(isZeroed(good), "PRF output must be zeroized after a successful unlock");
 
     const bad = prfOutput(0xbb);
     assert.throws(
-      () =>
-        unwrapVaultKeyWithPrfOutput({
-          prfOutput: bad,
-          deviceKeyEnvelope,
-          deviceEnvelope,
-          rpId: C.rp_id,
-        }),
+      () => unlock({ prfOutput: bad, deviceKeyEnvelope, deviceEnvelope }),
       AuthFailureError,
     );
     assert.ok(isZeroed(bad), "PRF output must be zeroized after a failed unlock");
@@ -143,13 +170,7 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
   it("rejects a PRF output from another origin (rpId is bound into HKDF info)", () => {
     const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
     assert.throws(
-      () =>
-        unwrapVaultKeyWithPrfOutput({
-          prfOutput: prfOutput(),
-          deviceKeyEnvelope,
-          deviceEnvelope,
-          rpId: "evil.example.com",
-        }),
+      () => unlock({ deviceKeyEnvelope, deviceEnvelope, rpId: "evil.example.com" }),
       AuthFailureError,
     );
   });
@@ -159,14 +180,13 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
     const prf = prfOutput();
     assert.throws(
       () =>
-        unwrapVaultKeyWithPrfOutput({
+        unlock({
           prfOutput: prf,
           deviceKeyEnvelope,
           deviceEnvelope,
-          rpId: C.rp_id,
           credentialId: hexToBytes("00112233445566778899aabbccddeeff"),
         }),
-      ProtocolError,
+      IntegrityError,
     );
     assert.ok(isZeroed(prf));
   });
@@ -177,36 +197,44 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
     const theirs = bind(vaultKey, { deviceId: "dev_other_profile" });
     assert.throws(
       () =>
-        unwrapVaultKeyWithPrfOutput({
-          prfOutput: prfOutput(),
+        unlock({
           deviceKeyEnvelope: mine.deviceKeyEnvelope,
           deviceEnvelope: theirs.deviceEnvelope,
-          rpId: C.rp_id,
         }),
-      ProtocolError,
+      IntegrityError,
     );
   });
 
-  it("rejects a master envelope handed over as a device envelope", () => {
-    const vaultKey = generateVaultKey();
-    const { deviceKeyEnvelope } = bind(vaultKey);
-    const forged = { ...deviceKeyEnvelope };
+  it("rejects a recovery envelope handed over as a device envelope", () => {
+    const { deviceKeyEnvelope } = bind(generateVaultKey());
     assert.throws(
       () =>
-        unwrapVaultKeyWithPrfOutput({
-          prfOutput: prfOutput(),
-          deviceKeyEnvelope: forged,
+        unlock({
+          deviceKeyEnvelope,
           deviceEnvelope: {
             version: 1,
             type: "recovery",
+            vaultKeyVersion: VAULT_KEY_VERSION,
             encryption: "AES-256-GCM",
             nonce: new Uint8Array(12),
             ciphertext: new Uint8Array(32),
             tag: new Uint8Array(16),
           },
-          rpId: C.rp_id,
         }),
-      ProtocolError,
+      IntegrityError,
+    );
+  });
+
+  it("rejects a Device-Key Envelope from an older Device-Key generation", () => {
+    const vaultKey = generateVaultKey();
+    const rotated = bind(vaultKey, { deviceKeyVersion: 2 });
+    assert.throws(
+      () =>
+        unlock({
+          deviceKeyEnvelope: rotated.deviceKeyEnvelope,
+          deviceEnvelope: rotated.deviceEnvelope,
+        }),
+      IntegrityError,
     );
   });
 
@@ -214,11 +242,10 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
     const { deviceKeyEnvelope, deviceEnvelope } = bind(generateVaultKey());
     assert.throws(
       () =>
-        unwrapVaultKeyWithPrfOutput({
+        unlock({
           prfOutput: new Uint8Array(16).fill(0xaa),
           deviceKeyEnvelope,
           deviceEnvelope,
-          rpId: C.rp_id,
         }),
       ProtocolError,
     );
@@ -226,56 +253,72 @@ describe("unwrapVaultKeyWithPrfOutput", () => {
 });
 
 describe("fallback ranks 2 and 3", () => {
-  it("unlocks from a stored wrapping key and zeroizes the copy", () => {
-    const vaultKey = generateVaultKey();
+  function localBinding(vaultKey: Uint8Array, deviceId = C.device_id) {
     const storageKey = generateDeviceKey();
     const deviceKey = generateDeviceKey();
     const deviceKeyEnvelope = wrapDeviceKey({
       deviceKey,
       deviceWrappingKey: storageKey,
       vaultId: C.vault_id,
-      deviceId: C.device_id,
+      deviceId,
       credentialId: CRED,
+      deviceKeyVersion: DEVICE_KEY_VERSION,
     });
     const deviceEnvelope = wrapVaultKey({
       vaultKey,
       wrappingKey: deviceKey,
       vaultId: C.vault_id,
       type: "device",
-      deviceId: C.device_id,
+      vaultKeyVersion: VAULT_KEY_VERSION,
+      deviceId,
+      deviceKeyVersion: DEVICE_KEY_VERSION,
     });
+    return { storageKey, deviceKeyEnvelope, deviceEnvelope };
+  }
+
+  it("unlocks from a stored wrapping key and zeroizes the copy", () => {
+    const vaultKey = generateVaultKey();
+    const { storageKey, deviceKeyEnvelope, deviceEnvelope } = localBinding(vaultKey);
 
     const copy = storageKey.slice();
-    const unlocked = unwrapVaultKeyWithDeviceWrappingKey(deviceKeyEnvelope, deviceEnvelope, copy);
+    const unlocked = unwrapVaultKeyWithDeviceWrappingKey({
+      deviceKeyEnvelope,
+      deviceEnvelope,
+      deviceWrappingKey: copy,
+      ...EXPECT,
+    });
     assert.deepEqual(unlocked, vaultKey);
     assert.ok(isZeroed(copy), "the wrapping-key copy must be zeroized");
   });
 
-  it("refuses a stored wrapping key that belongs to another device", () => {
+  it("refuses a device envelope that belongs to another device", () => {
     const vaultKey = generateVaultKey();
-    const deviceKey = generateDeviceKey();
-    const deviceKeyEnvelope = wrapDeviceKey({
-      deviceKey,
-      deviceWrappingKey: generateDeviceKey(),
-      vaultId: C.vault_id,
-      deviceId: C.device_id,
-      credentialId: CRED,
-    });
-    const otherDeviceEnvelope = wrapVaultKey({
-      vaultKey,
-      wrappingKey: deviceKey,
-      vaultId: C.vault_id,
-      type: "device",
-      deviceId: "dev_other_profile",
-    });
+    const mine = localBinding(vaultKey);
+    const theirs = localBinding(vaultKey, "dev_other_profile");
     assert.throws(
       () =>
-        unwrapVaultKeyWithDeviceWrappingKey(
+        unwrapVaultKeyWithDeviceWrappingKey({
+          deviceKeyEnvelope: mine.deviceKeyEnvelope,
+          deviceEnvelope: theirs.deviceEnvelope,
+          deviceWrappingKey: mine.storageKey.slice(),
+          ...EXPECT,
+        }),
+      IntegrityError,
+    );
+  });
+
+  it("refuses a stored wrapping key that does not open the envelope", () => {
+    const vaultKey = generateVaultKey();
+    const { deviceKeyEnvelope, deviceEnvelope } = localBinding(vaultKey);
+    assert.throws(
+      () =>
+        unwrapVaultKeyWithDeviceWrappingKey({
           deviceKeyEnvelope,
-          otherDeviceEnvelope,
-          generateDeviceKey(),
-        ),
-      ProtocolError,
+          deviceEnvelope,
+          deviceWrappingKey: generateDeviceKey(),
+          ...EXPECT,
+        }),
+      AuthFailureError,
     );
   });
 });

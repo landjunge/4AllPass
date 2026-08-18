@@ -15,12 +15,25 @@ import {
 } from "../src/index.ts";
 
 const vaultId = "vault_test_snapshot";
+const VKV = 1;
+const DKV = 1;
+const DEVICE_ID = "dev-1";
+
+/** What `unlockSnapshot` needs to state about the caller's own device envelope. */
+const deviceUnlock = {
+  vaultId,
+  vaultKeyVersion: VKV,
+  deviceId: DEVICE_ID,
+  deviceKeyVersion: DKV,
+  allowTestProfile: true,
+} as const;
 
 function makeEntry(vaultKey: Uint8Array, id: string, text: string) {
   return encryptEntry({
     vaultKey,
     vaultId,
     entryId: id,
+    vaultKeyVersion: VKV,
     plaintext: new TextEncoder().encode(text),
   });
 }
@@ -31,7 +44,9 @@ function deviceEnvelope(vaultKey: Uint8Array, deviceKey: Uint8Array) {
     wrappingKey: deviceKey,
     vaultId,
     type: "device",
-    deviceId: "dev-1",
+    vaultKeyVersion: VKV,
+    deviceId: DEVICE_ID,
+    deviceKeyVersion: DKV,
   });
 }
 
@@ -41,6 +56,7 @@ function masterEnvelope(vaultKey: Uint8Array, masterKey: Uint8Array) {
     wrappingKey: masterKey,
     vaultId,
     type: "master",
+    vaultKeyVersion: VKV,
     kdf: kdfParamsFrom(ARGON2ID_PROFILES.ci, generateSalt()),
     allowTestProfile: true,
   });
@@ -53,7 +69,7 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
     const env = deviceEnvelope(vaultKey, deviceKey);
     const entries = [makeEntry(vaultKey, "e1", "alpha"), makeEntry(vaultKey, "e2", "beta")];
 
-    const result = unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries });
+    const result = unlockSnapshot({ ...deviceUnlock, envelope: env, wrappingKey: deviceKey, entries });
 
     assert.deepEqual(result.vaultKey, vaultKey);
     assert.equal(result.entries.length, 2);
@@ -70,7 +86,7 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
     const master = masterEnvelope(vaultKey, masterKey);
 
     const result = unlockSnapshot({
-      vaultId,
+      ...deviceUnlock,
       envelope: env,
       wrappingKey: deviceKey,
       entries: [makeEntry(vaultKey, "e1", "x")],
@@ -88,7 +104,7 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
     const entries = [makeEntry(vaultKey, "e1", "ok"), makeEntry(otherKey, "e2", "mixed")];
 
     assert.throws(
-      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries }),
+      () => unlockSnapshot({ ...deviceUnlock, envelope: env, wrappingKey: deviceKey, entries }),
       IntegrityError,
     );
   });
@@ -104,8 +120,10 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
         verifySnapshot({
           vaultId,
           vaultKey,
+          vaultKeyVersion: VKV,
           entries: [],
           crossCheckEnvelopes: [{ envelope: master, wrappingKey: masterKey }],
+          allowTestProfile: true,
         }),
       IntegrityError,
     );
@@ -119,11 +137,13 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
       vaultKey,
       vaultId: "vault_OTHER",
       entryId: "e1",
+      vaultKeyVersion: VKV,
       plaintext: new TextEncoder().encode("x"),
     });
 
     assert.throws(
-      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: deviceKey, entries: [foreign] }),
+      () =>
+        unlockSnapshot({ ...deviceUnlock, envelope: env, wrappingKey: deviceKey, entries: [foreign] }),
       IntegrityError,
     );
   });
@@ -134,7 +154,8 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
     const env = deviceEnvelope(vaultKey, deviceKey);
 
     assert.throws(
-      () => unlockSnapshot({ vaultId, envelope: env, wrappingKey: randomBytes(32), entries: [] }),
+      () =>
+        unlockSnapshot({ ...deviceUnlock, envelope: env, wrappingKey: randomBytes(32), entries: [] }),
       AuthFailureError,
     );
   });

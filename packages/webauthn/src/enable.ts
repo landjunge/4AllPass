@@ -41,6 +41,10 @@ export interface EnableDeviceUnlockOptions {
   vaultKey: Uint8Array;
   vaultId: string;
   deviceId: string;
+  /** Vault-Key generation of the unlocked vault. */
+  vaultKeyVersion: number;
+  /** Device-Key generation being minted: 1 for a first binding. */
+  deviceKeyVersion: number;
   rpId: string;
   rpName?: string;
   user: { id: Uint8Array; name: string; displayName: string };
@@ -144,6 +148,7 @@ async function provision(
     deviceId: options.deviceId,
     rpId: options.rpId,
     credentialId: bytesToBase64(credentialId),
+    deviceKeyVersion: options.deviceKeyVersion,
     createdAt: new Date().toISOString(),
   };
 
@@ -164,6 +169,8 @@ async function provision(
       vaultId: options.vaultId,
       deviceId: options.deviceId,
       credentialId,
+      vaultKeyVersion: options.vaultKeyVersion,
+      deviceKeyVersion: options.deviceKeyVersion,
     });
     const record: DeviceUnlockRecord = {
       ...base,
@@ -188,6 +195,8 @@ async function provision(
       vaultId: options.vaultId,
       deviceId: options.deviceId,
       credentialId,
+      vaultKeyVersion: options.vaultKeyVersion,
+      deviceKeyVersion: options.deviceKeyVersion,
     });
 
     if (mechanism === "large_blob") {

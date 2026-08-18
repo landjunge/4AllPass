@@ -17,17 +17,19 @@ import {
   bytesToBase64,
   decodeDeviceKeyEnvelope,
   decodeVaultSnapshot,
-  decryptEntry,
   deriveMasterKey,
   deriveMasterKeyFromEnvelope,
+  deriveRecoveryWrappingKey,
   encodeEncryptedEntry,
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
   encryptEntry,
+  formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
   generateVaultKey,
   kdfParamsFrom,
+  parseRecoveryKey,
   unwrapVaultKey,
   verifySnapshot,
   wrapVaultKey,
@@ -35,6 +37,7 @@ import {
 } from "@4allpass/crypto";
 import type {
   Argon2idProfileName,
+  CrossCheckEnvelope,
   KeyEnvelope,
   VaultSnapshot,
 } from "@4allpass/crypto";
@@ -53,7 +56,6 @@ import {
   ENTRY_SCHEMA_VERSION,
   type VaultEntry,
 } from "./entries.ts";
-import { formatRecoveryKey, parseRecoveryKey } from "./recovery-key.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
@@ -89,6 +91,10 @@ export class CommitConflict extends Error {
 const store = () => indexedDbDeviceUnlockStore();
 const client = () => browserWebAuthnClient();
 
+/** Generations are 1-based; this client does not rotate keys yet. */
+const INITIAL_VAULT_KEY_VERSION = 1;
+const INITIAL_DEVICE_KEY_VERSION = 1;
+
 function masterEnvelopeOf(snapshot: VaultSnapshot): KeyEnvelope {
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "master");
   if (!envelope) throw new Error("snapshot has no master envelope");
@@ -122,20 +128,22 @@ function openSnapshot(
   snapshot: VaultSnapshot,
   vaultKey: Uint8Array,
   unlockedWith: UnlockMethod,
-  crossChecks: ReadonlyArray<{ envelope: KeyEnvelope; wrappingKey: Uint8Array }> = [],
+  crossChecks: readonly CrossCheckEnvelope[] = [],
 ): UnlockedVault {
-  verifySnapshot({
+  // verifySnapshot returns the plaintext it already had to produce to prove the
+  // snapshot is not mixed; decrypting a second time would only widen the window
+  // in which entry plaintext exists.
+  const entries: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
     entries: snapshot.entries,
     crossCheckEnvelopes: crossChecks,
-  });
-  const entries: VaultEntry[] = snapshot.entries.map((entry) => {
-    const plaintext = decryptEntry(entry, vaultKey, snapshot.vaultId);
+  }).map((entry) => {
     try {
-      return decodeEntryPlaintext(entry.id, plaintext);
+      return decodeEntryPlaintext(entry.id, entry.plaintext);
     } finally {
-      zeroize(plaintext);
+      zeroize(entry.plaintext);
     }
   });
   savePin({
@@ -173,19 +181,22 @@ export async function createVault(
   const salt = generateSalt(16);
   const masterKey = deriveMasterKey(masterPassword, salt, profile);
   const recoveryKey = generateRecoveryKey();
+  const recoveryWrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
   try {
     const masterEnvelope = wrapVaultKey({
       vaultKey,
       wrappingKey: masterKey,
       vaultId,
       type: "master",
+      vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
       kdf: kdfParamsFrom(profile, salt),
     });
     const recoveryEnvelope = wrapVaultKey({
       vaultKey,
-      wrappingKey: recoveryKey,
+      wrappingKey: recoveryWrappingKey,
       vaultId,
       type: "recovery",
+      vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
     });
     const committed = decodeVaultSnapshot(
       await api.commitSnapshot(vaultId, {
@@ -201,7 +212,7 @@ export async function createVault(
     ]);
     return { vault, recoveryKey: formatRecoveryKey(recoveryKey) };
   } finally {
-    zeroize(masterKey, recoveryKey);
+    zeroize(masterKey, recoveryKey, recoveryWrappingKey);
   }
 }
 
@@ -213,7 +224,12 @@ export async function unlockWithMasterPassword(
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
   try {
-    const vaultKey = unwrapVaultKey(masterEnvelope, masterKey, vaultId);
+    const vaultKey = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
     return openSnapshot(snapshot, vaultKey, "master_password", [
       { envelope: masterEnvelope, wrappingKey: masterKey },
     ]);
@@ -230,11 +246,17 @@ export async function unlockWithRecoveryKey(
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "recovery");
   if (!envelope) throw new Error("this vault has no recovery envelope");
   const recoveryKey = parseRecoveryKey(recoveryKeyText);
+  const wrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
   try {
-    const vaultKey = unwrapVaultKey(envelope, recoveryKey, vaultId);
-    return openSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey: recoveryKey }]);
+    const vaultKey = unwrapVaultKey(envelope, {
+      wrappingKey,
+      vaultId,
+      expectType: "recovery",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
+    return openSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey }]);
   } finally {
-    zeroize(recoveryKey);
+    zeroize(recoveryKey, wrappingKey);
   }
 }
 
@@ -284,6 +306,7 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
       store: store(),
       vaultId,
       deviceId: id,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
       deviceEnvelope,
       ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
     });
@@ -318,6 +341,7 @@ async function commitSnapshot(
           vaultId: vault.vaultId,
           entryId: entry.id,
           plaintext,
+          vaultKeyVersion: vault.vaultKeyVersion,
           schemaVersion: ENTRY_SCHEMA_VERSION,
         }),
       );
@@ -374,6 +398,8 @@ export async function enableDeviceUnlockForVault(
     vaultKey: vault.vaultKey,
     vaultId: vault.vaultId,
     deviceId: id,
+    vaultKeyVersion: vault.vaultKeyVersion,
+    deviceKeyVersion: INITIAL_DEVICE_KEY_VERSION,
     rpId: rpId(),
     user: {
       id: new TextEncoder().encode(accountEmail),

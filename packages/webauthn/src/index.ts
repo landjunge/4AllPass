@@ -28,6 +28,8 @@ export { browserWebAuthnClient } from "./browser-client.ts";
 export { indexedDbDeviceUnlockStore, memoryDeviceUnlockStore } from "./store.ts";
 
 export { assertPrfOutput, newChallenge, readPrfFirst } from "./prf.ts";
+export { resolveChallenge } from "./challenge.ts";
+export type { CeremonyPurpose, ChallengeProvider } from "./challenge.ts";
 export {
   parseDeviceKeyEnvelope,
   readLargeBlob,

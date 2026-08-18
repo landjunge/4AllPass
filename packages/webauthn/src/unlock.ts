@@ -17,7 +17,8 @@ import type { DeviceKeyEnvelope, KeyEnvelope } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockError, DeviceUnlockUnavailableError } from "./errors.ts";
 import { readLargeBlob } from "./large-blob.ts";
-import { assertPrfOutput, newChallenge } from "./prf.ts";
+import { assertPrfOutput } from "./prf.ts";
+import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import type {
   DeviceUnlockMechanism,
   DeviceUnlockRecord,
@@ -39,6 +40,8 @@ export interface UnlockWithDeviceOptions {
    * browser lost its local copy. Only useful for the `prf` mechanism.
    */
   mirroredDeviceKeyEnvelope?: DeviceKeyEnvelope;
+  /** Server-issued challenge per ceremony. Tests may omit this. */
+  challenges?: ChallengeProvider | undefined;
 }
 
 export interface DeviceUnlockResult {
@@ -115,6 +118,7 @@ async function runMechanism(
       rpId: record.rpId,
       vaultId: options.vaultId,
       credentialId,
+      challenges: options.challenges,
     });
     // Zeroizes prfOutput, the DWK, and the Device Key; only VK survives.
     const vaultKey = unwrapVaultKeyWithPrfOutput({
@@ -132,6 +136,7 @@ async function runMechanism(
       client: options.client,
       rpId: record.rpId,
       credentialId,
+      challenges: options.challenges,
     });
     const wrappingKey = storedWrappingKey(record);
     try {
@@ -150,7 +155,7 @@ async function runMechanism(
   // Rank 3: the UV assertion is the only gate in front of local key material.
   const assertion = await options.client.get({
     rpId: record.rpId,
-    challenge: newChallenge(),
+    challenge: await resolveChallenge("assert", options.challenges),
     credentialId,
     userVerification: "required",
   });

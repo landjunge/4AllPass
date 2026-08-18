@@ -12,6 +12,7 @@ src/
   validate.ts           untrusted-input validation and expectation checks
   encoding/
     aad.ts              length-prefixed AAD builders (envelope / entry / device / manifest)
+    base64.ts           strict base64 for the JSON wire format
     framing.ts          uint32be framing for digest preimages
     digest.ts           KDF-params, entry, envelope and sealed-manifest digests
     bytes.ts
@@ -23,10 +24,13 @@ src/
     aes-gcm.ts          encrypt (library nonce) / decrypt, owned output buffers
   envelope.ts           wrapVaultKey / unwrapVaultKey (expectations required)
   entry.ts              encryptEntry / decryptEntry (expected entryId + vaultKeyVersion)
-  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope, deviceKeyVersion
+  device.ts             PRF eval.first, HKDF DWK, Device-Key Envelope, deviceKeyVersion,
+                        bindDeviceWithPrfOutput / unwrapVaultKeyWithPrfOutput
   manifest.ts           snapshot manifest: seal / open / verify (revision is authenticated)
   recovery.ts           Emergency-Kit encoding + Recovery Wrapping Key
   revision.ts           evaluateRevision / rollback, downgrade, equivocation
+  snapshot.ts           verifySnapshot / unlockSnapshot (vault-revision.md §6)
+  wire.ts               JSON encode/decode for server transport (strict)
   random.ts             CSPRNG helpers
   memory.ts             best-effort zeroize
 ```
@@ -43,6 +47,8 @@ src/
 - `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.
 - The printed Recovery Key is never used as an AES key; `deriveRecoveryWrappingKey` first.
+- `bindDeviceWithPrfOutput` / `unwrapVaultKeyWithPrfOutput` zeroize the PRF output, the DWK, and the Device Key before returning. Only the Vault Key survives a device unlock.
+- Envelopes decoded with `wire.ts` are validated structurally (lengths, versions, type/field combinations) because they come from an untrusted server.
 - `ci` profile cannot be used unless `allowTestProfile: true` — on read as well as write.
 - Master password is NFC-normalized, then UTF-8.
 

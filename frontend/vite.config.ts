@@ -4,6 +4,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // The client calls the API same-origin (`/api/v1`), so the service worker
+  // scope and the API share one origin in production too.
+  server: {
+    // Pinned: the Playwright baseURL points here, and silently moving to the
+    // next free port would run the suite against nothing.
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: process.env.API_ORIGIN ?? 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -20,8 +34,10 @@ export default defineConfig({
         short_name: '4AllPass',
         description:
           'Self-hosted Zero-Knowledge password manager — for all browsers and devices.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        // Matches the app shell in src/styles.css, so the splash and the
+        // browser chrome do not flash a different colour on launch.
+        theme_color: '#080c18',
+        background_color: '#080c18',
         display: 'standalone',
         start_url: '/',
         icons: [

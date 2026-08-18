@@ -15,6 +15,9 @@ import {
   type DeviceKeyAadInput,
 } from "./encoding/aad.ts";
 import { ProtocolError } from "./errors.ts";
+import { zeroize } from "./memory.ts";
+import { generateDeviceKey } from "./random.ts";
+import { unwrapVaultKey, wrapVaultKey } from "./envelope.ts";
 import {
   assertBytes,
   assertId,
@@ -23,7 +26,7 @@ import {
   requireSameNumber,
   requireSameString,
 } from "./validate.ts";
-import type { DeviceKeyEnvelope, GcmBox } from "./types.ts";
+import type { DeviceKeyEnvelope, GcmBox, KeyEnvelope } from "./types.ts";
 
 export interface DeriveDeviceWrappingKeyOptions {
   prfOutput: Uint8Array;
@@ -201,4 +204,262 @@ export function unwrapDeviceKey(
   const dk = decrypt(opts.deviceWrappingKey, nonce, ciphertext, tag, deviceKeyAad(fields));
   assertBytes("deviceKey", dk, { exact: KEY_BYTES });
   return dk;
+}
+
+/**
+ * The identity a device unlock is being performed for.
+ *
+ * Both envelopes carry their own ids and generations, so opening them against
+ * those fields would only prove self-consistency. The caller states what it
+ * expects — the vault it is unlocking, the device it believes it is, the
+ * credential that produced the assertion, and the two key generations it read
+ * from the snapshot and from its own device record.
+ */
+interface DeviceExpectations {
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  deviceKeyVersion: number;
+  vaultKeyVersion: number;
+}
+
+function resolveExpectations(input: {
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  deviceKeyVersion: number;
+  vaultKeyVersion: number;
+}): DeviceExpectations {
+  return {
+    vaultId: assertId("vaultId", input.vaultId),
+    deviceId: assertId("deviceId", input.deviceId),
+    credentialId: assertCredentialId(input.credentialId),
+    deviceKeyVersion: assertVersion("deviceKeyVersion", input.deviceKeyVersion),
+    vaultKeyVersion: assertVersion("vaultKeyVersion", input.vaultKeyVersion),
+  };
+}
+
+export interface DeviceBinding {
+  /** Wrapped under the DWK. Stored locally (or mirrored as an opaque blob). */
+  deviceKeyEnvelope: DeviceKeyEnvelope;
+  /** Wrapped under the Device Key. Uploaded to the server. */
+  deviceEnvelope: KeyEnvelope;
+}
+
+export interface DeviceBindingInput {
+  /** `prf.results.first`. Zeroized before this call returns. */
+  prfOutput: Uint8Array;
+  /** Vault Key of the currently unlocked vault. Stays owned by the caller. */
+  vaultKey: Uint8Array;
+  rpId: string;
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  /** Vault-Key generation being wrapped. Never defaulted. */
+  vaultKeyVersion: number;
+  /** Device-Key generation being minted. Never defaulted. */
+  deviceKeyVersion: number;
+  cryptoVersion?: number;
+}
+
+export interface LocalDeviceBindingInput {
+  /**
+   * 32-byte wrapping key for the Device-Key Envelope. Owned by the caller,
+   * because fallback ranks 2 and 3 have to persist it (largeBlob or local
+   * store); it is not zeroized here.
+   */
+  deviceWrappingKey: Uint8Array;
+  vaultKey: Uint8Array;
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  vaultKeyVersion: number;
+  deviceKeyVersion: number;
+  cryptoVersion?: number;
+}
+
+/**
+ * Registration steps 4–8 of webauthn-prf.md §2.1: mint a random Device Key,
+ * wrap it under the DWK, and wrap the Vault Key under the Device Key.
+ *
+ * PRF output, DWK, and DK never leave this function; all three are zeroized
+ * before it returns. The Vault Key is not re-derived and never touched by the
+ * WebAuthn path — the DWK is not an encryption oracle for it.
+ */
+export function bindDeviceWithPrfOutput(input: DeviceBindingInput): DeviceBinding {
+  const cryptoVersion = input.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  let dwk: Uint8Array | undefined;
+  try {
+    dwk = deriveDeviceWrappingKey({
+      prfOutput: input.prfOutput,
+      rpId: input.rpId,
+      vaultId: input.vaultId,
+      deviceId: input.deviceId,
+      credentialId: input.credentialId,
+      cryptoVersion,
+    });
+    return bindDeviceWithWrappingKey({
+      deviceWrappingKey: dwk,
+      vaultKey: input.vaultKey,
+      vaultId: input.vaultId,
+      deviceId: input.deviceId,
+      credentialId: input.credentialId,
+      vaultKeyVersion: input.vaultKeyVersion,
+      deviceKeyVersion: input.deviceKeyVersion,
+      cryptoVersion,
+    });
+  } finally {
+    zeroize(dwk, input.prfOutput);
+  }
+}
+
+/**
+ * Same envelope pair as `bindDeviceWithPrfOutput`, but for fallback ranks 2
+ * and 3 where the wrapping key is a stored random key instead of an HKDF
+ * output. The Device Key is generated here and zeroized before returning.
+ */
+export function bindDeviceWithWrappingKey(input: LocalDeviceBindingInput): DeviceBinding {
+  assertBytes("vaultKey", input.vaultKey, { exact: KEY_BYTES });
+  const cryptoVersion = input.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION;
+  const deviceKey = generateDeviceKey();
+  try {
+    const deviceKeyEnvelope = wrapDeviceKey({
+      deviceKey,
+      deviceWrappingKey: input.deviceWrappingKey,
+      vaultId: input.vaultId,
+      deviceId: input.deviceId,
+      credentialId: input.credentialId,
+      deviceKeyVersion: input.deviceKeyVersion,
+      cryptoVersion,
+    });
+    const deviceEnvelope = wrapVaultKey({
+      vaultKey: input.vaultKey,
+      wrappingKey: deviceKey,
+      vaultId: input.vaultId,
+      type: "device",
+      vaultKeyVersion: input.vaultKeyVersion,
+      deviceId: input.deviceId,
+      deviceKeyVersion: input.deviceKeyVersion,
+      cryptoVersion,
+    });
+    return { deviceKeyEnvelope, deviceEnvelope };
+  } finally {
+    zeroize(deviceKey);
+  }
+}
+
+export interface DeviceUnlockInput {
+  /** `prf.results.first`. Zeroized before this call returns. */
+  prfOutput: Uint8Array;
+  deviceKeyEnvelope: DeviceKeyEnvelope;
+  deviceEnvelope: KeyEnvelope;
+  rpId: string;
+  vaultId: string;
+  deviceId: string;
+  /** Credential that produced `prfOutput`. */
+  credentialId: Uint8Array;
+  /** Device-Key generation this device holds. */
+  deviceKeyVersion: number;
+  /** Vault-Key generation of the snapshot being opened. */
+  vaultKeyVersion: number;
+  cryptoVersion?: number;
+}
+
+export interface LocalDeviceUnlockInput {
+  deviceKeyEnvelope: DeviceKeyEnvelope;
+  deviceEnvelope: KeyEnvelope;
+  /** Zeroized before returning, so a caller with a stored copy must clone it. */
+  deviceWrappingKey: Uint8Array;
+  vaultId: string;
+  deviceId: string;
+  credentialId: Uint8Array;
+  deviceKeyVersion: number;
+  vaultKeyVersion: number;
+}
+
+/**
+ * Caller-owned secret material to wipe on the way out. Anything that is not a
+ * byte array is not wipeable, and validation elsewhere is what rejects it.
+ */
+function secretBytes(value: unknown): Uint8Array | undefined {
+  return value instanceof Uint8Array ? value : undefined;
+}
+
+/** DK → VK, shared by every rank. The Device Key is zeroized before returning. */
+function openDeviceEnvelopes(
+  deviceKeyEnvelope: DeviceKeyEnvelope,
+  deviceEnvelope: KeyEnvelope,
+  deviceWrappingKey: Uint8Array,
+  expect: DeviceExpectations,
+): Uint8Array {
+  let deviceKey: Uint8Array | undefined;
+  try {
+    deviceKey = unwrapDeviceKey(deviceKeyEnvelope, {
+      deviceWrappingKey,
+      vaultId: expect.vaultId,
+      deviceId: expect.deviceId,
+      credentialId: expect.credentialId,
+      deviceKeyVersion: expect.deviceKeyVersion,
+    });
+    return unwrapVaultKey(deviceEnvelope, {
+      wrappingKey: deviceKey,
+      vaultId: expect.vaultId,
+      expectType: "device",
+      expectVaultKeyVersion: expect.vaultKeyVersion,
+      expectDeviceId: expect.deviceId,
+      expectDeviceKeyVersion: expect.deviceKeyVersion,
+    });
+  } finally {
+    zeroize(deviceKey);
+  }
+}
+
+/**
+ * Unlock steps 4–7 of webauthn-prf.md §2.2: PRF output → DWK → DK → VK.
+ *
+ * The DWK is derived from the caller's expectations rather than from the
+ * envelope, so a Device-Key Envelope belonging to another vault, device or
+ * credential cannot supply the very fields that would open it. PRF output,
+ * DWK, and DK are zeroized before this returns; only the Vault Key survives.
+ */
+export function unwrapVaultKeyWithPrfOutput(input: DeviceUnlockInput): Uint8Array {
+  // Resolved before the try so that a malformed expectation — not just a failed
+  // unwrap — still leaves through the zeroization below. A non-Uint8Array is
+  // dropped here instead of thrown at in `finally`, where it would replace the
+  // real error with a TypeError.
+  const prfOutput = secretBytes(input.prfOutput);
+  let dwk: Uint8Array | undefined;
+  try {
+    const expect = resolveExpectations(input);
+    dwk = deriveDeviceWrappingKey({
+      prfOutput: input.prfOutput,
+      rpId: input.rpId,
+      vaultId: expect.vaultId,
+      deviceId: expect.deviceId,
+      credentialId: expect.credentialId,
+      cryptoVersion: input.cryptoVersion ?? CRYPTO_PROTOCOL_VERSION,
+    });
+    return openDeviceEnvelopes(input.deviceKeyEnvelope, input.deviceEnvelope, dwk, expect);
+  } finally {
+    zeroize(dwk, prfOutput);
+  }
+}
+
+/**
+ * Fallback rank 2/3 of webauthn-prf.md §5: the Device-Key Envelope came from
+ * largeBlob or from a UV-gated local store, so the wrapping key is already a
+ * 32-byte key instead of a PRF output. The DK → VK half is identical.
+ */
+export function unwrapVaultKeyWithDeviceWrappingKey(input: LocalDeviceUnlockInput): Uint8Array {
+  const wrappingKey = secretBytes(input.deviceWrappingKey);
+  try {
+    return openDeviceEnvelopes(
+      input.deviceKeyEnvelope,
+      input.deviceEnvelope,
+      input.deviceWrappingKey,
+      resolveExpectations(input),
+    );
+  } finally {
+    zeroize(wrappingKey);
+  }
 }

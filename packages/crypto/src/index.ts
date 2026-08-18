@@ -58,9 +58,31 @@ export type {
   SealedManifest,
   SnapshotManifest,
   VaultRevision,
+  VaultSnapshot,
 } from "./types.ts";
 
 export { bytesToHex, concat, equalBytes, hexToBytes, u16be, u32be, utf8 } from "./encoding/bytes.ts";
+export { base64ToBytes, bytesToBase64 } from "./encoding/base64.ts";
+
+export {
+  decodeDeviceKeyEnvelope,
+  decodeEncryptedEntry,
+  decodeKdfParams,
+  decodeKeyEnvelope,
+  decodeVaultSnapshot,
+  encodeDeviceKeyEnvelope,
+  encodeEncryptedEntry,
+  encodeKdfParams,
+  encodeKeyEnvelope,
+  encodeVaultSnapshot,
+} from "./wire.ts";
+export type {
+  WireDeviceKeyEnvelope,
+  WireEncryptedEntry,
+  WireKdfParams,
+  WireKeyEnvelope,
+  WireVaultSnapshot,
+} from "./wire.ts";
 export {
   deviceKeyAad,
   dwkHkdfInfo,
@@ -118,13 +140,22 @@ export { encryptEntry, decryptEntry } from "./entry.ts";
 export type { DecryptEntryOptions, EncryptEntryOptions } from "./entry.ts";
 
 export {
+  bindDeviceWithPrfOutput,
+  bindDeviceWithWrappingKey,
   deriveDeviceWrappingKey,
   prfEvalFirst,
   unwrapDeviceKey,
+  unwrapVaultKeyWithDeviceWrappingKey,
+  unwrapVaultKeyWithPrfOutput,
   wrapDeviceKey,
 } from "./device.ts";
 export type {
   DeriveDeviceWrappingKeyOptions,
+  DeviceBinding,
+  DeviceBindingInput,
+  DeviceUnlockInput,
+  LocalDeviceBindingInput,
+  LocalDeviceUnlockInput,
   UnwrapDeviceKeyOptions,
   WrapDeviceKeyOptions,
 } from "./device.ts";

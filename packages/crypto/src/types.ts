@@ -124,6 +124,12 @@ export interface SealedManifest {
   tag: Uint8Array;
 }
 
+/** An immutable server snapshot: all envelopes plus all entries of one revision. */
+export interface VaultSnapshot extends VaultRevision {
+  envelopes: KeyEnvelope[];
+  entries: EncryptedEntry[];
+}
+
 export interface GcmBox {
   nonce: Uint8Array;
   ciphertext: Uint8Array;

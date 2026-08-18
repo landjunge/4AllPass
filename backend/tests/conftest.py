@@ -21,6 +21,15 @@ from app.main import app  # noqa: E402
 
 get_settings.cache_clear()
 
+SESSION_COOKIE = "fourallpass_session"
+
+
+def use_session(client: AsyncClient, token: str) -> AsyncClient:
+    """Bind the account session cookie on the client (not per-request)."""
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE, token)
+    return client
+
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def engine():

@@ -4,10 +4,10 @@ import uuid
 import pytest
 
 from app.core.sessions import get_session_store
+from tests.conftest import SESSION_COOKIE, use_session
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-SESSION_COOKIE = "fourallpass_session"
 PASSWORD = "account-password-1234"
 
 
@@ -19,10 +19,6 @@ def _session_token(response) -> str:
     token = response.cookies.get(SESSION_COOKIE)
     assert token, f"missing session cookie: {response.headers.get('set-cookie')}"
     return token
-
-
-def _cookies(token: str) -> dict[str, str]:
-    return {SESSION_COOKIE: token}
 
 
 def _assert_account_body(body: dict, email: str) -> None:
@@ -43,7 +39,7 @@ async def test_register_login_me_logout(client):
 
     set_cookie = register.headers["set-cookie"]
     assert "HttpOnly" in set_cookie
-    assert "SameSite=lax" in set_cookie.lower()
+    assert "samesite=lax" in set_cookie.lower()
     first_token = _session_token(register)
 
     me = await client.get("/api/v1/auth/me")
@@ -57,13 +53,13 @@ async def test_register_login_me_logout(client):
     assert second_token != first_token
 
     # Previous session is revoked (session fixation / reuse after re-login).
-    stale = await client.get("/api/v1/auth/me", cookies=_cookies(first_token))
+    stale = await use_session(client, first_token).get("/api/v1/auth/me")
     assert stale.status_code == 401
 
-    logout = await client.post("/api/v1/auth/logout")
+    logout = await use_session(client, second_token).post("/api/v1/auth/logout")
     assert logout.status_code == 204
 
-    after = await client.get("/api/v1/auth/me", cookies=_cookies(second_token))
+    after = await use_session(client, second_token).get("/api/v1/auth/me")
     assert after.status_code == 401
 
 
@@ -95,7 +91,7 @@ async def test_me_without_session(client):
 
 
 async def test_invalid_session_cookie(client):
-    response = await client.get("/api/v1/auth/me", cookies=_cookies("not-a-real-session"))
+    response = await use_session(client, "not-a-real-session").get("/api/v1/auth/me")
     assert response.status_code == 401
     assert response.json()["detail"] == "not authenticated"
 
@@ -109,7 +105,7 @@ async def test_expired_session(client):
     assert record is not None
     await store.put(token, record, ttl_seconds=-1)
 
-    response = await client.get("/api/v1/auth/me", cookies=_cookies(token))
+    response = await use_session(client, token).get("/api/v1/auth/me")
     assert response.status_code == 401
 
 

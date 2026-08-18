@@ -31,7 +31,7 @@ async def test_memory_session_roundtrip_and_delete():
     await store.put(token, record, ttl_seconds=60)
     loaded = await store.get(token)
     assert loaded is not None
-    assert loaded.email == "a@example.test"
+    assert loaded.email == "a@example.com"
     await store.delete(token)
     assert await store.get(token) is None
 

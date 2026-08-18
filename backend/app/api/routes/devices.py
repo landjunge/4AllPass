@@ -120,7 +120,6 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
@@ -128,6 +127,12 @@ async def register_device(
         device.last_seen_at = now
         device.revoked_at = None
         await db.flush()
+    result = await db.execute(
+        select(Device)
+        .where(Device.id == device.id)
+        .options(selectinload(Device.webauthn_credentials), selectinload(Device.device_key_envelopes))
+    )
+    device = result.scalar_one()
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 

@@ -150,7 +150,14 @@ async def load_active_snapshot(db: AsyncSession, vault: Vault) -> VaultSnapshot 
 
 
 async def _lock_vault(db: AsyncSession, vault_id) -> Vault:
-    result = await db.execute(select(Vault).where(Vault.id == vault_id).with_for_update())
+    # Must hit the database and refresh the identity map. A cached Vault from
+    # get_owned_vault would otherwise keep a stale active_snapshot_id and two
+    # concurrent writers would both believe they hold revision N.
+    await db.execute(select(Vault.id).where(Vault.id == vault_id).with_for_update())
+    result = await db.execute(
+        select(Vault).where(Vault.id == vault_id),
+        execution_options={"populate_existing": True},
+    )
     locked = result.scalar_one_or_none()
     if locked is None:
         raise HTTPException(status_code=404, detail="vault not found")
@@ -228,7 +235,10 @@ async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommi
         await db.flush()
     except IntegrityError as exc:
         await db.rollback()
-        raise RevisionConflict(current_revision) from exc
+        reread = await db.execute(select(Vault).where(Vault.id == vault.id))
+        latest = reread.scalar_one()
+        current = await load_active_snapshot(db, latest)
+        raise RevisionConflict(current.revision if current is not None else 0) from exc
 
     try:
         db.add_all([_envelope_from_wire(snapshot.id, env) for env in payload.envelopes])

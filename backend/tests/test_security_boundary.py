@@ -211,7 +211,7 @@ async def test_user_cannot_touch_foreign_vault_device_snapshot_or_envelope(clien
     _, bob, _ = await _signup(client)
     vault_id = await _vault(client, alice)
     device_id = "dev_alice_one"
-    cred = bytes(range(16))
+    cred = uuid.uuid4().bytes
 
     created = await client.post(
         f"/api/v1/vaults/{vault_id}/devices",
@@ -449,7 +449,7 @@ async def test_revoked_device_is_metadata_not_cryptographic_erasure(client):
     assert blocked.status_code == 422
     assert "revoked" in blocked.json()["detail"]
 
-    cred = bytes(range(16))
+    cred = uuid.uuid4().bytes
     cred_blocked = await client.post(
         f"/api/v1/vaults/{vault_id}/devices/{device_id}/credentials",
         headers=_auth(alice),
@@ -482,8 +482,8 @@ async def test_device_envelope_identity_must_match_path(client):
         headers=_auth(alice),
         json={"deviceId": device_id, "label": "box"},
     )
-    cred = bytes(range(16))
-    await client.post(
+    cred = uuid.uuid4().bytes
+    registered = await client.post(
         f"/api/v1/vaults/{vault_id}/devices/{device_id}/credentials",
         headers=_auth(alice),
         json={
@@ -494,6 +494,7 @@ async def test_device_envelope_identity_must_match_path(client):
             "largeBlobSupported": False,
         },
     )
+    assert registered.status_code == 200, registered.text
     mismatch = {
         "version": 1,
         "vaultId": other_vault,

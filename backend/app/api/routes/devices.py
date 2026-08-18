@@ -97,6 +97,15 @@ async def _get_device(db: AsyncSession, vault: Vault, device_id: str) -> Device:
     return device
 
 
+async def _reload_device(db: AsyncSession, device: Device) -> Device:
+    result = await db.execute(
+        select(Device)
+        .where(Device.id == device.id)
+        .options(selectinload(Device.webauthn_credentials), selectinload(Device.device_key_envelopes))
+    )
+    return result.scalar_one()
+
+
 @router.get("", response_model=list[DeviceSummary])
 async def list_devices(
     vault: Annotated[Vault, Depends(get_owned_vault)],
@@ -133,7 +142,6 @@ async def register_device(
         )
         db.add(device)
         await db.flush()
-        await db.refresh(device)
     else:
         device.display_name = payload.label or device.display_name
         device.platform = payload.platform or device.platform
@@ -144,6 +152,7 @@ async def register_device(
         # new device envelope in a later snapshot.
         device.revoked_at = None
         await db.flush()
+    device = await _reload_device(db, device)
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 

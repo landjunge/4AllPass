@@ -10,7 +10,7 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 |---|---|
 | [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1 core. No UI, no network, no authenticator I/O |
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — device unlock: PRF > largeBlob > UV-gated local store |
-| [`backend`](backend) | FastAPI + PostgreSQL + Redis. Stores opaque envelopes, snapshots, device metadata |
+| [`backend`](backend) | FastAPI + PostgreSQL + Redis. Account-Session, Ownership, Snapshot-CAS. Stores opaque envelopes only |
 | [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
 | [`docs`](docs) | The authoritative specifications |
 
@@ -67,6 +67,22 @@ python3 scripts/verify-argon2id-vectors.py
 ```
 
 ## Backend
+
+Account and vault HTTP API (`/api/v1`). The account password is **not** the
+master password and cannot decrypt a vault.
+
+```
+POST /api/v1/auth/register | login | logout
+GET  /api/v1/auth/me
+GET/POST /api/v1/vaults
+GET      /api/v1/vaults/{id}
+GET      /api/v1/vaults/{id}/snapshot
+POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
+         /api/v1/vaults/{id}/devices…     # owner-only
+```
+
+Every vault/device/snapshot route requires `Authorization: Bearer`. Foreign
+vaults return **404** (no id enumeration).
 
 ```sh
 cd backend

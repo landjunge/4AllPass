@@ -1,6 +1,8 @@
 /**
  * hardRevokeDevice: VK rotation, omit target, CAS before DELETE.
  */
+import "./test-storage-shim.ts";
+
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 
@@ -17,39 +19,12 @@ import {
 } from "@4allpass/crypto";
 
 import { api, ApiError } from "./api.ts";
+import { clearTestStorage } from "./test-storage-shim.ts";
 import {
   CommitConflict,
   hardRevokeDevice,
   type UnlockedVault,
 } from "./vault-session.ts";
-
-const memory = new Map<string, string>();
-
-Object.defineProperty(globalThis, "localStorage", {
-  configurable: true,
-  value: {
-    getItem(key: string) {
-      return memory.get(key) ?? null;
-    },
-    setItem(key: string, value: string) {
-      memory.set(key, value);
-    },
-    removeItem(key: string) {
-      memory.delete(key);
-    },
-  },
-});
-
-Object.defineProperty(globalThis, "sessionStorage", {
-  configurable: true,
-  value: {
-    getItem() {
-      return null;
-    },
-    setItem() {},
-    removeItem() {},
-  },
-});
 
 const PASSWORD = "hard-revoke-master-password";
 const TARGET = "dev_target_device_aaaaaaaa";
@@ -60,13 +35,13 @@ const originalCommit = api.commitSnapshot.bind(api);
 const originalRevoke = api.revokeDevice.bind(api);
 
 afterEach(() => {
-  memory.clear();
+  clearTestStorage();
   api.commitSnapshot = originalCommit;
   api.revokeDevice = originalRevoke;
 });
 
 function buildUnlocked(): { vault: UnlockedVault; recoveryKeyText: string } {
-  memory.set("4allpass.deviceId", SELF);
+  localStorage.setItem("4allpass.deviceId", SELF);
   const vaultId = "vault-hard-revoke-test-1";
   const vaultKey = generateVaultKey();
   const salt = generateSalt(16);

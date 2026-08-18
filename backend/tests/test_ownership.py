@@ -71,6 +71,17 @@ async def test_devices_require_auth(client):
     assert anon.status_code == 401
 
 
+async def test_vault_access_requires_auth(client):
+    _, alice = await _signup(client)
+    created = await client.post("/api/v1/vaults", headers=_auth(alice))
+    vault_id = created.json()["vaultId"]
+    client.cookies.clear()
+
+    assert (await client.get("/api/v1/vaults")).status_code == 401
+    assert (await client.post("/api/v1/vaults")).status_code == 401
+    assert (await client.get(f"/api/v1/vaults/{vault_id}")).status_code == 401
+
+
 async def test_snapshot_cas_and_ownership(client):
     _, alice = await _signup(client)
     created = await client.post("/api/v1/vaults", headers=_auth(alice))

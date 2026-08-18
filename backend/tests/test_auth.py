@@ -89,6 +89,16 @@ async def test_invalid_session_cookie_is_rejected(client):
     assert response.json()["detail"] == "invalid or expired session"
 
 
+async def test_bearer_header_cannot_supply_authenticated_identity(client):
+    client.cookies.clear()
+    response = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": "Bearer client-controlled-token"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "not authenticated"
+
+
 async def test_register_rejects_short_password(client):
     response = await client.post(
         "/api/v1/auth/register",

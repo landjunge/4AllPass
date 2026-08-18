@@ -15,7 +15,7 @@ from app.core.sessions import SessionStore
 from app.models.user import User
 from app.models.vault import Vault
 from app.schemas.snapshot import SnapshotCommit, WireVaultSnapshot
-from app.schemas.vault import VaultSummary
+from app.schemas.vault import VaultCreateRequest, VaultSummary
 from app.services.snapshots import RevisionConflict, commit_snapshot, load_active_snapshot, snapshot_to_wire
 
 router = APIRouter(prefix="/vaults", tags=["vaults"])
@@ -50,6 +50,7 @@ async def list_vaults(
 async def create_vault(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    _payload: VaultCreateRequest | None = None,
 ) -> VaultSummary:
     vault = Vault(
         owner_user_id=user.id,

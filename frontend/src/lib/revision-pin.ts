@@ -30,14 +30,16 @@ export function loadPin(vaultId: string): VaultRevision | null {
       Number.isInteger(parsed.revision) &&
       Number.isInteger(parsed.vaultKeyVersion)
     ) {
-      return {
+      const pin: VaultRevision = {
         vaultId: parsed.vaultId,
         revision: parsed.revision,
         vaultKeyVersion: parsed.vaultKeyVersion,
         cryptoProtocolVersion: 1,
-        manifestDigest:
-          typeof parsed.manifestDigest === "string" ? hexToBytes(parsed.manifestDigest) : undefined,
       };
+      if (typeof parsed.manifestDigest === "string") {
+        pin.manifestDigest = hexToBytes(parsed.manifestDigest);
+      }
+      return pin;
     }
     return null;
   } catch {

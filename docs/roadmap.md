@@ -21,10 +21,12 @@ Differenzierung:
 ## Aktueller Stand
 
 - Crypto-Protokoll und Reference Implementation (`packages/crypto`) sind weit fortgeschritten
-- Starke Specs vorhanden (crypto-protocol, webauthn-prf, vault-revision, threat-model)
-- Noch kein Backend, kein Frontend, keine Extension
+- Backend: Account-Auth, Ownership, Snapshot-CAS, opaque sealed manifest
+- PWA-Client: Master-Password / Recovery / WebAuthn-Unlock, echte verschlüsselte Snapshots
+- Security-Boundary-Pass: `docs/security-boundary.md` — Auth ≠ Authorization ≠ Crypto
+- Hard-Revocation (Vault-Key-Rotation im Produkt-Client) und Server-seitige WebAuthn-Assertion fehlen bewusst
 
-Die Crypto-Basis ist inzwischen gut genug, dass man aufhören kann, an der Architektur zu zweifeln. Ab hier entscheiden Umsetzung und UX.
+Nächster Milestone: **Hard revocation in the product client** (Vault Key rotation + re-encrypt), not another auth rewrite.
 
 ---
 

@@ -1,7 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from app.schemas.common import CamelModel
+from app.schemas.common import CamelModel, StrictCamelModel
+
+
+class VaultCreateRequest(StrictCamelModel):
+    """No client-controlled fields. Ownership comes from the session."""
 
 
 class VaultSummary(CamelModel):

@@ -307,15 +307,39 @@ async def test_forged_ids_do_not_bypass_ownership(client):
 async def test_create_vault_cannot_assign_foreign_owner(client):
     _, alice, _ = await _signup(client)
     _, bob, _ = await _signup(client)
-    created = await client.post(
+    rejected = await client.post(
         "/api/v1/vaults",
         headers=_auth(alice),
         json={"ownerUserId": str(uuid.uuid4())},
     )
+    assert rejected.status_code == 422
+    created = await client.post("/api/v1/vaults", headers=_auth(alice))
     assert created.status_code == 201
     vault_id = created.json()["vaultId"]
     assert (await client.get(f"/api/v1/vaults/{vault_id}", headers=_auth(bob))).status_code == 404
     assert (await client.get(f"/api/v1/vaults/{vault_id}", headers=_auth(alice))).status_code == 200
+
+
+async def test_unauthenticated_snapshot_write_is_rejected(client):
+    _, alice, _ = await _signup(client)
+    vault_id = await _vault(client, alice)
+    anon = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        json=_snapshot_body(1),
+    )
+    assert anon.status_code == 401
+
+
+async def test_snapshot_rollback_is_a_revision_conflict(client):
+    _, alice, _ = await _signup(client)
+    vault_id = await _vault(client, alice)
+    assert (await _commit(client, alice, vault_id, _snapshot_body(1))).status_code == 200
+    assert (await _commit(client, alice, vault_id, _snapshot_body(2, expected=1))).status_code == 200
+    rollback = await _commit(client, alice, vault_id, _snapshot_body(1, expected=0))
+    assert rollback.status_code == 409
+    assert rollback.json()["currentRevision"] == 2
+    fetched = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=_auth(alice))
+    assert fetched.json()["revision"] == 2
 
 
 # --- Snapshot CAS / atomicity / manifest bytes --------------------------------
@@ -462,6 +486,23 @@ async def test_revoked_device_is_metadata_not_cryptographic_erasure(client):
         },
     )
     assert cred_blocked.status_code == 409
+
+    env_blocked = await client.put(
+        f"/api/v1/vaults/{vault_id}/devices/{device_id}/credentials/{_b64url(cred)}/device-key-envelope",
+        headers=_auth(alice),
+        json={
+            "version": 1,
+            "vaultId": vault_id,
+            "deviceId": device_id,
+            "credentialId": _b64(cred),
+            "deviceKeyVersion": 1,
+            "encryption": "AES-256-GCM",
+            "nonce": _b64(b"\x00" * 12),
+            "ciphertext": _b64(b"\x07" * 32),
+            "tag": _b64(b"\x08" * 16),
+        },
+    )
+    assert env_blocked.status_code == 409
 
     # Soft revoke completes when the next snapshot omits the device envelope.
     soft = await _commit(

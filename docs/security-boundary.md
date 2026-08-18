@@ -123,6 +123,7 @@ before pinning `revision` / `vaultKeyVersion` / `manifestDigest`.
 
 - Hard revocation (Vault Key rotation + re-encrypt of every entry) is specified
   and supported by `@4allpass/crypto`; the product client does not perform it yet.
+  Recommended next milestone: implement that client rotation path.
 - WebAuthn assertion verification is client-side only; `public_key` on the
   credential row is nullable and unused.
 - Bearer token lives in `sessionStorage` (XSS-readable).

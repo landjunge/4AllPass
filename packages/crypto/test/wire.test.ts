@@ -258,6 +258,26 @@ describe("entry and snapshot wire format", () => {
     assert.deepEqual(decoded, snapshot);
   });
 
+  it("round-trips a sealed manifest on the snapshot wire", () => {
+    const snapshot = {
+      vaultId: VAULT_ID,
+      revision: 3,
+      vaultKeyVersion: VAULT_KEY_VERSION,
+      cryptoProtocolVersion: 1 as const,
+      envelopes: [masterEnvelope()],
+      entries: [],
+      manifest: {
+        version: 1,
+        encryption: "AES-256-GCM" as const,
+        nonce: new Uint8Array(12).fill(1),
+        ciphertext: new Uint8Array(48).fill(2),
+        tag: new Uint8Array(16).fill(3),
+      },
+    };
+    const decoded = decodeVaultSnapshot(roundTrip(encodeVaultSnapshot(snapshot)));
+    assert.deepEqual(decoded, snapshot);
+  });
+
   it("rejects snapshots with revision 0 or a foreign protocol version", () => {
     const wire = encodeVaultSnapshot({
       vaultId: VAULT_ID,

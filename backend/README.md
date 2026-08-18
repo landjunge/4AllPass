@@ -1,76 +1,79 @@
-# 4AllPass backend
+# 4AllPass Backend
 
-FastAPI + PostgreSQL + Redis. Stores wrapped envelopes, encrypted entries, and
-device metadata. It never sees a master password, a Vault Key, a Device Key,
-WebAuthn PRF output, or plaintext entry data.
+FastAPI + PostgreSQL + Redis backend for 4AllPass. This service is **Zero-Knowledge**: it
+never sees plaintext vault entries, the Master Password, the Vault Key, the Device Key, the
+Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at the repo root:
 
-```
-app/
-  config.py          settings (env prefix FOURALLPASS_)
-  db.py              async engine / session
-  redis_client.py    sessions + rate limits
-  security.py        account password hashing, session tokens
-  errors.py          typed API errors
-  models/            accounts, vaults, snapshots, envelopes, devices
-  schemas/wire.py    the opaque blob formats (mirrors packages/crypto/src/wire.ts)
-  schemas/api.py     request / response bodies
-  services/          accounts, sessions, vaults (commit protocol), devices
-  api/routes/        health, auth, vaults, devices
-alembic/versions/    0001_initial_schema.py
-```
+- [`../docs/architecture.md`](../docs/architecture.md)
+- [`../docs/crypto-protocol.md`](../docs/crypto-protocol.md)
+- [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
+- [`../docs/vault-revision.md`](../docs/vault-revision.md)
+- [`../docs/threat-model.md`](../docs/threat-model.md)
 
-## Run
+## What lives here (v1 scaffold)
 
-```sh
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-cp .env.example .env
-.venv/bin/alembic upgrade head
-.venv/bin/uvicorn app.main:app --reload
-```
+- SQLAlchemy 2.0 models + Alembic migration for the full server-storable schema:
+  users, vaults, immutable vault snapshots, key envelopes (master / device / recovery),
+  encrypted entries, devices, WebAuthn credentials, and the **Device-Key Envelope** mirror
+  (`docs/webauthn-prf.md` §4).
+- A minimal FastAPI app (`app/main.py`) with a health check and a read-only device listing
+  endpoint, wiring the models end-to-end. Auth, WebAuthn ceremony endpoints, vault snapshot
+  commit/CAS, and rotation are follow-up work — this scaffold intentionally stops at
+  "project structure + crypto-core + DB schema" per the initial brief.
+
+## Local setup
 
 ```sh
-.venv/bin/pytest          # needs PostgreSQL + Redis
-.venv/bin/ruff check .
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env   # adjust if your Postgres/Redis differ
+
+createuser fourallpass --pwprompt   # if not already present
+createdb fourallpass -O fourallpass
+createdb fourallpass_test -O fourallpass   # used by the pytest suite
+
+alembic upgrade head
+uvicorn app.main:app --reload
 ```
 
-Tests use the database named in `FOURALLPASS_DATABASE_URL` with `_test`
-appended by `tests/conftest.py`'s default, and Redis DB 1. They run the real
-migration, so the migration itself is covered.
+## Tests
 
-## Endpoints
+```sh
+pip install -r requirements-dev.txt
+createdb fourallpass_test -O fourallpass
+createdb fourallpass_migrations_test -O fourallpass   # used by tests/test_migrations.py
+pytest
+```
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/v1/health` | database + Redis reachability, protocol version |
-| `POST` | `/api/v1/auth/register` `/login` `/logout` | account session (not the vault) |
-| `GET` | `/api/v1/auth/me` | current account |
-| `POST` | `/api/v1/vaults` | reserve a `vault_id` for AAD binding |
-| `GET` | `/api/v1/vaults/{id}/snapshot` | the snapshot at `active_revision` |
-| `POST` | `/api/v1/vaults/{id}/snapshots` | commit revision N+1 (compare-and-set) |
-| `GET`/`POST` | `/api/v1/vaults/{id}/devices` | device identities |
-| `POST` | `.../devices/{device_id}/credentials` | WebAuthn credential metadata |
-| `PUT`/`GET` | `.../credentials/{credential_id}/device-key-envelope` | opaque PRF mirror |
-| `DELETE` | `.../devices/{device_id}` | soft revocation |
+`tests/test_migrations.py` runs `alembic upgrade head` → `downgrade base` → `upgrade head` →
+`alembic check` against a scratch database to catch migration/model drift. Set
+`FOURALLPASS_SKIP_MIGRATION_TESTS=1` to skip it in environments without a spare database.
 
-Credential ids are base64url without padding in URL paths, standard base64 in
-JSON bodies.
+## Database schema — Device Envelopes
 
-## What the server enforces
+Two distinct envelope concepts exist per `docs/webauthn-prf.md`, and both are modeled:
 
-- **Commit protocol.** `expectedRevision` must equal `active_revision`, the new
-  revision must be exactly one higher, and the pointer moves with a
-  compare-and-set. Two racing clients produce one `201` and one `409`.
-- **No mixed revisions.** Snapshots are immutable and only the one named by
-  `active_revision` is served. A pending snapshot is never visible.
-- **Vault key versions** stay equal or rotate by exactly one.
-- **Structural validation** of every blob: 12-byte nonces, 16-byte tags,
-  32-byte wrapped keys, KDF parameters only on the master envelope, `deviceId`
-  only on device envelopes, one master per snapshot.
-- **KDF floor.** A master envelope below 32 MiB Argon2id memory is rejected, so
-  the test-only `ci` profile cannot reach a real vault.
-- **Device envelopes** only for registered, non-revoked devices.
-- **Mirroring** of a Device-Key Envelope only for the `prf` mechanism.
-- **`userVerification`** is stored as required and constrained to true.
+| Table | Wraps | Under | Docs |
+|---|---|---|---|
+| `key_envelopes` (`type = "device"`) | Vault Key (VK) | Device Key (DK) | crypto-protocol.md §3 |
+| `device_key_envelopes` | Device Key (DK) | Device Wrapping Key (DWK) | webauthn-prf.md §4 |
 
-The same rules exist as CHECK constraints in the migration, so a bug in this
-layer still cannot persist a malformed envelope.
+The server can decrypt neither: it never holds DK or DWK. `device_key_envelopes` is an
+optional mirror of client-held state (webauthn-prf.md §2.1, step 7) that lets a second
+browser session on an already-trusted device recover the same convenience-unlock blob.
+
+Supporting tables: `devices` (stable `device_id` bound into both envelopes' AAD) and
+`webauthn_credentials` (credential id, RP id, COSE public key, PRF/largeBlob capability
+flags — never key material).
+
+## Migrations
+
+```sh
+alembic revision --autogenerate -m "message"
+alembic upgrade head
+```
+
+Review autogenerated migrations by hand — Alembic does not always order circular
+foreign keys (`vaults.active_snapshot_id` ↔ `vault_snapshots.vault_id`) or Postgres enum
+drops correctly. See the comments in `alembic/versions/*_initial_schema.py`.

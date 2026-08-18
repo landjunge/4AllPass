@@ -56,7 +56,7 @@ import {
   indexedDbDeviceUnlockStore,
   unlockWithDevice as unlockWithDeviceCredential,
 } from "@4allpass/webauthn";
-import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
+import type { DeviceUnlockMechanism, DeviceUnlockStore } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
@@ -97,8 +97,16 @@ export class CommitConflict extends Error {
   }
 }
 
-const store = () => indexedDbDeviceUnlockStore();
+/** Test-only override so unit tests can seed a local DK without IndexedDB. */
+let deviceUnlockStoreOverride: DeviceUnlockStore | null = null;
+
+const store = () => deviceUnlockStoreOverride ?? indexedDbDeviceUnlockStore();
 const client = () => browserWebAuthnClient();
+
+/** @internal */
+export function setDeviceUnlockStoreForTests(next: DeviceUnlockStore | null): void {
+  deviceUnlockStoreOverride = next;
+}
 
 /** Generations are 1-based. Soft commits keep the version; hard revoke bumps it. */
 const INITIAL_VAULT_KEY_VERSION = 1;
@@ -562,9 +570,11 @@ export async function revokeDevice(
  * cannot decrypt the next snapshot. Soft DELETE is metadata only; this is the
  * cryptographic step (docs/security-boundary.md §4, vault-revision.md §5).
  *
- * Device envelopes are included only when this client can wrap them without a
- * new WebAuthn ceremony (local DK). Otherwise the snapshot has master (+
- * recovery) only and every device re-enrols after master unlock.
+ * Device envelopes are included only when this client already has a device
+ * envelope in the current snapshot *and* can wrap without a new WebAuthn
+ * ceremony (local DK). Otherwise the snapshot has master (+ recovery) only and
+ * every device re-enrols after master unlock. Leftover IndexedDB after a soft
+ * revoke does not re-attach this device.
  *
  * Order is mandatory: CAS commit under VK₂ succeeds before metadata DELETE.
  * On 409, DELETE is not called.
@@ -639,7 +649,12 @@ export async function hardRevokeDevice(
 
   const currentId = deviceId();
   let localDevice: { deviceKey: Uint8Array; deviceKeyVersion: number } | null = null;
-  if (targetDeviceId !== currentId) {
+  // Only continue an existing device enrolment. Leftover IndexedDB after a soft
+  // revoke must not re-attach this device (would 422 if revoked_at is set).
+  const selfEntitled = vault.envelopes.some(
+    (envelope) => envelope.type === "device" && envelope.deviceId === currentId,
+  );
+  if (targetDeviceId !== currentId && selfEntitled) {
     localDevice = await tryLocalDeviceKey(vault.vaultId, currentId);
   }
 

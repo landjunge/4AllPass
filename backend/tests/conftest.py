@@ -15,10 +15,24 @@ os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
 
 from app.api.deps import get_db  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.core.sessions import _memory as memory_session_store  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
 
 get_settings.cache_clear()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_memory_session_store() -> AsyncIterator[None]:
+    """The in-memory session/rate-limit store is a process-wide singleton.
+
+    Without this, sessions and rate-limit counters leak across test
+    functions (and even across test files) run in the same process, making
+    results depend on execution order/count.
+    """
+    memory_session_store._sessions.clear()
+    memory_session_store._rates.clear()
+    yield
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")

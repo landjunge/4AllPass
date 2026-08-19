@@ -139,9 +139,9 @@ object and returns it unchanged. The client verifies it under VK
 - No server-side WebAuthn assertion verification.
 - No PWA Vault Key rotation (hard revoke).
 - Account session is not bound to a device identity.
-- Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
-  `active_revision` (a stale DK generation can still be served until the
-  client refuses it).
+- Device-Key Envelope mirror is gated on the active snapshot: PUT requires
+  `expectedRevision` and a matching device envelope; GET refuses a missing
+  envelope (404) or a stale `deviceKeyVersion` (409).
 - Bearer token lives in `sessionStorage` (XSS = account takeover, not vault
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.

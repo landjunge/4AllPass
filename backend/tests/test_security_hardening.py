@@ -259,7 +259,7 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
     assert cred.json()["verification"] == "client_asserted"
 
     put = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -285,8 +285,8 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
             "prfSupported": True,
             "largeBlobSupported": False,
         }),
-        ("GET", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope", None),
-        ("PUT", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        ("GET", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1", None),
+        ("PUT", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
          _dke(vault_id, DEVICE_A, cred_id)),
     ]
     for method, path, body in paths:
@@ -345,7 +345,7 @@ async def test_device_delete_is_metadata_only_and_does_not_claim_crypto_erase(cl
         },
     )
     await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -364,12 +364,12 @@ async def test_device_delete_is_metadata_only_and_does_not_claim_crypto_erase(cl
     assert "device" in types
 
     blocked_get = await client.get(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
     )
     assert blocked_get.status_code == 409
     blocked_put = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -438,21 +438,21 @@ async def test_envelope_identity_mismatch_and_cross_device_substitution(client):
     assert cred.status_code == 200, cred.text
 
     wrong_vault = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(other, DEVICE_A, cred_id),
     )
     assert wrong_vault.status_code == 422
 
     wrong_device = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_B, cred_id),
     )
     assert wrong_device.status_code == 422
 
     missing_cred = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_B}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_B}/credentials/{_cred_path(cred_id)}/device-key-envelope?expectedRevision=1",
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_B, cred_id),
     )
@@ -583,3 +583,80 @@ async def test_inactive_user_cannot_use_a_live_token(client, engine):
 
     response = await client.get("/api/v1/auth/me", headers=_auth(token))
     assert response.status_code == 401
+
+
+async def test_device_key_mirror_follows_the_active_snapshot(client):
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    await _commit(
+        client,
+        alice,
+        vault_id,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A)],
+    )
+    await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(alice),
+        json={"deviceId": DEVICE_A, "label": "Phone"},
+    )
+    cred_id = _cred_b64()
+    await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials",
+        headers=_auth(alice),
+        json={
+            "credentialId": cred_id,
+            "rpId": "localhost",
+            "mechanism": "prf",
+            "prfSupported": True,
+            "largeBlobSupported": False,
+        },
+    )
+    path = (
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/"
+        f"{_cred_path(cred_id)}/device-key-envelope"
+    )
+
+    stale_revision = await client.put(
+        f"{path}?expectedRevision=0",
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert stale_revision.status_code == 409
+
+    put = await client.put(
+        f"{path}?expectedRevision=1",
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert put.status_code == 200, put.text
+    assert (await client.get(path, headers=_auth(alice))).status_code == 200
+
+    dropped = await _commit(
+        client,
+        alice,
+        vault_id,
+        revision=2,
+        expectedRevision=1,
+        envelopes=[_master_envelope()],
+    )
+    assert dropped.status_code == 200
+    assert (await client.get(path, headers=_auth(alice))).status_code == 404
+
+    rotated = await _commit(
+        client,
+        alice,
+        vault_id,
+        revision=3,
+        expectedRevision=2,
+        envelopes=[
+            _master_envelope(),
+            {**_device_envelope(DEVICE_A), "deviceKeyVersion": 2},
+        ],
+    )
+    assert rotated.status_code == 200
+    stale_gen = await client.put(
+        f"{path}?expectedRevision=3",
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert stale_gen.status_code == 409

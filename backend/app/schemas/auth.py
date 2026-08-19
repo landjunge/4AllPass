@@ -21,6 +21,7 @@ class AccountSession(CamelModel):
     expires_in: int
     account_id: UUID
     email: str
+    device_id: str
 
 
 class AccountMe(CamelModel):

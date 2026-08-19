@@ -583,3 +583,44 @@ async def test_inactive_user_cannot_use_a_live_token(client, engine):
 
     response = await client.get("/api/v1/auth/me", headers=_auth(token))
     assert response.status_code == 401
+
+
+async def test_revoking_a_device_kills_its_other_sessions(client):
+    email, owner = await _signup(client)
+    vault_id = await _vault(client, owner)
+
+    other = await client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": PASSWORD},
+        headers={"X-Device-Id": DEVICE_B},
+    )
+    assert other.status_code == 200
+    other_token = other.json()["token"]
+
+    registered = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(owner),
+        json={"deviceId": DEVICE_B, "label": "Phone"},
+    )
+    assert registered.status_code == 200
+
+    still = await client.get(
+        "/api/v1/auth/me",
+        headers={**_auth(other_token), "X-Device-Id": DEVICE_B},
+    )
+    assert still.status_code == 200
+
+    revoked = await client.delete(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_B}",
+        headers=_auth(owner),
+    )
+    assert revoked.status_code == 200
+
+    dead = await client.get(
+        "/api/v1/auth/me",
+        headers={**_auth(other_token), "X-Device-Id": DEVICE_B},
+    )
+    assert dead.status_code == 401
+
+    owner_still = await client.get("/api/v1/auth/me", headers=_auth(owner))
+    assert owner_still.status_code == 200

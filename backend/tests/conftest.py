@@ -58,6 +58,9 @@ async def db_session(engine) -> AsyncIterator[AsyncSession]:
             await conn.rollback()
 
 
+TEST_DEVICE_ID = "dev_sessiontestdevice0000001"
+
+
 @pytest_asyncio.fixture(loop_scope="session")
 async def client(engine) -> AsyncIterator[AsyncClient]:
     factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False)
@@ -71,8 +74,16 @@ async def client(engine) -> AsyncIterator[AsyncClient]:
                 await session.rollback()
                 raise
 
+    async def _attach_device(request):
+        if "x-device-id" not in {k.lower() for k in request.headers}:
+            request.headers["X-Device-Id"] = TEST_DEVICE_ID
+
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        event_hooks={"request": [_attach_device]},
+    ) as ac:
         yield ac
     app.dependency_overrides.clear()

@@ -23,13 +23,30 @@ def test_token_lookup_is_not_the_bearer_token():
 async def test_memory_session_roundtrip_and_delete():
     store = MemorySessionStore()
     token = new_session_token()
-    record = SessionRecord(user_id=uuid4(), email="a@example.com")
+    record = SessionRecord(user_id=uuid4(), email="a@example.com", device_id="dev_aaaaaaaaaaaaaaaaaaaaaaaa")
     await store.put(token, record, ttl_seconds=60)
     loaded = await store.get(token)
     assert loaded is not None
     assert loaded.email == "a@example.com"
+    assert loaded.device_id == "dev_aaaaaaaaaaaaaaaaaaaaaaaa"
     await store.delete(token)
     assert await store.get(token) is None
+
+
+async def test_revoke_device_keeps_the_calling_token():
+    store = MemorySessionStore()
+    user_id = uuid4()
+    keep = new_session_token()
+    other = new_session_token()
+    foreign = new_session_token()
+    await store.put(keep, SessionRecord(user_id=user_id, email="a@example.com", device_id="dev_aaaaaaaaaaaaaaaaaaaaaaaa"), 60)
+    await store.put(other, SessionRecord(user_id=user_id, email="a@example.com", device_id="dev_aaaaaaaaaaaaaaaaaaaaaaaa"), 60)
+    await store.put(foreign, SessionRecord(user_id=user_id, email="a@example.com", device_id="dev_bbbbbbbbbbbbbbbbbbbbbbbb"), 60)
+    removed = await store.revoke_device(user_id, "dev_aaaaaaaaaaaaaaaaaaaaaaaa", keep_token=keep)
+    assert removed == 1
+    assert await store.get(keep) is not None
+    assert await store.get(other) is None
+    assert await store.get(foreign) is not None
 
 
 async def test_rate_limit_trips():

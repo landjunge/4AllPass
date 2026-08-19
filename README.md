@@ -16,7 +16,8 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 
 ## Documentation
 
-- Architecture: [`docs/architecture.md`](docs/architecture.md)
+- Agent playbook (review / code / improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
+
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
 - Vault revision / rotation / snapshot manifest: [`docs/vault-revision.md`](docs/vault-revision.md)

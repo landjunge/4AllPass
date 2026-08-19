@@ -25,6 +25,7 @@ import {
   hasDeviceUnlock,
   lock as lockVault,
   revokeDevice,
+  rotateVaultKey,
   unlockWithDevice,
   unlockWithMasterPassword,
   unlockWithRecoveryKey,
@@ -65,6 +66,7 @@ interface AppActions {
   saveEntries(entries: VaultEntry[]): Promise<void>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
+  rotateKeys(masterPassword: string): Promise<void>;
   refreshDevices(): Promise<void>;
   dismissRecoveryKey(): void;
   clearMessages(): void;
@@ -298,6 +300,18 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setDevices(await api.listDevices(current.vaultId));
           if (targetDeviceId === deviceId()) setDeviceUnlockAvailable(false);
         }, "Device revoked in the new revision.");
+      },
+
+      async rotateKeys(masterPassword) {
+        const current = vaultRef.current;
+        if (!current) throw new Error("vault is locked");
+        await withStatus(async () => {
+          const rotated = await rotateVaultKey(current, masterPassword);
+          setUnlocked(rotated.vault);
+          setRecoveryKey(rotated.recoveryKey);
+          setDeviceUnlockAvailable(false);
+          setDevices(await api.listDevices(current.vaultId));
+        }, "Vault key rotated. Store the new recovery key. Other devices must re-enrol.");
       },
 
       refreshDevices,

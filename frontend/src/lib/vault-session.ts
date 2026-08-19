@@ -26,6 +26,7 @@ import {
   encodeDeviceKeyEnvelope,
   encodeSealedManifest,
   encryptEntry,
+  equalBytes,
   formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
@@ -98,7 +99,7 @@ export class CommitConflict extends Error {
 const store = () => indexedDbDeviceUnlockStore();
 const client = () => browserWebAuthnClient();
 
-/** Generations are 1-based; this client does not rotate keys yet. */
+/** Generations are 1-based. Hard rotation increments vaultKeyVersion. */
 const INITIAL_VAULT_KEY_VERSION = 1;
 const INITIAL_DEVICE_KEY_VERSION = 1;
 
@@ -512,6 +513,98 @@ export async function revokeDevice(
     (envelope) => !(envelope.type === "device" && envelope.deviceId === targetDeviceId),
   );
   return commitSnapshot(vault, vault.entries, envelopes);
+}
+
+/**
+ * Hard rotation (vault-revision.md §5). Required when a device may already know
+ * the current Vault Key. Other devices cannot be re-wrapped without their
+ * Device Key, so they are dropped and must re-enrol. A new Recovery Key is
+ * issued because the old kit wrapped VK_v.
+ */
+export async function rotateVaultKey(
+  vault: UnlockedVault,
+  masterPassword: string,
+): Promise<{ vault: UnlockedVault; recoveryKey: string }> {
+  const masterEnvelope = vault.envelopes.find((envelope) => envelope.type === "master");
+  if (!masterEnvelope) throw new Error("snapshot has no master envelope");
+  if (!masterEnvelope.kdf) {
+    throw new Error("master envelope has no kdf parameters");
+  }
+  const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  let nextKey: Uint8Array | null = null;
+  const recoveryKey = generateRecoveryKey();
+  const recoveryWrappingKey = deriveRecoveryWrappingKey({
+    recoveryKey,
+    vaultId: vault.vaultId,
+  });
+  try {
+    const check = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId: vault.vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: vault.vaultKeyVersion,
+    });
+    try {
+      if (!equalBytes(check, vault.vaultKey)) {
+        throw new Error("master password does not open this vault");
+      }
+    } finally {
+      zeroize(check);
+    }
+
+    const nextVersion = vault.vaultKeyVersion + 1;
+    nextKey = generateVaultKey();
+    const nextMaster = wrapVaultKey({
+      vaultKey: nextKey,
+      wrappingKey: masterKey,
+      vaultId: vault.vaultId,
+      type: "master",
+      vaultKeyVersion: nextVersion,
+      kdf: masterEnvelope.kdf,
+    });
+    const nextRecovery = wrapVaultKey({
+      vaultKey: nextKey,
+      wrappingKey: recoveryWrappingKey,
+      vaultId: vault.vaultId,
+      type: "recovery",
+      vaultKeyVersion: nextVersion,
+    });
+
+    const deviceIds = [
+      ...new Set(
+        vault.envelopes
+          .filter((envelope) => envelope.type === "device" && envelope.deviceId)
+          .map((envelope) => envelope.deviceId as string),
+      ),
+    ];
+    for (const id of deviceIds) {
+      try {
+        await api.revokeDevice(vault.vaultId, id);
+      } catch {
+        // Metadata revoke is best-effort; the snapshot is the source of truth.
+      }
+      try {
+        await store().remove(vault.vaultId, id);
+      } catch {
+        // Local record may already be gone.
+      }
+    }
+
+    const rotated: UnlockedVault = {
+      ...vault,
+      vaultKey: nextKey,
+      vaultKeyVersion: nextVersion,
+      envelopes: [nextMaster, nextRecovery],
+    };
+    const committed = await commitSnapshot(rotated, vault.entries, [nextMaster, nextRecovery]);
+    zeroize(vault.vaultKey);
+    return { vault: committed, recoveryKey: formatRecoveryKey(recoveryKey) };
+  } catch (error) {
+    if (nextKey) zeroize(nextKey);
+    throw error;
+  } finally {
+    zeroize(masterKey, recoveryKey, recoveryWrappingKey);
+  }
 }
 
 export function lock(vault: UnlockedVault | null): void {

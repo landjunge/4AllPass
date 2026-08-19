@@ -9,11 +9,13 @@ const MECHANISM_LABEL: Record<string, string> = {
 };
 
 export function DevicesPanel(): ReactNode {
-  const { devices, refreshDevices, enableBiometrics, revoke, thisDeviceId, deviceUnlockAvailable } =
+  const { devices, refreshDevices, enableBiometrics, revoke, rotateKeys, thisDeviceId, deviceUnlockAvailable } =
     useApp();
   const [busy, setBusy] = useState(false);
   const [mechanism, setMechanism] = useState<string | null>(null);
   const [prfAvailable] = useState(() => webauthnPrfAvailable());
+  const [masterPassword, setMasterPassword] = useState("");
+  const [rotating, setRotating] = useState(false);
 
   useEffect(() => {
     void refreshDevices();
@@ -114,6 +116,45 @@ export function DevicesPanel(): ReactNode {
           Revoking drops the device envelope in the next revision. A device that already knows this
           Vault Key still knows it, so a suspected compromise needs a key rotation.
         </p>
+        <form
+          className="columns"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void (async () => {
+              setRotating(true);
+              try {
+                await rotateKeys(masterPassword);
+                setMasterPassword("");
+              } catch {
+                // Banner shows the reason.
+              } finally {
+                setRotating(false);
+              }
+            })();
+          }}
+        >
+          <h3>Hard revoke</h3>
+          <p className="hint">
+            Rotates the Vault Key (vault-revision.md §5). Other devices must re-enrol. A new
+            Emergency Kit is shown once.
+          </p>
+          <input
+            type="password"
+            autoComplete="current-password"
+            placeholder="Master password"
+            value={masterPassword}
+            onChange={(event) => setMasterPassword(event.target.value)}
+            data-testid="rotate-master-password"
+          />
+          <button
+            type="submit"
+            className="danger"
+            disabled={rotating || masterPassword.length === 0}
+            data-testid="rotate-vault-key"
+          >
+            {rotating ? "Rotating…" : "Rotate vault key"}
+          </button>
+        </form>
       </section>
     </div>
   );

@@ -137,7 +137,7 @@ object and returns it unchanged. The client verifies it under VK
 ## 6. Remaining limitations (honest)
 
 - No server-side WebAuthn assertion verification.
-- No PWA Vault Key rotation (hard revoke).
+- PWA Vault Key rotation (hard revoke) is implemented (`rotateVaultKey`). Other devices are dropped and must re-enrol; a new Recovery Key is issued.
 - Account session is not bound to a device identity.
 - Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
   `active_revision` (a stale DK generation can still be served until the
@@ -146,6 +146,7 @@ object and returns it unchanged. The client verifies it under VK
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 
-Recommended next milestone: **Vault Key rotation in the PWA** (hard
-revocation) and, optionally, server-side WebAuthn assertion verification
-as device-ceremony integrity — not as a replacement for client-side PRF.
+Recommended next milestone: bind the account session to a device identity,
+and CAS-tie the Device-Key Envelope mirror to `active_revision`. Server-side
+WebAuthn assertion verification remains optional — it is device-ceremony
+integrity, not a replacement for client-side PRF.

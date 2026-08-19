@@ -201,8 +201,9 @@ export const api = {
     deviceId: string,
     credentialIdBase64: string,
     envelope: WireDeviceKeyEnvelope,
+    expectedRevision: number,
   ): Promise<WireDeviceKeyEnvelope> {
-    const path = `/vaults/${vaultId}/devices/${deviceId}/credentials/${toPathId(credentialIdBase64)}/device-key-envelope`;
+    const path = `/vaults/${vaultId}/devices/${deviceId}/credentials/${toPathId(credentialIdBase64)}/device-key-envelope?expectedRevision=${expectedRevision}`;
     return request("PUT", path, envelope);
   },
 

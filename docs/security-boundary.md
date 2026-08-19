@@ -51,7 +51,7 @@ fixation: login always mints a new token.
 - The PWA already talks to a same-origin `/api/v1` via a Bearer header.
 - A custom `Authorization` header is not sent by a cross-site form POST, so
   classic cookie CSRF does not apply to this design.
-- Sessions are already server-revocable (logout / TTL / `is_active`).
+- Sessions are already server-revocable (logout / TTL / `is_active` / device revoke).
 - Moving to cookies would require a CSRF token (or equivalent) and a rewrite
   of the client store. That is a later milestone, not a hardening of the
   current boundary.
@@ -94,15 +94,14 @@ Vault unlock still requires the real authenticator on the client
 
 `DELETE /vaults/{vault_id}/devices/{device_id}` sets `revoked_at` on the device
 and its credentials. The response says `revocation: "metadata_only"`.
-
-That is **not** cryptographic erase.
+That is **not** cryptographic erase. It also revokes other sessions bound to
+that device id, except the calling token.
 
 | What DELETE does | What DELETE does not do |
 |---|---|
 | Sets `revoked_at` | Remove the device envelope from the active snapshot |
 | Blocks GET/PUT of the Device-Key Envelope mirror | Increment `vault_key_version` |
 | Blocks new credential metadata on that row | Invalidate an already-unwrapped VK cached in a browser |
-| Leaves `hasDeviceEnvelope` reflecting the snapshot | Invalidate an already-unwrapped VK cached in a browser |
 | Revokes other sessions bound to that device id | Kill the calling session (so rotate can still commit) |
 
 The expected model remains:
@@ -152,14 +151,13 @@ object and returns it unchanged. The client verifies it under VK
 - No PWA Vault Key rotation (hard revoke).
 - Account session is bound to a client-asserted `X-Device-Id`, not to a
   WebAuthn credential. Stolen token + stolen device id still works.
-- Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
-  `active_revision` (a stale DK generation can still be served until the
-  client refuses it).
+- Device-Key Envelope mirror is gated on the active snapshot: PUT requires
+  `expectedRevision` and a matching device envelope; GET refuses a missing
+  envelope (404) or a stale `deviceKeyVersion` (409).
 - Bearer token lives in `sessionStorage` (XSS = account takeover, not vault
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 
-Recommended next milestone: CAS-tie the Device-Key Envelope mirror to
-`active_revision`. Server-side WebAuthn assertion verification remains
-optional — it is device-ceremony integrity, not a replacement for client-side
-PRF. Vault Key rotation in the PWA is a separate change.
+Recommended next milestone: Vault Key rotation in the PWA (hard revoke).
+Server-side WebAuthn assertion verification remains optional — it is
+device-ceremony integrity, not a replacement for client-side PRF.

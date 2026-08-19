@@ -164,8 +164,10 @@ async def get_device(
 @router.delete("/{device_id}", response_model=DeviceSummary)
 async def revoke_device(
     device_id: str,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
     device = await _get_device(db, vault, device_id)
     device.revoked_at = datetime.now(timezone.utc)
@@ -173,6 +175,13 @@ async def revoke_device(
         if cred.revoked_at is None:
             cred.revoked_at = device.revoked_at
     await db.flush()
+    authorization = request.headers.get("authorization")
+    keep = (
+        authorization.split(" ", 1)[1].strip()
+        if authorization and authorization.lower().startswith("bearer ")
+        else None
+    )
+    await store.revoke_device(vault.owner_user_id, device.device_id, keep_token=keep)
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 

@@ -28,10 +28,23 @@ entries / notes / credentials. Request schemas do not accept those fields.
 
 ## 2. Sessions (Bearer is retained)
 
-The browser sends `Authorization: Bearer <token>`. The token is a
-`secrets.token_urlsafe(32)` value. Redis (or the in-memory test store) keeps
-only `HMAC-SHA256(session_secret, token)` → `{user_id, email}` with a TTL
-(default 14 days). Logout deletes that key. Tokens are never logged.
+The browser sends `Authorization: Bearer <token>` and `X-Device-Id`. The token
+is a `secrets.token_urlsafe(32)` value. Redis (or the in-memory test store)
+keeps only `HMAC-SHA256(session_secret, token)` → `{user_id, email, device_id}`
+with a TTL (default 14 days). Logout deletes that key. Tokens are never logged.
+
+Login and register refuse to mint a session without a well-formed `X-Device-Id`.
+`get_current_user` rejects a valid token presented with a different device id.
+`X-Device-Id` is **client-asserted** — it is not a WebAuthn proof. A thief who
+has both the token and the id can still use the session. A thief who has only
+the token cannot.
+
+`DELETE /devices/{id}` revokes every session bound to that device id except the
+calling token, so a hard rotate on this device can still commit snapshot `N+1`.
+
+Concurrent logins create independent tokens, each bound to the device id sent
+at mint time. Logging out one does not revoke the others. There is no session
+fixation: login always mints a new token.
 
 **Why not HttpOnly cookies?**
 
@@ -46,9 +59,6 @@ only `HMAC-SHA256(session_secret, token)` → `{user_id, email}` with a TTL
 `sessionStorage` still means XSS can read the account token. That is accepted
 in `threat-model.md` (malicious client). The token still cannot decrypt the
 vault.
-
-Concurrent logins create independent tokens. Logging out one does not revoke
-the others. There is no session fixation: login always mints a new token.
 
 **CSRF:** Bearer authentication is not cookie-authenticated, so CSRF
 protection is “the browser will not attach `Authorization` to a foreign form
@@ -92,7 +102,8 @@ That is **not** cryptographic erase.
 | Sets `revoked_at` | Remove the device envelope from the active snapshot |
 | Blocks GET/PUT of the Device-Key Envelope mirror | Increment `vault_key_version` |
 | Blocks new credential metadata on that row | Invalidate an already-unwrapped VK cached in a browser |
-| Leaves `hasDeviceEnvelope` reflecting the snapshot | Bind the account session to a device |
+| Leaves `hasDeviceEnvelope` reflecting the snapshot | Invalidate an already-unwrapped VK cached in a browser |
+| Revokes other sessions bound to that device id | Kill the calling session (so rotate can still commit) |
 
 The expected model remains:
 
@@ -105,8 +116,9 @@ metadata revoke
 Hard rotation is implemented and tested in `packages/crypto`. The PWA does
 **not** rotate keys yet (`frontend/src/lib/vault-session.ts`). A revoked
 device that still holds VK can decrypt any snapshot still sealed under that
-VK, including ones it downloads with a still-valid *account* session
-(sessions are per account, not per device).
+VK, including ones it downloads if it still holds a matching session. Sessions
+for that device id are dropped except the caller's token. `X-Device-Id` is not
+a substitute for Vault Key rotation.
 
 Re-POSTing the same `deviceId` clears `revoked_at`. That is metadata
 re-enrolment only. It does not put an envelope back.
@@ -138,7 +150,8 @@ object and returns it unchanged. The client verifies it under VK
 
 - No server-side WebAuthn assertion verification.
 - No PWA Vault Key rotation (hard revoke).
-- Account session is not bound to a device identity.
+- Account session is bound to a client-asserted `X-Device-Id`, not to a
+  WebAuthn credential. Stolen token + stolen device id still works.
 - Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
   `active_revision` (a stale DK generation can still be served until the
   client refuses it).
@@ -146,6 +159,7 @@ object and returns it unchanged. The client verifies it under VK
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 
-Recommended next milestone: **Vault Key rotation in the PWA** (hard
-revocation) and, optionally, server-side WebAuthn assertion verification
-as device-ceremony integrity — not as a replacement for client-side PRF.
+Recommended next milestone: CAS-tie the Device-Key Envelope mirror to
+`active_revision`. Server-side WebAuthn assertion verification remains
+optional — it is device-ceremony integrity, not a replacement for client-side
+PRF. Vault Key rotation in the PWA is a separate change.

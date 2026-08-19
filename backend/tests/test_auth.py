@@ -75,3 +75,49 @@ async def test_register_rejects_short_password(client):
         json={"email": _email(), "password": "short"},
     )
     assert response.status_code == 422
+
+
+async def test_session_is_bound_to_device_header(client):
+    email = _email()
+    register = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "account-password-1234"},
+        headers={"X-Device-Id": "dev_aaaaaaaaaaaaaaaaaaaaaaaa"},
+    )
+    assert register.status_code == 200
+    token = register.json()["token"]
+    assert register.json()["deviceId"] == "dev_aaaaaaaaaaaaaaaaaaaaaaaa"
+
+    same = await client.get(
+        "/api/v1/auth/me",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Device-Id": "dev_aaaaaaaaaaaaaaaaaaaaaaaa",
+        },
+    )
+    assert same.status_code == 200
+
+    other = await client.get(
+        "/api/v1/auth/me",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Device-Id": "dev_bbbbbbbbbbbbbbbbbbbbbbbb",
+        },
+    )
+    assert other.status_code == 401
+    assert other.json()["detail"] == "session is bound to another device"
+
+    missing = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {token}", "X-Device-Id": ""},
+    )
+    assert missing.status_code == 401
+
+
+async def test_register_requires_device_id(client):
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": _email(), "password": "account-password-1234"},
+        headers={"X-Device-Id": "no"},
+    )
+    assert response.status_code == 400

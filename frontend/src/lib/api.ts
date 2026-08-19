@@ -12,6 +12,8 @@ import type {
   WireVaultSnapshot,
 } from "@4allpass/crypto";
 
+import { deviceId } from "./device-identity.ts";
+
 const API_BASE = "/api/v1";
 const TOKEN_KEY = "4allpass.session";
 
@@ -20,6 +22,7 @@ export interface AccountSession {
   expiresIn: number;
   accountId: string;
   email: string;
+  deviceId: string;
 }
 
 export interface VaultSummary {
@@ -102,6 +105,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
+  headers["X-Device-Id"] = deviceId();
   const init: RequestInit = { method, headers, credentials: "same-origin" };
   if (body !== undefined) init.body = JSON.stringify(body);
   const response = await fetch(`${API_BASE}${path}`, init);

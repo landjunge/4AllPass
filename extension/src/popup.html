@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>4AllPass</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>4AllPass</h1>
+    <p id="status" class="muted">Locked. Decryption stays on this device.</p>
+    <form id="unlock">
+      <label>API <input id="api" value="http://127.0.0.1:8010" /></label>
+      <label>E-mail <input id="email" type="email" autocomplete="username" required /></label>
+      <label>Sign-in password <input id="account" type="password" autocomplete="current-password" required /></label>
+      <label>Vault password <input id="vault" type="password" required /></label>
+      <button type="submit" id="unlock-btn">Unlock</button>
+    </form>
+    <div id="unlocked" hidden>
+      <button type="button" id="fill">Fill this page</button>
+      <ul id="picks"></ul>
+      <button type="button" id="lock" class="link">Lock</button>
+    </div>
+    <p id="error" class="error" hidden></p>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

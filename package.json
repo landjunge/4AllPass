@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "frontend"
+    "frontend",
+    "extension"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
@@ -15,6 +16,7 @@
     "dev": "npm run dev -w @4allpass/frontend",
     "test:e2e": "npm run test:e2e -w @4allpass/frontend",
     "test:e2e:live": "npm run test:e2e:live -w @4allpass/frontend",
+    "build:extension": "npm run build -w @4allpass/extension",
     "build": "npm run build -w @4allpass/frontend"
   }
 }

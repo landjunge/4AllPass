@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>4AllPass login test</title>
+  </head>
+  <body>
+    <h1>Demo login</h1>
+    <form id="login" action="#" method="post">
+      <label>Username <input id="username" name="username" autocomplete="username" /></label>
+      <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
+      <button type="submit">Sign in</button>
+    </form>
+    <p id="result"></p>
+    <script>
+      document.getElementById("login").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const user = document.getElementById("username").value;
+        const pass = document.getElementById("password").value;
+        document.getElementById("result").textContent = user && pass ? `submitted ${user}` : "empty";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+body {
+  font: 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+  width: 280px;
+  margin: 0;
+  padding: 12px;
+  background: #080c18;
+  color: #eaf0ff;
+}
+h1 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+label {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+}
+input {
+  background: #101733;
+  color: inherit;
+  border: 1px solid #24306b;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #7aa2ff;
+  color: #080c18;
+  font-weight: 650;
+  cursor: pointer;
+}
+button.link {
+  background: transparent;
+  color: #93a2d0;
+}
+.muted {
+  color: #93a2d0;
+}
+.error {
+  color: #ff7a90;
+}
+#picks {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+#picks button {
+  background: #16204a;
+  color: #eaf0ff;
+  text-align: left;
+}

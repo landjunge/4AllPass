@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "4AllPass",
+  "version": "0.1.0",
+  "description": "Fill logins from your self-hosted 4AllPass vault. Decryption stays on this device.",
+  "action": {
+    "default_title": "4AllPass",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage", "activeTab", "tabs", "scripting"],
+  "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"]
+}

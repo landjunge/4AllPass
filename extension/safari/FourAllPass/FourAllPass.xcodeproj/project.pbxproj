@@ -1,0 +1,841 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		71758DEB3037798D006DF541 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758DEA3037798D006DF541 /* AppDelegate.swift */; };
+		71758DEF3037798D006DF541 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 71758DED3037798D006DF541 /* Main.html */; };
+		71758DF13037798D006DF541 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 71758DF03037798D006DF541 /* Icon.png */; };
+		71758DF33037798D006DF541 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 71758DF23037798D006DF541 /* Style.css */; };
+		71758DF53037798D006DF541 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 71758DF43037798D006DF541 /* Script.js */; };
+		71758DF73037798D006DF541 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758DF63037798D006DF541 /* ViewController.swift */; };
+		71758DFA3037798D006DF541 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 71758DF83037798D006DF541 /* Main.storyboard */; };
+		71758DFC30377991006DF541 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71758DFB30377991006DF541 /* Assets.xcassets */; };
+		71758E0930377991006DF541 /* FourAllPassTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758E0830377991006DF541 /* FourAllPassTests.swift */; };
+		71758E1330377991006DF541 /* FourAllPassUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758E1230377991006DF541 /* FourAllPassUITests.swift */; };
+		71758E1530377991006DF541 /* FourAllPassUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758E1430377991006DF541 /* FourAllPassUITestsLaunchTests.swift */; };
+		71758E1B30377992006DF541 /* FourAllPass Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 71758E1A30377992006DF541 /* FourAllPass Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		71758E2030377992006DF541 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71758E1F30377992006DF541 /* SafariWebExtensionHandler.swift */; };
+		71758E3930377992006DF541 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3330377992006DF541 /* popup.js */; };
+		71758E3A30377992006DF541 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3430377992006DF541 /* background.js */; };
+		71758E3B30377992006DF541 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3530377992006DF541 /* popup.html */; };
+		71758E3C30377992006DF541 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3630377992006DF541 /* manifest.json */; };
+		71758E3D30377992006DF541 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3730377992006DF541 /* popup.css */; };
+		71758E3E30377992006DF541 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 71758E3830377992006DF541 /* content.js */; };
+		71758E4C30377992006DF541 /* icon48.png in Resources */ = {isa = PBXBuildFile; fileRef = 71758E4A30377992006DF541 /* icon48.png */; };
+		71758E4D30377992006DF541 /* icon128.png in Resources */ = {isa = PBXBuildFile; fileRef = 71758E4B30377992006DF541 /* icon128.png */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		71758E0530377991006DF541 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 71758DDF3037798D006DF541 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71758DE63037798D006DF541;
+			remoteInfo = FourAllPass;
+		};
+		71758E0F30377991006DF541 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 71758DDF3037798D006DF541 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71758DE63037798D006DF541;
+			remoteInfo = FourAllPass;
+		};
+		71758E1C30377992006DF541 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 71758DDF3037798D006DF541 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 71758E1930377992006DF541;
+			remoteInfo = "FourAllPass Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		71758E2830377992006DF541 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				71758E1B30377992006DF541 /* FourAllPass Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		71758DE73037798D006DF541 /* FourAllPass.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FourAllPass.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71758DEA3037798D006DF541 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		71758DEE3037798D006DF541 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		71758DF03037798D006DF541 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		71758DF23037798D006DF541 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		71758DF43037798D006DF541 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		71758DF63037798D006DF541 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		71758DF93037798D006DF541 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		71758DFB30377991006DF541 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		71758DFD30377991006DF541 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		71758DFE30377991006DF541 /* FourAllPass.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FourAllPass.entitlements; sourceTree = "<group>"; };
+		71758DFF30377991006DF541 /* FourAllPass.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FourAllPass.entitlements; sourceTree = "<group>"; };
+		71758E0430377991006DF541 /* FourAllPassTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FourAllPassTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		71758E0830377991006DF541 /* FourAllPassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FourAllPassTests.swift; sourceTree = "<group>"; };
+		71758E0E30377991006DF541 /* FourAllPassUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FourAllPassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		71758E1230377991006DF541 /* FourAllPassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FourAllPassUITests.swift; sourceTree = "<group>"; };
+		71758E1430377991006DF541 /* FourAllPassUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FourAllPassUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		71758E1A30377992006DF541 /* FourAllPass Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "FourAllPass Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		71758E1F30377992006DF541 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		71758E2130377992006DF541 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		71758E2230377992006DF541 /* FourAllPass_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FourAllPass_Extension.entitlements; sourceTree = "<group>"; };
+		71758E3330377992006DF541 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = Resources/popup.js; sourceTree = "<group>"; };
+		71758E3430377992006DF541 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = Resources/background.js; sourceTree = "<group>"; };
+		71758E3530377992006DF541 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = Resources/popup.html; sourceTree = "<group>"; };
+		71758E3630377992006DF541 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = Resources/manifest.json; sourceTree = "<group>"; };
+		71758E3730377992006DF541 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; name = popup.css; path = Resources/popup.css; sourceTree = "<group>"; };
+		71758E3830377992006DF541 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = Resources/content.js; sourceTree = "<group>"; };
+		71758E4A30377992006DF541 /* icon48.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon48.png; path = "Resources/icons/icon48.png"; sourceTree = "<group>"; };
+		71758E4B30377992006DF541 /* icon128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon128.png; path = "Resources/icons/icon128.png"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		71758DE43037798D006DF541 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0130377991006DF541 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0B30377991006DF541 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E1730377992006DF541 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		71758DDE3037798D006DF541 = {
+			isa = PBXGroup;
+			children = (
+				71758DE93037798D006DF541 /* FourAllPass */,
+				71758E0730377991006DF541 /* FourAllPassTests */,
+				71758E1130377991006DF541 /* FourAllPassUITests */,
+				71758E1E30377992006DF541 /* FourAllPass Extension */,
+				71758DE83037798D006DF541 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		71758DE83037798D006DF541 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				71758DE73037798D006DF541 /* FourAllPass.app */,
+				71758E0430377991006DF541 /* FourAllPassTests.xctest */,
+				71758E0E30377991006DF541 /* FourAllPassUITests.xctest */,
+				71758E1A30377992006DF541 /* FourAllPass Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		71758DE93037798D006DF541 /* FourAllPass */ = {
+			isa = PBXGroup;
+			children = (
+				71758DEA3037798D006DF541 /* AppDelegate.swift */,
+				71758DF63037798D006DF541 /* ViewController.swift */,
+				71758DF83037798D006DF541 /* Main.storyboard */,
+				71758DFB30377991006DF541 /* Assets.xcassets */,
+				71758DFD30377991006DF541 /* Info.plist */,
+				71758DFE30377991006DF541 /* FourAllPass.entitlements */,
+				71758DFF30377991006DF541 /* FourAllPass.entitlements */,
+				71758DEC3037798D006DF541 /* Resources */,
+			);
+			path = FourAllPass;
+			sourceTree = "<group>";
+		};
+		71758DEC3037798D006DF541 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				71758DED3037798D006DF541 /* Main.html */,
+				71758DF03037798D006DF541 /* Icon.png */,
+				71758DF23037798D006DF541 /* Style.css */,
+				71758DF43037798D006DF541 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		71758E0730377991006DF541 /* FourAllPassTests */ = {
+			isa = PBXGroup;
+			children = (
+				71758E0830377991006DF541 /* FourAllPassTests.swift */,
+			);
+			path = FourAllPassTests;
+			sourceTree = "<group>";
+		};
+		71758E1130377991006DF541 /* FourAllPassUITests */ = {
+			isa = PBXGroup;
+			children = (
+				71758E1230377991006DF541 /* FourAllPassUITests.swift */,
+				71758E1430377991006DF541 /* FourAllPassUITestsLaunchTests.swift */,
+			);
+			path = FourAllPassUITests;
+			sourceTree = "<group>";
+		};
+		71758E1E30377992006DF541 /* FourAllPass Extension */ = {
+			isa = PBXGroup;
+			children = (
+				71758E3230377992006DF541 /* Resources */,
+				71758E1F30377992006DF541 /* SafariWebExtensionHandler.swift */,
+				71758E2130377992006DF541 /* Info.plist */,
+				71758E2230377992006DF541 /* FourAllPass_Extension.entitlements */,
+			);
+			path = "FourAllPass Extension";
+			sourceTree = "<group>";
+		};
+		71758E3230377992006DF541 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				71758E3330377992006DF541 /* popup.js */,
+				71758E3430377992006DF541 /* background.js */,
+				71758E3530377992006DF541 /* popup.html */,
+				71758E3630377992006DF541 /* manifest.json */,
+				71758E3730377992006DF541 /* popup.css */,
+				71758E3830377992006DF541 /* content.js */,
+				71758E4A30377992006DF541 /* icon48.png */,
+				71758E4B30377992006DF541 /* icon128.png */,
+			);
+			name = Resources;
+			path = "FourAllPass Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		71758DE63037798D006DF541 /* FourAllPass */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71758E2930377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPass" */;
+			buildPhases = (
+				71758DE33037798D006DF541 /* Sources */,
+				71758DE43037798D006DF541 /* Frameworks */,
+				71758DE53037798D006DF541 /* Resources */,
+				71758E2830377992006DF541 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				71758E1D30377992006DF541 /* PBXTargetDependency */,
+			);
+			name = FourAllPass;
+			packageProductDependencies = (
+			);
+			productName = FourAllPass;
+			productReference = 71758DE73037798D006DF541 /* FourAllPass.app */;
+			productType = "com.apple.product-type.application";
+		};
+		71758E0330377991006DF541 /* FourAllPassTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71758E2C30377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPassTests" */;
+			buildPhases = (
+				71758E0030377991006DF541 /* Sources */,
+				71758E0130377991006DF541 /* Frameworks */,
+				71758E0230377991006DF541 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				71758E0630377991006DF541 /* PBXTargetDependency */,
+			);
+			name = FourAllPassTests;
+			packageProductDependencies = (
+			);
+			productName = FourAllPassTests;
+			productReference = 71758E0430377991006DF541 /* FourAllPassTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		71758E0D30377991006DF541 /* FourAllPassUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71758E2F30377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPassUITests" */;
+			buildPhases = (
+				71758E0A30377991006DF541 /* Sources */,
+				71758E0B30377991006DF541 /* Frameworks */,
+				71758E0C30377991006DF541 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				71758E1030377991006DF541 /* PBXTargetDependency */,
+			);
+			name = FourAllPassUITests;
+			packageProductDependencies = (
+			);
+			productName = FourAllPassUITests;
+			productReference = 71758E0E30377991006DF541 /* FourAllPassUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		71758E1930377992006DF541 /* FourAllPass Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71758E2530377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPass Extension" */;
+			buildPhases = (
+				71758E1630377992006DF541 /* Sources */,
+				71758E1730377992006DF541 /* Frameworks */,
+				71758E1830377992006DF541 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "FourAllPass Extension";
+			packageProductDependencies = (
+			);
+			productName = "FourAllPass Extension";
+			productReference = 71758E1A30377992006DF541 /* FourAllPass Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		71758DDF3037798D006DF541 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					71758DE63037798D006DF541 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					71758E0330377991006DF541 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 71758DE63037798D006DF541;
+					};
+					71758E0D30377991006DF541 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 71758DE63037798D006DF541;
+					};
+					71758E1930377992006DF541 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 71758DE23037798D006DF541 /* Build configuration list for PBXProject "FourAllPass" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 71758DDE3037798D006DF541;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 71758DE83037798D006DF541 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				71758DE63037798D006DF541 /* FourAllPass */,
+				71758E0330377991006DF541 /* FourAllPassTests */,
+				71758E0D30377991006DF541 /* FourAllPassUITests */,
+				71758E1930377992006DF541 /* FourAllPass Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		71758DE53037798D006DF541 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758DF13037798D006DF541 /* Icon.png in Resources */,
+				71758DFA3037798D006DF541 /* Main.storyboard in Resources */,
+				71758DF53037798D006DF541 /* Script.js in Resources */,
+				71758DEF3037798D006DF541 /* Main.html in Resources */,
+				71758DFC30377991006DF541 /* Assets.xcassets in Resources */,
+				71758DF33037798D006DF541 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0230377991006DF541 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0C30377991006DF541 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E1830377992006DF541 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758E3E30377992006DF541 /* content.js in Resources */,
+				71758E3D30377992006DF541 /* popup.css in Resources */,
+				71758E3C30377992006DF541 /* manifest.json in Resources */,
+				71758E3A30377992006DF541 /* background.js in Resources */,
+				71758E3B30377992006DF541 /* popup.html in Resources */,
+				71758E3930377992006DF541 /* popup.js in Resources */,
+				71758E4C30377992006DF541 /* icon48.png in Resources */,
+				71758E4D30377992006DF541 /* icon128.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		71758DE33037798D006DF541 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758DF73037798D006DF541 /* ViewController.swift in Sources */,
+				71758DEB3037798D006DF541 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0030377991006DF541 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758E0930377991006DF541 /* FourAllPassTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E0A30377991006DF541 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758E1330377991006DF541 /* FourAllPassUITests.swift in Sources */,
+				71758E1530377991006DF541 /* FourAllPassUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71758E1630377992006DF541 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71758E2030377992006DF541 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		71758E0630377991006DF541 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71758DE63037798D006DF541 /* FourAllPass */;
+			targetProxy = 71758E0530377991006DF541 /* PBXContainerItemProxy */;
+		};
+		71758E1030377991006DF541 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71758DE63037798D006DF541 /* FourAllPass */;
+			targetProxy = 71758E0F30377991006DF541 /* PBXContainerItemProxy */;
+		};
+		71758E1D30377992006DF541 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 71758E1930377992006DF541 /* FourAllPass Extension */;
+			targetProxy = 71758E1C30377992006DF541 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		71758DED3037798D006DF541 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				71758DEE3037798D006DF541 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		71758DF83037798D006DF541 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				71758DF93037798D006DF541 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		71758E2330377992006DF541 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		71758E2430377992006DF541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		71758E2630377992006DF541 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "FourAllPass Extension/FourAllPass_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "FourAllPass Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "FourAllPass Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPass.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		71758E2730377992006DF541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "FourAllPass Extension/FourAllPass_Extension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "FourAllPass Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "FourAllPass Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPass.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		71758E2A30377992006DF541 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FourAllPass/FourAllPass.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FourAllPass/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FourAllPass;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPass;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		71758E2B30377992006DF541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FourAllPass/FourAllPass.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FourAllPass/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FourAllPass;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPass;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		71758E2D30377992006DF541 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPassTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FourAllPass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FourAllPass";
+			};
+			name = Debug;
+		};
+		71758E2E30377992006DF541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPassTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FourAllPass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FourAllPass";
+			};
+			name = Release;
+		};
+		71758E3030377992006DF541 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPassUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = FourAllPass;
+			};
+			name = Debug;
+		};
+		71758E3130377992006DF541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.FourAllPassUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = FourAllPass;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		71758DE23037798D006DF541 /* Build configuration list for PBXProject "FourAllPass" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71758E2330377992006DF541 /* Debug */,
+				71758E2430377992006DF541 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71758E2530377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPass Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71758E2630377992006DF541 /* Debug */,
+				71758E2730377992006DF541 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71758E2930377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPass" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71758E2A30377992006DF541 /* Debug */,
+				71758E2B30377992006DF541 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71758E2C30377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPassTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71758E2D30377992006DF541 /* Debug */,
+				71758E2E30377992006DF541 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71758E2F30377992006DF541 /* Build configuration list for PBXNativeTarget "FourAllPassUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71758E3030377992006DF541 /* Debug */,
+				71758E3130377992006DF541 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 71758DDF3037798D006DF541 /* Project object */;
+}

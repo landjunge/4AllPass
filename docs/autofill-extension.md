@@ -1,6 +1,6 @@
-# 4AllPass browser extension (Chromium + Firefox)
+# 4AllPass browser extension (Chromium + Firefox + macOS Safari)
 
-Decrypts vault entries **in the extension**, with `@4allpass/crypto`. The server still only stores envelopes. One MV3 bundle; Firefox 128+ (`browser` API, `addon@4allpass.local`). Safari is not in this slice.
+Decrypts vault entries **in the extension**, with `@4allpass/crypto`. The server still only stores envelopes. One MV3 bundle (`browser ?? chrome`). Firefox 128+ (`addon@4allpass.local`). macOS Safari 16.4+ via the Xcode wrapper in `extension/safari/`. This is **not** iOS Password AutoFill.
 
 ## Build
 
@@ -18,6 +18,26 @@ Chrome → `chrome://extensions` → Developer mode → Load unpacked → `exten
 
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → `extension/dist/manifest.json`. Firefox 128+. Grant the API origin if the Unlock prompt asks.
 
+## macOS Safari (Web Extension wrapper)
+
+Safari cannot load an unpacked `dist/` folder. It needs a containing app:
+
+```sh
+npm run build -w @4allpass/extension
+# copies dist into extension/safari/FourAllPass/FourAllPass Extension/Resources
+open extension/safari/FourAllPass/FourAllPass.xcodeproj
+```
+
+If `xcodebuild` is not found, Xcode is installed but Command Line Tools are active:
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+```
+
+In Xcode: select the **FourAllPass** scheme → Run. Enable the extension in Safari → Settings → Extensions. Allow unsigned extensions under Develop → Developer settings. Unlock in the toolbar popup; grant the API origin if Safari asks.
+
+iOS Safari Web Extension and system Password AutoFill are not this wrapper.
+
 Popup: API (default `http://127.0.0.1:8000` or `:8010` if that port is taken), e-mail, sign-in password, vault password → **Unlock**. Then either:
 
 - **Fill this page** in the popup, or
@@ -32,4 +52,4 @@ Acceptance: login on `http://127.0.0.1:5173/test-login.html` without copy-paste 
 
 ## Not in this slice
 
-Safari Web Extension, native iOS/Android Autofill, in-page keystroke overlays, filling sites whose entry has no URL. AMO / Chrome Web Store listing.
+iOS Safari Web Extension, native iOS/Android Password AutoFill, in-page keystroke overlays, filling sites whose entry has no URL. App Store / AMO / Chrome Web Store listing.

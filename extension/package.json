@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "safari": "node scripts/build.mjs && open safari/FourAllPass/FourAllPass.xcodeproj",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts"
   },

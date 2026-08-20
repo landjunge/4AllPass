@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
@@ -23,7 +23,7 @@ await esbuild.build({
     background: "src/background.ts",
     popup: "src/popup.ts",
   },
-  format: "esm",
+  format: "iife",
   outdir: dist,
 });
 
@@ -37,5 +37,20 @@ await esbuild.build({
 cpSync(join(root, "manifest.json"), join(dist, "manifest.json"));
 cpSync(join(root, "src/popup.html"), join(dist, "popup.html"));
 cpSync(join(root, "src/popup.css"), join(dist, "popup.css"));
+if (existsSync(join(root, "icons"))) {
+  cpSync(join(root, "icons"), join(dist, "icons"), { recursive: true });
+}
 
-console.log("extension → dist/");
+const safariRes = join(root, "safari/FourAllPass/FourAllPass Extension/Resources");
+if (existsSync(dirname(safariRes))) {
+  mkdirSync(safariRes, { recursive: true });
+  for (const name of readdirSync(safariRes)) {
+    rmSync(join(safariRes, name), { recursive: true, force: true });
+  }
+  for (const name of readdirSync(dist)) {
+    cpSync(join(dist, name), join(safariRes, name), { recursive: true });
+  }
+  console.log("extension → dist/ + safari Resources");
+} else {
+  console.log("extension → dist/");
+}

@@ -3,13 +3,20 @@
   "name": "4AllPass",
   "version": "0.1.0",
   "description": "Fill logins from your self-hosted 4AllPass vault. Decryption stays on this device.",
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_title": "4AllPass",
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -34,6 +41,9 @@
     "gecko": {
       "id": "addon@4allpass.local",
       "strict_min_version": "128.0"
+    },
+    "safari": {
+      "strict_min_version": "16.4"
     }
   },
   "commands": {

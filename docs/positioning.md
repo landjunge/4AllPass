@@ -54,7 +54,7 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 
 ## Was wir heute nicht behaupten dürfen
 
-- Autofill-Zuverlässigkeit in allen Browsern (Chromium + Firefox MV3 existieren; Safari/native nicht).
+- Autofill-Zuverlässigkeit in allen Browsern (Chromium, Firefox, macOS Safari existieren; iOS/Android native nicht).
 - Live item-sharing to another person’s device key (v1 is an encrypted file plus share key only).
 - Unabhängiges Drittaudit.
 - „DELETE Gerät löscht den Schlüssel“ — Soft-Revoke ist `metadata_only`; Hard-Revoke rotiert den Vault Key in der PWA.

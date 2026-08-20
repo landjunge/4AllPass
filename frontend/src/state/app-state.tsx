@@ -58,7 +58,7 @@ interface AppActions {
   signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   selectVault(vaultId: string): Promise<void>;
-  createNewVault(masterPassword: string, profile: Argon2idProfileName): Promise<void>;
+  createNewVault(masterPassword: string, profile?: Argon2idProfileName): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -216,7 +216,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         setDeviceUnlockAvailable(await hasDeviceUnlock(vaultId));
       },
 
-      async createNewVault(masterPassword, profile) {
+      async createNewVault(masterPassword, profile = "mobile_safe") {
         await withStatus(async () => {
           setLockState("UNLOCKING");
           try {

@@ -101,6 +101,7 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 2. **Hard-Revoke in der PWA** (#15/#16 mergen oder rebasen, nicht neu schreiben).
 3. **A1 + A3** — Onboarding-Copy und WebAuthn-Standard, Bausteine existieren.
 4. **A2 Autofill** — sobald der Kern kryptografisch widerrufbar ist.
+   Vorher: Live-Browser-Test `docs/live-browser-test.md` / `npm run test:e2e:live`.
 5. **B2, B3, B4** — technische Vertiefung.
 6. **A4 + C4** — Sharing und Community.
 

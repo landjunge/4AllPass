@@ -10,6 +10,7 @@
     "typecheck": "tsc -b",
     "test": "tsx --test src/**/*.test.ts",
     "test:e2e": "playwright test",
+    "test:e2e:live": "playwright test -c playwright.live.config.ts",
     "preview": "vite preview"
   },
   "dependencies": {

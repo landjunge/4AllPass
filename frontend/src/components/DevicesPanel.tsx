@@ -159,7 +159,7 @@ export function DevicesPanel(): ReactNode {
             <h4>Rotate vault key</h4>
             <p className="muted small mono">{rotateTarget}</p>
             <label>
-              Master password
+              Vault password
               <input
                 type="password"
                 autoComplete="current-password"

@@ -20,10 +20,8 @@ async function signUp(page: Page): Promise<string> {
 }
 
 async function createVault(page: Page): Promise<string> {
-  await page.getByLabel("Master password").fill(MASTER_PASSWORD);
+  await page.getByLabel("Vault password").fill(MASTER_PASSWORD);
   await page.getByLabel("Repeat").fill(MASTER_PASSWORD);
-  // mobile_safe is a production profile and keeps the JS KDF quick in CI.
-  await page.getByLabel("Argon2id profile").selectOption("mobile_safe");
   await page.getByRole("button", { name: "Create vault" }).click();
   const recoveryKey = await page.getByTestId("recovery-key").textContent();
   // Crockford Base32 over the 32-byte key plus its 2-byte checksum.

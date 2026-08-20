@@ -79,6 +79,8 @@ npm run test:crypto:heavy   # includes 32–128 MiB Argon2id profiles
 npm run test:webauthn
 npm run test -w @4allpass/frontend
 npm run test:e2e -w @4allpass/frontend   # needs Postgres, Redis and a running backend
+npm run test:e2e:live                    # headed Chrome/Firefox/Brave/WebKit on this Mac
+# see docs/live-browser-test.md
 npm run typecheck
 node scripts/generate-vectors.mjs           # regenerate the KAT JSON (independent impl)
 node scripts/verify-aes-gcm-vectors.mjs

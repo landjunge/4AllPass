@@ -2,13 +2,18 @@
 
 **Zielgruppe:** Technisch versierte Einzelpersonen und kleine Teams, die volle Datenkontrolle wollen — Self-Hoster, die Bitwarden/Vaultwarden nutzen aber UI oder Autofill leid sind, oder die 1Password/Proton Pass mögen, aber nicht von einem Cloud-Anbieter und dessen Preispolitik abhängen wollen.
 
-**Kernversprechen (ehrlich, Gerät vor Marketing):**
+**Wedge (8 Wochen, [`eight-week-agent-access.md`](eight-week-agent-access.md)):**
 
-> Deine Geräte besitzen deinen Vault — kryptografisch, nicht nur organisatorisch. Self-hosted, Zero-Knowledge, offenes Protokoll.
+> 4AllPass — Secure credential access for humans, applications and AI agents.  
+> Your agents need access. They don't need your secrets.
 
-4AllPass ist **kein besserer Bitwarden**. Die Chance ist die Device-Centric-Architektur (WebAuthn PRF → Device Wrapping Key → Device Key → Vault Key), saubere Revocation und ein Server, dem man kryptografisch nicht vertrauen muss.
+Nicht „besserer Bitwarden“, nicht „Secret Manager“. Einstieg: **AI-Agent Credential Access**. Expansion: humans → applications → agents.
 
-**Marktbotschaft, sobald Autofill und Sharing tatsächlich sitzen:** *Self-hosted wie Bitwarden. Poliert wie 1Password. Teilen präziser als beide.* Bis dahin diese Sätze nicht als Ist-Zustand veröffentlichen.
+**Heute (Vault, ehrlich):**
+
+> Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Self-hosted, Zero-Knowledge, offenes Protokoll.
+
+Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** später scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
 
 ---
 
@@ -58,7 +63,7 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 - Live item-sharing to another person’s device key (v1 is an encrypted file plus share key only).
 - Unabhängiges Drittaudit.
 - „DELETE Gerät löscht den Schlüssel“ — Soft-Revoke ist `metadata_only`; Hard-Revoke rotiert den Vault Key in der PWA.
-- Application/Agent Secret Access, Provider-Templates, oder „personal secret access control“ — das ist Zielbild (`positioning-target.md`), kein Ist.
+- Application/Agent Secret Access, Provider-Templates, n8n-Broker, `POST /v1/access/request` — Plan in `eight-week-agent-access.md`, **kein Ist**. FastAPI gibt keine Tokens aus.
 
 Vergleichstabelle: [`comparison.md`](comparison.md).
 

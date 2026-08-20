@@ -6,7 +6,7 @@
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 
-**Far later (nicht Kern):** Clipboard-Watcher (Ingest, `#59`), **Provider & Service Management** ([`provider-service-vision.md`](provider-service-vision.md), `#65`), **Secret Access Layer** ([`secret-access-layer.md`](secret-access-layer.md), `#67`), **Capability-Schnittstelle** zu Tollgate/Gnom-Hub ([`capability-interface.md`](capability-interface.md), Contract [`capability-contract-v1.md`](capability-contract-v1.md) / 4AP-CAP-1, `#70`: klein, signiert, Capability ≠ Secret; kein Superprotokoll; MCP nicht die Security-Boundary). MCP/n8n/IDE ist ein *Client* der SAL, nicht ein zweites Protokoll. Zielkategorie nur in [`positioning-target.md`](positioning-target.md) — keine Ist-Claims. Nur nach Community-Votum oder als optionale **Plus-Schale** (Default aus, gleiches Protokoll). Die PWA behauptet keinen Hintergrund-Watcher. Der Server indexiert keine Provider-Typen und keine Grants.
+**Wedge (8 Wochen):** [`eight-week-agent-access.md`](eight-week-agent-access.md) — Agent credential access, 4AllPass eigenständig, Broker lokal, FastAPI ohne Tokens. Tollgate erst danach als Client. Provider-Vision `#65`, SAL `#67`, 4AP-CAP-1 `#70` bleiben die Specs darunter. Clipboard-Ingest `#59` bleibt far later. Keine Ist-Claims in README, solange die Demo nicht existiert.
 
 ---
 

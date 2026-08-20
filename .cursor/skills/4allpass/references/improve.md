@@ -1,6 +1,6 @@
 # What to improve (priority)
 
-Product north star: devices own the vault **cryptographically**. Features that do not strengthen that are later.
+Product north star: devices own the vault **cryptographically**. The **wedge** is agent credential access (`docs/eight-week-agent-access.md`) — not “a nicer Bitwarden.” FastAPI still never sees secrets.
 
 `docs/roadmap.md` phases 2–3 are largely done (backend + PWA exist). Do not restart scaffolding.
 
@@ -8,15 +8,13 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, offline wire-snapshot cache (pin still applies), recovery-kit copy, Chromium MV3 autofill, Bitwarden/1Password/KeePass/CSV plaintext import.
 
-## Now (prove, do not build features)
+## Now
 
-Security freeze. Next work is proof, not product:
+1. **8-week agent-access plan** — `docs/eight-week-agent-access.md`. Week 1 is positioning (README wedge). Weeks 2+ (n8n demo, local broker, three provider classes) only when executing that plan. FastAPI must not grow a token API. Tollgate is a later *client*.
+2. Safari.app fill / real Touch ID still unproven. Do not block the wedge on it.
+3. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
 
-- Hard-revoke **across two Playwright profiles** is on main (`frontend/e2e/device-unlock.spec.ts`: VK₂; victim device-unlock fails; master still works). Live two-app suite: `frontend/e2e/live/hard-revoke.spec.ts` (API **:8010**, not :8000).
-- Still unproven in **Safari.app**: extension fill; real Touch ID. Do not confuse WebKit Playwright with Safari.app.
-- Do not start TOTP, iOS Autofill, Plus, public-key wrapping, Provider templates, SAL, or 4AP-CAP-1
-
-Item-share files are on main (`docs/sharing.md`).
+Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-share files are on main (`docs/sharing.md`).
 
 ## Later (do not start)
 

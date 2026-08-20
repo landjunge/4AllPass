@@ -12,7 +12,7 @@ description: >
 
 # 4AllPass
 
-Device-centric, self-hosted Zero-Knowledge password manager. Not “a nicer Bitwarden.”
+Device-centric ZK vault. Wedge: **agent credential access** (`docs/eight-week-agent-access.md`). Not “a nicer Bitwarden.” Not a Tollgate feature.
 
 Specs in `docs/` win over comments and PR descriptions. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -98,11 +98,11 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Security freeze: two-Playwright-profile hard-revoke is on main. Remaining proof is Safari.app extension fill / real Touch ID — not 4AP-CAP-1. Do not start public-key wrapping / ML-KEM / Plus unless asked.
+1. Execute `docs/eight-week-agent-access.md` in order (positioning first). Broker is **local**; FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
-Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard watchers, an MCP/n8n agent, **Provider templates**, the **Secret Access Layer**, a **Tollgate merge**, or **4AP-CAP-1 implementation** before the above. Those are **far later** — see [references/improve.md](references/improve.md), `docs/capability-contract-v1.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
+Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard auto-save, a **Tollgate merge**, or FastAPI token minting. Provider templates / local broker / n8n demo follow the 8-week plan only — see `docs/eight-week-agent-access.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
 
 ## Open work already in flight
 

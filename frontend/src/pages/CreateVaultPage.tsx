@@ -1,15 +1,10 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { ARGON2ID_PROFILES } from "@4allpass/crypto";
-import type { Argon2idProfileName } from "@4allpass/crypto";
 import { useApp } from "../state/app-state.tsx";
-
-const PROFILES: Argon2idProfileName[] = ["mobile_safe", "balanced", "standard", "high"];
 
 export function CreateVaultPage(): ReactNode {
   const { createNewVault } = useApp();
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
-  const [profile, setProfile] = useState<Argon2idProfileName>("standard");
   const [busy, setBusy] = useState(false);
   const mismatch = repeat.length > 0 && password !== repeat;
 
@@ -18,7 +13,7 @@ export function CreateVaultPage(): ReactNode {
     if (mismatch) return;
     setBusy(true);
     try {
-      await createNewVault(password, profile);
+      await createNewVault(password);
     } catch {
       // The banner shows the reason.
     } finally {
@@ -33,11 +28,11 @@ export function CreateVaultPage(): ReactNode {
       <form className="card auth" onSubmit={submit}>
         <h2>Create your vault</h2>
         <p className="muted">
-          The master password is the only thing that can open this vault, next to the recovery key.
-          It never leaves this device.
+          Choose a vault password. If you forget it, only the recovery key on the next screen can
+          open this vault. Nobody can reset it for you — not even this server.
         </p>
         <label>
-          Master password
+          Vault password
           <input
             type="password"
             autoComplete="new-password"
@@ -58,29 +53,11 @@ export function CreateVaultPage(): ReactNode {
           />
         </label>
         {mismatch ? <p className="error-text">The passwords do not match.</p> : null}
-        <label>
-          Argon2id profile
-          <select
-            value={profile}
-            onChange={(event) => setProfile(event.target.value as Argon2idProfileName)}
-          >
-            {PROFILES.map((name) => {
-              const params = ARGON2ID_PROFILES[name];
-              return (
-                <option key={name} value={name}>
-                  {name} — {Math.round(params.memory / 1024)} MiB, t={params.iterations}, p=
-                  {params.parallelism}
-                </option>
-              );
-            })}
-          </select>
-        </label>
         <p className="hint">
-          The parameters are stored inside the master envelope, so they can be upgraded later
-          without losing data. Deriving the key takes a moment on purpose.
+          The vault password never leaves this device. Setup takes a few seconds on purpose.
         </p>
         <button type="submit" disabled={busy || mismatch}>
-          {busy ? "Deriving key…" : "Create vault"}
+          {busy ? "Creating vault…" : "Create vault"}
         </button>
       </form>
     </div>

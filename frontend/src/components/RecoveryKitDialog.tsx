@@ -1,19 +1,71 @@
 import { useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 
+function kitText(vaultId: string, recoveryKey: string): string {
+  return [
+    "4AllPass emergency kit",
+    "",
+    `Vault ID: ${vaultId}`,
+    "",
+    "Recovery key:",
+    recoveryKey,
+    "",
+    "This is the only other way into the vault. There is no e-mail reset and the",
+    "server cannot recover it for you. Store this offline. Do not screenshot it",
+    "into a cloud album.",
+    "",
+  ].join("\n");
+}
+
+function downloadKit(vaultId: string, recoveryKey: string): void {
+  const blob = new Blob([kitText(vaultId, recoveryKey)], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `4allpass-emergency-kit-${vaultId.slice(0, 8)}.txt`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function printKit(vaultId: string, recoveryKey: string): void {
+  const frame = document.createElement("iframe");
+  frame.style.position = "fixed";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  document.body.append(frame);
+  const doc = frame.contentDocument;
+  if (!doc) {
+    frame.remove();
+    window.print();
+    return;
+  }
+  doc.open();
+  doc.write(`<!doctype html><title>4AllPass emergency kit</title>
+    <pre style="font:16px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:24px">${kitText(vaultId, recoveryKey).replaceAll("<", "&lt;")}</pre>`);
+  doc.close();
+  frame.contentWindow?.focus();
+  frame.contentWindow?.print();
+  window.setTimeout(() => frame.remove(), 1000);
+}
+
 /** Emergency Kit (crypto-protocol.md §6). Shown once, never stored anywhere. */
 export function RecoveryKitDialog(): ReactNode {
   const { recoveryKey, activeVaultId, dismissRecoveryKey } = useApp();
   const [confirmed, setConfirmed] = useState(false);
-  if (!recoveryKey) return null;
+  if (!recoveryKey || !activeVaultId) return null;
 
   return (
     <div className="overlay" role="dialog" aria-modal="true">
       <div className="card kit">
-        <h2>Emergency Kit</h2>
+        <h2>Save your recovery key</h2>
         <p>
-          This recovery key is the only other way into your vault. There is no server-side reset and
-          no e-mail recovery.
+          Write this down or keep an offline copy. If you lose both the vault password and this
+          key, the vault cannot be opened. There is no e-mail recovery.
         </p>
         <p className="muted small">Vault ID</p>
         <code className="mono block">{activeVaultId}</code>
@@ -21,13 +73,21 @@ export function RecoveryKitDialog(): ReactNode {
         <code className="mono block key" data-testid="recovery-key">
           {recoveryKey}
         </code>
+        <div className="device-actions">
+          <button type="button" onClick={() => downloadKit(activeVaultId, recoveryKey)}>
+            Download
+          </button>
+          <button type="button" onClick={() => printKit(activeVaultId, recoveryKey)}>
+            Print
+          </button>
+        </div>
         <label className="checkbox">
           <input
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
           />
-          I stored this offline.
+          I stored this recovery key offline.
         </label>
         <button
           type="button"

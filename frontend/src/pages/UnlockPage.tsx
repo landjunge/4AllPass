@@ -2,9 +2,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 
 const MECHANISM_LABEL: Record<string, string> = {
-  prf: "WebAuthn PRF",
-  large_blob: "WebAuthn largeBlob",
-  uv_gated_local: "UV-gated local store",
+  prf: "this device",
+  large_blob: "this device",
+  uv_gated_local: "this device",
 };
 
 export function UnlockPage(): ReactNode {
@@ -56,7 +56,7 @@ export function UnlockPage(): ReactNode {
               disabled={busy !== "none"}
               data-testid="unlock-biometrics"
             >
-              {busy === "device" ? "Waiting for the authenticator…" : "Unlock with biometrics"}
+              {busy === "device" ? "Waiting for this device…" : "Unlock with this device"}
             </button>
             {mechanism ? (
               <p className="hint" data-testid="unlock-mechanism">
@@ -80,7 +80,7 @@ export function UnlockPage(): ReactNode {
           </label>
         ) : (
           <label>
-            Master password
+            Vault password
             <input
               type="password"
               autoComplete="current-password"
@@ -95,10 +95,12 @@ export function UnlockPage(): ReactNode {
           {busy === "password" ? "Deriving key…" : "Unlock"}
         </button>
         <button type="button" className="link" onClick={() => setUseRecovery(!useRecovery)}>
-          {useRecovery ? "Use the master password" : "Use the recovery key"}
+          {useRecovery ? "Use the vault password" : "Use the recovery key"}
         </button>
         <p className="hint">
-          Master-password unlock stays available on every device, whatever biometrics does.
+          {deviceUnlockAvailable
+            ? "This device can unlock in one step. The vault password still works on any device."
+            : "After you unlock once, you can turn on one-step unlock for this device."}
         </p>
       </form>
     </div>

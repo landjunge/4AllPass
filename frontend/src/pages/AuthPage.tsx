@@ -26,7 +26,9 @@ export function AuthPage(): ReactNode {
       <form className="card auth" onSubmit={submit}>
         <h1>4AllPass</h1>
         <p className="muted">
-          {mode === "sign-in" ? "Sign in to reach your vault." : "Create an account for API access."}
+          {mode === "sign-in"
+            ? "Sign in to your account. This does not open the vault."
+            : "Create an account so this server can store your encrypted vault. The password below is only for signing in."}
         </p>
         <label>
           E-mail
@@ -50,8 +52,8 @@ export function AuthPage(): ReactNode {
           />
         </label>
         <p className="hint">
-          This is the account password for the server. It is not the master password and cannot
-          decrypt anything.
+          Sign-in password and vault password are different. The sign-in password cannot open your
+          vault, and nobody on this server can reset the vault password.
         </p>
         <button type="submit" disabled={busy}>
           {busy ? "Working…" : mode === "sign-in" ? "Sign in" : "Create account"}

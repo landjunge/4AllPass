@@ -1,59 +1,86 @@
+:root {
+  --bg: #121316;
+  --bg-panel: #1a1b1f;
+  --bg-card: #1e1f24;
+  --bg-elev: #24262d;
+  --text: #e2e4e9;
+  --text-muted: #8b909a;
+  --border: #2e3138;
+  --accent: #6b7280;
+  --accent-hi: #a1a8b3;
+  --ok: #3d9b6a;
+  --err: #c45c5c;
+  --line: var(--border);
+  --muted: var(--text-muted);
+  --danger: var(--err);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
+}
+
 body {
-  font: 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
   width: 280px;
   margin: 0;
   padding: 12px;
-  background: #080c18;
-  color: #eaf0ff;
+  background: var(--bg);
+  color: var(--text);
 }
 h1 {
   font-size: 15px;
+  font-weight: 600;
   margin: 0 0 8px;
 }
 label {
   display: grid;
   gap: 2px;
   margin: 8px 0;
+  color: var(--muted);
 }
 input {
-  background: #101733;
+  background: var(--bg-panel);
   color: inherit;
-  border: 1px solid #24306b;
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 8px;
+}
+input:focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 button {
   width: 100%;
   margin-top: 8px;
-  padding: 8px;
-  border: 0;
-  border-radius: 8px;
-  background: #7aa2ff;
-  color: #080c18;
-  font-weight: 650;
+  padding: 6px 10px;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-weight: 600;
   cursor: pointer;
+}
+button:hover {
+  background: #1c7ed6;
+  border-color: #1c7ed6;
+  color: #fff;
 }
 button.link {
   background: transparent;
-  color: #93a2d0;
+  color: var(--muted);
+  font-weight: 500;
+}
+button.link:hover {
+  background: var(--bg-elev);
+  color: var(--text);
+  border-color: var(--accent-hi);
 }
 .muted {
-  color: #93a2d0;
+  color: var(--muted);
 }
 .error {
-  color: #ff7a90;
+  color: var(--danger);
 }
 #picks {
   list-style: none;
   padding: 0;
   margin: 8px 0 0;
-}
-#shortcut {
-  margin: 6px 0 0;
-  font-size: 11px;
-}
-#picks button {
-  background: #16204a;
-  color: #eaf0ff;
-  text-align: left;
 }

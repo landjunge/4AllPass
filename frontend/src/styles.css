@@ -1,13 +1,6 @@
+@import "./tokens.css";
+
 :root {
-  --bg: #080c18;
-  --panel: #101733;
-  --panel-2: #16204a;
-  --line: #24306b;
-  --text: #eaf0ff;
-  --muted: #93a2d0;
-  --accent: #7aa2ff;
-  --ok: #4fd1a5;
-  --danger: #ff7a90;
   color-scheme: dark;
 }
 
@@ -23,9 +16,9 @@ body,
 }
 
 body {
-  background: radial-gradient(1200px 600px at 20% -10%, #1a2454 0%, var(--bg) 60%);
+  background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 .app {
@@ -38,18 +31,18 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 20px;
+  gap: 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--line);
-  background: rgba(8, 12, 24, 0.75);
-  backdrop-filter: blur(8px);
+  background: var(--bg-panel);
   position: sticky;
   top: 0;
   z-index: 5;
 }
 
 .brand {
-  font-weight: 650;
+  font-weight: 600;
+  font-size: 16px;
   letter-spacing: 0.02em;
 }
 
@@ -60,12 +53,13 @@ header {
 }
 
 .state {
-  font: 600 11px/1 ui-monospace, monospace;
-  letter-spacing: 0.08em;
-  padding: 5px 8px;
-  border-radius: 999px;
+  font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  padding: 3px 7px;
+  border-radius: 3px;
   border: 1px solid var(--line);
   color: var(--muted);
+  background: var(--bg-card);
 }
 
 main {
@@ -80,10 +74,11 @@ main {
 }
 
 .card {
-  background: linear-gradient(180deg, var(--panel) 0%, #0d1430 100%);
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-soft);
 }
 
 .auth {
@@ -110,10 +105,10 @@ input,
 select,
 textarea {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  background: #0a1129;
+  background: var(--bg-panel);
   color: var(--text);
   font: inherit;
 }
@@ -121,22 +116,30 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid rgba(122, 162, 255, 0.5);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 button {
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 6px 12px;
+  min-height: 28px;
+  border-radius: 3px;
   border: 1px solid var(--line);
-  background: var(--panel-2);
+  background: var(--bg-card);
   color: var(--text);
   font: inherit;
+  font-size: 13px;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  border-color: var(--accent);
+  background: var(--bg-elev);
+  border-color: var(--accent-hi);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 button:disabled {
@@ -145,14 +148,20 @@ button:disabled {
 }
 
 button.primary {
-  background: linear-gradient(180deg, #3f62d8 0%, #2b45a8 100%);
-  border-color: #4f6fe0;
+  background: var(--bg-elev);
+  border-color: var(--accent-hi);
   font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #1c7ed6;
+  border-color: #1c7ed6;
+  color: #fff;
 }
 
 button.danger {
   background: transparent;
-  border-color: #5b2537;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
   color: var(--danger);
 }
 
@@ -196,9 +205,9 @@ button.link {
 .block {
   display: block;
   padding: 10px 12px;
-  background: #0a1129;
+  background: var(--bg-panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   word-break: break-all;
 }
 
@@ -212,15 +221,15 @@ button.link {
 }
 
 .banner.error {
-  background: #3a1524;
-  border-bottom: 1px solid #5b2537;
-  color: #ffd7de;
+  background: color-mix(in srgb, var(--err) 18%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--err) 40%, var(--line));
+  color: #f0c8c8;
 }
 
 .banner.notice {
-  background: #10322a;
-  border-bottom: 1px solid #1c5647;
-  color: #d3fff2;
+  background: color-mix(in srgb, var(--ok) 16%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--ok) 35%, var(--line));
+  color: #c8ead6;
 }
 
 .divider {
@@ -276,7 +285,8 @@ button.link {
   cursor: pointer;
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 3px;
+  background: var(--bg-card);
   font-size: 13px;
 }
 
@@ -301,7 +311,7 @@ button.link {
   display: grid;
   gap: 2px;
   text-align: left;
-  background: #0a1129;
+  background: var(--bg-panel);
 }
 
 .row.active {
@@ -343,8 +353,8 @@ button.link {
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #0a1129;
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
 }
 
 .devices li > div {
@@ -364,9 +374,9 @@ button.link {
   gap: 10px;
   margin-top: 16px;
   padding: 14px;
-  border: 1px solid var(--danger);
-  border-radius: 12px;
-  background: #0a1129;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
 }
 
 .rotate-form h4 {
@@ -376,10 +386,10 @@ button.link {
 .badge {
   display: inline-block;
   margin-left: 8px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -388,7 +398,7 @@ button.link {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(4, 7, 16, 0.8);
+  background: rgba(0, 0, 0, 0.55);
   padding: 20px;
   z-index: 10;
 }

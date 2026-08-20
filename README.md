@@ -52,6 +52,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Post-quantum roadmap (concept only): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
 - Selective item share (encrypted file, v1): [`docs/sharing.md`](docs/sharing.md)
 - Provider & service management (concept only, far later): [`docs/provider-service-vision.md`](docs/provider-service-vision.md)
+- Secret Access Layer (concept only, far later): [`docs/secret-access-layer.md`](docs/secret-access-layer.md)
 
 ## Key path
 

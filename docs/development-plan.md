@@ -6,7 +6,7 @@
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 
-**Far later (nicht Kern):** Clipboard-Watcher, MCP/IDE/n8n-Agent, Auto-Kategorien aus der Zwischenablage, **Provider & Service Management** ([`provider-service-vision.md`](provider-service-vision.md): Vorlagen Website/E-Mail/Domain/Hosting/FTP/…; Provider ≠ Account ≠ Secret; Beziehungen nur clientseitig im Ciphertext). Nur nach Community-Votum oder als optionale **Plus-Schale** (Default aus, gleiches Protokoll). Die PWA behauptet keinen Hintergrund-Watcher. Der Server indexiert keine Provider-Typen.
+**Far later (nicht Kern):** Clipboard-Watcher (Ingest, `#59`), **Provider & Service Management** ([`provider-service-vision.md`](provider-service-vision.md), `#65`), **Secret Access Layer** ([`secret-access-layer.md`](secret-access-layer.md), `#67`: Auto-Erkennung + Approval + optionaler lokaler Broker, kein Auto-Vergabe, FastAPI ist nicht der Broker). MCP/n8n/IDE ist ein *Client* dieser Schicht, nicht ein zweites Protokoll. Nur nach Community-Votum oder als optionale **Plus-Schale** (Default aus, gleiches Protokoll). Die PWA behauptet keinen Hintergrund-Watcher. Der Server indexiert keine Provider-Typen und keine Grants.
 
 ---
 

@@ -31,13 +31,13 @@ Item-share files are on main (`docs/sharing.md`).
 
 Parked on purpose (2026-08-20). Do not build on “weiter” / “improve”. Revisit only if a community vote asks or the maintainer defines a **Plus shell** (same envelopes, same server never sees plaintext, default **off**).
 
-- Clipboard capture / watcher (never in the PWA as a fake background watch; never default on)
-- IDE / MCP / n8n credential provider agent
-- Auto-categorize hosting / Plesk / mail / IP from clipboard
+- Clipboard capture / watcher (never in the PWA as a fake background watch; never default on) — *ingest*, `#59`
+- **Provider & service management** (vault *shape*, not an API gateway): `docs/provider-service-vision.md`, `#65`
+- **Secret Access Layer** (vault *egress*): `docs/secret-access-layer.md`, `#67`. Auto-detection + click-to-approve fill + optional local broker + application identity + capabilities. Unifies “API-key management”, MCP/n8n/IDE agent, and auto-suggest. **Not** “apps get passwords automatically.” Unknown app = DENY. FastAPI is not the broker. Default off.
+- Auto-categorize hosting / Plesk / mail / IP from clipboard (ingest helper; still `#59`)
 - A paid or “Plus” edition that is extra modules, not a second protocol
-- **Provider & service management** (product vision, not an API gateway): see `docs/provider-service-vision.md` and `#65`. Templates Website / Email / Domain / Hosting / FTP-SFTP / Cloud / Git / Database / VPN / API / Custom. Split **Provider** (the service) / **Account** (your login) / **Secret** (password, TOTP, API key, SSH key, recovery codes) plus custom fields and later client-side relationships (domain → DNS → hosting). All of that lives in **ciphertext** (`schemaVersion` bump). The server must not index provider, kind, or the graph.
 
-If Plus ever exists: `packages/crypto` stays unchanged; agent and capture are optional processes. Who does not install them has today’s ZK.
+If Plus ever exists: `packages/crypto` stays unchanged; broker, agent, and capture are optional processes. Who does not install them has today’s ZK.
 
 ## How to pick a task
 

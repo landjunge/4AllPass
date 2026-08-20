@@ -98,7 +98,7 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Envelope fuzzing (`fast-check`) and reproducible frontend/extension builds
+1. Reproducible frontend/extension builds (`docs/reproducible-builds.md`)
 2. Offline: last good snapshot stays on the device; pin still applies
 3. Then Selective Sharing UI — after the above, not before
 

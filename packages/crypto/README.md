@@ -97,7 +97,7 @@ const plaintext = decryptEntry(record, { vaultKey: vk, vaultId, entryId, vaultKe
 ## Tests
 
 ```sh
-npm test                 # KATs (AES-GCM, Argon2id, PRF, manifest, recovery) + adversarial suite
+npm test                 # KATs + adversarial suite + envelope property tests (fast-check)
 npm run test:crypto:heavy
 npm run typecheck
 ```
@@ -109,3 +109,7 @@ produced by `scripts/generate-vectors.mjs`, which does not import this package.
 cross-vault, cross-device, key substitution, downgrade, rollback, malformed input,
 truncation, credential swapping, PRF misuse, HKDF misuse, zeroization leaks and
 test-only API leakage. Findings behind those tests: `docs/adversarial-review.md`.
+
+`test/property-envelope.test.ts` is the B3 property suite: random keys/ids/versions
+for device and recovery envelopes, Device-Key Envelopes, and entries. It does not
+replace KATs. Master envelopes stay on the Argon2id vector path.

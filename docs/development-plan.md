@@ -63,7 +63,8 @@ Deterministischer Frontend-Build-Hash. Deliverable später: `docs/reproducible-b
 
 ### B3. Fuzzing des Crypto-Cores
 
-Property-based Tests (`fast-check`) für Envelope-Un/Wrapping, in CI. Ergänzt die bestehende KAT- und Adversarial-Suite.
+✅ `packages/crypto/test/property-envelope.test.ts` (`fast-check`, läuft in `npm test` / CI).
+Device-/Recovery-Envelope, Device-Key Envelope, Entries: Roundtrip plus falscher Key / falsche Identität / Tamper. Ergänzt KATs und die Adversarial-Suite. Master-Envelopes bleiben auf dem Argon2id-Vektorpfad.
 
 ### B4. Post-Quantum-Vorbereitung
 
@@ -101,7 +102,7 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 2. **Hard-Revoke in der PWA** — ✅ `#26` (DK-Mirror-CAS `#27`)
 3. **A1 + A3** — ✅ `#29` (A3 war schon Primary auf der Unlock-Page)
 4. **A2 Autofill (Chromium-MVP)** — ✅ `#30` (+ Live-E2E in `#29`)
-5. **B2, B3, B4** — offen (reproducible builds, Envelope-Fuzzing, PQ-Konzept)
+5. **B2, B4** — offen (reproducible builds, PQ-Konzept). **B3** Envelope-Fuzzing ✅
 6. **A4 Sharing** — offen. C4 Community ✅ `#31`
 
 COSE-Assertion gegen die server-issued Challenge ist in diesem Stand verdrahtet (Ceremony-Integrität, kein PRF). Import (Bitwarden JSON/CSV) ist auf `main` (`#31`).

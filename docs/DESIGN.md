@@ -19,25 +19,29 @@ Es existieren mehrere Repos mit „Gnom“-Varianten im Namen (`gnom-hub`, `Gnom
 Alle anderen Bezeichnungen (Gnom-Hub, Gnom Hub, Gnom-Hub-V2 usw.) sind veraltet oder falsch und führen zu Verwirrung.  
 Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antworten – damit der Owner nicht immer wieder korrigieren muss.
 
-## Aktuelles UI (Frontend)
+## Gemeinsames Desk-Chrome (alle Tools)
 
-Farben aus `frontend/src/styles.css` (nur Dark Theme):
+**Basis ist Gnom-Hub-V1**, nicht eine eigene 4AllPass-Palette und nicht das alte Neon-Hub.
 
-| Token        | Wert      |
-|--------------|-----------|
-| `--bg`       | `#080c18` |
-| `--panel`    | `#101733` |
-| `--panel-2`  | `#16204a` |
-| `--line`     | `#24306b` |
-| `--text`     | `#eaf0ff` |
-| `--muted`    | `#93a2d0` |
-| `--accent`   | `#7aa2ff` |
-| `--ok`       | `#4fd1a5` |
-| `--danger`   | `#ff7a90` |
+Quelle: `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root` → Kopie `frontend/src/tokens.css`.
 
-Aktuelles Icon (`frontend/public/icon.svg`): Schild + Schloss, Gradient `#7e14ff` → `#47bfff` auf `#0f172a`.
+| Token | Wert | Rolle |
+|---|---|---|
+| `--bg` | `#121316` | Fläche |
+| `--bg-panel` | `#1a1b1f` | Header / Inputs |
+| `--bg-card` | `#1e1f24` | Karten |
+| `--bg-elev` | `#24262d` | angehoben |
+| `--text` | `#e2e4e9` | Text |
+| `--text-muted` | `#8b909a` | sekundär |
+| `--border` | `#2e3138` | Kanten |
+| `--accent` / `--accent-hi` | `#6b7280` / `#a1a8b3` | Chrome, kein Neon |
+| `--ok` / `--warn` / `--err` | `#3d9b6a` / `#c9a227` / `#c45c5c` | Status |
 
-**Feedback:** Farben und Design der App gefallen noch nicht – Redesign gewünscht.
+Gleiche Tokens für 4AllPass PWA, Extension-Popup und Tollgate Control Room. **Kein Rainbow-Chrome.** Agent-Farben nur in Gnom-Hub-V1 (Identität der Agenten).
+
+Logos bleiben produktspezifisch (4AllPass-Elster, Gnom-G, Tollgate-Marke).
+
+Aktuelles Icon (`frontend/public/icon.svg`): Schild + Schloss — Logo-Brief unten, Chrome ist Desk.
 
 ## Logo-Brief 4AllPass
 
@@ -53,17 +57,9 @@ Symbolik: Elster = klug, sammelt glänzende Dinge → Passwörter / Keys / Secre
 Canva-Kandidaten (editierbar im Account):
 - [Modern '4AllPass' Logo with Alert Magpie](https://www.canva.com/d/TgTiGOX87wFWhrW)
 
-## Vorgeschlagene Farbpalette 4AllPass – „Golden Magpie“
+## Logo-Farbe vs. Chrome
 
-| Rolle     | Wert      | Begründung                          |
-|-----------|-----------|-------------------------------------|
-| BG        | `#0A0E1A` | Tiefes, warmes Dunkel               |
-| Panel     | `#12182B` | Leicht angehoben                    |
-| Accent    | `#C9A227` | Gold – passt zum Schlüssel + Premium |
-| Text      | `#F8F4EC` | Warmes Off-White                    |
-| Muted     | `#A89F8C` | Neutrales Grau-Beige                |
-| OK        | `#3DDC97` | Frisches Emerald für Sicherheit     |
-| Danger    | `#FF7A90` | Beibehalten oder leicht anpassen    |
+„Golden Magpie“ (`#C9A227`) gilt **nur für das 4AllPass-Logo** (Schlüssel / Elster), nicht für App-Chrome. Chrome folgt Gnom-Hub-V1. `--warn` in der Desk-Palette ist bewusst dasselbe Gold, als Status, nicht als Button-Fill.
 
 ## Logo netzwerkpunkt.de (neu)
 
@@ -72,10 +68,10 @@ Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, moder
 
 ## Nächste Schritte
 
-1. Logo-Varianten 4AllPass in Canva finalisieren und als SVG/PNG exportieren
-2. `frontend/public/icon.svg` + Branding in der PWA ersetzen
-3. Design-Tokens in `styles.css` auf die gewählte Palette umstellen
-4. Optional Light-Mode ergänzen
+1. Logo-Varianten 4AllPass in Canva finalisieren (Elster bleibt; Chrome bleibt Desk)
+2. `frontend/public/icon.svg` ersetzen, ohne Desk-Tokens zu verwerfen
+3. Tollgate-Marketing-Site (`site/styles.css`) weiter auf dieselben Tokens ziehen
+4. Optional Light-Mode — nur wenn Gnom-Hub-V1 ihn hat
 5. 4AllPass + korrekte **Gnom-Hub-V1**-Bezeichnung auf netzwerkpunkt.de eintragen
 6. Logo für netzwerkpunkt.de finalisieren
 

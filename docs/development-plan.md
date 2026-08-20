@@ -2,7 +2,7 @@
 
 **Zweck:** Arbeitsauftrag in drei Achsen. Phasen sind nach Wirkung/Aufwand sortiert, nicht streng chronologisch.
 
-**Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium-Autofill, Bitwarden/1Password/KeePass/CSV-Import, Envelope-Property-Tests, Reproducible Builds, Offline-Snapshot-Cache, Clipboard-Overwrite und v1 Item-Share-Files (`docs/sharing.md`) sind im Baum. Kein Live-Share an fremde Device Keys, keine native Autofill-Apps.
+**Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium- und Firefox-Autofill, Bitwarden/1Password/KeePass/CSV-Import, Envelope-Property-Tests, Reproducible Builds, Offline-Snapshot-Cache, Clipboard-Overwrite und v1 Item-Share-Files (`docs/sharing.md`) sind im Baum. Kein Live-Share an fremde Device Keys, kein Safari, keine native Autofill-Apps.
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 

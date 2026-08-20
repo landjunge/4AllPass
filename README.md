@@ -54,6 +54,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Selective item share (encrypted file, v1): [`docs/sharing.md`](docs/sharing.md)
 - Provider & service management (concept only, far later): [`docs/provider-service-vision.md`](docs/provider-service-vision.md)
 - Secret Access Layer (concept only, far later): [`docs/secret-access-layer.md`](docs/secret-access-layer.md)
+- Capability interface with Tollgate / Gnom-Hub (concept only, far later): [`docs/capability-interface.md`](docs/capability-interface.md)
 
 ## Key path
 

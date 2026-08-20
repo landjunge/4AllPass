@@ -102,7 +102,7 @@ Current recommended order:
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
-Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard watchers, an MCP/n8n agent, **Provider templates**, or the **Secret Access Layer** (local broker, auto-give, capabilities) before the above. Those are **far later** (community vote or Plus shell, default off) — see [references/improve.md](references/improve.md), `docs/provider-service-vision.md`, `docs/secret-access-layer.md`.
+Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard watchers, an MCP/n8n agent, **Provider templates**, the **Secret Access Layer**, or a **Tollgate merge / capability broker** before the above. Those are **far later** (community vote or Plus shell, default off) — see [references/improve.md](references/improve.md), `docs/provider-service-vision.md`, `docs/secret-access-layer.md`, `docs/capability-interface.md`. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
 
 ## Open work already in flight
 

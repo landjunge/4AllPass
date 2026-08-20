@@ -73,12 +73,16 @@ insecure default.
 ## 3. WebAuthn trust boundary
 
 `POST /vaults/{vault_id}/devices` and `POST …/credentials` store **client-asserted
-metadata**. The server does **not**:
+metadata**. The PWA asks the server for a one-time `publicKey.challenge`
+(`POST …/webauthn/challenges`) and consumes it after the ceremony. The server
+stores `SHA-256(challenge)`, never the raw bytes after issue, and never sees
+PRF output.
 
-- run a WebAuthn ceremony
-- verify an attestation or assertion signature
-- see or check PRF output
+The server still does **not**:
+
+- verify an attestation or assertion signature (`signCount` / COSE)
 - treat `prfSupported: true` as proof of possession
+- mix the challenge into HKDF / DWK
 
 `CredentialSummary.verification` is always `"client_asserted"` and
 `serverVerified` is always `false`. Those fields exist so the API cannot be
@@ -170,6 +174,6 @@ object and returns it unchanged. The client verifies it under VK
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope
-mirror is CAS-tied to `active_revision`. Next: server-side WebAuthn
-assertion verification as ceremony integrity — not as a replacement for
-client-side PRF.
+mirror is CAS-tied to `active_revision`. WebAuthn challenges are server-issued
+and single-use. Next: COSE assertion verification against that challenge —
+ceremony integrity, not a replacement for client-side PRF.

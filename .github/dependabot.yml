@@ -1,0 +1,47 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 8
+    groups:
+      npm-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Argon2id / WebCrypto wrappers: bump only with a protocol review.
+      - dependency-name: "@noble/ciphers"
+      - dependency-name: "@noble/hashes"
+      - dependency-name: hash-wasm
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      pip-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns:
+          - "*"

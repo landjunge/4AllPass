@@ -1,0 +1,11 @@
+# Solo repo today; this still marks who must review protocol-sensitive paths
+# if branch protection or additional collaborators are added later.
+* @landjunge
+
+/docs/ @landjunge
+/packages/crypto/ @landjunge
+/packages/webauthn/ @landjunge
+/backend/ @landjunge
+/frontend/src/lib/ @landjunge
+/extension/src/ @landjunge
+/.github/ @landjunge

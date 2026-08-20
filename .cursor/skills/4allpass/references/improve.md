@@ -6,12 +6,11 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 ## Done on main (do not reimplement)
 
-Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
+Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, offline wire-snapshot cache (pin still applies), recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
 
 ## Now (product you can feel)
 
-1. Offline: last good snapshot stays on the device; pin still applies.
-2. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
+1. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
 
 ## Later (do not start)
 
@@ -19,7 +18,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 - Social login as a crypto factor
 - Native apps
 - Passkey store as a separate vault product
-- Shamir, TOTP, selective sharing — after offline snapshot cache
+- Shamir, TOTP, selective sharing — after remaining product-now items
 - Post-quantum hybrid-KEM: a concept doc only (`docs/post-quantum-roadmap.md`), no implementation
 
 ## How to pick a task

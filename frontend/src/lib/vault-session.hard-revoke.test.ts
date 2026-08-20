@@ -24,6 +24,7 @@ import {
 import { memoryDeviceUnlockStore } from "@4allpass/webauthn";
 
 import { api, ApiError } from "./api.ts";
+import { setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import {
   CommitConflict,
@@ -44,6 +45,7 @@ const originalRevoke = api.revokeDevice.bind(api);
 afterEach(() => {
   clearTestStorage();
   setDeviceUnlockStoreForTests(null);
+  setSnapshotCacheForTests(null);
   api.commitSnapshot = originalCommit;
   api.revokeDevice = originalRevoke;
 });

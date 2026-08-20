@@ -2,7 +2,7 @@
 
 **Zweck:** Arbeitsauftrag in drei Achsen. Phasen sind nach Wirkung/Aufwand sortiert, nicht streng chronologisch.
 
-**Stand im Repo (2026-08-20, nach #25–#31 + COSE):** Backend (FastAPI) und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, **Hard-Revoke in der PWA**, DK-Mirror-CAS, server-issued WebAuthn-Challenges, **COSE-Ceremony-Verify**, Chromium-Autofill-MVP, Bitwarden/CSV-Import und `CONTRIBUTING.md` sind im Baum. Es gibt **kein** Selective Sharing in der laufenden PWA und **keine** native iOS/Android-Autofill-Apps.
+**Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium-Autofill-MVP, Bitwarden/CSV-Import, Envelope-Property-Tests, Reproducible Builds und **Offline-Snapshot-Cache** (Pin gilt weiter) sind im Baum. Kein Selective Sharing in der PWA, keine native Autofill-Apps.
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Selective Sharing kommt **nach** Hard-Revoke (erledigt) und Recovery-UX (erledigt).
 

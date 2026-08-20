@@ -1,3 +1,4 @@
+import { ext } from "./browser.ts";
 import { pickPassword, pickUsername, type InputLike } from "./fill.ts";
 
 function visibleInputs(): HTMLInputElement[] {
@@ -38,7 +39,7 @@ function fillForm(username: string, password: string): boolean {
   return Boolean(user || pass);
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "fill-form") return;
   const ok = fillForm(String(message.username ?? ""), String(message.password ?? ""));
   sendResponse({ ok });

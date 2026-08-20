@@ -270,6 +270,23 @@ button.link {
   margin-bottom: 12px;
 }
 
+.import-file {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.import-file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
 .list ul,
 .devices {
   list-style: none;

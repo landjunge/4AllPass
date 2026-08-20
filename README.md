@@ -16,6 +16,8 @@ Argon2id, WebAuthn device unlock, PWA. Selective profile sharing is specified, n
 | [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
 | [`docs`](docs) | The authoritative specifications |
 
+How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Why trust this?
 
 The server is a blob store. It never sees the master password, vault key, or plaintext entries. You can check that claim against public specs and tests instead of a marketing page:

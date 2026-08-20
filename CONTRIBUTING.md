@@ -30,7 +30,7 @@ Do not claim `DELETE /devices` erased a key. Soft revoke omits the envelope; har
 
 ## Imports
 
-Bitwarden JSON and CSV imports are plaintext until the user confirms. The PWA encrypts on the device, then commits. Do not upload the export file to the server.
+Bitwarden JSON, 1Password JSON/1PIF, KeePass XML, and Title/Username/Password CSV imports are plaintext until the user confirms. The PWA encrypts on the device, then commits. Do not upload the export file to the server. Encrypted `.kdbx` / `.1pux` zips are not parsed.
 
 ## Issues / PRs
 

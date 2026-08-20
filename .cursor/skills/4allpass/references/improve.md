@@ -6,11 +6,11 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 ## Done on main (do not reimplement)
 
-Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, offline wire-snapshot cache (pin still applies), recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
+Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, offline wire-snapshot cache (pin still applies), recovery-kit copy, Chromium MV3 autofill, Bitwarden/1Password/KeePass/CSV plaintext import.
 
 ## Now (product you can feel)
 
-1. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
+No queued item. Selective sharing is **later** — crypto-Modell is ready, PWA-UI is not. Do not start it unless the user asks.
 
 ## Later (do not start)
 

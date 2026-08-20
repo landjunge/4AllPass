@@ -28,7 +28,7 @@ Erledigt:
 - Crypto-Protokoll und Reference Implementation (`packages/crypto`) inkl. Envelope-Property-Tests
 - Specs: crypto-protocol, webauthn-prf, vault-revision, threat-model, adversarial-review, security-boundary
 - Backend: FastAPI + PostgreSQL + Redis, Account-Sessions, Ownership-404, Snapshot-CAS, opaque Envelopes
-- PWA: Account, Vault anlegen, Master-Passwort-Unlock, WebAuthn-Unlock, Recovery Kit, Device-Panel, Hard-Revoke, Bitwarden/CSV-Import, Offline-Snapshot-Cache
+- PWA: Account, Vault anlegen, Master-Passwort-Unlock, WebAuthn-Unlock, Recovery Kit, Device-Panel, Hard-Revoke, Bitwarden/1Password/KeePass/CSV-Import, Offline-Snapshot-Cache
 - Chromium MV3 Autofill (`extension/`)
 - Docker Compose für Postgres + Redis + Backend
 

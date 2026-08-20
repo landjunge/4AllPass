@@ -1,12 +1,23 @@
 # 4AllPass – Design Foundation
 
-> Basis-Info, damit nichts verloren geht (Stand 2026-08-20).
+> Basis-Info, damit nichts verloren geht (Stand 2026-08-20, korrigiert).
 
 ## Portfolio / Domain
 
 - **Hauptdomain:** [netzwerkpunkt.de](https://netzwerkpunkt.de)
 - Dort sollen alle Projekte, Apps, Webseiten und Portfolio-Items gebündelt werden.
-- 4AllPass gehört als weiteres Projekt unter dieses Dach (neben Tollgate, Gnom-Hub etc.).
+- 4AllPass gehört als weiteres Projekt unter dieses Dach.
+
+### Namensregel – Gnom (KRITISCH, nicht mehr verdrehen)
+
+| Korrekt | Status |
+|---------|--------|
+| **Gnom-Hub-V1** | Einziger korrekter und aktueller Name + Repo |
+
+Es existieren mehrere Repos mit „Gnom“-Varianten im Namen (`gnom-hub`, `Gnom-Hub-Clean`, `gnom-hub-v2`, …).  
+**Nur `Gnom-Hub-V1` / `gnom-hub-v1` ist momentan richtig und relevant.**  
+Alle anderen Bezeichnungen (Gnom-Hub, Gnom Hub, Gnom-Hub-V2 usw.) sind veraltet oder falsch und führen zu Verwirrung.  
+Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antworten – damit der Owner nicht immer wieder korrigieren muss.
 
 ## Aktuelles UI (Frontend)
 
@@ -28,7 +39,7 @@ Aktuelles Icon (`frontend/public/icon.svg`): Schild + Schloss, Gradient `#7e14ff
 
 **Feedback:** Farben und Design der App gefallen noch nicht – Redesign gewünscht.
 
-## Logo-Brief
+## Logo-Brief 4AllPass
 
 4AllPass bekommt ein eigenes Logo:
 
@@ -39,10 +50,10 @@ Aktuelles Icon (`frontend/public/icon.svg`): Schild + Schloss, Gradient `#7e14ff
 
 Symbolik: Elster = klug, sammelt glänzende Dinge → Passwörter / Keys / Secrets. Goldener Schlüssel = Zugang, Sicherheit, Zero-Knowledge.
 
-Canva-Kandidaten (editierbar im Account) wurden generiert; ein gespeichertes Design:
+Canva-Kandidaten (editierbar im Account):
 - [Modern '4AllPass' Logo with Alert Magpie](https://www.canva.com/d/TgTiGOX87wFWhrW)
 
-## Vorgeschlagene Farbpalette – „Golden Magpie“
+## Vorgeschlagene Farbpalette 4AllPass – „Golden Magpie“
 
 | Rolle     | Wert      | Begründung                          |
 |-----------|-----------|-------------------------------------|
@@ -54,15 +65,19 @@ Canva-Kandidaten (editierbar im Account) wurden generiert; ein gespeichertes Des
 | OK        | `#3DDC97` | Frisches Emerald für Sicherheit     |
 | Danger    | `#FF7A90` | Beibehalten oder leicht anpassen    |
 
-Alternative: Deep Trust Navy mit Gold nur als Highlight für Logo/Key.
+## Logo netzwerkpunkt.de (neu)
+
+Portfolio-Logo wird separat entwickelt (siehe Canva / spätere Varianten).  
+Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, modern, KI-/Multi-Agent-tauglich, ohne Verwechslung mit 4AllPass-Elster.
 
 ## Nächste Schritte
 
-1. Logo-Varianten in Canva finalisieren und als SVG/PNG exportieren
+1. Logo-Varianten 4AllPass in Canva finalisieren und als SVG/PNG exportieren
 2. `frontend/public/icon.svg` + Branding in der PWA ersetzen
 3. Design-Tokens in `styles.css` auf die gewählte Palette umstellen
 4. Optional Light-Mode ergänzen
-5. 4AllPass auf netzwerkpunkt.de als Portfolio-Projekt eintragen
+5. 4AllPass + korrekte **Gnom-Hub-V1**-Bezeichnung auf netzwerkpunkt.de eintragen
+6. Logo für netzwerkpunkt.de finalisieren
 
 ---
-*Angelegt als permanente Design-Basis im Repo.*
+*Angelegt als permanente Design-Basis im Repo. Gnom-Namensregel verbindlich.*

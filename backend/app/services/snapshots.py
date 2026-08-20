@@ -2,8 +2,9 @@
 
 The server never decrypts envelopes, entries, or the sealed manifest. It only
 checks structure, CAS (docs/vault-revision.md §4), vault-key-version
-monotonicity, and that a master envelope is present so the vault cannot be
-committed into an unrecoverable state.
+monotonicity, that a master envelope is present so the vault cannot be
+committed into an unrecoverable state, that revoked device envelopes are not
+re-attached, and that sealedManifest is present after the initial revision.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.encoding import b64decode, b64encode
+from app.models.device import Device
 from app.models.entry import EncryptedEntry
 from app.models.enums import EnvelopeType
 from app.models.key_envelope import KeyEnvelope
@@ -174,6 +176,28 @@ async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommi
         raise RevisionConflict(current_revision)
     if payload.vault_key_version < current_vault_key_version:
         raise HTTPException(status_code=422, detail="vaultKeyVersion must not decrease")
+
+    # After the first revision, every commit must carry a sealed manifest.
+    # The server stores it opaque — it does not open it under the Vault Key.
+    if current_revision >= 1 and payload.sealed_manifest is None:
+        raise HTTPException(status_code=422, detail="sealedManifest is required")
+
+    # Soft DELETE only sets revoked_at. Refuse to let a client put that device's
+    # envelope back into a later snapshot (hard rotation omits it; soft omits it).
+    revoked = await db.execute(
+        select(Device.device_id).where(
+            Device.vault_id == vault.id,
+            Device.revoked_at.is_not(None),
+        )
+    )
+    revoked_ids = set(revoked.scalars().all())
+    if revoked_ids:
+        for env in payload.envelopes:
+            if env.type == "device" and env.device_id in revoked_ids:
+                raise HTTPException(
+                    status_code=422,
+                    detail="snapshot includes envelope for a revoked device",
+                )
 
     snapshot = VaultSnapshot(
         vault_id=vault.id,

@@ -22,6 +22,7 @@ import {
   commitEntries,
   createVault,
   enableDeviceUnlockForVault,
+  hardRevokeDevice,
   hasDeviceUnlock,
   lock as lockVault,
   revokeDevice,
@@ -65,6 +66,11 @@ interface AppActions {
   saveEntries(entries: VaultEntry[]): Promise<void>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
+  hardRevoke(
+    targetDeviceId: string,
+    masterPassword: string,
+    recoveryKeyText?: string,
+  ): Promise<void>;
   refreshDevices(): Promise<void>;
   dismissRecoveryKey(): void;
   clearMessages(): void;
@@ -297,7 +303,29 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setUnlocked(await revokeDevice(current, targetDeviceId));
           setDevices(await api.listDevices(current.vaultId));
           if (targetDeviceId === deviceId()) setDeviceUnlockAvailable(false);
-        }, "Device revoked in the new revision.");
+        }, "Removed from the next sync. A device that already knows this vault key still knows it.");
+      },
+
+      async hardRevoke(targetDeviceId, masterPassword, recoveryKeyText) {
+        const current = vaultRef.current;
+        if (!current) throw new Error("vault is locked");
+        await withStatus(async () => {
+          const next = await hardRevokeDevice(current, {
+            targetDeviceId,
+            masterPassword,
+            ...(recoveryKeyText ? { recoveryKeyText } : {}),
+          });
+          setDevices(await api.listDevices(current.vaultId));
+          if (targetDeviceId === deviceId()) {
+            setUnlocked(null);
+            setDeviceUnlockAvailable(false);
+          } else {
+            setUnlocked(next);
+            if (!next.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
+              setDeviceUnlockAvailable(false);
+            }
+          }
+        }, "Vault key rotated. Old snapshots stay readable only to holders of the previous key.");
       },
 
       refreshDevices,

@@ -195,9 +195,10 @@ independently of the vault snapshot it belongs to:
 
 - When mirrored to the server (§2.1 step 7), it is versioned and committed
   **atomically with its vault-snapshot `revision`** (see
-  `vault-revision.md` §4). A client fetches it only as part of the snapshot
-  named by `active_revision`, never through a separate, independently
-  replayable channel.
+  `vault-revision.md` §4). The PWA commits the snapshot first, then PUTs the
+  mirror with `expectedRevision`. GET refuses a blob whose `deviceKeyVersion`
+  does not match the device envelope in `active_revision`. A client must not
+  treat the mirror as an independently replayable channel.
 - Freshness of the Device-Key Envelope is thus inherited from the snapshot's
   `evaluateRevision` check. A malicious server that replays only an old
   Device-Key Envelope blob (e.g. to resurrect a rotated-out Device Key) fails on

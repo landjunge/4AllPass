@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -15,6 +15,8 @@ from app.core.encoding import b64decode, b64encode, b64url_decode
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
 from app.models.enums import EnvelopeType
+from app.models.key_envelope import KeyEnvelope
+from app.models.snapshot import VaultSnapshot
 from app.models.vault import Vault
 from app.models.webauthn_credential import WebAuthnCredential
 from app.schemas.device import (
@@ -99,6 +101,31 @@ def _require_active_device(device: Device) -> None:
             status_code=status.HTTP_409_CONFLICT,
             detail="device is revoked",
         )
+
+
+def _device_envelope_in_snapshot(
+    snapshot: VaultSnapshot | None, device_public_id: str
+) -> KeyEnvelope | None:
+    if snapshot is None:
+        return None
+    for envelope in snapshot.envelopes:
+        if envelope.type == EnvelopeType.DEVICE and envelope.device_id == device_public_id:
+            return envelope
+    return None
+
+
+async def _require_mirror_snapshot(
+    db: AsyncSession, vault: Vault, expected_revision: int
+) -> VaultSnapshot:
+    snapshot = await load_active_snapshot(db, vault)
+    if snapshot is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="no active snapshot")
+    if snapshot.revision != expected_revision:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="revision conflict",
+        )
+    return snapshot
 
 
 @router.get("", response_model=list[DeviceSummary])
@@ -235,6 +262,7 @@ async def put_device_key_envelope(
     payload: WireDeviceKeyEnvelope,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    expected_revision: Annotated[int, Query(alias="expectedRevision")],
 ) -> WireDeviceKeyEnvelope:
     device = await _get_device(db, vault, device_id)
     _require_active_device(device)
@@ -246,6 +274,18 @@ async def put_device_key_envelope(
         raise HTTPException(status_code=404, detail="credential not found")
     if payload.device_id != device.device_id or payload.vault_id != vault.id:
         raise HTTPException(status_code=422, detail="envelope identity does not match path")
+    snapshot = await _require_mirror_snapshot(db, vault, expected_revision)
+    snapshot_envelope = _device_envelope_in_snapshot(snapshot, device.device_id)
+    if snapshot_envelope is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="no device envelope in the active revision",
+        )
+    if snapshot_envelope.device_key_version != payload.device_key_version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="device-key generation does not match the active snapshot",
+        )
 
     existing = await db.execute(
         select(DeviceKeyEnvelope).where(
@@ -300,6 +340,13 @@ async def get_device_key_envelope(
     device = await _get_device(db, vault, device_id)
     _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)
+    snapshot = await load_active_snapshot(db, vault)
+    snapshot_envelope = _device_envelope_in_snapshot(snapshot, device.device_id)
+    if snapshot_envelope is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="device-key envelope not in the active revision",
+        )
     result = await db.execute(
         select(DeviceKeyEnvelope).where(
             DeviceKeyEnvelope.vault_id == vault.id,
@@ -310,6 +357,11 @@ async def get_device_key_envelope(
     row = result.scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="device-key envelope not found")
+    if snapshot_envelope.device_key_version != row.device_key_version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="stale device-key generation",
+        )
     return WireDeviceKeyEnvelope(
         version=row.crypto_version,
         vault_id=vault.id,

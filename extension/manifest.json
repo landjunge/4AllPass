@@ -19,7 +19,23 @@
     }
   ],
   "permissions": ["storage", "activeTab", "tabs", "scripting", "contextMenus", "alarms"],
-  "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://127.0.0.1:*/*",
+    "http://localhost/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:8000/*",
+    "http://127.0.0.1:8010/*",
+    "http://localhost:8000/*",
+    "http://localhost:8010/*"
+  ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@4allpass.local",
+      "strict_min_version": "128.0"
+    }
+  },
   "commands": {
     "fill-login": {
       "suggested_key": {

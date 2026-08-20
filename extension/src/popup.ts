@@ -1,3 +1,5 @@
+import { ext } from "./browser.ts";
+
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
 const unlockForm = document.getElementById("unlock") as HTMLFormElement;
@@ -15,7 +17,7 @@ function clearError(): void {
 }
 
 async function send(message: Record<string, unknown>): Promise<Record<string, unknown>> {
-  return (await chrome.runtime.sendMessage(message)) as Record<string, unknown>;
+  return (await ext.runtime.sendMessage(message)) as Record<string, unknown>;
 }
 
 function renderPicks(entries: Array<{ id: string; title: string; username: string }>): void {

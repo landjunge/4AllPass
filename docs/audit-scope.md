@@ -17,7 +17,7 @@ This is a map of what to review, what the running system actually enforces, and 
 | WebAuthn client | `packages/webauthn` | PRF > largeBlob > UV-gated local store; HKDF of PRF output into DWK; no vault crypto of its own |
 | PWA | `frontend/` | All cryptography happens here. Session handling, unlock, snapshot CAS client, recovery kit, device panel, hard revoke, plaintext import |
 | Backend | `backend/` | Account auth, ownership (foreign ids → 404), snapshot CAS, opaque blob storage, WebAuthn challenge issue/consume. Must never decrypt |
-| Chromium extension | `extension/` | MV3 autofill. Decrypts on-device via `@4allpass/crypto`. Same protocol as the PWA |
+| Browser extension | `extension/` | Chromium + Firefox MV3 autofill. Decrypts on-device via `@4allpass/crypto`. Same protocol as the PWA. Safari not shipped |
 | Specs | `docs/` | Protocol claims vs implementation. Over-claims are findings |
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 | Client artifacts | `frontend/dist`, `extension/dist` | Tree hash via `scripts/hash-dist.mjs`. Two-build check: `npm run verify:reproducible`. Same-toolchain only (`docs/reproducible-builds.md`) |
@@ -85,7 +85,7 @@ From `docs/security-boundary.md` §6 — treat as known, not surprises:
 2. Bearer token in `sessionStorage` (XSS = account takeover, not vault plaintext by itself).
 3. Rate limits are per-IP counters.
 4. Soft `DELETE` remains `metadata_only` — it is not cryptographic erase (hard revoke is a separate PWA path).
-5. Chromium autofill only; no native iOS/Android Autofill, no Selective-Sharing UI.
+5. Chromium + Firefox autofill; no Safari, no native iOS/Android Autofill. Item-share is a file (`docs/sharing.md`), not wrap-to-foreign-device.
 6. `cose_verified` is ceremony integrity (`fmt=none` + assertion). It is not hardware attestation and not PRF.
 7. No post-quantum KEM in v1. Vault wrapping is AES-256-GCM. See `docs/post-quantum-roadmap.md`.
 

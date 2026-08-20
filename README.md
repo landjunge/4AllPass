@@ -14,7 +14,7 @@ Argon2id, WebAuthn device unlock, PWA. You can share a login as an encrypted fil
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — device unlock: PRF > largeBlob > UV-gated local store |
 | [`backend`](backend) | FastAPI + PostgreSQL + Redis. Account-Session, Ownership, Snapshot-CAS. Stores opaque envelopes only |
 | [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
-| [`extension`](extension) | Chromium MV3 autofill. Decrypts on-device via `@4allpass/crypto` |
+| [`extension`](extension) | Chromium + Firefox MV3 autofill. Decrypts on-device via `@4allpass/crypto` |
 | [`docs`](docs) | The authoritative specifications |
 
 How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md). Security reports: [`SECURITY.md`](SECURITY.md). Board: [4AllPass project](https://github.com/users/landjunge/projects/2).
@@ -87,7 +87,7 @@ npm run test -w @4allpass/frontend
 npm run test:e2e -w @4allpass/frontend   # needs Postgres, Redis and a running backend
 npm run test:e2e:live                    # headed Chrome/Firefox/Brave/WebKit on this Mac
 # see docs/live-browser-test.md
-npm run build -w @4allpass/extension     # Chromium MV3 unpacked load: extension/dist
+npm run build -w @4allpass/extension     # unpacked: Chrome/Brave/Edge or Firefox about:debugging → extension/dist
 # see docs/autofill-extension.md
 npm run typecheck
 node scripts/generate-vectors.mjs           # regenerate the KAT JSON (independent impl)

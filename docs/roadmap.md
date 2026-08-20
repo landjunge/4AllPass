@@ -35,7 +35,7 @@ Erledigt:
 Offen (ehrlich):
 
 - Selective-Sharing-UI (Crypto-Modell da, PWA nicht verdrahtet)
-- Native iOS/Android Autofill; Firefox/Safari-Extension-Ports
+- Native iOS/Android Autofill; Safari Web Extension
 - Post-Quantum: Konzept in `docs/post-quantum-roadmap.md` (kein Code)
 - Kein unabhängiges Drittaudit (`docs/audit-scope.md` ist die Karte)
 

@@ -1,4 +1,5 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
+import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { entriesForPage, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
@@ -32,9 +33,9 @@ const idle = createIdleLock(() => {
 
 async function armChromeAlarm(): Promise<void> {
   try {
-    await chrome.alarms.clear(AUTO_LOCK_ALARM);
+    await ext.alarms.clear(AUTO_LOCK_ALARM);
     if (session) {
-      await chrome.alarms.create(AUTO_LOCK_ALARM, { delayInMinutes: AUTO_LOCK_MINUTES });
+      await ext.alarms.create(AUTO_LOCK_ALARM, { delayInMinutes: AUTO_LOCK_MINUTES });
     }
   } catch {
     // alarms permission missing in tests / older chrome
@@ -44,7 +45,7 @@ async function armChromeAlarm(): Promise<void> {
 function noteActivity(): void {
   if (!session) {
     idle.stop();
-    void chrome.alarms.clear(AUTO_LOCK_ALARM).catch(() => undefined);
+    void ext.alarms.clear(AUTO_LOCK_ALARM).catch(() => undefined);
     return;
   }
   idle.touch();
@@ -55,7 +56,7 @@ async function lockVault(): Promise<void> {
   idle.stop();
   dropSession();
   try {
-    await chrome.alarms.clear(AUTO_LOCK_ALARM);
+    await ext.alarms.clear(AUTO_LOCK_ALARM);
   } catch {
     // ignore
   }
@@ -63,26 +64,38 @@ async function lockVault(): Promise<void> {
   await refreshBadge();
 }
 
+async function ensureApiOrigin(origin: string): Promise<void> {
+  if (!ext.permissions?.contains || !ext.permissions.request) return;
+  const origins = [`${origin.replace(/\/$/, "")}/*`];
+  try {
+    if (await ext.permissions.contains({ origins })) return;
+    const granted = await ext.permissions.request({ origins });
+    if (!granted) throw new Error("this browser blocked access to the API origin");
+  } catch (error) {
+    if (error instanceof Error && /blocked access to the API origin/.test(error.message)) throw error;
+  }
+}
+
 async function deviceId(): Promise<string> {
-  const stored = await chrome.storage.local.get("deviceId");
+  const stored = await ext.storage.local.get("deviceId");
   if (typeof stored.deviceId === "string" && stored.deviceId.startsWith("dev_")) {
     return stored.deviceId;
   }
   const created = `dev_${bytesToHex(randomBytes(12))}`;
-  await chrome.storage.local.set({ deviceId: created });
+  await ext.storage.local.set({ deviceId: created });
   return created;
 }
 
 async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   if (tab?.id && tab.url && /^https?:/.test(tab.url)) return tab;
-  const tabs = await chrome.tabs.query({});
+  const tabs = await ext.tabs.query({});
   return tabs.find((candidate) => candidate.id && candidate.url && /^https?:/.test(candidate.url));
 }
 
 async function fillInTab(tabId: number, username: string, password: string): Promise<boolean> {
   try {
-    const response = (await chrome.tabs.sendMessage(tabId, {
+    const response = (await ext.tabs.sendMessage(tabId, {
       type: "fill-form",
       username,
       password,
@@ -91,8 +104,8 @@ async function fillInTab(tabId: number, username: string, password: string): Pro
   } catch {
     // no content script yet
   }
-  await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-  const retry = (await chrome.tabs.sendMessage(tabId, {
+  await ext.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+  const retry = (await ext.tabs.sendMessage(tabId, {
     type: "fill-form",
     username,
     password,
@@ -102,21 +115,21 @@ async function fillInTab(tabId: number, username: string, password: string): Pro
 
 async function refreshBadge(tabId?: number): Promise<void> {
   const tab = tabId
-    ? await chrome.tabs.get(tabId).catch(() => undefined)
+    ? await ext.tabs.get(tabId).catch(() => undefined)
     : await activeHttpTab();
   if (!tab?.id) return;
   if (!session || !tab.url) {
-    await chrome.action.setBadgeText({ tabId: tab.id, text: "" });
+    await ext.action.setBadgeText({ tabId: tab.id, text: "" });
     return;
   }
   const n = entriesForPage(session.entries, tab.url).length;
-  await chrome.action.setBadgeBackgroundColor({ color: "#3d6bff" });
-  await chrome.action.setBadgeText({ tabId: tab.id, text: n > 0 ? String(n) : "" });
+  await ext.action.setBadgeBackgroundColor({ color: "#3d6bff" });
+  await ext.action.setBadgeText({ tabId: tab.id, text: n > 0 ? String(n) : "" });
 }
 
 async function setMenuEnabled(on: boolean): Promise<void> {
   try {
-    await chrome.contextMenus.update(MENU_FILL, {
+    await ext.contextMenus.update(MENU_FILL, {
       enabled: on,
       title: on ? "Fill with 4AllPass" : "Fill with 4AllPass (unlock first)",
     });
@@ -129,8 +142,8 @@ let menuChain = Promise.resolve();
 
 async function ensureMenu(): Promise<void> {
   menuChain = menuChain.then(async () => {
-    await chrome.contextMenus.removeAll();
-    chrome.contextMenus.create({
+    await ext.contextMenus.removeAll();
+    ext.contextMenus.create({
       id: MENU_FILL,
       title: session ? "Fill with 4AllPass" : "Fill with 4AllPass (unlock first)",
       contexts: ["page", "frame", "editable"],
@@ -142,7 +155,7 @@ async function ensureMenu(): Promise<void> {
 
 async function openPopupSafe(): Promise<void> {
   try {
-    await chrome.action.openPopup();
+    await ext.action.openPopup();
   } catch {
     // no user-gesture window
   }
@@ -172,36 +185,36 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   return { ok: true, filled: chosen.title || chosen.username };
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+ext.runtime.onInstalled.addListener(() => {
   void ensureMenu();
 });
 
-chrome.runtime.onStartup.addListener(() => {
+ext.runtime.onStartup.addListener(() => {
   void ensureMenu();
 });
 
-chrome.commands.onCommand.addListener((command) => {
+ext.commands.onCommand.addListener((command) => {
   if (command === "fill-login") void fillActive();
   if (command === "lock-vault") void lockVault();
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+ext.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === AUTO_LOCK_ALARM) void lockVault();
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
+ext.contextMenus.onClicked.addListener((info) => {
   if (info.menuItemId === MENU_FILL) void fillActive();
 });
 
-chrome.tabs.onActivated.addListener((info) => {
+ext.tabs.onActivated.addListener((info) => {
   void refreshBadge(info.tabId);
 });
 
-chrome.tabs.onUpdated.addListener((tabId, change) => {
+ext.tabs.onUpdated.addListener((tabId, change) => {
   if (change.status === "complete" || change.url) void refreshBadge(tabId);
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   void (async () => {
     try {
       sendResponse(await handle(message));
@@ -227,6 +240,7 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       return { ok: true };
     case "unlock": {
       const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8010").replace(/\/$/, "");
+      await ensureApiOrigin(apiOrigin);
       const unlocked = await unlockVault({
         apiOrigin,
         deviceId: await deviceId(),

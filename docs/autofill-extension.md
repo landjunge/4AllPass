@@ -1,8 +1,8 @@
-# 4AllPass Chromium extension (MVP)
+# 4AllPass browser extension (Chromium + Firefox)
 
-Decrypts vault entries **in the extension**, with `@4allpass/crypto`. The server still only stores envelopes.
+Decrypts vault entries **in the extension**, with `@4allpass/crypto`. The server still only stores envelopes. One MV3 bundle; Firefox 128+ (`browser` API, `addon@4allpass.local`). Safari is not in this slice.
 
-## Load unpacked (Chrome / Brave / Edge)
+## Build
 
 ```sh
 cd ~/4AllPass
@@ -10,7 +10,13 @@ npm install
 npm run build -w @4allpass/extension
 ```
 
+## Load unpacked (Chrome / Brave / Edge)
+
 Chrome → `chrome://extensions` → Developer mode → Load unpacked → `extension/dist`.
+
+## Load temporarily (Firefox)
+
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → `extension/dist/manifest.json`. Firefox 128+. Grant the API origin if the Unlock prompt asks.
 
 Popup: API (default `http://127.0.0.1:8000` or `:8010` if that port is taken), e-mail, sign-in password, vault password → **Unlock**. Then either:
 
@@ -26,4 +32,4 @@ Acceptance: login on `http://127.0.0.1:5173/test-login.html` without copy-paste 
 
 ## Not in this slice
 
-Firefox/Safari add-ons, native iOS/Android Autofill, in-page keystroke overlays, filling sites whose entry has no URL.
+Safari Web Extension, native iOS/Android Autofill, in-page keystroke overlays, filling sites whose entry has no URL. AMO / Chrome Web Store listing.

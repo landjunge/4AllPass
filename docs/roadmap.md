@@ -25,7 +25,7 @@ Ausführlich: [`positioning.md`](positioning.md), [`comparison.md`](comparison.m
 
 Erledigt:
 
-- Crypto-Protokoll und Reference Implementation (`packages/crypto`)
+- Crypto-Protokoll und Reference Implementation (`packages/crypto`) inkl. Envelope-Property-Tests
 - Specs: crypto-protocol, webauthn-prf, vault-revision, threat-model, adversarial-review, security-boundary
 - Backend: FastAPI + PostgreSQL + Redis, Account-Sessions, Ownership-404, Snapshot-CAS, opaque Envelopes
 - PWA: Account, Vault anlegen, Master-Passwort-Unlock, WebAuthn-Unlock, Recovery Kit, Device-Panel, Hard-Revoke, Bitwarden/CSV-Import
@@ -36,7 +36,7 @@ Offen (ehrlich):
 
 - Selective-Sharing-UI (Crypto-Modell da, PWA nicht verdrahtet)
 - Native iOS/Android Autofill; Firefox/Safari-Extension-Ports
-- Reproducible Builds, Envelope-Fuzzing, Post-Quantum-Konzept
+- Reproducible Builds, Post-Quantum-Konzept
 - Kein unabhängiges Drittaudit (`docs/audit-scope.md` ist die Karte)
 
 Erledigt seit diesem Datum: Hard-Revoke in der PWA, DK-Mirror-CAS, server-issued Challenges, Chromium-Autofill-MVP, Bitwarden/CSV-Import, CONTRIBUTING.

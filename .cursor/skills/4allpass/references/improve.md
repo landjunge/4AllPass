@@ -6,17 +6,16 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 ## Done on main (do not reimplement)
 
-Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
+Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
 
 ## Now (audit-facing)
 
-1. Envelope property tests (`fast-check`) in CI, on top of KATs.
-2. Reproducible frontend/extension builds (`docs/reproducible-builds.md`).
+1. Reproducible frontend/extension builds (`docs/reproducible-builds.md`).
 
 ## Next (product you can feel)
 
-3. Offline: last good snapshot stays on the device; pin still applies.
-4. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
+2. Offline: last good snapshot stays on the device; pin still applies.
+3. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
 
 ## Later (do not start)
 

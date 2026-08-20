@@ -7,6 +7,8 @@
  *   as the envelope is open.
  * - Every snapshot is checked for freshness against the local pin *and* for
  *   internal consistency before anything is decrypted into the UI.
+ * - The last verified wire snapshot is cached on-device. Offline unlock uses
+ *   that cache; the pin still refuses rollbacks. Never cache plaintext.
  * - WebAuthn only ever produces a Device Wrapping Key; the Vault Key path is
  *   DWK → Device Key → Vault Key.
  * - Master-password unlock is never disabled by anything here.
@@ -26,6 +28,7 @@ import {
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
   encodeSealedManifest,
+  encodeVaultSnapshot,
   encryptEntry,
   formatRecoveryKey,
   generateRecoveryKey,
@@ -71,6 +74,7 @@ import {
   type VaultEntry,
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
+import { isOfflineError, snapshotCache } from "./snapshot-cache.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
 
@@ -198,7 +202,16 @@ function deviceEnvelopeOf(snapshot: VaultSnapshot, id: string): KeyEnvelope | nu
 
 /** Fetch the active snapshot and refuse a rollback before touching any key. */
 async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
-  const snapshot = decodeVaultSnapshot(await api.getSnapshot(vaultId));
+  let raw;
+  try {
+    raw = await api.getSnapshot(vaultId);
+  } catch (error) {
+    if (!isOfflineError(error)) throw error;
+    const cached = await snapshotCache().load(vaultId);
+    if (!cached) throw error;
+    raw = cached;
+  }
+  const snapshot = decodeVaultSnapshot(raw);
   if (snapshot.vaultId !== vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
@@ -287,6 +300,21 @@ function openSnapshot(
   };
 }
 
+async function acceptSnapshot(
+  snapshot: VaultSnapshot,
+  vaultKey: Uint8Array,
+  unlockedWith: UnlockMethod,
+  crossChecks: readonly CrossCheckEnvelope[] = [],
+): Promise<UnlockedVault> {
+  const vault = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks);
+  try {
+    await snapshotCache().save(snapshot.vaultId, encodeVaultSnapshot(snapshot));
+  } catch {
+    // Cache is best-effort. Unlock already succeeded.
+  }
+  return vault;
+}
+
 export interface CreatedVault {
   vault: UnlockedVault;
   /** Show once, then it only exists on the user's Emergency Kit. */
@@ -341,7 +369,7 @@ export async function createVault(
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
-    const vault = openSnapshot(committed, vaultKey, "master_password", [
+    const vault = await acceptSnapshot(committed, vaultKey, "master_password", [
       { envelope: masterEnvelopeOf(committed), wrappingKey: masterKey },
     ]);
     return { vault, recoveryKey: formatRecoveryKey(recoveryKey) };
@@ -364,7 +392,7 @@ export async function unlockWithMasterPassword(
       expectType: "master",
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
-    return openSnapshot(snapshot, vaultKey, "master_password", [
+    return acceptSnapshot(snapshot, vaultKey, "master_password", [
       { envelope: masterEnvelope, wrappingKey: masterKey },
     ]);
   } finally {
@@ -388,7 +416,7 @@ export async function unlockWithRecoveryKey(
       expectType: "recovery",
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
-    return openSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey }]);
+    return acceptSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey }]);
   } finally {
     zeroize(recoveryKey, wrappingKey);
   }
@@ -447,7 +475,7 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
         challenges: challenges.provider,
         ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
       });
-      return openSnapshot(snapshot, result.vaultKey, result.mechanism);
+      return acceptSnapshot(snapshot, result.vaultKey, result.mechanism);
     } finally {
       await challenges.consumeAll();
     }
@@ -515,7 +543,7 @@ async function commitSnapshot(
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
-    return openSnapshot(committed, vaultKey, vault.unlockedWith);
+    return acceptSnapshot(committed, vaultKey, vault.unlockedWith);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new CommitConflict(error.currentRevision);

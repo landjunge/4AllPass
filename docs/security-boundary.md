@@ -182,6 +182,8 @@ object and returns it unchanged. The client verifies it under VK
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
+- The PWA caches the last **verified wire** snapshot in IndexedDB for offline
+  unlock. The pin still applies. Plaintext and the Vault Key are not cached.
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope

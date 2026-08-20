@@ -98,11 +98,10 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Offline: last good snapshot stays on the device; pin still applies
-2. 1Password / KeePass import parsers (Bitwarden/CSV already exist)
-3. Then Selective Sharing UI — after the above, not before
+1. 1Password / KeePass import parsers (Bitwarden/CSV already exist)
+2. Then Selective Sharing UI — after the above, not before
 
-Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, Chromium autofill, Bitwarden/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
+Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
 
 Do not start orgs, social-login-as-crypto, native apps, or “passkey store as vault” before the above.
 

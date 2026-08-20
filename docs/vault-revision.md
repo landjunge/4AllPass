@@ -133,6 +133,23 @@ proceed instead of silently downgrading.
 
 Pin-on-first-use is intentional: a brand-new client has no prior revision. After the first successful unlock, the pin is stored locally (outside the server’s control).
 
+### 3.2 Offline: last verified snapshot
+
+After a snapshot is verified and the pin is written, the PWA stores the **wire**
+snapshot (ciphertext, envelopes, sealed manifest) in IndexedDB keyed by
+`vaultId`. It does not store the Vault Key or plaintext entries.
+
+On unlock, `GET /snapshot` is tried first. If the request fails before an HTTP
+status (`TypeError` / no network), the cached snapshot is used instead. HTTP
+4xx/5xx do not fall back — those are server answers, not “offline”.
+
+The pin still runs (`assertFreshSnapshot`) on the cached bytes. A cache older
+than the pin is a rollback and is refused. A successful unlock rewrites the
+cache from the snapshot that just verified.
+
+XSS on this origin can read the cache the same way it can read a live GET. The
+cache is not a second security boundary.
+
 ---
 
 ## 4. Commit protocol (every write)

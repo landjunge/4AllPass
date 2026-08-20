@@ -10,7 +10,7 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 | Zero-Knowledge | ✅ Server sieht keine Klartext-Einträge und keine Vault Keys | ✅ | ✅ | ✅ |
 | Master-Passwort-Ableitung | ✅ Argon2id (Profile in `packages/crypto`) | ⚠️ PBKDF2/Argon2id konfigurierbar | ⚠️ PBKDF2 + Secret Key | ✅ Argon2 |
 | WebAuthn / Passkey-Unlock | ✅ PRF > largeBlob > UV-gated local; PWA bietet Biometrie als Unlock | ⚠️ vorhanden, oft Zusatzschritt | ⚠️ vorhanden | ✅ |
-| Selective Item-Sharing | ⏳ Crypto-Modell (Device-Envelopes) vorhanden, PWA-UI fehlt | ⚠️ Collection-/Vault-Ebene | ⚠️ Vault-Ebene | ⚠️ eingeschränkt |
+| Selective Item-Sharing | ⚠️ Encrypted share file + share key (`docs/sharing.md`); no live wrap to a foreign device | ⚠️ Collection-/Vault-Ebene | ⚠️ Vault-Ebene | ⚠️ eingeschränkt |
 | Offene Testvektoren / Threat Model | ✅ `docs/threat-model.md`, `docs/adversarial-review.md`, `docs/test-vectors*.md` | teilweise | ❌ nicht öffentlich | teilweise (Audit-Berichte) |
 | Unabhängiges Security-Audit | ⏳ vorbereitet in `docs/audit-scope.md` | ✅ regelmäßig | ✅ regelmäßig | ✅ (u. a. Cure53) |
 | Preis | Self-Hosting, keine Lizenz | ~20 $/Jahr Premium (Stand 2026) | ~40–70 $/Jahr | 0–24 $/Jahr |
@@ -30,3 +30,4 @@ Quellen für die 4AllPass-Spalte:
 - Autofill: `extension/`, `docs/autofill-extension.md`
 - Hard-Revoke: `frontend/src/lib/vault-session.ts` (`hardRevokeDevice`)
 - Grenzen: `docs/security-boundary.md`
+- Item-share file: `docs/sharing.md`, `frontend/src/lib/share.ts`

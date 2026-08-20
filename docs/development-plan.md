@@ -2,9 +2,9 @@
 
 **Zweck:** Arbeitsauftrag in drei Achsen. Phasen sind nach Wirkung/Aufwand sortiert, nicht streng chronologisch.
 
-**Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium-Autofill-MVP, Bitwarden/1Password/KeePass/CSV-Import, Envelope-Property-Tests, Reproducible Builds und Offline-Snapshot-Cache (Pin gilt weiter) sind im Baum. Kein Selective Sharing in der PWA, keine native Autofill-Apps.
+**Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium-Autofill, Bitwarden/1Password/KeePass/CSV-Import, Envelope-Property-Tests, Reproducible Builds, Offline-Snapshot-Cache, Clipboard-Overwrite und v1 Item-Share-Files (`docs/sharing.md`) sind im Baum. Kein Live-Share an fremde Device Keys, keine native Autofill-Apps.
 
-Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Selective Sharing kommt **nach** Hard-Revoke (erledigt) und Recovery-UX (erledigt).
+Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 
 ---
 
@@ -47,7 +47,7 @@ Heute: Unlock-Page zeigt Biometrie bereits als Primary-Button, wenn ein Device-U
 
 ### A4. Selective Sharing sichtbar machen
 
-„Eintrag teilen“ in 2 Klicks. **Später** — nach Hard-Revoke und Recovery-UX. Sharing ist im Crypto-Modell (Device-Envelopes) angelegt, in der PWA nicht verdrahtet.
+„Eintrag teilen“ in 2 Klicks. v1 ist symmetrisch: **Share** baut ein portables Snapshot-File plus Share-Key (`docs/sharing.md`). Der Server sieht beides nicht. Device-Envelopes bleiben die Freigabe **eigener** Geräte (Devices-Panel). Wrapping an den Device Key einer anderen Person braucht Public-Key-Wrapping und ist später.
 
 ---
 
@@ -103,7 +103,7 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 3. **A1 + A3** — ✅ `#29` (A3 war schon Primary auf der Unlock-Page)
 4. **A2 Autofill (Chromium-MVP)** — ✅ `#30` (+ Live-E2E in `#29`)
 5. **B2 + B3 + B4** — ✅ Reproducible Builds, Envelope-Fuzzing, PQ-Konzept (`docs/post-quantum-roadmap.md`, kein Code)
-6. **A4 Sharing** — offen (bewusst später). C4 Community ✅ `#31`
+6. **A4 Sharing** — ✅ portables Share-File (`docs/sharing.md`). Live-Share an fremde Device Keys bleibt später. C4 Community ✅ `#31`
 
 COSE-Assertion gegen die server-issued Challenge ist in diesem Stand verdrahtet (Ceremony-Integrität, kein PRF). Import (Bitwarden JSON/CSV) ist auf `main` (`#31`).
 

@@ -1,4 +1,5 @@
 import { newEntryId, type VaultEntry } from "./entries.ts";
+import { looksLikeSharePackage } from "./share.ts";
 
 export type ImportFormat = "bitwarden-json" | "onepassword-json" | "onepassword-1pif" | "keepass-xml" | "csv";
 
@@ -336,6 +337,11 @@ export function parsePlaintextExport(text: string): ImportResult {
     );
   }
   const trimmed = text.trim();
+  if (looksLikeSharePackage(trimmed)) {
+    throw new Error(
+      "This is a 4AllPass share file, not a plaintext export. Import it and enter the share key.",
+    );
+  }
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     const parsed = JSON.parse(trimmed) as unknown;
     const bitwarden = parseBitwarden(parsed);

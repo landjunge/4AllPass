@@ -98,9 +98,9 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Selective Sharing UI — after the above, not before. Do not start until the user asks.
+1. No queued product-now item. Do not start public-key wrapping / ML-KEM unless asked.
 
-Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
+Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
 Do not start orgs, social-login-as-crypto, native apps, or “passkey store as vault” before the above.
 

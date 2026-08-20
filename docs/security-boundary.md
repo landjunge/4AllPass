@@ -190,6 +190,10 @@ object and returns it unchanged. The client verifies it under VK
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
+- Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
+  recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
+  Device Key. A copy already given cannot be remotely revoked. See
+  [`docs/sharing.md`](sharing.md).
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope

@@ -1,4 +1,5 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
+import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { entriesForPage, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
@@ -12,6 +13,55 @@ interface SessionState {
 let session: SessionState | null = null;
 
 const MENU_FILL = "fill-login";
+const AUTO_LOCK_ALARM = "autolock";
+
+function dropSession(): void {
+  if (session) {
+    session.token = "";
+    for (const entry of session.entries) {
+      entry.password = "";
+      entry.username = "";
+    }
+  }
+  session = null;
+}
+
+const idle = createIdleLock(() => {
+  void lockVault();
+});
+
+async function armChromeAlarm(): Promise<void> {
+  try {
+    await chrome.alarms.clear(AUTO_LOCK_ALARM);
+    if (session) {
+      await chrome.alarms.create(AUTO_LOCK_ALARM, { delayInMinutes: AUTO_LOCK_MINUTES });
+    }
+  } catch {
+    // alarms permission missing in tests / older chrome
+  }
+}
+
+function noteActivity(): void {
+  if (!session) {
+    idle.stop();
+    void chrome.alarms.clear(AUTO_LOCK_ALARM).catch(() => undefined);
+    return;
+  }
+  idle.touch();
+  void armChromeAlarm();
+}
+
+async function lockVault(): Promise<void> {
+  idle.stop();
+  dropSession();
+  try {
+    await chrome.alarms.clear(AUTO_LOCK_ALARM);
+  } catch {
+    // ignore
+  }
+  await setMenuEnabled(false);
+  await refreshBadge();
+}
 
 async function deviceId(): Promise<string> {
   const stored = await chrome.storage.local.get("deviceId");
@@ -103,6 +153,7 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
     await openPopupSafe();
     return { ok: false, error: "vault is locked" };
   }
+  noteActivity();
   const tab = await activeHttpTab();
   if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill" };
   const matches = entriesForPage(session.entries, tab.url);
@@ -131,11 +182,11 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "fill-login") void fillActive();
-  if (command === "lock-vault") {
-    session = null;
-    void setMenuEnabled(false);
-    void refreshBadge();
-  }
+  if (command === "lock-vault") void lockVault();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === AUTO_LOCK_ALARM) void lockVault();
 });
 
 chrome.contextMenus.onClicked.addListener((info) => {
@@ -164,15 +215,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function handle(message: { type?: string; [key: string]: unknown }): Promise<unknown> {
   switch (message.type) {
     case "status":
+      if (session) noteActivity();
       return {
         ok: true,
         unlocked: session !== null,
         entryCount: session?.entries.length ?? 0,
+        autoLockMinutes: AUTO_LOCK_MINUTES,
       };
     case "lock":
-      session = null;
-      await setMenuEnabled(false);
-      await refreshBadge();
+      await lockVault();
       return { ok: true };
     case "unlock": {
       const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8010").replace(/\/$/, "");
@@ -189,12 +240,14 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
         vaultId: unlocked.vaultId,
         entries: unlocked.entries,
       };
+      noteActivity();
       await setMenuEnabled(true);
       await refreshBadge();
       return { ok: true, entryCount: session.entries.length };
     }
     case "candidates-active": {
       if (!session) return { ok: false, error: "vault is locked" };
+      noteActivity();
       const tab = await activeHttpTab();
       return { ok: true, entries: tab?.url ? entriesForPage(session.entries, tab.url) : [] };
     }

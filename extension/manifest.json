@@ -18,7 +18,7 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "activeTab", "tabs", "scripting", "contextMenus"],
+  "permissions": ["storage", "activeTab", "tabs", "scripting", "contextMenus", "alarms"],
   "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"],
   "commands": {
     "fill-login": {

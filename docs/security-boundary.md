@@ -185,8 +185,10 @@ object and returns it unchanged. The client verifies it under VK
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
 - The Chromium extension decrypts on-device via `@4allpass/crypto`. Unlocked
-  entries sit in service-worker memory until Lock or worker eviction — not in
-  `chrome.storage`. Fill matching uses the entry URL host, not the page title.
+  entries sit in service-worker memory until Lock, 5 minutes idle, or worker
+  eviction — not in `chrome.storage`. Closing the popup does not lock (shortcut
+  fill still works until idle). Fill matching uses the entry URL host, not the
+  page title. JavaScript cannot securely zeroize strings.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.

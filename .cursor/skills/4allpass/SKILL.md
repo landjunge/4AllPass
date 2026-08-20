@@ -78,8 +78,8 @@ Follow [references/coding.md](references/coding.md).
 
 - Open paths take **caller expectations** (`expectType`, `entryId`, `vaultId`…) and compare **before** decrypt. Self-referential AAD is not enough.
 - `revision` is a cryptographic statement via the sealed manifest, not a server integer.
-- `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = `vaultKeyVersion`++. The PWA does **not** rotate yet unless your change lands it.
-- WebAuthn rows on the server are `verification: "client_asserted"`. Do not imply server verification.
+- `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = `vaultKeyVersion`++. The PWA rotates via `hardRevokeDevice`.
+- WebAuthn rows on the server are `verification: "client_asserted"` until COSE assertion verification lands. Do not imply the server verified PRF.
 - Foreign vault/device ids → 404, never 403.
 - Snapshot write: `SELECT … FOR UPDATE`, CAS `expectedRevision`, reject `vaultKeyVersion` decrease, 409 on conflict.
 - New crypto behavior needs an adversarial test in the matching class (`adversarial-aead|identity|freshness|kdf-prf|toctou`).
@@ -98,18 +98,17 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. PWA Vault Key rotation (hard revoke) — already in `packages/crypto`, not wired in `frontend/src/lib/vault-session.ts`
-2. Bind snapshot-CAS to the Device-Key Envelope mirror
-3. Optional: server-side WebAuthn **assertion** verification (ceremony integrity, not a PRF replacement)
-4. Then Phase 4 product: extension, autofill, import, recovery UX, offline
+1. Server-side WebAuthn **COSE assertion** against the issued challenge (ceremony integrity, not a PRF replacement) — `security-boundary.md` §6
+2. Envelope fuzzing (`fast-check`) and reproducible frontend/extension builds
+3. Offline: last good snapshot stays on the device; pin still applies
+4. Then Selective Sharing UI — after the above, not before
+
+Hard revoke, DK-mirror CAS, server-issued challenges, Chromium autofill, Bitwarden/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
 
 Do not start orgs, social-login-as-crypto, native apps, or “passkey store as vault” before the above.
 
 ## Open work already in flight
 
-Check GitHub before duplicating:
+Check GitHub before duplicating. Stale branches to ignore: `#8` (adversarial crypto, superseded), old `#15`/`#16`/`#12` (landed via `#26`/`#28`).
 
-- #15 / #16 — hard revoke + review closures (mergeable)
-- #8 / #12 — crypto tests / server WebAuthn challenges (**conflicts** — rebase or close)
-
-Do not open a fifth parallel Cursor branch for the same theme.
+Do not open a fifth parallel branch for the same theme.

@@ -15,12 +15,13 @@ This is a map of what to review, what the running system actually enforces, and 
 |---|---|---|
 | Crypto core | `packages/crypto` | Argon2id profiles, AES-256-GCM, envelopes, AAD, snapshot manifest, recovery, device wrapping, vault-key rotation APIs |
 | WebAuthn client | `packages/webauthn` | PRF > largeBlob > UV-gated local store; HKDF of PRF output into DWK; no vault crypto of its own |
-| PWA | `frontend/` | All cryptography happens here. Session handling, unlock, snapshot CAS client, recovery kit, device panel |
-| Backend | `backend/` | Account auth, ownership (foreign ids → 404), snapshot CAS, opaque blob storage. Must never decrypt |
+| PWA | `frontend/` | All cryptography happens here. Session handling, unlock, snapshot CAS client, recovery kit, device panel, hard revoke, plaintext import |
+| Backend | `backend/` | Account auth, ownership (foreign ids → 404), snapshot CAS, opaque blob storage, WebAuthn challenge issue/consume. Must never decrypt |
+| Chromium extension | `extension/` | MV3 autofill. Decrypts on-device via `@4allpass/crypto`. Same protocol as the PWA |
 | Specs | `docs/` | Protocol claims vs implementation. Over-claims are findings |
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 
-Out of scope until they exist in tree: browser extension, native apps, org/team features, selective-sharing UI, server-side WebAuthn assertion verification (open PR #12).
+Out of scope until they exist in tree: native apps, org/team features, selective-sharing UI, server-side WebAuthn **assertion** verification (COSE against the issued challenge — specified as next in `security-boundary.md` §6).
 
 ---
 
@@ -58,14 +59,14 @@ Known-answer tests: `npm test` (default) and `npm run test:crypto:heavy` (large 
 
 - PRF output → HKDF → DWK → Device-Key Envelope → DK → Device Envelope → VK (`docs/webauthn-prf.md`).
 - Fallback order PRF > largeBlob > UV-gated store.
-- Server rows are `verification: "client_asserted"`. Do not treat metadata as possession proof (`docs/security-boundary.md` §3).
+- Server rows are `verification: "client_asserted"`. Challenges are server-issued and single-use; consuming them does **not** verify the authenticator signature. Do not treat metadata as possession proof (`docs/security-boundary.md` §3).
 
 ### M3 — Backend auth, ownership, CAS
 
 - Bearer session: hashed at rest, bound to client-asserted `X-Device-Id` (not a WebAuthn proof).
 - Foreign vault/device ids → 404, never 403.
 - Snapshot write: row lock, `expectedRevision` CAS, reject `vaultKeyVersion` decrease, 409 on conflict.
-- `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = `vaultKeyVersion++` on the client (library exists; PWA wiring is the open gap).
+- `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = PWA `hardRevokeDevice` (`vaultKeyVersion++`, re-encrypt, omit target, CAS, then metadata DELETE).
 
 ### M4 — PWA claim surface
 
@@ -79,12 +80,12 @@ Known-answer tests: `npm test` (default) and `npm run test:crypto:heavy` (large 
 
 From `docs/security-boundary.md` §6 — treat as known, not surprises:
 
-1. No server-side WebAuthn assertion verification.
-2. No PWA Vault Key rotation (hard revoke) in `frontend/src/lib/vault-session.ts`.
-3. Account session bound to client-asserted `X-Device-Id`, not a WebAuthn credential.
-4. Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to `active_revision` (PR #24 in flight).
-5. Bearer token in `sessionStorage` (XSS = account takeover, not vault plaintext by itself).
-6. Rate limits are per-IP counters.
+1. No server-side WebAuthn assertion verification (COSE against the issued challenge).
+2. Account session bound to client-asserted `X-Device-Id`, not a WebAuthn credential.
+3. Bearer token in `sessionStorage` (XSS = account takeover, not vault plaintext by itself).
+4. Rate limits are per-IP counters.
+5. Soft `DELETE` remains `metadata_only` — it is not cryptographic erase (hard revoke is a separate PWA path).
+6. Chromium autofill only; no native iOS/Android Autofill, no Selective-Sharing UI.
 
 ---
 

@@ -21,14 +21,14 @@ Do not stack “also I refactored the PWA” onto a crypto PR.
 ## WebAuthn (`packages/webauthn`)
 
 - Order is PRF → largeBlob → UV-gated local store. Document the weaker fallback; do not hide it.
-- Challenges for ceremonies must be **server-issued and one-time** if you touch that path (see open #12). Client `newChallenge()` is not bindable.
+- Challenges for ceremonies must be **server-issued and one-time**. Client `newChallenge()` is not bindable. Consuming a challenge is not COSE verification.
 
 ## Backend
 
 - Opaque bytes in, opaque bytes out. Request schemas reject VK/DK/password-equivalent fields.
 - `get_owned_vault` on every vault-scoped route.
 - Snapshot writes stay race-safe (`FOR UPDATE` + CAS + unique revision).
-- Device DELETE remains honest: `revocation: "metadata_only"` until a hard-rotate endpoint exists **and** the client uses it.
+- Device DELETE remains honest: `revocation: "metadata_only"`. Cryptographic erase is `hardRevokeDevice` on the client, not DELETE.
 - Alembic migration in the same PR as the model change.
 - Tests: `backend/tests/test_security_hardening.py`, `test_security_unit.py`, `test_ownership.py`, `test_auth.py`.
 

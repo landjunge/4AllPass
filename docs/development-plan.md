@@ -2,9 +2,9 @@
 
 **Zweck:** Arbeitsauftrag in drei Achsen. Phasen sind nach Wirkung/Aufwand sortiert, nicht streng chronologisch.
 
-**Stand im Repo (2026-08-20):** Backend (FastAPI) und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit und Snapshot-CAS sind implementiert. Es gibt **keine** Browser-Extension und **kein** Selective Sharing in der laufenden PWA. Hard-Revoke (Vault-Key-Rotation in der PWA) ist spezifiziert und in `packages/crypto` getestet, aber in der PWA noch nicht verdrahtet — offene PRs: [#15](https://github.com/landjunge/4AllPass/pull/15), [#16](https://github.com/landjunge/4AllPass/pull/16).
+**Stand im Repo (2026-08-20, nach #25–#31):** Backend (FastAPI) und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, **Hard-Revoke in der PWA**, DK-Mirror-CAS, server-issued WebAuthn-Challenges, Chromium-Autofill-MVP, Bitwarden/CSV-Import und `CONTRIBUTING.md` sind auf `main`. Es gibt **kein** Selective Sharing in der laufenden PWA und **keine** native iOS/Android-Autofill-Apps. Die nächste Security-Lücke laut `docs/security-boundary.md` §6: COSE-Assertion gegen die Challenge (Ceremony-Integrität, kein PRF-Ersatz).
 
-Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Autofill, Import und Selective Sharing kommen **nach** Hard-Revoke und Recovery-UX.
+Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Selective Sharing kommt **nach** Hard-Revoke (erledigt) und Recovery-UX (erledigt).
 
 ---
 
@@ -29,7 +29,7 @@ Registrierung/Setup auf max. 3 Screens:
 
 Akzeptanzkriterium: Recovery-Key-Schritt ist nicht überspringbar. Kein Krypto-Jargon in der UI (`Argon2id`, `Envelope`). Copy an `docs/recovery.md` ausrichten.
 
-Heute: Account- und Vault-Erstellung sind getrennte Screens; das Emergency Kit erscheint nach Vault-Erstellung (`RecoveryKitDialog`) und braucht die Checkbox. Argon2id-Profilnamen stehen noch in der Vault-Erstellung.
+Heute: Account- und Vault-Erstellung sind getrennte Screens; das Emergency Kit erscheint nach Vault-Erstellung (`RecoveryKitDialog`) und braucht die Checkbox. Copy ist Alltagsprache (`#29`); Argon2id-Profilnamen sind aus der Vault-Erstellung raus.
 
 ### A2. Autofill als Kernfeature
 
@@ -37,7 +37,7 @@ Browser-Extension, die über `@4allpass/crypto` clientseitig entschlüsselt. Kei
 
 Akzeptanzkriterium: Login auf einer Testseite via Extension in ≤2 Klicks, ohne Copy-Paste.
 
-Chromium-MVP: `extension/` (MV3), Entschlüsselung über `@4allpass/crypto`, Fill auf `frontend/public/test-login.html`. Native iOS/Android Autofill bleibt Folgephase.
+Chromium-MVP **auf main** (`extension/`, `#30`): MV3, Entschlüsselung über `@4allpass/crypto`, Fill auf `frontend/public/test-login.html`. Native iOS/Android Autofill bleibt Folgephase. Firefox/Safari-Ports nicht begonnen.
 
 ### A3. WebAuthn/Biometrie als Standard-Unlock
 
@@ -91,19 +91,20 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 
 ### C4. Community
 
-`CONTRIBUTING.md` und Issue-Templates, sobald der vorzeigbare Stand (Hard-Revoke + ehrliche Doku) steht.
+`CONTRIBUTING.md` und Issue-Templates sind auf `main` (`#31`).
 
 ---
 
 ## Reihenfolge
 
-1. **B1 + B5 + C1–C3** — Fundament, kein Crypto-Risiko.
-2. **Hard-Revoke in der PWA** (#15/#16 mergen oder rebasen, nicht neu schreiben).
-3. **A1 + A3** — Onboarding-Copy und WebAuthn-Standard, Bausteine existieren.
-4. **A2 Autofill** — sobald der Kern kryptografisch widerrufbar ist.
-   Vorher: Live-Browser-Test `docs/live-browser-test.md` / `npm run test:e2e:live`.
-5. **B2, B3, B4** — technische Vertiefung.
-6. **A4 + C4** — Sharing und Community.
+1. **B1 + B5 + C1–C3** — ✅ `#25`
+2. **Hard-Revoke in der PWA** — ✅ `#26` (DK-Mirror-CAS `#27`)
+3. **A1 + A3** — ✅ `#29` (A3 war schon Primary auf der Unlock-Page)
+4. **A2 Autofill (Chromium-MVP)** — ✅ `#30` (+ Live-E2E in `#29`)
+5. **B2, B3, B4** — offen (reproducible builds, Envelope-Fuzzing, PQ-Konzept)
+6. **A4 Sharing** — offen. C4 Community ✅ `#31`
+
+Dazwischen, nicht als eigene Plan-Nummer, aber `security-boundary.md` §6: **COSE-Assertion** gegen die server-issued Challenge. Import (Bitwarden JSON/CSV) ist auf `main` (`#31`).
 
 ---
 

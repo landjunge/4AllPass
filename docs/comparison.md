@@ -14,10 +14,10 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 | Offene Testvektoren / Threat Model | ✅ `docs/threat-model.md`, `docs/adversarial-review.md`, `docs/test-vectors*.md` | teilweise | ❌ nicht öffentlich | teilweise (Audit-Berichte) |
 | Unabhängiges Security-Audit | ⏳ vorbereitet in `docs/audit-scope.md` | ✅ regelmäßig | ✅ regelmäßig | ✅ (u. a. Cure53) |
 | Preis | Self-Hosting, keine Lizenz | ~20 $/Jahr Premium (Stand 2026) | ~40–70 $/Jahr | 0–24 $/Jahr |
-| Autofill | ⏳ keine Extension im Repo | ⚠️ oft kritisiert | ✅ stark | ⚠️ teils unzuverlässig |
+| Autofill | ⚠️ Chromium-MVP in `extension/` (`@4allpass/crypto`); native iOS/Android ⏳ | ⚠️ oft kritisiert | ✅ stark | ⚠️ teils unzuverlässig |
 | Emergency Access / Recovery | ✅ Recovery Key + Emergency Kit in der PWA (`docs/recovery.md`); kein Server-Reset | ❌ kein Master-PW-Recovery | ✅ | ⚠️ oft nur höhere Tarife |
 | Kryptografische Gerätebindung | ✅ WebAuthn PRF → DWK → DK → VK | ⚠️ Geräte sind meist organisatorisch | ⚠️ Secret Key + Geräte | ⚠️ |
-| Hard-Revoke (Vault-Key-Rotation) | ⚠️ in `packages/crypto` getestet, PWA noch nicht verdrahtet | n/a | n/a | n/a |
+| Hard-Revoke (Vault-Key-Rotation) | ✅ PWA `hardRevokeDevice` (VK+1, re-encrypt, omit target, CAS, dann metadata DELETE) | n/a | n/a | n/a |
 
 Wettbewerber-Spalten stützen sich auf öffentliche Produktangaben und Nutzerfeedback, Stand August 2026 — nicht auf eigene Messungen ihrer Binaries.
 
@@ -27,4 +27,6 @@ Quellen für die 4AllPass-Spalte:
 - ZK / KDF / PRF: `packages/crypto`, `packages/webauthn`, `docs/crypto-protocol.md`, `docs/webauthn-prf.md`
 - Recovery: `frontend/src/components/RecoveryKitDialog.tsx`, `docs/recovery.md`
 - Unlock-UX: `frontend/src/pages/UnlockPage.tsx`
+- Autofill: `extension/`, `docs/autofill-extension.md`
+- Hard-Revoke: `frontend/src/lib/vault-session.ts` (`hardRevokeDevice`)
 - Grenzen: `docs/security-boundary.md`

@@ -4,26 +4,21 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 `docs/roadmap.md` phases 2–3 are largely done (backend + PWA exist). Do not restart scaffolding.
 
+## Done on main (do not reimplement)
+
+Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, recovery-kit copy, Chromium MV3 autofill, Bitwarden JSON/CSV import with a plaintext warning.
+
 ## Now (security you already specified)
 
-1. **Hard revoke in the PWA**  
-   Rotate VK on “this device may already know the key.” Library support exists. Wire `frontend/src/lib/vault-session.ts`, update `security-boundary.md` §4. Prefer landing #15 + #16 (rebase if needed) over a sixth implementation.
+1. **Server WebAuthn COSE assertion**  
+   Verify `authenticatorData` + `clientDataJSON` + signature against the stored COSE public key and the issued challenge. Ceremony integrity, not wrapping, not PRF. `fmt=none` attestation only proves we extracted a key bound to the challenge.
 
-2. **Soft revoke that actually drops the envelope**  
-   Metadata `DELETE` then commit snapshot N+1 without that device envelope. UX: say “removed from next sync” not “erased.”
+## Next (product / audit you can feel)
 
-3. **Device-Key Envelope mirror ↔ snapshot CAS**  
-   Today GET/PUT of the DK envelope is not tied to `active_revision`. A stale generation can be served until the client refuses. Bind them.
-
-4. **Server WebAuthn challenges**  
-   One-time, account-bound `publicKey.challenge`. This is ceremony integrity, not wrapping. #12 conflicts — rebase rather than rewrite.
-
-## Next (product you can feel)
-
-5. Recovery kit UX that matches `docs/recovery.md` (print / download once; no e-mail).
-6. Chromium extension (MV3) using `@4allpass/crypto` — no second protocol.
-7. Import from Bitwarden / 1Password / KeePass (warn on plaintext import).
-8. Offline: last good snapshot stays on the device; pin still applies.
+2. Envelope property tests (`fast-check`) in CI, on top of KATs.
+3. Reproducible frontend/extension builds (`docs/reproducible-builds.md`).
+4. Offline: last good snapshot stays on the device; pin still applies.
+5. 1Password / KeePass import parsers (Bitwarden/CSV already exist).
 
 ## Later (do not start)
 
@@ -31,8 +26,9 @@ Product north star: devices own the vault **cryptographically**. Features that d
 - Social login as a crypto factor
 - Native apps
 - Passkey store as a separate vault product
-- Shamir, TOTP, selective sharing — after hard revoke + recovery UX
+- Shamir, TOTP, selective sharing — after COSE + the audit-facing items above
+- Post-quantum hybrid-KEM: a concept doc only (`docs/post-quantum-roadmap.md`), no implementation
 
 ## How to pick a task
 
-If the user says “improve 4AllPass” without a target, propose **one** item from “Now”, say why, and implement that. Do not open a new architecture debate. The architecture is frozen enough; the gap is wiring and honesty.
+If the user says “improve 4AllPass” without a target, propose **one** item from “Now”, say why, and implement that. Do not open a new architecture debate. The architecture is frozen enough; the gap is ceremony verification, audit artifacts, and honesty.

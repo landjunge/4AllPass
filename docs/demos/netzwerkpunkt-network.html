@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>netzwerkpunkt — interaktives Netzwerk</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-soft: #0d1b2a;
+    --accent: #00b4d8;
+    --accent-dim: rgba(0, 180, 216, 0.35);
+    --accent-glow: rgba(0, 180, 216, 0.55);
+    --text: #f0f4f8;
+    --muted: #8a9bb0;
+    --line: rgba(0, 180, 216, 0.25);
+    --line-hot: rgba(0, 180, 216, 0.85);
+    --ok: #3ddc97;
+    --work: #c9a227;
+    --exp: #6b7c93;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #122038 0%, var(--bg) 70%);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .wrap {
+    width: min(920px, 100%);
+    position: relative;
+  }
+  svg.network {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .line {
+    stroke: var(--line);
+    stroke-width: 1.5;
+    fill: none;
+    transition: stroke 0.25s, stroke-width 0.25s;
+  }
+  .line.hot {
+    stroke: var(--line-hot);
+    stroke-width: 2.5;
+  }
+  .center-glow {
+    fill: var(--accent);
+    opacity: 0.15;
+    animation: pulse 2.8s ease-in-out infinite;
+  }
+  .center-core {
+    fill: var(--accent);
+    filter: drop-shadow(0 0 12px var(--accent-glow));
+  }
+  .center-ring {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    opacity: 0.7;
+  }
+  @keyframes pulse {
+    0%, 100% { r: 28; opacity: 0.12; }
+    50% { r: 42; opacity: 0.28; }
+  }
+  .node-group {
+    cursor: pointer;
+  }
+  .node-group:hover .node-circle,
+  .node-group.active .node-circle {
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+  }
+  .node-circle {
+    transition: fill 0.2s, stroke 0.2s;
+    stroke-width: 2;
+  }
+  .node-label {
+    fill: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: 0.02em;
+  }
+  .node-status {
+    fill: var(--muted);
+    font-size: 10px;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  .badge-work { fill: var(--work); }
+  .badge-ok { fill: var(--ok); }
+  .badge-exp { fill: var(--exp); }
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(13, 27, 42, 0.95);
+    border: 1px solid var(--accent-dim);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    max-width: 240px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .tooltip strong { color: var(--accent); display: block; margin-bottom: 4px; }
+  .tooltip .status { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .hint {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <h1>netzwerkpunkt · interaktives Netzwerk</h1>
+  <div class="wrap" id="wrap">
+    <svg class="network" viewBox="0 0 800 480" role="img" aria-label="Netzwerkpunkt Portfolio">
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <g id="lines"></g>
+      <circle class="center-glow" cx="400" cy="240" r="36"/>
+      <circle class="center-ring" cx="400" cy="240" r="22"/>
+      <circle class="center-core" cx="400" cy="240" r="10"/>
+      <text x="400" y="278" class="node-label" style="font-size:12px;fill:#00b4d8">netzwerkpunkt</text>
+      <g id="nodes"></g>
+    </svg>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+  <p class="hint">Hover für Details · Klick öffnet Projekt · bereit für 1–3 Min Video-Demo</p>
+
+<script>
+const CX = 400, CY = 240, R = 155;
+const projects = [
+  { id: "tollgate", label: "Tollgate", status: "In Arbeit", statusClass: "badge-work",
+    desc: "Agent Safety Layer — Protect · Route · Prove", href: "#tollgate", angle: -90 },
+  { id: "gnom", label: "Gnom-Hub-V1", status: "In Arbeit", statusClass: "badge-work",
+    desc: "Lokaler Multi-Agent-Desk — Brainstorm frei, Execute bewusst", href: "#gnom-hub-v1", angle: -18 },
+  { id: "4allpass", label: "4AllPass", status: "In Arbeit", statusClass: "badge-work",
+    desc: "Self-hosted ZK Password Manager — Device-Centric, WebAuthn PRF", href: "https://github.com/landjunge/4AllPass", angle: 54 },
+  { id: "demos", label: "Browser-Demos", status: "Funktioniert", statusClass: "badge-ok",
+    desc: "Protect-Gate & Desk ohne Installation", href: "#demos", angle: 126 },
+  { id: "exp", label: "Experimente", status: "Experimentell", statusClass: "badge-exp",
+    desc: "Feenreich, Oracle, Gauge — Lernfläche", href: "#experimente", angle: 198 },
+];
+
+const linesG = document.getElementById("lines");
+const nodesG = document.getElementById("nodes");
+const tooltip = document.getElementById("tooltip");
+const wrap = document.getElementById("wrap");
+
+function pos(angleDeg) {
+  const a = (angleDeg * Math.PI) / 180;
+  return { x: CX + R * Math.cos(a), y: CY + R * Math.sin(a) };
+}
+
+projects.forEach((p) => {
+  const { x, y } = pos(p.angle);
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", CX);
+  line.setAttribute("y1", CY);
+  line.setAttribute("x2", x);
+  line.setAttribute("y2", y);
+  line.setAttribute("class", "line");
+  line.dataset.id = p.id;
+  linesG.appendChild(line);
+
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "node-group");
+  g.dataset.id = p.id;
+
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", x);
+  circle.setAttribute("cy", y);
+  circle.setAttribute("r", 16);
+  circle.setAttribute("class", "node-circle");
+  circle.setAttribute("fill", "#0d1b2a");
+  circle.setAttribute("stroke", "#00b4d8");
+
+  const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  label.setAttribute("x", x);
+  label.setAttribute("y", y + 36);
+  label.setAttribute("class", "node-label");
+  label.textContent = p.label;
+
+  const status = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  status.setAttribute("x", x);
+  status.setAttribute("y", y + 50);
+  status.setAttribute("class", "node-status " + p.statusClass);
+  status.textContent = p.status;
+
+  g.appendChild(circle);
+  g.appendChild(label);
+  g.appendChild(status);
+  nodesG.appendChild(g);
+
+  g.addEventListener("mouseenter", (e) => {
+    line.classList.add("hot");
+    g.classList.add("active");
+    tooltip.innerHTML = `<strong>${p.label}</strong>${p.desc}<div class="status">${p.status} · Klick für Details</div>`;
+    tooltip.classList.add("visible");
+    moveTip(e);
+  });
+  g.addEventListener("mousemove", moveTip);
+  g.addEventListener("mouseleave", () => {
+    line.classList.remove("hot");
+    g.classList.remove("active");
+    tooltip.classList.remove("visible");
+  });
+  g.addEventListener("click", () => {
+    if (p.href && p.href.startsWith("http")) window.open(p.href, "_blank");
+    else console.log("Navigate to", p.href, p.label);
+  });
+});
+
+function moveTip(e) {
+  const rect = wrap.getBoundingClientRect();
+  let left = e.clientX - rect.left + 16;
+  let top = e.clientY - rect.top + 16;
+  if (left + 220 > rect.width) left = e.clientX - rect.left - 230;
+  tooltip.style.left = left + "px";
+  tooltip.style.top = top + "px";
+}
+</script>
+</body>
+</html>

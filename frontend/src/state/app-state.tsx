@@ -16,6 +16,7 @@ import {
   type ReactNode,
 } from "react";
 import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
+import { clearCopiedSecret } from "../lib/clipboard.ts";
 import { deviceId } from "../lib/device-identity.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
@@ -116,6 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     vaultRef.current = null;
     setVault(null);
     setLockState("LOCKED");
+    void clearCopiedSecret().catch(() => undefined);
   }, []);
 
   const loadVaults = useCallback(async (): Promise<VaultSummary[]> => {

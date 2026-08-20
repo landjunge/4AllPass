@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import {
   emptyDraft,
   generatePassword,
@@ -20,6 +21,13 @@ export function VaultPage(): ReactNode {
   const [importPending, setImportPending] = useState<{ count: number; entries: VaultEntry[] } | null>(
     null,
   );
+  const [revealPassword, setRevealPassword] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRevealPassword(false);
+    setCopied(null);
+  }, [selectedId]);
 
   const entries = vault?.entries ?? [];
   const filtered = useMemo(() => {
@@ -33,6 +41,12 @@ export function VaultPage(): ReactNode {
   }, [entries, query]);
 
   const selected = entries.find((entry) => entry.id === selectedId) ?? null;
+
+  function copyField(label: string, value: string): void {
+    void copySecret(value)
+      .then(() => setCopied(label))
+      .catch(() => setCopied(null));
+  }
 
   function startNew(): void {
     setSelectedId(null);
@@ -197,23 +211,62 @@ export function VaultPage(): ReactNode {
                     value={draft.username}
                     onChange={(event) => setDraft({ ...draft, username: event.target.value })}
                     data-testid="entry-username"
+                    autoComplete="off"
                   />
                 </label>
+                <div className="field-actions">
+                  <button
+                    type="button"
+                    className="link"
+                    disabled={!draft.username}
+                    data-testid="copy-username"
+                    onClick={() => copyField("Username", draft.username)}
+                  >
+                    Copy username
+                  </button>
+                </div>
                 <label>
                   Password
                   <input
+                    type={revealPassword ? "text" : "password"}
                     value={draft.password}
                     onChange={(event) => setDraft({ ...draft, password: event.target.value })}
                     data-testid="entry-password"
+                    autoComplete="off"
                   />
                 </label>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => setDraft({ ...draft, password: generatePassword() })}
-                >
-                  Generate password
-                </button>
+                <div className="field-actions">
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => setRevealPassword((open) => !open)}
+                    data-testid="reveal-password"
+                  >
+                    {revealPassword ? "Hide password" : "Show password"}
+                  </button>
+                  <button
+                    type="button"
+                    className="link"
+                    disabled={!draft.password}
+                    data-testid="copy-password"
+                    onClick={() => copyField("Password", draft.password)}
+                  >
+                    Copy password
+                  </button>
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => setDraft({ ...draft, password: generatePassword() })}
+                  >
+                    Generate password
+                  </button>
+                </div>
+                {copied ? (
+                  <p className="hint" data-testid="copied-note">
+                    {copied} copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000}{" "}
+                    seconds if it still holds this value.
+                  </p>
+                ) : null}
                 <label>
                   URL
                   <input

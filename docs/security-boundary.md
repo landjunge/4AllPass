@@ -187,6 +187,9 @@ object and returns it unchanged. The client verifies it under VK
 - The Chromium extension decrypts on-device via `@4allpass/crypto`. Unlocked
   entries sit in service-worker memory until Lock or worker eviction — not in
   `chrome.storage`. Fill matching uses the entry URL host, not the page title.
+- Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
+  that clipboard after 30s and on lock **if** it still matches. Other apps may
+  already have read it. No clipboard-read permission → no overwrite.
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope

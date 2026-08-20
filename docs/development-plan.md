@@ -68,7 +68,7 @@ Device-/Recovery-Envelope, Device-Key Envelope, Entries: Roundtrip plus falscher
 
 ### B4. Post-Quantum-Vorbereitung
 
-Hybrid-KEM (z. B. X25519 + ML-KEM) als Konzept, keine Pflichtimplementierung. Deliverable später: `docs/post-quantum-roadmap.md`.
+✅ [`docs/post-quantum-roadmap.md`](post-quantum-roadmap.md) — Konzept, **keine** Implementierung. v1 ist symmetrisch (AES-256-GCM, Argon2id, HKDF). Hybrid-KEM erst, wenn Public-Key-Wrapping (Sharing / Remote-Enrol) tatsächlich kommt.
 
 ### B5. CI/CD-Härtung
 
@@ -102,8 +102,8 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 2. **Hard-Revoke in der PWA** — ✅ `#26` (DK-Mirror-CAS `#27`)
 3. **A1 + A3** — ✅ `#29` (A3 war schon Primary auf der Unlock-Page)
 4. **A2 Autofill (Chromium-MVP)** — ✅ `#30` (+ Live-E2E in `#29`)
-5. **B4** — offen (PQ-Konzept). **B2** Reproducible Builds ✅ · **B3** Envelope-Fuzzing ✅
-6. **A4 Sharing** — offen. C4 Community ✅ `#31`
+5. **B2 + B3 + B4** — ✅ Reproducible Builds, Envelope-Fuzzing, PQ-Konzept (`docs/post-quantum-roadmap.md`, kein Code)
+6. **A4 Sharing** — offen (bewusst später). C4 Community ✅ `#31`
 
 COSE-Assertion gegen die server-issued Challenge ist in diesem Stand verdrahtet (Ceremony-Integrität, kein PRF). Import (Bitwarden JSON/CSV) ist auf `main` (`#31`).
 

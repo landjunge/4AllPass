@@ -49,6 +49,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Security boundary (what is actually implemented): [`docs/security-boundary.md`](docs/security-boundary.md)
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
+- Post-quantum roadmap (concept only): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
 
 ## Key path
 

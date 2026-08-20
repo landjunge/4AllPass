@@ -87,6 +87,7 @@ From `docs/security-boundary.md` §6 — treat as known, not surprises:
 4. Soft `DELETE` remains `metadata_only` — it is not cryptographic erase (hard revoke is a separate PWA path).
 5. Chromium autofill only; no native iOS/Android Autofill, no Selective-Sharing UI.
 6. `cose_verified` is ceremony integrity (`fmt=none` + assertion). It is not hardware attestation and not PRF.
+7. No post-quantum KEM in v1. Vault wrapping is AES-256-GCM. See `docs/post-quantum-roadmap.md`.
 
 ---
 

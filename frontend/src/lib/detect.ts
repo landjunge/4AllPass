@@ -97,7 +97,14 @@ export function detectCredential(raw: string): DetectedCredential | null {
     const last = allLines.at(-1) ?? "";
     const password = last === token || last === host ? "" : last;
     const username =
-      allLines.find((line) => line !== host && line !== password && line !== token) ?? "";
+      allLines.find(
+        (line) =>
+          line !== host &&
+          line !== password &&
+          line !== token &&
+          !line.includes(host) &&
+          !/^(?:sftp|ftp|password)$/i.test(line),
+      ) ?? "";
     const isSftp = /\bsftp\b/i.test(blob) || /:22\b/.test(blob);
     return {
       kind: "sftp",

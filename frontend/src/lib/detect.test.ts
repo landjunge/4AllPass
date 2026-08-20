@@ -36,7 +36,7 @@ test("ftp host plus login is SFTP class", () => {
 });
 
 test("sftp paste with dotted username does not treat the password as username", () => {
-  const detected = detectCredential("sftp ftp.example.com\nmy.user\ns3cret");
+  const detected = detectCredential("sftp\nftp.example.com\nmy.user\ns3cret");
   assert.ok(detected);
   assert.equal(detected?.kind, "sftp");
   assert.equal(detected?.username, "my.user");

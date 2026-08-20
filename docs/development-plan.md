@@ -59,7 +59,7 @@ Deliverable: [`docs/audit-scope.md`](audit-scope.md). Die KI führt das Audit ni
 
 ### B2. Reproducible Builds
 
-Deterministischer Frontend-Build-Hash. Deliverable später: `docs/reproducible-builds.md`.
+✅ [`docs/reproducible-builds.md`](reproducible-builds.md). Tree-Hash von `frontend/dist` und `extension/dist` (`scripts/hash-dist.mjs`). CI: zwei Builds, gleicher Hash (`npm run verify:reproducible`). Kein Cross-OS-Claim.
 
 ### B3. Fuzzing des Crypto-Cores
 
@@ -102,7 +102,7 @@ README-Abschnitt „Why trust this?“ mit Verweisen auf Threat Model, Adversari
 2. **Hard-Revoke in der PWA** — ✅ `#26` (DK-Mirror-CAS `#27`)
 3. **A1 + A3** — ✅ `#29` (A3 war schon Primary auf der Unlock-Page)
 4. **A2 Autofill (Chromium-MVP)** — ✅ `#30` (+ Live-E2E in `#29`)
-5. **B2, B4** — offen (reproducible builds, PQ-Konzept). **B3** Envelope-Fuzzing ✅
+5. **B4** — offen (PQ-Konzept). **B2** Reproducible Builds ✅ · **B3** Envelope-Fuzzing ✅
 6. **A4 Sharing** — offen. C4 Community ✅ `#31`
 
 COSE-Assertion gegen die server-issued Challenge ist in diesem Stand verdrahtet (Ceremony-Integrität, kein PRF). Import (Bitwarden JSON/CSV) ist auf `main` (`#31`).

@@ -4,6 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    sourcemap: false,
+    reportCompressedSize: false,
+    cssMinify: true,
+  },
   // The client calls the API same-origin (`/api/v1`), so the service worker
   // scope and the API share one origin in production too.
   server: {

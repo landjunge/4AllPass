@@ -36,7 +36,7 @@ Offen (ehrlich):
 
 - Selective-Sharing-UI (Crypto-Modell da, PWA nicht verdrahtet)
 - Native iOS/Android Autofill; Firefox/Safari-Extension-Ports
-- Reproducible Builds, Post-Quantum-Konzept
+- Post-Quantum-Konzept (`docs/post-quantum-roadmap.md`, später)
 - Kein unabhängiges Drittaudit (`docs/audit-scope.md` ist die Karte)
 
 Erledigt seit diesem Datum: Hard-Revoke in der PWA, DK-Mirror-CAS, server-issued Challenges, Chromium-Autofill-MVP, Bitwarden/CSV-Import, CONTRIBUTING.

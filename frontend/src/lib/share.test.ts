@@ -8,9 +8,16 @@ import { buildSharePackage, looksLikeSharePackage, openSharePackage, SHARE_KIND 
 
 function entry(partial: Partial<VaultEntry> & Pick<VaultEntry, "id" | "password">): VaultEntry {
   return {
+    kind: "web",
     title: "GitHub",
+    provider: "",
+    account: "",
     username: "ada",
     url: "https://github.com",
+    host: "",
+    port: "",
+    protocol: "",
+    capabilities: "",
     notes: "",
     updatedAt: "2026-08-20T00:00:00.000Z",
     ...partial,

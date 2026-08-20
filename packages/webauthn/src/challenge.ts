@@ -10,9 +10,27 @@ export const CHALLENGE_BYTES = 32;
 
 export type CeremonyPurpose = "create" | "assert";
 
+export interface CeremonyArtifact {
+  purpose: CeremonyPurpose;
+  credentialId: Uint8Array;
+  clientDataJSON: ArrayBuffer;
+  attestationObject?: ArrayBuffer;
+  authenticatorData?: ArrayBuffer;
+  signature?: ArrayBuffer;
+}
+
 export interface ChallengeProvider {
   /** Called immediately before every navigator.credentials.create / .get. */
   next(purpose: CeremonyPurpose): Promise<Uint8Array>;
+  /** Optional: PWA reports the authenticator response so the server can verify COSE. */
+  report?(artifact: CeremonyArtifact): void;
+}
+
+export function reportCeremony(
+  provider: ChallengeProvider | undefined,
+  artifact: CeremonyArtifact,
+): void {
+  provider?.report?.(artifact);
 }
 
 export function newChallenge(): Uint8Array {

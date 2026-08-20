@@ -35,10 +35,8 @@ class WebAuthnCredential(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     rp_id: Mapped[str] = mapped_column(String(255), nullable=False)
     credential_id: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True, index=True)
-    # COSE public key — required once the server verifies assertions.
-    # Device-unlock registration from the PWA currently sends ceremony
-    # metadata only (frontend registerCredential); assertion verification
-    # is a follow-up. Nullable until that lands.
+    # COSE public key extracted from a verified fmt=none registration.
+    # Null on client_asserted legacy rows. Never PRF material.
     public_key: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     sign_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     transports: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

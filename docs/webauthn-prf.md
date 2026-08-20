@@ -123,7 +123,12 @@ Rules:
 
 The PWA injects a `ChallengeProvider` into `@4allpass/webauthn`. Unit tests may omit it and fall back to a local `newChallenge()`.
 
-Consuming the challenge does **not** verify the authenticator signature. That is a later step (`public_key` + `signCount`). The challenge exists so that step has something server-bound to verify against.
+Consuming the challenge with an assertion (`clientDataJSON`, `authenticatorData`,
+`signature`, `credentialId`) verifies the COSE signature against the stored
+public key and this challenge, then updates `signCount`. Registration posts
+the `fmt=none` attestation with the create challenge; the server extracts the
+COSE key. That is ceremony integrity. It is **not** PRF verification and is
+not mixed into HKDF.
 
 ---
 

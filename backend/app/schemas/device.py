@@ -19,10 +19,10 @@ class CredentialSummary(CamelModel):
     created_at: datetime
     last_used_at: datetime | None
     revoked_at: datetime | None
-    # The server stores client-asserted ceremony metadata. It does not verify
-    # WebAuthn assertions or PRF output (docs/security-boundary.md).
-    server_verified: Literal[False] = False
-    verification: Literal["client_asserted"] = "client_asserted"
+    # cose_verified = the server checked a registration/assertion signature
+    # against a one-time challenge. It is not proof of PRF or vault unwrap.
+    server_verified: bool = False
+    verification: Literal["client_asserted", "cose_verified"] = "client_asserted"
 
 
 class DeviceSummary(CamelModel):
@@ -53,3 +53,9 @@ class RegisterCredentialRequest(WriteModel):
     mechanism: Literal["prf", "large_blob", "uv_gated_local"]
     prf_supported: bool
     large_blob_supported: bool
+    # Optional registration response. When present, the server consumes the
+    # create challenge and stores the COSE public key. Absent → client_asserted.
+    challenge_id: UUID | None = None
+    challenge: str | None = None
+    client_data_json: str | None = Field(default=None, alias="clientDataJSON")
+    attestation_object: str | None = None

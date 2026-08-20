@@ -45,8 +45,8 @@ export interface CredentialSummary {
   createdAt: string;
   lastUsedAt: string | null;
   revokedAt: string | null;
-  serverVerified?: false;
-  verification?: "client_asserted";
+  serverVerified?: boolean;
+  verification?: "client_asserted" | "cose_verified";
 }
 
 export interface DeviceSummary {
@@ -198,6 +198,10 @@ export const api = {
       mechanism: CredentialSummary["mechanism"];
       prfSupported: boolean;
       largeBlobSupported: boolean;
+      challengeId?: string;
+      challenge?: string;
+      clientDataJSON?: string;
+      attestationObject?: string;
     },
   ): Promise<CredentialSummary> {
     return request("POST", `/vaults/${vaultId}/devices/${deviceId}/credentials`, credential);
@@ -237,7 +241,14 @@ export const api = {
   consumeWebAuthnChallenge(
     vaultId: string,
     challengeId: string,
-    body: { purpose: "create" | "assert"; challenge: string },
+    body: {
+      purpose: "create" | "assert";
+      challenge: string;
+      credentialId?: string;
+      clientDataJSON?: string;
+      authenticatorData?: string;
+      signature?: string;
+    },
   ): Promise<void> {
     return request("POST", `/vaults/${vaultId}/webauthn/challenges/${challengeId}/consume`, body);
   },

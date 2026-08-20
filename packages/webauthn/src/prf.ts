@@ -7,7 +7,7 @@
  */
 import { equalBytes, KEY_BYTES, prfEvalFirst } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
-import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
+import { reportCeremony, resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import { PrfUnavailableError, WebAuthnUnavailableError } from "./errors.ts";
 import type {
   ExtensionBytes,
@@ -60,6 +60,13 @@ export async function assertPrfOutput(request: PrfAssertionRequest): Promise<Uin
   };
   const assertion = await request.client.get(assertionRequest);
   assertUserVerified(assertion.authenticatorData, request.rpId);
+  reportCeremony(request.challenges, {
+    purpose: "assert",
+    credentialId: request.credentialId,
+    clientDataJSON: assertion.clientDataJSON,
+    authenticatorData: assertion.authenticatorData,
+    signature: assertion.signature,
+  });
   if (!equalBytes(new Uint8Array(assertion.rawId), request.credentialId)) {
     throw new WebAuthnUnavailableError("authenticator answered with a different credential");
   }

@@ -9,7 +9,7 @@ import type { DeviceKeyEnvelope } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockError, WebAuthnUnavailableError } from "./errors.ts";
 import { toBytes } from "./prf.ts";
-import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
+import { reportCeremony, resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import type { WebAuthnClient } from "./types.ts";
 
 export interface LargeBlobRequest {
@@ -45,6 +45,13 @@ export async function writeLargeBlob(
     largeBlob: { write: serializeDeviceKeyEnvelope(request.envelope) },
   });
   assertUserVerified(assertion.authenticatorData, request.rpId);
+  reportCeremony(request.challenges, {
+    purpose: "assert",
+    credentialId: request.credentialId,
+    clientDataJSON: assertion.clientDataJSON,
+    authenticatorData: assertion.authenticatorData,
+    signature: assertion.signature,
+  });
   if (assertion.extensionResults.largeBlob?.written !== true) {
     throw new WebAuthnUnavailableError("authenticator did not write the largeBlob");
   }
@@ -59,6 +66,13 @@ export async function readLargeBlob(request: LargeBlobRequest): Promise<DeviceKe
     largeBlob: { read: true },
   });
   assertUserVerified(assertion.authenticatorData, request.rpId);
+  reportCeremony(request.challenges, {
+    purpose: "assert",
+    credentialId: request.credentialId,
+    clientDataJSON: assertion.clientDataJSON,
+    authenticatorData: assertion.authenticatorData,
+    signature: assertion.signature,
+  });
   const blob = toBytes(assertion.extensionResults.largeBlob?.blob);
   if (!blob || blob.length === 0) {
     throw new WebAuthnUnavailableError("authenticator returned no largeBlob");

@@ -28,15 +28,18 @@ Erledigt:
 - Crypto-Protokoll und Reference Implementation (`packages/crypto`)
 - Specs: crypto-protocol, webauthn-prf, vault-revision, threat-model, adversarial-review, security-boundary
 - Backend: FastAPI + PostgreSQL + Redis, Account-Sessions, Ownership-404, Snapshot-CAS, opaque Envelopes
-- PWA: Account, Vault anlegen, Master-Passwort-Unlock, WebAuthn-Unlock, Recovery Kit, Device-Panel
+- PWA: Account, Vault anlegen, Master-Passwort-Unlock, WebAuthn-Unlock, Recovery Kit, Device-Panel, Hard-Revoke, Bitwarden/CSV-Import
+- Chromium MV3 Autofill (`extension/`)
 - Docker Compose für Postgres + Redis + Backend
 
 Offen (ehrlich):
 
-- PWA verdrahtet Hard-Revoke (Vault-Key-Rotation) noch nicht — Library ist fertig, PRs #15/#16
-- Device-Key-Envelope-Mirror ist nicht CAS-gebunden an `active_revision` — PR #24
-- Keine Browser-Extension, kein Autofill, kein Selective-Sharing-UI
-- Kein unabhängiges Drittaudit
+- Selective-Sharing-UI (Crypto-Modell da, PWA nicht verdrahtet)
+- Native iOS/Android Autofill; Firefox/Safari-Extension-Ports
+- Reproducible Builds, Envelope-Fuzzing, Post-Quantum-Konzept
+- Kein unabhängiges Drittaudit (`docs/audit-scope.md` ist die Karte)
+
+Erledigt seit diesem Datum: Hard-Revoke in der PWA, DK-Mirror-CAS, server-issued Challenges, Chromium-Autofill-MVP, Bitwarden/CSV-Import, CONTRIBUTING.
 
 Die Crypto-Basis ist gut genug, um nicht weiter an der Architektur zu zweifeln. Ab hier entscheiden Verdrahtung, UX und Ehrlichkeit der Claims.
 

@@ -70,8 +70,9 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
   this device’s envelope is included only when its Device Key is recoverable
   locally without a WebAuthn ceremony — otherwise every device re-enrols after
   master unlock. See [`docs/security-boundary.md`](security-boundary.md) §4.
-- WebAuthn credential rows are client-asserted metadata (`verification: "client_asserted"`).
-  The server does not verify assertions or PRF output.
+- WebAuthn credential rows are `client_asserted` until the PWA posts a
+  registration/assertion the server can COSE-verify (`verification: "cose_verified"`).
+  That is ceremony integrity. The server never verifies PRF output.
 
 Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-boundary.md).
 

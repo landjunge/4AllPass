@@ -25,3 +25,9 @@ class ConsumeChallengeRequest(CamelModel):
     purpose: ChallengePurpose
     """The same 32 bytes that were used as publicKey.challenge."""
     challenge: str
+    # Optional assertion. When present with purpose=assert, the server verifies
+    # the COSE signature against the stored public key. Not PRF material.
+    credential_id: str | None = None
+    client_data_json: str | None = Field(default=None, alias="clientDataJSON")
+    authenticator_data: str | None = None
+    signature: str | None = None

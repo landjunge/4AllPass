@@ -103,8 +103,11 @@ export function browserWebAuthnClient(): WebAuthnClient {
         throw new WebAuthnUnavailableError("credential creation returned nothing");
       }
       const publicKeyCredential = credential as PublicKeyCredential;
+      const response = publicKeyCredential.response as AuthenticatorAttestationResponse;
       return {
         rawId: publicKeyCredential.rawId,
+        clientDataJSON: response.clientDataJSON,
+        attestationObject: response.attestationObject,
         extensionResults: extensionResults(publicKeyCredential),
       };
     },
@@ -145,6 +148,8 @@ export function browserWebAuthnClient(): WebAuthnClient {
       return {
         rawId: publicKeyCredential.rawId,
         authenticatorData: response.authenticatorData,
+        clientDataJSON: response.clientDataJSON,
+        signature: response.signature,
         extensionResults: extensionResults(publicKeyCredential),
       };
     },

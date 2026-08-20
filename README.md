@@ -14,6 +14,7 @@ Argon2id, WebAuthn device unlock, PWA. Selective profile sharing is specified, n
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — device unlock: PRF > largeBlob > UV-gated local store |
 | [`backend`](backend) | FastAPI + PostgreSQL + Redis. Account-Session, Ownership, Snapshot-CAS. Stores opaque envelopes only |
 | [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
+| [`extension`](extension) | Chromium MV3 autofill. Decrypts on-device via `@4allpass/crypto` |
 | [`docs`](docs) | The authoritative specifications |
 
 How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md).

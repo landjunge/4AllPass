@@ -69,11 +69,15 @@ export interface ExtensionResultsLike {
 export interface AssertionLike {
   rawId: ArrayBuffer;
   authenticatorData: ArrayBuffer;
+  clientDataJSON: ArrayBuffer;
+  signature: ArrayBuffer;
   extensionResults: ExtensionResultsLike;
 }
 
 export interface AttestationLike {
   rawId: ArrayBuffer;
+  clientDataJSON: ArrayBuffer;
+  attestationObject: ArrayBuffer;
   extensionResults: ExtensionResultsLike;
 }
 

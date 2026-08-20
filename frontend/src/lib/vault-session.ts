@@ -56,7 +56,12 @@ import {
   indexedDbDeviceUnlockStore,
   unlockWithDevice as unlockWithDeviceCredential,
 } from "@4allpass/webauthn";
-import type { ChallengeProvider, DeviceUnlockMechanism, DeviceUnlockStore } from "@4allpass/webauthn";
+import type {
+  CeremonyArtifact,
+  ChallengeProvider,
+  DeviceUnlockMechanism,
+  DeviceUnlockStore,
+} from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
@@ -108,12 +113,24 @@ export function setDeviceUnlockStoreForTests(next: DeviceUnlockStore | null): vo
   deviceUnlockStoreOverride = next;
 }
 
+function arrayBufferToB64(buffer: ArrayBuffer): string {
+  return bytesToBase64(new Uint8Array(buffer));
+}
+
 /** One server challenge per create/get; consume after the ceremony batch. */
 function serverChallenges(vaultId: string, deviceIdValue: string): {
   provider: ChallengeProvider;
+  takeCreate: () =>
+    | { challengeId: string; challenge: string; artifact: CeremonyArtifact | undefined }
+    | undefined;
   consumeAll: () => Promise<void>;
 } {
-  const issued: Array<{ challengeId: string; challenge: string; purpose: "create" | "assert" }> = [];
+  const issued: Array<{
+    challengeId: string;
+    challenge: string;
+    purpose: "create" | "assert";
+    artifact?: CeremonyArtifact;
+  }> = [];
   return {
     provider: {
       async next(purpose) {
@@ -121,18 +138,41 @@ function serverChallenges(vaultId: string, deviceIdValue: string): {
         issued.push({ challengeId: row.challengeId, challenge: row.challenge, purpose: row.purpose });
         return base64ToBytes(row.challenge);
       },
+      report(artifact) {
+        const row = [...issued].reverse().find((item) => item.purpose === artifact.purpose && !item.artifact);
+        if (row) row.artifact = artifact;
+      },
+    },
+    takeCreate() {
+      const index = issued.findIndex((row) => row.purpose === "create");
+      if (index < 0) return undefined;
+      const [row] = issued.splice(index, 1);
+      if (!row) return undefined;
+      return { challengeId: row.challengeId, challenge: row.challenge, artifact: row.artifact };
     },
     async consumeAll() {
       const pending = issued.splice(0);
       await Promise.all(
-        pending.map((row) =>
-          api
+        pending.map((row) => {
+          const artifact = row.artifact;
+          return api
             .consumeWebAuthnChallenge(vaultId, row.challengeId, {
               purpose: row.purpose,
               challenge: row.challenge,
+              ...(row.purpose === "assert" &&
+              artifact?.signature &&
+              artifact.signature.byteLength > 0 &&
+              artifact.authenticatorData
+                ? {
+                    credentialId: bytesToBase64(artifact.credentialId),
+                    clientDataJSON: arrayBufferToB64(artifact.clientDataJSON),
+                    authenticatorData: arrayBufferToB64(artifact.authenticatorData),
+                    signature: arrayBufferToB64(artifact.signature),
+                  }
+                : {}),
             })
-            .catch(() => undefined),
-        ),
+            .catch(() => undefined);
+        }),
       );
     },
   };
@@ -542,51 +582,67 @@ export async function enableDeviceUnlockForVault(
   });
 
   const challenges = serverChallenges(vault.vaultId, id);
-  const result = await enableDeviceUnlock({
-    client: client(),
-    store: store(),
-    vaultKey: vault.vaultKey,
-    vaultId: vault.vaultId,
-    deviceId: id,
-    vaultKeyVersion: vault.vaultKeyVersion,
-    deviceKeyVersion: INITIAL_DEVICE_KEY_VERSION,
-    rpId: rpId(),
-    challenges: challenges.provider,
-    user: {
-      id: new TextEncoder().encode(accountEmail),
-      name: accountEmail,
-      displayName: accountEmail,
-    },
-  }).finally(() => challenges.consumeAll());
+  try {
+    const result = await enableDeviceUnlock({
+      client: client(),
+      store: store(),
+      vaultKey: vault.vaultKey,
+      vaultId: vault.vaultId,
+      deviceId: id,
+      vaultKeyVersion: vault.vaultKeyVersion,
+      deviceKeyVersion: INITIAL_DEVICE_KEY_VERSION,
+      rpId: rpId(),
+      challenges: challenges.provider,
+      user: {
+        id: new TextEncoder().encode(accountEmail),
+        name: accountEmail,
+        displayName: accountEmail,
+      },
+    });
 
-  const credentialIdBase64 = bytesToBase64(result.credentialId);
-  await api.registerCredential(vault.vaultId, id, {
-    credentialId: credentialIdBase64,
-    rpId: rpId(),
-    mechanism: result.mechanism,
-    prfSupported: result.mechanism === "prf",
-    largeBlobSupported: result.mechanism === "large_blob",
-  });
+    const credentialIdBase64 = bytesToBase64(result.credentialId);
+    const create = challenges.takeCreate();
+    const attestation = create?.artifact;
+    await api.registerCredential(vault.vaultId, id, {
+      credentialId: credentialIdBase64,
+      rpId: rpId(),
+      mechanism: result.mechanism,
+      prfSupported: result.mechanism === "prf",
+      largeBlobSupported: result.mechanism === "large_blob",
+      ...(create &&
+      attestation?.attestationObject &&
+      attestation.attestationObject.byteLength > 0
+        ? {
+            challengeId: create.challengeId,
+            challenge: create.challenge,
+            clientDataJSON: arrayBufferToB64(attestation.clientDataJSON),
+            attestationObject: arrayBufferToB64(attestation.attestationObject),
+          }
+        : {}),
+    });
 
-  const envelopes = [
-    ...vault.envelopes.filter(
-      (envelope) => !(envelope.type === "device" && envelope.deviceId === id),
-    ),
-    result.deviceEnvelope,
-  ];
-  const updated = await commitSnapshot(vault, vault.entries, envelopes);
+    const envelopes = [
+      ...vault.envelopes.filter(
+        (envelope) => !(envelope.type === "device" && envelope.deviceId === id),
+      ),
+      result.deviceEnvelope,
+    ];
+    const updated = await commitSnapshot(vault, vault.entries, envelopes);
 
-  if (result.mirrorableDeviceKeyEnvelope) {
-    await api.putDeviceKeyEnvelope(
-      vault.vaultId,
-      id,
-      credentialIdBase64,
-      encodeDeviceKeyEnvelope(result.mirrorableDeviceKeyEnvelope),
-      updated.revision,
-    );
+    if (result.mirrorableDeviceKeyEnvelope) {
+      await api.putDeviceKeyEnvelope(
+        vault.vaultId,
+        id,
+        credentialIdBase64,
+        encodeDeviceKeyEnvelope(result.mirrorableDeviceKeyEnvelope),
+        updated.revision,
+      );
+    }
+
+    return { vault: updated, mechanism: result.mechanism };
+  } finally {
+    await challenges.consumeAll();
   }
-
-  return { vault: updated, mechanism: result.mechanism };
 }
 
 /**

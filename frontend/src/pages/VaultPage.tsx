@@ -149,7 +149,7 @@ export function VaultPage(): ReactNode {
                 Import
                 <input
                   type="file"
-                  accept=".json,.csv,application/json,text/csv"
+                  accept=".json,.csv,.xml,.1pif,application/json,text/csv,application/xml,text/xml"
                   data-testid="import-file"
                   onChange={(event) => {
                     const file = event.target.files?.[0];

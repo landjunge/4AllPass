@@ -1,9 +1,7 @@
 /**
- * Shared desk chrome — source: Gnom-Hub-V1
- * `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root` (calm dark, no rainbow).
- *
- * Products keep their own logo/name. Surfaces, type, radius, status colors
- * stay the same so 4AllPass, Tollgate, and Gnom-Hub-V1 feel like one desk.
+ * Shared desk chrome — always Gnom-Hub-V1.
+ * Source: gnom-hub-v1/src/gnom_hub/ui/static/app.css `:root`
+ * Published: https://netzwerkpunkt.de/assets/desk-tokens.css
  */
 :root {
   --bg: #121316;
@@ -24,7 +22,6 @@
   --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
 
-  /* Aliases for existing 4AllPass class names */
   --panel: var(--bg-card);
   --panel-2: var(--bg-elev);
   --line: var(--border);

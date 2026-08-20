@@ -23,7 +23,11 @@ Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antwo
 
 **Basis ist Gnom-Hub-V1**, nicht eine eigene 4AllPass-Palette und nicht das alte Neon-Hub.
 
-Quelle: `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root` → Kopie `frontend/src/tokens.css`.
+**Immer Gnom-Hub-V1** — Name, Desk und Farben. Nicht Orange vom Portfolio, nicht das alte Neon-Hub.
+
+Quelle: `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root`  
+Veröffentlicht: https://netzwerkpunkt.de/assets/desk-tokens.css  
+Lokale Kopie: `frontend/src/tokens.css` (offline, kein Extra-Origin).
 
 | Token | Wert | Rolle |
 |---|---|---|
@@ -34,7 +38,7 @@ Quelle: `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root` → Kopie `frontend
 | `--text` | `#e2e4e9` | Text |
 | `--text-muted` | `#8b909a` | sekundär |
 | `--border` | `#2e3138` | Kanten |
-| `--accent` / `--accent-hi` | `#6b7280` / `#a1a8b3` | Chrome, kein Neon |
+| `--accent` / `--accent-hi` | `#6b7280` / `#a1a8b3` | ruhiges Chrome |
 | `--ok` / `--warn` / `--err` | `#3d9b6a` / `#c9a227` / `#c45c5c` | Status |
 
 Gleiche Tokens für 4AllPass PWA, Extension-Popup und Tollgate Control Room. **Kein Rainbow-Chrome.** Agent-Farben nur in Gnom-Hub-V1 (Identität der Agenten).

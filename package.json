@@ -13,6 +13,8 @@
     "test:webauthn": "npm test -w @4allpass/webauthn",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "dev": "npm run dev -w @4allpass/frontend",
+    "test:e2e": "npm run test:e2e -w @4allpass/frontend",
+    "test:e2e:live": "npm run test:e2e:live -w @4allpass/frontend",
     "build": "npm run build -w @4allpass/frontend"
   }
 }

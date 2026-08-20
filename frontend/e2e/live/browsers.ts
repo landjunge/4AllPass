@@ -55,7 +55,7 @@ export async function launchInstalledBrowsers(): Promise<LiveBrowser[]> {
           ? await firefox.launch({
               headless: false,
               slowMo: SLOWMO,
-              executablePath: app.path,
+              ...(app.path ? { executablePath: app.path } : {}),
             })
           : await chromium.launch({
               headless: false,
@@ -65,6 +65,16 @@ export async function launchInstalledBrowsers(): Promise<LiveBrowser[]> {
       launched.push({ name: app.name, browser });
     } catch (error) {
       console.warn(`skip ${app.name}:`, error instanceof Error ? error.message : error);
+      if (app.kind === "firefox") {
+        try {
+          launched.push({
+            name: "Firefox (Playwright)",
+            browser: await firefox.launch({ headless: false, slowMo: SLOWMO }),
+          });
+        } catch (inner) {
+          console.warn("skip bundled Firefox:", inner instanceof Error ? inner.message : inner);
+        }
+      }
     }
   }
   try {

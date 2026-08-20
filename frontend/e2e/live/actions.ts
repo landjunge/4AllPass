@@ -27,6 +27,14 @@ export async function signUpWithMouse(page: Page): Promise<string> {
   await clickAndType(page, page.getByLabel("E-mail"), email);
   await clickAndType(page, page.getByLabel("Account password"), ACCOUNT_PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
+  const error = page.getByTestId("error-banner");
+  await Promise.race([
+    page.getByTestId("account-email").waitFor({ state: "visible" }),
+    error.waitFor({ state: "visible" }),
+  ]);
+  if (await error.isVisible()) {
+    throw new Error(`sign-up failed: ${((await error.textContent()) ?? "").trim()}`);
+  }
   await expect(page.getByTestId("account-email")).toHaveText(email);
   return email;
 }

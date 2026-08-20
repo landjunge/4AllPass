@@ -22,7 +22,10 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --host 127.0.0.1",
     url: process.env.E2E_BASE_URL ?? "http://127.0.0.1:5173",
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.API_ORIGIN,
     timeout: 60_000,
+    env: {
+      API_ORIGIN: process.env.API_ORIGIN ?? "http://127.0.0.1:8000",
+    },
   },
 });

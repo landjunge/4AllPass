@@ -17,6 +17,7 @@ import {
   shareWarning,
   type BuiltShare,
 } from "../lib/share.ts";
+import { AccessPanel } from "../components/AccessPanel.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 
 export function VaultPage(): ReactNode {
@@ -25,7 +26,7 @@ export function VaultPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EntryDraft | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"entries" | "devices">("entries");
+  const [tab, setTab] = useState<"entries" | "devices" | "access">("entries");
   const [importPending, setImportPending] = useState<{
     count: number;
     entries: VaultEntry[];
@@ -46,7 +47,7 @@ export function VaultPage(): ReactNode {
     const needle = query.trim().toLowerCase();
     if (!needle) return entries;
     return entries.filter((entry) =>
-      [entry.title, entry.username, entry.url].some((field) =>
+      [entry.title, entry.username, entry.url, entry.provider, entry.host].some((field) =>
         field.toLowerCase().includes(needle),
       ),
     );
@@ -62,16 +63,23 @@ export function VaultPage(): ReactNode {
 
   function startNew(): void {
     setSelectedId(null);
-    setDraft({ ...emptyDraft(), password: generatePassword() });
+    setDraft({ ...emptyDraft("web"), password: generatePassword() });
   }
 
   function startEdit(entry: VaultEntry): void {
     setSelectedId(entry.id);
     setDraft({
+      kind: entry.kind,
       title: entry.title,
+      provider: entry.provider,
+      account: entry.account,
       username: entry.username,
       password: entry.password,
       url: entry.url,
+      host: entry.host,
+      port: entry.port,
+      protocol: entry.protocol,
+      capabilities: entry.capabilities,
       notes: entry.notes,
     });
   }
@@ -171,6 +179,14 @@ export function VaultPage(): ReactNode {
         </button>
         <button
           type="button"
+          className={tab === "access" ? "active" : ""}
+          onClick={() => setTab("access")}
+          data-testid="tab-access"
+        >
+          Access
+        </button>
+        <button
+          type="button"
           className={tab === "devices" ? "active" : ""}
           onClick={() => setTab("devices")}
           data-testid="tab-devices"
@@ -184,6 +200,8 @@ export function VaultPage(): ReactNode {
 
       {tab === "devices" ? (
         <DevicesPanel />
+      ) : tab === "access" ? (
+        <AccessPanel entries={entries} />
       ) : (
         <div className="columns">
           <section className="card list">
@@ -223,7 +241,11 @@ export function VaultPage(): ReactNode {
                       onClick={() => startEdit(entry)}
                     >
                       <strong>{entry.title || "(untitled)"}</strong>
-                      <span className="muted">{entry.username}</span>
+                      <span className="muted">
+                        {entry.kind}
+                        {entry.provider ? ` · ${entry.provider}` : ""}
+                        {entry.username ? ` · ${entry.username}` : ""}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -235,6 +257,30 @@ export function VaultPage(): ReactNode {
             {draft ? (
               <>
                 <h3>{selectedId ? "Edit entry" : "New entry"}</h3>
+                <div className="tabs">
+                  {(["web", "api", "sftp"] as const).map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      className={draft.kind === kind ? "active" : ""}
+                      data-testid={`kind-${kind}`}
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          kind,
+                          port: kind === "sftp" && !draft.port ? "22" : draft.port,
+                          protocol: kind === "sftp" && !draft.protocol ? "sftp" : draft.protocol,
+                          capabilities:
+                            kind === "api" && !draft.capabilities
+                              ? "repository.read"
+                              : draft.capabilities,
+                        })
+                      }
+                    >
+                      {kind === "web" ? "Web" : kind === "api" ? "API" : "SSH/SFTP"}
+                    </button>
+                  ))}
+                </div>
                 <label>
                   Title
                   <input
@@ -243,6 +289,61 @@ export function VaultPage(): ReactNode {
                     data-testid="entry-title"
                   />
                 </label>
+                <label>
+                  Provider
+                  <input
+                    value={draft.provider}
+                    onChange={(event) => setDraft({ ...draft, provider: event.target.value })}
+                    data-testid="entry-provider"
+                    placeholder={draft.kind === "api" ? "GitHub" : draft.kind === "sftp" ? "Production" : ""}
+                  />
+                </label>
+                <label>
+                  Account
+                  <input
+                    value={draft.account}
+                    onChange={(event) => setDraft({ ...draft, account: event.target.value })}
+                    data-testid="entry-account"
+                    placeholder="personal"
+                  />
+                </label>
+                {draft.kind === "sftp" ? (
+                  <>
+                    <label>
+                      Host
+                      <input
+                        value={draft.host}
+                        onChange={(event) => setDraft({ ...draft, host: event.target.value })}
+                        data-testid="entry-host"
+                      />
+                    </label>
+                    <label>
+                      Protocol
+                      <input
+                        value={draft.protocol}
+                        onChange={(event) => setDraft({ ...draft, protocol: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Port
+                      <input
+                        value={draft.port}
+                        onChange={(event) => setDraft({ ...draft, port: event.target.value })}
+                      />
+                    </label>
+                  </>
+                ) : null}
+                {draft.kind === "api" ? (
+                  <label>
+                    Capabilities
+                    <input
+                      value={draft.capabilities}
+                      onChange={(event) => setDraft({ ...draft, capabilities: event.target.value })}
+                      data-testid="entry-capabilities"
+                      placeholder="repository.read"
+                    />
+                  </label>
+                ) : null}
                 <label>
                   Username
                   <input
@@ -264,7 +365,7 @@ export function VaultPage(): ReactNode {
                   </button>
                 </div>
                 <label>
-                  Password
+                  {draft.kind === "api" ? "API key / token" : "Password"}
                   <input
                     type={revealPassword ? "text" : "password"}
                     value={draft.password}
@@ -359,8 +460,8 @@ export function VaultPage(): ReactNode {
               <div className="placeholder">
                 <h3>Zero-knowledge vault</h3>
                 <p className="muted">
-                  Select an entry or create a new one. Saving re-seals every entry with a fresh
-                  nonce and commits the next revision.
+                  Web, API, or SSH/SFTP. Saving re-seals every entry on this device. The server only
+                  stores ciphertext. Agent access is the Access tab — unknown apps are denied.
                 </p>
               </div>
             )}

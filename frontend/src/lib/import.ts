@@ -25,10 +25,17 @@ function asEntry(partial: {
 }): VaultEntry {
   return {
     id: newEntryId(),
+    kind: "web",
     title: partial.title?.trim() ?? "",
+    provider: "",
+    account: "",
     username: partial.username?.trim() ?? "",
     password: partial.password ?? "",
     url: partial.url?.trim() ?? "",
+    host: "",
+    port: "",
+    protocol: "",
+    capabilities: "",
     notes: partial.notes?.trim() ?? "",
     updatedAt: new Date().toISOString(),
   };

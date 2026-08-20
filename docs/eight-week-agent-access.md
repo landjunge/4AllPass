@@ -49,17 +49,11 @@ README shows the access loop first, crypto later. Architecture:
 Human / App / Agent → request → Policy → approval/deny → scoped credential → Provider
 ```
 
-Shipped this week: **docs + README wedge**. Not the broker.
+Shipped: **docs + README wedge**. Not the broker.
 
-### 1–2 — MVP providers (three classes only)
+### 1–2 — MVP providers (in the PWA)
 
-Not the full template list. Demo needs:
-
-| Class | Why |
-|---|---|
-| **API** | GitHub / Stripe / OpenAI-style key |
-| **SSH/SFTP** | Not “just API keys” |
-| **Web/HTTP** | Generic login |
+Three kinds in **ciphertext** (`web` / `api` / `sftp`), still `schemaVersion` 1 so old entries decode as `web`. Access tab: n8n GitHub read (TTL demo), `repository.delete` DENY, unknown app DENY. Grants live in the unlocked page only. FastAPI is not on this path.
 
 Full list (Website, Mail, Domain, Hosting, Cloud, Git, DB, VPN, Custom) stays in `provider-service-vision.md`.
 

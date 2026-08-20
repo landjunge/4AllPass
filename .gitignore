@@ -9,6 +9,11 @@ dev-dist/
 *.log
 test-results/
 playwright-report/
+**/xcuserdata/
+**/DerivedData/
+*.xcuserstate
+# filled by npm run build -w @4allpass/extension
+extension/safari/FourAllPass/FourAllPass Extension/Resources/
 
 # Python / backend
 .venv/

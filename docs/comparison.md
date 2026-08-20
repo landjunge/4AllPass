@@ -14,7 +14,7 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 | Offene Testvektoren / Threat Model | ✅ `docs/threat-model.md`, `docs/adversarial-review.md`, `docs/test-vectors*.md` | teilweise | ❌ nicht öffentlich | teilweise (Audit-Berichte) |
 | Unabhängiges Security-Audit | ⏳ vorbereitet in `docs/audit-scope.md` | ✅ regelmäßig | ✅ regelmäßig | ✅ (u. a. Cure53) |
 | Preis | Self-Hosting, keine Lizenz | ~20 $/Jahr Premium (Stand 2026) | ~40–70 $/Jahr | 0–24 $/Jahr |
-| Autofill | ⚠️ Chromium + Firefox MV3 (`extension/`); Safari/native ⏳ | ⚠️ oft kritisiert | ✅ stark | ⚠️ teils unzuverlässig |
+| Autofill | ⚠️ Chromium + Firefox MV3 + macOS Safari wrapper; iOS/Android native ⏳ | ⚠️ oft kritisiert | ✅ stark | ⚠️ teils unzuverlässig |
 | Emergency Access / Recovery | ✅ Recovery Key + Emergency Kit in der PWA (`docs/recovery.md`); kein Server-Reset | ❌ kein Master-PW-Recovery | ✅ | ⚠️ oft nur höhere Tarife |
 | Kryptografische Gerätebindung | ✅ WebAuthn PRF → DWK → DK → VK | ⚠️ Geräte sind meist organisatorisch | ⚠️ Secret Key + Geräte | ⚠️ |
 | Hard-Revoke (Vault-Key-Rotation) | ✅ PWA `hardRevokeDevice` (VK+1, re-encrypt, omit target, CAS, dann metadata DELETE) | n/a | n/a | n/a |

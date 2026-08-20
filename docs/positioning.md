@@ -58,5 +58,8 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 - Live item-sharing to another person’s device key (v1 is an encrypted file plus share key only).
 - Unabhängiges Drittaudit.
 - „DELETE Gerät löscht den Schlüssel“ — Soft-Revoke ist `metadata_only`; Hard-Revoke rotiert den Vault Key in der PWA.
+- Application/Agent Secret Access, Provider-Templates, oder „personal secret access control“ — das ist Zielbild (`positioning-target.md`), kein Ist.
 
 Vergleichstabelle: [`comparison.md`](comparison.md).
+
+**Far later (keine Ist-Claims):** Zielkategorie *personal secret access control* (Mensch + Anwendung + Agent, ohne den Vault preiszugeben) steht in [`positioning-target.md`](positioning-target.md). Die dortigen 9/10-Zahlen gelten nur, wenn Provider-Templates und der Secret Access Layer fertig, getestet und auditiert sind. Nicht auf README/Website kopieren.

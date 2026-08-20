@@ -4,7 +4,7 @@
 **Date:** 2026-08-20  
 **Not this document:** a schema bump, TOTP generator, API gateway, server-side graph, MCP/n8n injection, clipboard watcher, or Secret Broker.
 
-Companion: `development-plan.md`, `security-boundary.md`, `sharing.md`, `secret-access-layer.md` (who may *read* a Secret), `.cursor/skills/4allpass/references/improve.md`. Tracker: [#65](https://github.com/landjunge/4AllPass/issues/65).
+Companion: `development-plan.md`, `security-boundary.md`, `sharing.md`, `secret-access-layer.md` (who may *read* a Secret), `positioning-target.md` (category *if this ships*), `.cursor/skills/4allpass/references/improve.md`. Tracker: [#65](https://github.com/landjunge/4AllPass/issues/65).
 
 ---
 

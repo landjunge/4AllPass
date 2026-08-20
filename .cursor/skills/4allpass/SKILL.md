@@ -102,7 +102,7 @@ Current recommended order:
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
-Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard watchers, or an MCP/n8n agent before the above. Those last two are **far later** (community vote or Plus shell, default off) — see [references/improve.md](references/improve.md).
+Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard watchers, an MCP/n8n agent, or **Provider & Service Management** before the above. Clipboard/MCP/Provider templates are **far later** (community vote or Plus shell, default off) — see [references/improve.md](references/improve.md) and `docs/provider-service-vision.md`.
 
 ## Open work already in flight
 

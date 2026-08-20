@@ -6,7 +6,7 @@
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 
-**Far later (nicht Kern):** Clipboard-Watcher, MCP/IDE/n8n-Agent, Auto-Kategorien aus der Zwischenablage, **Provider & Service Management** (Vorlagen Website/E-Mail/Domain/Hosting/FTP/…; Provider ≠ Account ≠ Secret; Beziehungen nur clientseitig im Ciphertext). Nur nach Community-Votum oder als optionale **Plus-Schale** (Default aus, gleiches Protokoll). Die PWA behauptet keinen Hintergrund-Watcher. Der Server indexiert keine Provider-Typen.
+**Far later (nicht Kern):** Clipboard-Watcher, MCP/IDE/n8n-Agent, Auto-Kategorien aus der Zwischenablage, **Provider & Service Management** ([`provider-service-vision.md`](provider-service-vision.md): Vorlagen Website/E-Mail/Domain/Hosting/FTP/…; Provider ≠ Account ≠ Secret; Beziehungen nur clientseitig im Ciphertext). Nur nach Community-Votum oder als optionale **Plus-Schale** (Default aus, gleiches Protokoll). Die PWA behauptet keinen Hintergrund-Watcher. Der Server indexiert keine Provider-Typen.
 
 ---
 

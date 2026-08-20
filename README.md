@@ -51,6 +51,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 - Post-quantum roadmap (concept only): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
 - Selective item share (encrypted file, v1): [`docs/sharing.md`](docs/sharing.md)
+- Provider & service management (concept only, far later): [`docs/provider-service-vision.md`](docs/provider-service-vision.md)
 
 ## Key path
 

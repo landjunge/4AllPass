@@ -35,7 +35,7 @@ Parked on purpose (2026-08-20). Do not build on “weiter” / “improve”. Re
 - IDE / MCP / n8n credential provider agent
 - Auto-categorize hosting / Plesk / mail / IP from clipboard
 - A paid or “Plus” edition that is extra modules, not a second protocol
-- **Provider & service management** (product vision, not an API gateway): templates Website / Email / Domain / Hosting / FTP-SFTP / Cloud / Git / Database / VPN / API / Custom. Split **Provider** (the service) / **Account** (your login) / **Secret** (password, TOTP, API key, SSH key, recovery codes) plus optional custom fields and later client-side relationships (domain → DNS → hosting). All of that lives in **ciphertext** (`schemaVersion` bump). The server must not index provider, kind, or the graph.
+- **Provider & service management** (product vision, not an API gateway): see `docs/provider-service-vision.md` and `#65`. Templates Website / Email / Domain / Hosting / FTP-SFTP / Cloud / Git / Database / VPN / API / Custom. Split **Provider** (the service) / **Account** (your login) / **Secret** (password, TOTP, API key, SSH key, recovery codes) plus custom fields and later client-side relationships (domain → DNS → hosting). All of that lives in **ciphertext** (`schemaVersion` bump). The server must not index provider, kind, or the graph.
 
 If Plus ever exists: `packages/crypto` stays unchanged; agent and capture are optional processes. Who does not install them has today’s ZK.
 

@@ -98,6 +98,7 @@ Reihenfolge: Hard-Revoke in der PWA zuerst, dann:
 - Native Apps
 - Passkey-Store als eigenes Feature
 - Komplexe Sharing-Modelle
+- **Provider & Service Management** (Konzept: [`provider-service-vision.md`](provider-service-vision.md), `#65`) — strukturierte Infrastruktur + Credentials im Ciphertext, kein API-Gateway, kein Server-Graph
 
 ---
 

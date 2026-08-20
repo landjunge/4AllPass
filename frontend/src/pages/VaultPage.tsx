@@ -165,6 +165,7 @@ export function VaultPage(): ReactNode {
           type="button"
           className={tab === "entries" ? "active" : ""}
           onClick={() => setTab("entries")}
+          data-testid="tab-entries"
         >
           Entries ({entries.length})
         </button>

@@ -25,5 +25,8 @@ export default defineConfig({
     url: process.env.E2E_BASE_URL ?? "http://localhost:5173",
     reuseExistingServer: true,
     timeout: 60_000,
+    env: {
+      API_ORIGIN: process.env.API_ORIGIN ?? "http://127.0.0.1:8010",
+    },
   },
 });

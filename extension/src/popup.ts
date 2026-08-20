@@ -18,6 +18,24 @@ async function send(message: Record<string, unknown>): Promise<Record<string, un
   return (await chrome.runtime.sendMessage(message)) as Record<string, unknown>;
 }
 
+function renderPicks(entries: Array<{ id: string; title: string; username: string }>): void {
+  picksEl.replaceChildren();
+  for (const entry of entries) {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `${entry.title || entry.username}`;
+    button.addEventListener("click", () => {
+      void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
+        if (!filled.ok) showError(String(filled.error ?? "fill failed"));
+        else statusEl.textContent = `Filled ${String(filled.filled)}`;
+      });
+    });
+    item.append(button);
+    picksEl.append(item);
+  }
+}
+
 async function render(): Promise<void> {
   const status = await send({ type: "status" });
   const unlocked = status.unlocked === true;
@@ -26,6 +44,13 @@ async function render(): Promise<void> {
   statusEl.textContent = unlocked
     ? `Unlocked · ${String(status.entryCount)} entries on this device`
     : "Locked. Decryption stays on this device.";
+  picksEl.replaceChildren();
+  if (!unlocked) return;
+  const candidates = await send({ type: "candidates-active" });
+  if (candidates.ok && Array.isArray(candidates.entries)) {
+    const entries = candidates.entries as Array<{ id: string; title: string; username: string }>;
+    if (entries.length > 1) renderPicks(entries);
+  }
 }
 
 unlockForm.addEventListener("submit", (event) => {
@@ -56,20 +81,7 @@ document.getElementById("fill")?.addEventListener("click", () => {
       return;
     }
     if (result.needsPick && Array.isArray(result.entries)) {
-      for (const entry of result.entries as Array<{ id: string; title: string; username: string }>) {
-        const item = document.createElement("li");
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = `${entry.title || entry.username}`;
-        button.addEventListener("click", () => {
-          void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
-            if (!filled.ok) showError(String(filled.error ?? "fill failed"));
-            else statusEl.textContent = `Filled ${String(filled.filled)}`;
-          });
-        });
-        item.append(button);
-        picksEl.append(item);
-      }
+      renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
       return;
     }
     statusEl.textContent = `Filled ${String(result.filled)}`;

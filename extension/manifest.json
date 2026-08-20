@@ -18,6 +18,18 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "activeTab", "tabs", "scripting"],
-  "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"]
+  "permissions": ["storage", "activeTab", "tabs", "scripting", "contextMenus"],
+  "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"],
+  "commands": {
+    "fill-login": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Fill the current page from the unlocked vault"
+    },
+    "lock-vault": {
+      "description": "Lock the vault in this extension"
+    }
+  }
 }

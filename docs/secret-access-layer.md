@@ -4,8 +4,8 @@
 **Date:** 2026-08-20  
 **Not this document:** a broker binary, MCP server, FastAPI grant API, env-var export, clipboard watcher, or an orchestrator.
 
-Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
-Trackers: [#67](https://github.com/landjunge/4AllPass/issues/67) (this layer), [#65](https://github.com/landjunge/4AllPass/issues/65) (Provider / Account / Secret), [#59](https://github.com/landjunge/4AllPass/issues/59) (clipboard *ingest*; MCP as a future *client*).
+Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `capability-interface.md` (Tollgate = execution, not 4AllPass), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
+Trackers: [#67](https://github.com/landjunge/4AllPass/issues/67) (this layer), [#65](https://github.com/landjunge/4AllPass/issues/65) (Provider / Account / Secret), [#70](https://github.com/landjunge/4AllPass/issues/70) (Capability × Tollgate), [#59](https://github.com/landjunge/4AllPass/issues/59) (clipboard *ingest*; MCP as a future *client*).
 
 ---
 
@@ -21,9 +21,11 @@ It is a **capability / approval** model:
 
 > An application may receive Secret X only after an explicit grant.
 
-4AllPass is **not an orchestrator**. It does not decide “Agent A may run this workflow.” It only answers:
+4AllPass is **not an orchestrator** and **not a policy engine**. It does not decide “Agent A may run this workflow” and it does not enforce spend, model, or tool-loop limits (that is Tollgate). It only answers:
 
 > **Agent A has an explicit capability on Secret X** (optional expiry).
+
+Sibling split: `capability-interface.md`. Keep the repos separate.
 
 ```text
 4AllPass
@@ -186,6 +188,7 @@ A later native n8n credential type (“4AllPass → OpenAI Production”) is a P
 | Secret Access Layer | Who may *read* which Secret, after approval | `#67`, this file |
 | Clipboard capture | *Ingest* into the vault (suggest, don’t auto-save) | `#59` |
 | MCP / IDE / n8n agent | A **client** of the broker, default off | `#59` points here |
+| Capability × Tollgate | Secret authority vs execution authority; do not merge | `#70`, `capability-interface.md` |
 
 Do not build four parallel injection paths.
 
@@ -201,7 +204,7 @@ If this is ever implemented:
 4. **Approval required.** No silent fill to an app. “Always allow” needs Phase D identity.
 5. **Unknown = DENY.**
 6. **No env export as the happy path.**
-7. **No orchestrator.** No workflow engine, no “run agent A,” no server-side policy language.
+7. **No orchestrator and no execution policy.** No workflow engine, no “run agent A,” no spend/model/tool-loop engine in this repo. Tollgate stays a sibling (`capability-interface.md`).
 8. **Do not mix** with clipboard auto-save. Ingest ≠ egress.
 
 ---

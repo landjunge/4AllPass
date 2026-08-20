@@ -4,8 +4,8 @@
 **Date:** 2026-08-20  
 **Not this document:** a README rewrite, scores in `comparison.md`, a broker, native mobile, or an audit report.
 
-Companion: `positioning.md` (what we may say **today**), `comparison.md` (only ✅ that `security-boundary.md` carries), `provider-service-vision.md`, `secret-access-layer.md`.  
-Trackers: [#65](https://github.com/landjunge/4AllPass/issues/65), [#67](https://github.com/landjunge/4AllPass/issues/67).
+Companion: `positioning.md` (what we may say **today**), `comparison.md` (only ✅ that `security-boundary.md` carries), `provider-service-vision.md`, `secret-access-layer.md`, `capability-interface.md` (do not merge Tollgate).  
+Trackers: [#65](https://github.com/landjunge/4AllPass/issues/65), [#67](https://github.com/landjunge/4AllPass/issues/67), [#70](https://github.com/landjunge/4AllPass/issues/70).
 
 If a sentence here appears as an Ist-Zustand on the README or website, that is a **defect**.
 
@@ -138,6 +138,16 @@ Two honest product levels, if the freeze and later work land:
 | If you also ship a clean Secret Access Layer | A distinct concept, more interesting than “yet another password manager” |
 
 The interesting combination is **Provider → Credential → Capability → TTL → Application/Agent**, not twenty more password-manager features.
+
+If Tollgate and Gnom-Hub stay in the picture, the *stack* is personal / local AI security — still three products:
+
+```text
+Identity + Secrets     4AllPass     Secret Authority
+Policy + Budget        Tollgate     Execution Authority
+Agents                 Gnom-Hub     Orchestration
+```
+
+Do not fuse them. The join is a small Capability (`capability-interface.md`). Human website fill never needs Tollgate.
 
 ---
 

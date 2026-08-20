@@ -101,6 +101,7 @@ Reihenfolge: Hard-Revoke in der PWA zuerst, dann:
 - **Provider & Service Management** (Konzept: [`provider-service-vision.md`](provider-service-vision.md), `#65`) — strukturierte Infrastruktur + Credentials im Ciphertext, kein API-Gateway, kein Server-Graph
 - **Secret Access Layer** (Konzept: [`secret-access-layer.md`](secret-access-layer.md), `#67`) — Capability/Approval, kein Auto-Vergabe; lokaler Broker nie FastAPI; Unknown = DENY; 4AllPass wird kein Orchestrator
 - **Zielkategorie** (kein Ist-Claim): [`positioning-target.md`](positioning-target.md) — Password Manager + persönlicher Secret Access für Apps/Agenten; 9/10-Zahlen nur nach Audit und fertigem Layer
+- **Capability-Schnittstelle** (Konzept: [`capability-interface.md`](capability-interface.md), `#70`) — 4AllPass × Tollgate × Gnom-Hub; drei Repos, eine Capability; nicht verschmelzen
 
 ---
 

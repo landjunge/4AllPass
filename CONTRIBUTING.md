@@ -35,3 +35,5 @@ Bitwarden JSON, 1Password JSON/1PIF, KeePass XML, and Title/Username/Password CS
 ## Issues / PRs
 
 Use the GitHub templates. One theme per PR. Prefer rebasing an existing branch over opening a fifth parallel attempt at the same gap.
+
+Live exploits: [SECURITY.md](SECURITY.md) (private advisory). Do not paste keys, recovery material, or plaintext exports. Board: [4AllPass project](https://github.com/users/landjunge/projects/2).

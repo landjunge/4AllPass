@@ -1,0 +1,35 @@
+name: Feature
+description: Product work that is not a live exploit. Later items stay later.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What
+      description: The product behaviour you want, not an architecture rewrite.
+    validations:
+      required: true
+  - type: dropdown
+    id: when
+    attributes:
+      label: When
+      description: Plan items marked later must stay later unless a maintainer asks.
+      options:
+        - now
+        - later
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options: [packages/crypto, packages/webauthn, backend, frontend, extension, docs]
+    validations:
+      required: true
+  - type: textarea
+    id: zk
+    attributes:
+      label: Zero-Knowledge
+      description: How this stays client-side. If the server would see keys or plaintext, this issue should not exist.
+    validations:
+      required: true

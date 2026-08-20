@@ -3,3 +3,6 @@ contact_links:
   - name: Specs
     url: https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md
     about: What the running backend and PWA actually enforce.
+  - name: Private vulnerability report
+    url: https://github.com/landjunge/4AllPass/security/advisories/new
+    about: Live exploit? Do not file a public issue. Never paste keys, recovery material, or plaintext exports.

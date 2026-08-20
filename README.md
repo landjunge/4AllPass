@@ -17,7 +17,7 @@ Argon2id, WebAuthn device unlock, PWA. Selective profile sharing is specified, n
 | [`extension`](extension) | Chromium MV3 autofill. Decrypts on-device via `@4allpass/crypto` |
 | [`docs`](docs) | The authoritative specifications |
 
-How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md). Security reports: [`SECURITY.md`](SECURITY.md). Board: [4AllPass project](https://github.com/users/landjunge/projects/2).
 
 ## Why trust this?
 

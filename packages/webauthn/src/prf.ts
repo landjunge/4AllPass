@@ -5,8 +5,9 @@
  * must be handed straight to `deriveDeviceWrappingKey` (or to the crypto-core
  * helpers that do it and zeroize afterwards).
  */
-import { equalBytes, KEY_BYTES, prfEvalFirst, randomBytes } from "@4allpass/crypto";
+import { equalBytes, KEY_BYTES, prfEvalFirst } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
+import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import { PrfUnavailableError, WebAuthnUnavailableError } from "./errors.ts";
 import type {
   ExtensionBytes,
@@ -15,11 +16,7 @@ import type {
   WebAuthnClient,
 } from "./types.ts";
 
-export const CHALLENGE_BYTES = 32;
-
-export function newChallenge(): Uint8Array {
-  return randomBytes(CHALLENGE_BYTES);
-}
+export { CHALLENGE_BYTES, newChallenge } from "./challenge.ts";
 
 export function toBytes(value: ExtensionBytes | undefined): Uint8Array | null {
   if (!value) return null;
@@ -45,6 +42,7 @@ export interface PrfAssertionRequest {
   rpId: string;
   vaultId: string;
   credentialId: Uint8Array;
+  challenges?: ChallengeProvider | undefined;
 }
 
 /**
@@ -55,7 +53,7 @@ export interface PrfAssertionRequest {
 export async function assertPrfOutput(request: PrfAssertionRequest): Promise<Uint8Array> {
   const assertionRequest: GetAssertionRequest = {
     rpId: request.rpId,
-    challenge: newChallenge(),
+    challenge: await resolveChallenge("assert", request.challenges),
     credentialId: request.credentialId,
     userVerification: "required",
     prfEvalFirst: prfEvalFirst(request.rpId, request.vaultId),

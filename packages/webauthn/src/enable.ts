@@ -18,7 +18,8 @@ import type { DeviceKeyEnvelope, KeyEnvelope } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockUnavailableError, WebAuthnUnavailableError } from "./errors.ts";
 import { writeLargeBlob } from "./large-blob.ts";
-import { assertPrfOutput, newChallenge, readPrfFirst } from "./prf.ts";
+import { assertPrfOutput, readPrfFirst } from "./prf.ts";
+import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import { MECHANISM_RANK } from "./types.ts";
 import type {
   AttestationLike,
@@ -52,6 +53,8 @@ export interface EnableDeviceUnlockOptions {
   credentialId?: Uint8Array;
   /** Ranks this deployment permits, highest security first. */
   allowedMechanisms?: readonly DeviceUnlockMechanism[];
+  /** Server-issued challenge per ceremony. Tests may omit this. */
+  challenges?: ChallengeProvider | undefined;
 }
 
 export interface EnableDeviceUnlockResult {
@@ -95,7 +98,7 @@ export async function enableDeviceUnlock(
         rpId: options.rpId,
         rpName: options.rpName ?? "4AllPass",
         user: options.user,
-        challenge: newChallenge(),
+        challenge: await resolveChallenge("create", options.challenges),
         userVerification: "required",
         prfEvalFirst: prfEvalFirst(options.rpId, options.vaultId),
         requestLargeBlob: mechanisms.includes("large_blob"),
@@ -160,6 +163,7 @@ async function provision(
         rpId: options.rpId,
         vaultId: options.vaultId,
         credentialId,
+        challenges: options.challenges,
       }));
     // bindDeviceWithPrfOutput zeroizes prfOutput, the DWK, and the Device Key.
     const binding = bindDeviceWithPrfOutput({
@@ -205,6 +209,7 @@ async function provision(
         rpId: options.rpId,
         credentialId,
         envelope: binding.deviceKeyEnvelope,
+        challenges: options.challenges,
       });
       const record: DeviceUnlockRecord = {
         ...base,
@@ -219,7 +224,7 @@ async function provision(
     // starts relying on a locally held wrapping key.
     const assertion = await options.client.get({
       rpId: options.rpId,
-      challenge: newChallenge(),
+      challenge: await resolveChallenge("assert", options.challenges),
       credentialId,
       userVerification: "required",
     });

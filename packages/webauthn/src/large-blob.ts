@@ -8,13 +8,15 @@ import { decodeDeviceKeyEnvelope, encodeDeviceKeyEnvelope, utf8 } from "@4allpas
 import type { DeviceKeyEnvelope } from "@4allpass/crypto";
 import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockError, WebAuthnUnavailableError } from "./errors.ts";
-import { newChallenge, toBytes } from "./prf.ts";
+import { toBytes } from "./prf.ts";
+import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import type { WebAuthnClient } from "./types.ts";
 
 export interface LargeBlobRequest {
   client: WebAuthnClient;
   rpId: string;
   credentialId: Uint8Array;
+  challenges?: ChallengeProvider | undefined;
 }
 
 export function serializeDeviceKeyEnvelope(envelope: DeviceKeyEnvelope): Uint8Array {
@@ -37,7 +39,7 @@ export async function writeLargeBlob(
 ): Promise<void> {
   const assertion = await request.client.get({
     rpId: request.rpId,
-    challenge: newChallenge(),
+    challenge: await resolveChallenge("assert", request.challenges),
     credentialId: request.credentialId,
     userVerification: "required",
     largeBlob: { write: serializeDeviceKeyEnvelope(request.envelope) },
@@ -51,7 +53,7 @@ export async function writeLargeBlob(
 export async function readLargeBlob(request: LargeBlobRequest): Promise<DeviceKeyEnvelope> {
   const assertion = await request.client.get({
     rpId: request.rpId,
-    challenge: newChallenge(),
+    challenge: await resolveChallenge("assert", request.challenges),
     credentialId: request.credentialId,
     userVerification: "required",
     largeBlob: { read: true },

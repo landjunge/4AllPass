@@ -99,6 +99,8 @@ GET      /api/v1/vaults/{id}
 GET      /api/v1/vaults/{id}/snapshot
 POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
          /api/v1/vaults/{id}/devices…     # owner-only
+POST     /api/v1/vaults/{id}/webauthn/challenges           # one-time ceremony
+POST     /api/v1/vaults/{id}/webauthn/challenges/{id}/consume
 ```
 
 Every vault/device/snapshot route requires `Authorization: Bearer`. Foreign

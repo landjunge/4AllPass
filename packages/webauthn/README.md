@@ -10,6 +10,7 @@ src/
   errors.ts              WebAuthnUnavailable / PrfUnavailable / UserVerification / DeviceUnlockUnavailable
   browser-client.ts      the only file that touches navigator.credentials
   authenticator-data.ts  rpIdHash + UP/UV flag checks
+  challenge.ts           server-issued 32-byte ceremony challenge (or test fallback)
   prf.ts                 assertion → prf.results.first (32 bytes, else abort)
   large-blob.ts          rank 2 storage in the authenticator
   store.ts               local record store (memory + IndexedDB)

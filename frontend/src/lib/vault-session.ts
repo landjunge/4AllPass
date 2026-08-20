@@ -530,15 +530,6 @@ export async function enableDeviceUnlockForVault(
     largeBlobSupported: result.mechanism === "large_blob",
   });
 
-  if (result.mirrorableDeviceKeyEnvelope) {
-    await api.putDeviceKeyEnvelope(
-      vault.vaultId,
-      id,
-      credentialIdBase64,
-      encodeDeviceKeyEnvelope(result.mirrorableDeviceKeyEnvelope),
-    );
-  }
-
   const envelopes = [
     ...vault.envelopes.filter(
       (envelope) => !(envelope.type === "device" && envelope.deviceId === id),
@@ -546,6 +537,17 @@ export async function enableDeviceUnlockForVault(
     result.deviceEnvelope,
   ];
   const updated = await commitSnapshot(vault, vault.entries, envelopes);
+
+  if (result.mirrorableDeviceKeyEnvelope) {
+    await api.putDeviceKeyEnvelope(
+      vault.vaultId,
+      id,
+      credentialIdBase64,
+      encodeDeviceKeyEnvelope(result.mirrorableDeviceKeyEnvelope),
+      updated.revision,
+    );
+  }
+
   return { vault: updated, mechanism: result.mechanism };
 }
 

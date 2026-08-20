@@ -159,16 +159,17 @@ object and returns it unchanged. The client verifies it under VK
   the DK needs a WebAuthn ceremony); those devices re-enrol after master unlock.
 - Account session is bound to a client-asserted `X-Device-Id`, not to a
   WebAuthn credential. Stolen token + stolen device id still works.
-- Device-Key Envelope mirror is a separate GET/PUT, not CAS-tied to
-  `active_revision` (a stale DK generation can still be served until the
-  client refuses it).
+- Device-Key Envelope mirror is gated on the active snapshot: PUT requires
+  `expectedRevision` and a matching device envelope; GET refuses a missing
+  envelope (404) or a stale `deviceKeyVersion` (409). The PWA commits the
+  snapshot first, then PUTs the mirror with that revision.
 - Bearer token lives in `sessionStorage` (XSS = account takeover, not vault
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
-exposed as “Rotate vault key” on the devices panel. Next: CAS-tie the
-Device-Key Envelope mirror to `active_revision` (PR #24), and optionally add
-server-side WebAuthn assertion verification as ceremony integrity — not as
-a replacement for client-side PRF.
+exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope
+mirror is CAS-tied to `active_revision`. Next: server-side WebAuthn
+assertion verification as ceremony integrity — not as a replacement for
+client-side PRF.

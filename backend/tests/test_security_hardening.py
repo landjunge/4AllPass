@@ -111,6 +111,15 @@ def _cred_path(credential_id: str) -> str:
     return credential_id.replace("+", "-").replace("/", "_").rstrip("=")
 
 
+def _dke_path(
+    vault_id: str, device_id: str, credential_id: str, expected_revision: int = 1
+) -> str:
+    return (
+        f"/api/v1/vaults/{vault_id}/devices/{device_id}/credentials/{_cred_path(credential_id)}"
+        f"/device-key-envelope?expectedRevision={expected_revision}"
+    )
+
+
 async def _signup(client, email: str | None = None) -> tuple[str, str]:
     email = email or _email()
     response = await client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
@@ -259,7 +268,7 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
     assert cred.json()["verification"] == "client_asserted"
 
     put = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_A, cred_id),
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -286,7 +295,7 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
             "largeBlobSupported": False,
         }),
         ("GET", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope", None),
-        ("PUT", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        ("PUT", _dke_path(vault_id, DEVICE_A, cred_id),
          _dke(vault_id, DEVICE_A, cred_id)),
     ]
     for method, path, body in paths:
@@ -345,7 +354,7 @@ async def test_device_delete_is_metadata_only_and_does_not_claim_crypto_erase(cl
         },
     )
     await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_A, cred_id),
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -369,7 +378,7 @@ async def test_device_delete_is_metadata_only_and_does_not_claim_crypto_erase(cl
     )
     assert blocked_get.status_code == 409
     blocked_put = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_A, cred_id),
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_A, cred_id),
     )
@@ -438,25 +447,105 @@ async def test_envelope_identity_mismatch_and_cross_device_substitution(client):
     assert cred.status_code == 200, cred.text
 
     wrong_vault = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_A, cred_id),
         headers=_auth(alice),
         json=_dke(other, DEVICE_A, cred_id),
     )
     assert wrong_vault.status_code == 422
 
     wrong_device = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_A, cred_id),
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_B, cred_id),
     )
     assert wrong_device.status_code == 422
 
     missing_cred = await client.put(
-        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_B}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        _dke_path(vault_id, DEVICE_B, cred_id),
         headers=_auth(alice),
         json=_dke(vault_id, DEVICE_B, cred_id),
     )
     assert missing_cred.status_code == 404
+
+
+async def test_device_key_mirror_follows_the_active_snapshot(client):
+    """Mirror PUT/GET is gated on the snapshot, not an independent blob store."""
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    assert (
+        await _commit(
+            client,
+            alice,
+            vault_id,
+            envelopes=[_master_envelope(), _device_envelope(DEVICE_A)],
+        )
+    ).status_code == 200
+    await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(alice),
+        json={"deviceId": DEVICE_A, "label": "Phone"},
+    )
+    cred_id = _cred_b64()
+    cred = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials",
+        headers=_auth(alice),
+        json={
+            "credentialId": cred_id,
+            "rpId": "localhost",
+            "mechanism": "prf",
+            "prfSupported": True,
+            "largeBlobSupported": False,
+        },
+    )
+    assert cred.status_code == 200, cred.text
+
+    stale = await client.put(
+        _dke_path(vault_id, DEVICE_A, cred_id, expected_revision=0),
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert stale.status_code == 409
+
+    ok = await client.put(
+        _dke_path(vault_id, DEVICE_A, cred_id, expected_revision=1),
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert ok.status_code == 200, ok.text
+    fetched = await client.get(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        headers=_auth(alice),
+    )
+    assert fetched.status_code == 200
+
+    wrong_gen = await client.put(
+        _dke_path(vault_id, DEVICE_A, cred_id, expected_revision=1),
+        headers=_auth(alice),
+        json={**_dke(vault_id, DEVICE_A, cred_id), "deviceKeyVersion": 2},
+    )
+    assert wrong_gen.status_code == 409
+
+    dropped = await _commit(
+        client,
+        alice,
+        vault_id,
+        expectedRevision=1,
+        revision=2,
+        envelopes=[_master_envelope()],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert dropped.status_code == 200, dropped.text
+    gone = await client.get(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope",
+        headers=_auth(alice),
+    )
+    assert gone.status_code == 404
+    reattach = await client.put(
+        _dke_path(vault_id, DEVICE_A, cred_id, expected_revision=2),
+        headers=_auth(alice),
+        json=_dke(vault_id, DEVICE_A, cred_id),
+    )
+    assert reattach.status_code == 409
 
 
 async def test_snapshot_commit_rejects_ownership_and_revision_overrides(client):

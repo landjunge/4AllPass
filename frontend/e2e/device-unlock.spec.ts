@@ -152,8 +152,8 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await secondPage.getByTestId("unlock-submit").click();
     await expect(secondPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
     await secondPage.getByTestId("tab-devices").click();
-    await secondPage.getByRole("button", { name: "Revoke" }).click();
-    await expect(secondPage.getByTestId("notice-banner")).toContainText("revoked");
+    await secondPage.getByRole("button", { name: "Remove from sync" }).click();
+    await expect(secondPage.getByTestId("notice-banner")).toBeVisible();
 
     // The first profile still has its credential and its local record, but the
     // active revision no longer carries its device envelope.
@@ -169,6 +169,57 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
 
     await first.close();
     await second.close();
+  });
+
+  test("hard revoke rotates the vault key: victim device unlock fails, master still works", async ({
+    browser,
+  }) => {
+    const attacker = await browser.newContext();
+    const attackerPage = await attacker.newPage();
+    await attackerPage.goto("/");
+    await addVirtualAuthenticator(attacker, attackerPage, { hasPrf: true, hasLargeBlob: true });
+    const email = await signUp(attackerPage);
+    const recoveryKey = await createVault(attackerPage);
+    await addEntry(attackerPage);
+    await enableDeviceUnlock(attackerPage);
+
+    const victim = await browser.newContext();
+    const victimPage = await victim.newPage();
+    await victimPage.goto("/");
+    await addVirtualAuthenticator(victim, victimPage, { hasPrf: true, hasLargeBlob: true });
+    await victimPage.getByLabel("E-mail").fill(email);
+    await victimPage.getByLabel("Account password").fill("account-password-1234");
+    await victimPage.getByRole("button", { name: "Sign in", exact: true }).click();
+    await victimPage.getByTestId("master-password").fill(MASTER_PASSWORD);
+    await victimPage.getByTestId("unlock-submit").click();
+    await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await expect(victimPage.getByRole("button", { name: new RegExp(ENTRY.title) })).toBeVisible();
+    expect(await enableDeviceUnlock(victimPage)).toContain("WebAuthn");
+    const victimId = await victimPage.evaluate(() => localStorage.getItem("4allpass.deviceId"));
+    expect(victimId).toBeTruthy();
+
+    await attackerPage.getByTestId("tab-devices").click();
+    await attackerPage.getByTestId(`rotate-key-${victimId}`).click();
+    await attackerPage.getByTestId("rotate-vault-password").fill(MASTER_PASSWORD);
+    await attackerPage.getByTestId("rotate-recovery-key").fill(recoveryKey);
+    await attackerPage.getByTestId("confirm-rotate").click();
+    await expect(attackerPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await expect(attackerPage.getByTestId("revision")).toContainText("vault key v2");
+    await expect(attackerPage.getByRole("button", { name: new RegExp(ENTRY.title) })).toBeVisible();
+
+    await victimPage.getByTestId("lock").click();
+    await victimPage.getByTestId("unlock-biometrics").click();
+    await expect(victimPage.getByTestId("error-banner")).toBeVisible();
+    await expect(victimPage.getByTestId("lock-state")).toHaveText("LOCKED");
+
+    await victimPage.getByTestId("master-password").fill(MASTER_PASSWORD);
+    await victimPage.getByTestId("unlock-submit").click();
+    await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await expect(victimPage.getByTestId("revision")).toContainText("vault key v2");
+    await expect(victimPage.getByRole("button", { name: new RegExp(ENTRY.title) })).toBeVisible();
+
+    await attacker.close();
+    await victim.close();
   });
 
   test("a wrong master password does not unlock", async ({ page, context }) => {

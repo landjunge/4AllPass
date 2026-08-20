@@ -167,6 +167,7 @@ export function DevicesPanel(): ReactNode {
                 onChange={(event) => setMasterPassword(event.target.value)}
                 required
                 minLength={10}
+                data-testid="rotate-vault-password"
               />
             </label>
             {needsRecoveryKey ? (
@@ -178,6 +179,7 @@ export function DevicesPanel(): ReactNode {
                   rows={3}
                   placeholder="XXXXX-XXXXX-XXXXX-…"
                   required
+                  data-testid="rotate-recovery-key"
                 />
               </label>
             ) : null}

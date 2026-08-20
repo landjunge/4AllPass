@@ -8,7 +8,7 @@ Your agents need access. They don't need your secrets.
 Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
 ```
 
-Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). That access path is **not shipped** yet.
+Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The PWA has a **local** Access tab (n8n GitHub demo + paste-detect). FastAPI is not on that path. Grants copy the stored secret with a client TTL; they are not scoped upstream tokens. `POST /v1/access/request` (local broker) is **not shipped**.
 
 Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
 

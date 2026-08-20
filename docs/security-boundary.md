@@ -123,7 +123,7 @@ The PWA implements both layers:
 
 | Path | Client | Crypto effect |
 |---|---|---|
-| **Soft** `revokeDevice` | Metadata DELETE, then commit revision N+1 **without** that device envelope, **same** `vaultKeyVersion` | Device can no longer unwrap via sync; a client that already holds VK still can |
+| **Soft** `revokeDevice` | Commit revision N+1 **without** that device envelope, **same** `vaultKeyVersion`, then metadata DELETE | Device can no longer unwrap via sync; a client that already holds VK still can |
 | **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery (device envelopes only if DK is locally recoverable without WebAuthn) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
 
 Foreign Device Keys are never available to the acting client. This device’s DK is
@@ -193,6 +193,10 @@ object and returns it unchanged. The client verifies it under VK
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
+- The PWA Access tab is a **local** n8n demo. Policy and grants never leave the
+  unlocked page. A grant is the stored secret plus a client TTL, not a scoped
+  upstream token. Detect prefills a draft; it does not approve. FastAPI has no
+  `/v1/access` route.
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See

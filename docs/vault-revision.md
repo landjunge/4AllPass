@@ -218,8 +218,8 @@ After commit:
 
 Soft revocation (device not believed compromised) is still “delete that device envelope and commit a new revision with the **same** `vault_key_version`”.
 
-**PWA:** Soft revoke is `revokeDevice` (metadata DELETE, then omit envelope, same
-VK). Hard revoke is `hardRevokeDevice` (VK+1, re-encrypt, omit target, sealed
+**PWA:** Soft revoke is `revokeDevice` (omit envelope, same VK, CAS, then
+metadata DELETE). Hard revoke is `hardRevokeDevice` (VK+1, re-encrypt, omit target, sealed
 manifest, CAS, then metadata DELETE). The server rejects re-attached revoked
 device envelopes and requires `sealedManifest` once `current_revision >= 1`.
 Device unlock on other browsers is re-enrolled with the master password after

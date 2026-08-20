@@ -64,8 +64,8 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Jedes Browser-Profil und jedes Mobilgerät erhält eine eigene stabile Identität.
 - Zugriff wird kryptografisch über die Existenz eines Device Envelopes gesteuert (nicht nur über ein Flag).
 - `DELETE /devices/{id}` is **metadata-only** (`revocation: "metadata_only"`).
-  Soft cryptographic revoke = PWA `revokeDevice` (DELETE, then next snapshot without
-  that device envelope, same `vaultKeyVersion`).
+  Soft cryptographic revoke = PWA `revokeDevice` (next snapshot without
+  that device envelope, same `vaultKeyVersion`, then metadata DELETE).
   Hard revoke = PWA `hardRevokeDevice` (Vault Key rotation, re-encrypt, omit target,
   CAS commit, then metadata DELETE). Foreign device envelopes are not rewrapped;
   this device’s envelope is included only when its Device Key is recoverable

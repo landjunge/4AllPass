@@ -682,11 +682,15 @@ export async function revokeDevice(
   vault: UnlockedVault,
   targetDeviceId: string,
 ): Promise<UnlockedVault> {
-  await api.revokeDevice(vault.vaultId, targetDeviceId);
   const envelopes = vault.envelopes.filter(
     (envelope) => !(envelope.type === "device" && envelope.deviceId === targetDeviceId),
   );
-  return commitSnapshot(vault, vault.entries, envelopes);
+  // CAS first, same as hard revoke. DELETE-then-commit on a 409 leaves
+  // revoked_at set while the active snapshot still has the envelope, so the
+  // next saveEntries 422s (server refuses re-attaching a revoked device).
+  const updated = await commitSnapshot(vault, vault.entries, envelopes);
+  await api.revokeDevice(vault.vaultId, targetDeviceId);
+  return updated;
 }
 
 /**

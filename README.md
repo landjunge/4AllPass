@@ -55,6 +55,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Provider & service management (concept only, far later): [`docs/provider-service-vision.md`](docs/provider-service-vision.md)
 - Secret Access Layer (concept only, far later): [`docs/secret-access-layer.md`](docs/secret-access-layer.md)
 - Capability interface with Tollgate / Gnom-Hub (concept only, far later): [`docs/capability-interface.md`](docs/capability-interface.md)
+- Capability contract 4AP-CAP-1 (concept only, not a protocol): [`docs/capability-contract-v1.md`](docs/capability-contract-v1.md)
 
 ## Key path
 

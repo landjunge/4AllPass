@@ -68,10 +68,13 @@ test("hard revoke: other browser cannot use the old vault key", async () => {
     await pageA.getByTestId("rotate-recovery-key").fill(recoveryKey);
     await pageA.getByTestId("confirm-rotate").click();
     await expect(pageA.getByTestId("revision")).toContainText("vault key v2");
+    await pageA.getByTestId("tab-entries").click();
     await expect(pageA.getByRole("button", { name: /GitHub/ })).toBeVisible();
 
-    await pageB.getByTestId("lock").click();
-    await expectLocked(pageB);
+    // Rotation DELETEs the victim device and drops its sessions. Re-auth,
+    // then the vault password unwraps VK₂ (this is not a permanent lockout).
+    await pageB.getByRole("button", { name: "Sign out" }).click();
+    await signInWithMouse(pageB, email);
     await unlockWithVaultPassword(pageB);
     await expect(pageB.getByTestId("lock-state")).toHaveText("UNLOCKED");
     await expect(pageB.getByTestId("revision")).toContainText("vault key v2");

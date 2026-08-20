@@ -98,7 +98,7 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Security freeze: prove hard-revoke and cross-browser claims. Do not start public-key wrapping / ML-KEM / Plus unless asked.
+1. Security freeze: two-Playwright-profile hard-revoke is on main. Remaining proof is Safari.app extension fill / real Touch ID — not 4AP-CAP-1. Do not start public-key wrapping / ML-KEM / Plus unless asked.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 

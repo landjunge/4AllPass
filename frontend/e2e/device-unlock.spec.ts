@@ -45,8 +45,22 @@ async function addEntry(page: Page): Promise<void> {
 async function enableDeviceUnlock(page: Page): Promise<string> {
   await page.getByTestId("tab-devices").click();
   await page.getByTestId("enable-biometrics").click();
-  await expect(page.getByTestId("enabled-mechanism")).toBeVisible();
-  return (await page.getByTestId("enabled-mechanism").textContent()) ?? "";
+  const enabled = page.getByTestId("enabled-mechanism");
+  const conflict = page.getByTestId("error-banner").filter({ hasText: "revision conflict" });
+  await expect(enabled.or(conflict)).toBeVisible();
+  if (await conflict.isVisible()) {
+    // Enrol is a snapshot CAS. A profile that unlocked just before another
+    // device committed must reload, then retry once.
+    await conflict.getByRole("button", { name: "Dismiss" }).click();
+    await page.getByTestId("lock").click();
+    await page.getByTestId("master-password").fill(MASTER_PASSWORD);
+    await page.getByTestId("unlock-submit").click();
+    await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await page.getByTestId("tab-devices").click();
+    await page.getByTestId("enable-biometrics").click();
+  }
+  await expect(enabled).toBeVisible();
+  return (await enabled.textContent()) ?? "";
 }
 
 test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
@@ -200,6 +214,12 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await victimPage.getByTestId("unlock-submit").click();
     await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
     await expect(victimPage.getByRole("button", { name: new RegExp(ENTRY.title) })).toBeVisible();
+    // Enrol writes a snapshot. Reload so expectedRevision matches the
+    // attacker's device envelope (CAS 409 otherwise).
+    await victimPage.getByTestId("lock").click();
+    await victimPage.getByTestId("master-password").fill(MASTER_PASSWORD);
+    await victimPage.getByTestId("unlock-submit").click();
+    await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
     expect(await enableDeviceUnlock(victimPage)).toContain("WebAuthn");
     const victimId = await victimPage.evaluate(() => localStorage.getItem("4allpass.deviceId"));
     expect(victimId).toBeTruthy();

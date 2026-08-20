@@ -68,7 +68,7 @@ That is the demo. Not a crypto lecture.
 
 ### 3 — Auto-discovery
 
-Paste credential / host → detect provider + type + fields. **Never unlock from a guess.**
+Paste credential / host → detect provider + type + fields. **Never unlock from a guess.** In the PWA: Detect on the entry form (`detect.ts`). It prefills Web / API / SFTP. It does **not** call Access/Allow.
 
 ### 3–4 — Provider ≠ Account ≠ Credential
 

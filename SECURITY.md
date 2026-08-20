@@ -26,7 +26,7 @@ Describe the attack with a **reproduction against a throwaway vault**, a failing
 - PWA / extension paths that decrypt on-device
 - Over-claims in `docs/` or UI copy that the running code does not enforce
 
-Out of scope until they exist: native apps, org/team features, selective-sharing UI.
+Out of scope until they exist: native apps, org/team features, wrapping a key to a foreign Device Key. Item-share files (`docs/sharing.md`) are in-scope as client-side packages, not as server ACLs.
 
 Map for a third-party auditor: [`docs/audit-scope.md`](docs/audit-scope.md). What the running system actually enforces: [`docs/security-boundary.md`](docs/security-boundary.md).
 

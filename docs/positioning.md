@@ -55,7 +55,7 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 ## Was wir heute nicht behaupten dürfen
 
 - Autofill-Zuverlässigkeit (keine Extension).
-- Selective Item-Sharing als fertiges Produktmerkmal.
+- Live item-sharing to another person’s device key (v1 is an encrypted file plus share key only).
 - Unabhängiges Drittaudit.
 - „DELETE Gerät löscht den Schlüssel“ — Revoke ist `metadata_only`, bis Hard-Revoke in der PWA landet.
 

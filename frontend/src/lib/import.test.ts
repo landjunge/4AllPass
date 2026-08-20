@@ -6,6 +6,13 @@ test("warns that the file is plaintext", () => {
   assert.match(plaintextImportWarning(), /plaintext/i);
 });
 
+test("refuses a 4AllPass share file on the plaintext path", () => {
+  assert.throws(
+    () => parsePlaintextExport(JSON.stringify({ kind: "4allpass-share-v1", snapshot: {} })),
+    /share file/i,
+  );
+});
+
 test("parses Bitwarden JSON logins and skips notes", () => {
   const result = parsePlaintextExport(
     JSON.stringify({

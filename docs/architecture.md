@@ -12,7 +12,8 @@ Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers s
 - **Zero-Knowledge**: Der Server sieht niemals Klartext-Passwörter oder das Master-Passwort.
 - Das **Master-Passwort** ist die einzige Quelle für die Entschlüsselung (neben dem Recovery Key).
 - **Biometrie** und **Social-Login** sind reine Komfort-Funktionen und ersetzen das Master-Passwort nicht.
-- Selektives Sharing: Der Nutzer entscheidet pro Browser-Profil und Gerät, welche die Vault-Daten erhalten (kryptografisch über Key Envelopes).
+- Gerätezugriff: Der Nutzer entscheidet pro Browser-Profil und Gerät, welche die Vault-Daten erhalten (kryptografisch über Device Envelopes).
+- Item-Share in v1: portables verschlüsseltes File plus Share-Key (`docs/sharing.md`), nicht an den Device Key einer anderen Person.
 
 ---
 

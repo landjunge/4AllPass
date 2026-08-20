@@ -9,6 +9,14 @@ import {
   type VaultEntry,
 } from "../lib/entries.ts";
 import { parsePlaintextExport, plaintextImportWarning } from "../lib/import.ts";
+import {
+  buildSharePackage,
+  downloadShareFile,
+  looksLikeSharePackage,
+  openSharePackage,
+  shareWarning,
+  type BuiltShare,
+} from "../lib/share.ts";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 
 export function VaultPage(): ReactNode {
@@ -18,11 +26,15 @@ export function VaultPage(): ReactNode {
   const [draft, setDraft] = useState<EntryDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<"entries" | "devices">("entries");
-  const [importPending, setImportPending] = useState<{ count: number; entries: VaultEntry[] } | null>(
-    null,
-  );
+  const [importPending, setImportPending] = useState<{
+    count: number;
+    entries: VaultEntry[];
+    source: "plaintext" | "share";
+  } | null>(null);
   const [revealPassword, setRevealPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [share, setShare] = useState<BuiltShare | null>(null);
+  const [shareImport, setShareImport] = useState<{ text: string; key: string } | null>(null);
 
   useEffect(() => {
     setRevealPassword(false);
@@ -85,9 +97,34 @@ export function VaultPage(): ReactNode {
   async function onImportFile(file: File): Promise<void> {
     const text = await file.text();
     try {
+      if (looksLikeSharePackage(text)) {
+        setShareImport({ text, key: "" });
+        return;
+      }
       const parsed = parsePlaintextExport(text);
       if (parsed.entries.length === 0) throw new Error("no login entries in this file");
-      setImportPending({ count: parsed.entries.length, entries: parsed.entries });
+      setImportPending({ count: parsed.entries.length, entries: parsed.entries, source: "plaintext" });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function startShare(): void {
+    if (!selected) return;
+    try {
+      setShare(buildSharePackage([selected]));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function openShare(): void {
+    if (!shareImport) return;
+    try {
+      const opened = openSharePackage(shareImport.text, shareImport.key);
+      if (opened.length === 0) throw new Error("share file had no logins");
+      setShareImport(null);
+      setImportPending({ count: opened.length, entries: opened, source: "share" });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -296,14 +333,24 @@ export function VaultPage(): ReactNode {
                     Cancel
                   </button>
                   {selected ? (
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => void remove(selected)}
-                      disabled={busy}
-                    >
-                      Delete
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        data-testid="share-entry"
+                        onClick={startShare}
+                        disabled={busy}
+                      >
+                        Share
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => void remove(selected)}
+                        disabled={busy}
+                      >
+                        Delete
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </>
@@ -322,8 +369,12 @@ export function VaultPage(): ReactNode {
       {importPending ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Import plaintext file</h2>
-            <p>{plaintextImportWarning()}</p>
+            <h2>{importPending.source === "share" ? "Import shared logins" : "Import plaintext file"}</h2>
+            <p>
+              {importPending.source === "share"
+                ? "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext."
+                : plaintextImportWarning()}
+            </p>
             <p className="muted">
               {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
               this device, then committed as the next revision.
@@ -339,6 +390,78 @@ export function VaultPage(): ReactNode {
                 Encrypt and import
               </button>
               <button type="button" disabled={busy} onClick={() => setImportPending(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {share ? (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="card kit">
+            <h2>Share this login</h2>
+            <p>{shareWarning()}</p>
+            <p className="muted small">Share key</p>
+            <code className="mono block key" data-testid="share-key">
+              {share.shareKey}
+            </code>
+            <div className="device-actions">
+              <button
+                type="button"
+                className="primary"
+                data-testid="download-share"
+                onClick={() => downloadShareFile(share)}
+              >
+                Download encrypted file
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void copySecret(share.shareKey)
+                    .then(() => setCopied("Share key"))
+                    .catch(() => undefined);
+                }}
+              >
+                Copy share key
+              </button>
+            </div>
+            {copied === "Share key" ? (
+              <p className="hint">
+                Key copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000} seconds if it
+                still holds this value.
+              </p>
+            ) : null}
+            <button type="button" className="link" onClick={() => setShare(null)}>
+              Done
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {shareImport ? (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="card kit">
+            <h2>Open share file</h2>
+            <p>Enter the share key. Decryption stays on this device.</p>
+            <label>
+              Share key
+              <input
+                value={shareImport.key}
+                onChange={(event) => setShareImport({ ...shareImport, key: event.target.value })}
+                data-testid="share-import-key"
+                autoComplete="off"
+              />
+            </label>
+            <div className="actions">
+              <button
+                type="button"
+                className="primary"
+                data-testid="open-share"
+                onClick={openShare}
+                disabled={!shareImport.key.trim()}
+              >
+                Decrypt on this device
+              </button>
+              <button type="button" onClick={() => setShareImport(null)}>
                 Cancel
               </button>
             </div>

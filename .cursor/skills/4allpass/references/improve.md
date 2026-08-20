@@ -10,7 +10,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 ## Now (product you can feel)
 
-No queued item. Selective sharing is **later** — crypto-Modell is ready, PWA-UI is not. Do not start it unless the user asks.
+No queued item. Item-share files are on main (`docs/sharing.md`). Do not add public-key wrapping unless asked.
 
 ## Later (do not start)
 
@@ -18,7 +18,8 @@ No queued item. Selective sharing is **later** — crypto-Modell is ready, PWA-U
 - Social login as a crypto factor
 - Native apps
 - Passkey store as a separate vault product
-- Shamir, TOTP, selective sharing — after remaining product-now items
+- Shamir, TOTP
+- Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)
 - Post-quantum hybrid-KEM: concept is `docs/post-quantum-roadmap.md`. Do not implement ML-KEM until public-key wrapping exists.
 
 ## How to pick a task

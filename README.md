@@ -2,7 +2,7 @@
 
 Self-hosted Zero-Knowledge password manager – for all browsers and devices.
 
-Argon2id, WebAuthn device unlock, PWA. Selective profile sharing is specified, not shipped in the PWA yet.
+Argon2id, WebAuthn device unlock, PWA. You can share a login as an encrypted file plus a share key; the server never sees either. Wrapping to someone else’s device key is not in v1.
 
 **Positioning:** your devices own the vault cryptographically, not just organisationally. Not “a nicer Bitwarden.” See [`docs/positioning.md`](docs/positioning.md).
 
@@ -50,6 +50,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
 - Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 - Post-quantum roadmap (concept only): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
+- Selective item share (encrypted file, v1): [`docs/sharing.md`](docs/sharing.md)
 
 ## Key path
 

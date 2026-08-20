@@ -23,22 +23,23 @@ Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antwo
 
 **Basis ist Gnom-Hub-V1**, nicht eine eigene 4AllPass-Palette und nicht das alte Neon-Hub.
 
-**Farben:** netzwerkpunkt.de (Orange `#e85d2a`, Flächen `#111114` / `#1a1a1f`).  
-**Layout/Desk:** Gnom-Hub-V1.  
-**Veröffentlicht:** https://netzwerkpunkt.de/assets/desk-tokens.css  
-Lokale Kopie in den Apps (`frontend/src/tokens.css`) — offline, kein Extra-Origin.
+**Immer Gnom-Hub-V1** — Name, Desk und Farben. Nicht Orange vom Portfolio, nicht das alte Neon-Hub.
+
+Quelle: `gnom-hub-v1/src/gnom_hub/ui/static/app.css` `:root`  
+Veröffentlicht: https://netzwerkpunkt.de/assets/desk-tokens.css  
+Lokale Kopie: `frontend/src/tokens.css` (offline, kein Extra-Origin).
 
 | Token | Wert | Rolle |
 |---|---|---|
-| `--bg` | `#111114` | Fläche |
-| `--bg-panel` | `#1a1a1f` | Header / Inputs |
-| `--bg-card` | `#1e1e24` | Karten |
-| `--bg-elev` | `#24242b` | angehoben |
-| `--text` | `#f0f0f2` | Text |
-| `--text-muted` | `#b0b0ba` | sekundär |
-| `--border` | `#2c2c34` | Kanten |
-| `--accent` / `--accent-hi` | `#e85d2a` / `#f0a070` | Netzwerkpunkt-Orange |
-| `--ok` / `--warn` / `--err` | `#3dba6e` / `#c9a227` / `#c45c5c` | Status |
+| `--bg` | `#121316` | Fläche |
+| `--bg-panel` | `#1a1b1f` | Header / Inputs |
+| `--bg-card` | `#1e1f24` | Karten |
+| `--bg-elev` | `#24262d` | angehoben |
+| `--text` | `#e2e4e9` | Text |
+| `--text-muted` | `#8b909a` | sekundär |
+| `--border` | `#2e3138` | Kanten |
+| `--accent` / `--accent-hi` | `#6b7280` / `#a1a8b3` | ruhiges Chrome |
+| `--ok` / `--warn` / `--err` | `#3d9b6a` / `#c9a227` / `#c45c5c` | Status |
 
 Gleiche Tokens für 4AllPass PWA, Extension-Popup und Tollgate Control Room. **Kein Rainbow-Chrome.** Agent-Farben nur in Gnom-Hub-V1 (Identität der Agenten).
 

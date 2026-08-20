@@ -154,8 +154,8 @@ button.primary {
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #1c7ed6;
+  border-color: #1c7ed6;
   color: #fff;
 }
 

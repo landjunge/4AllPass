@@ -36,6 +36,7 @@ function asEntry(partial: {
     port: "",
     protocol: "",
     capabilities: "",
+    credentialType: "",
     notes: partial.notes?.trim() ?? "",
     updatedAt: new Date().toISOString(),
   };

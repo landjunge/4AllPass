@@ -18,6 +18,7 @@ function entry(partial: Partial<VaultEntry> & Pick<VaultEntry, "id" | "password"
     port: "",
     protocol: "",
     capabilities: "",
+    credentialType: "",
     notes: "",
     updatedAt: "2026-08-20T00:00:00.000Z",
     ...partial,

@@ -72,7 +72,7 @@ Paste credential / host → detect provider + type + fields. **Never unlock from
 
 ### 3–4 — Provider ≠ Account ≠ Credential
 
-Templates (YAML-shaped, in ciphertext). Custom providers allowed. Not hardcoded into `packages/crypto`.
+Templates in the PWA (`providers.ts`): GitHub, OpenAI, Stripe, Website, SSH/SFTP, plus a custom YAML/JSON paste. Applied drafts still sit in **ciphertext**. Not in `packages/crypto`. FastAPI does not index provider ids.
 
 ### 4 — Application identity
 

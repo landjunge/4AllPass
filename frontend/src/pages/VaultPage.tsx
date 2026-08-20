@@ -98,6 +98,8 @@ export function VaultPage(): ReactNode {
       await saveEntries(next);
       setDraft(null);
       setSelectedId(null);
+      setPaste("");
+      setDetectedLabel(null);
     } catch {
       // The banner shows the reason.
     } finally {
@@ -284,6 +286,7 @@ export function VaultPage(): ReactNode {
                       ...draftFromDetection(found),
                       password: found.password || draft?.password || generatePassword(),
                     });
+                    setPaste("");
                     setDetectedLabel(`${found.label}. Save to store it encrypted. Access still needs Allow.`);
                   }}
                 >

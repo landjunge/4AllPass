@@ -29,13 +29,36 @@ test("ftp host plus login is SFTP class", () => {
   assert.ok(detected);
   assert.equal(detected?.kind, "sftp");
   assert.equal(detected?.host, "ftp.example.com");
-  assert.match(detected?.protocol ?? "", /ftp/i);
+  assert.equal(detected?.username, "deploy");
+  assert.equal(detected?.password, "s3cret");
+  assert.equal(detected?.protocol, "ftp");
+  assert.equal(detected?.port, "21");
+});
+
+test("sftp paste with dotted username does not treat the password as username", () => {
+  const detected = detectCredential("sftp ftp.example.com\nmy.user\ns3cret");
+  assert.ok(detected);
+  assert.equal(detected?.kind, "sftp");
+  assert.equal(detected?.username, "my.user");
+  assert.equal(detected?.password, "s3cret");
+  assert.equal(detected?.protocol, "sftp");
+  assert.equal(detected?.port, "22");
 });
 
 test("https URL is Web, not auto-approved", () => {
   const detected = detectCredential("https://github.com/login");
   assert.ok(detected);
   assert.equal(detected?.kind, "web");
+  assert.equal(detected?.url, "https://github.com/login");
+});
+
+test("https userinfo is stripped out of the stored URL", () => {
+  const detected = detectCredential("https://ada:s3cret@github.com/login");
+  assert.ok(detected);
+  assert.equal(detected?.kind, "web");
+  assert.equal(detected?.username, "ada");
+  assert.equal(detected?.password, "s3cret");
+  assert.equal(detected?.url.includes("s3cret"), false);
   assert.equal(detected?.url, "https://github.com/login");
 });
 

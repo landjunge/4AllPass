@@ -30,6 +30,7 @@ The server is a blob store. It never sees the master password, vault key, or pla
 - Argon2id KATs: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
 - Recovery (no server reset): [`docs/recovery.md`](docs/recovery.md)
 - Audit map for a third party: [`docs/audit-scope.md`](docs/audit-scope.md)
+- Reproducible PWA / extension tree hash: [`docs/reproducible-builds.md`](docs/reproducible-builds.md)
 
 There is **no** independent third-party audit yet. Planned scope is in `docs/audit-scope.md`. Feature comparison (honest ✅ / ⏳): [`docs/comparison.md`](docs/comparison.md).
 

@@ -20,6 +20,10 @@ jobs:
       - run: npm run test:webauthn
       - run: npm run typecheck
       - run: node scripts/verify-aes-gcm-vectors.mjs
+      - name: Reproducible PWA and extension builds
+        env:
+          SOURCE_DATE_EPOCH: "0"
+        run: npm run verify:reproducible
       - name: npm audit (high+)
         run: npm audit --audit-level=high
         continue-on-error: true

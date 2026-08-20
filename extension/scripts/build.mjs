@@ -4,32 +4,34 @@ import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dist = join(root, "dist");
+const dist = process.env.FOURALLPASS_OUTDIR || join(root, "dist");
 mkdirSync(dist, { recursive: true });
 
-await esbuild.build({
+const common = {
   absWorkingDir: root,
+  bundle: true,
+  platform: "browser",
+  target: "chrome120",
+  sourcemap: false,
+  legalComments: "none",
+  charset: "utf8",
+};
+
+await esbuild.build({
+  ...common,
   entryPoints: {
     background: "src/background.ts",
     popup: "src/popup.ts",
   },
-  bundle: true,
   format: "esm",
-  platform: "browser",
-  target: "chrome120",
   outdir: dist,
-  sourcemap: false,
 });
 
 await esbuild.build({
-  absWorkingDir: root,
+  ...common,
   entryPoints: ["src/content.ts"],
-  bundle: true,
   format: "iife",
-  platform: "browser",
-  target: "chrome120",
   outfile: join(dist, "content.js"),
-  sourcemap: false,
 });
 
 cpSync(join(root, "manifest.json"), join(dist, "manifest.json"));

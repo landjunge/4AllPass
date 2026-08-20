@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
+import { detectCredential, draftFromDetection } from "../lib/detect.ts";
 import {
   emptyDraft,
   generatePassword,
@@ -36,6 +37,8 @@ export function VaultPage(): ReactNode {
   const [copied, setCopied] = useState<string | null>(null);
   const [share, setShare] = useState<BuiltShare | null>(null);
   const [shareImport, setShareImport] = useState<{ text: string; key: string } | null>(null);
+  const [paste, setPaste] = useState("");
+  const [detectedLabel, setDetectedLabel] = useState<string | null>(null);
 
   useEffect(() => {
     setRevealPassword(false);
@@ -257,6 +260,40 @@ export function VaultPage(): ReactNode {
             {draft ? (
               <>
                 <h3>{selectedId ? "Edit entry" : "New entry"}</h3>
+                <label>
+                  Paste credential
+                  <textarea
+                    rows={3}
+                    value={paste}
+                    onChange={(event) => setPaste(event.target.value)}
+                    data-testid="detect-paste"
+                    placeholder="ghp_… or ftp.example.com / https://…"
+                  />
+                </label>
+                <p className="hint">Detect fills the form. It never grants access.</p>
+                <button
+                  type="button"
+                  data-testid="detect-apply"
+                  onClick={() => {
+                    const found = detectCredential(paste);
+                    if (!found) {
+                      setDetectedLabel("Nothing recognized. Pick Web, API, or SSH/SFTP.");
+                      return;
+                    }
+                    setDraft({
+                      ...draftFromDetection(found),
+                      password: found.password || draft?.password || generatePassword(),
+                    });
+                    setDetectedLabel(`${found.label}. Save to store it encrypted. Access still needs Allow.`);
+                  }}
+                >
+                  Detect
+                </button>
+                {detectedLabel ? (
+                  <p className="ok" data-testid="detect-label">
+                    {detectedLabel}
+                  </p>
+                ) : null}
                 <div className="tabs">
                   {(["web", "api", "sftp"] as const).map((kind) => (
                     <button

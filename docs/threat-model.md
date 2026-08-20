@@ -113,7 +113,7 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
-| Quantum attacks on AES            | Out of scope for v1                               | Future protocol version |
+| Quantum attacks on AES            | Out of scope for v1                               | AES-256 remains ~128-bit under Grover; see `docs/post-quantum-roadmap.md`. No KEM in v1 |
 
 ---
 

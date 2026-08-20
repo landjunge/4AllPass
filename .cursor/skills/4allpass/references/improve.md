@@ -19,7 +19,7 @@ No queued item. Selective sharing is **later** — crypto-Modell is ready, PWA-U
 - Native apps
 - Passkey store as a separate vault product
 - Shamir, TOTP, selective sharing — after remaining product-now items
-- Post-quantum hybrid-KEM: a concept doc only (`docs/post-quantum-roadmap.md`), no implementation
+- Post-quantum hybrid-KEM: concept is `docs/post-quantum-roadmap.md`. Do not implement ML-KEM until public-key wrapping exists.
 
 ## How to pick a task
 

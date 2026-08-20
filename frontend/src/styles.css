@@ -328,6 +328,27 @@ button.link {
   gap: 3px;
 }
 
+.device-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.rotate-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  background: #0a1129;
+}
+
+.rotate-form h4 {
+  margin: 0;
+}
+
 .badge {
   display: inline-block;
   margin-left: 8px;

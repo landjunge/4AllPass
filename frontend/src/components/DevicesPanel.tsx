@@ -9,11 +9,23 @@ const MECHANISM_LABEL: Record<string, string> = {
 };
 
 export function DevicesPanel(): ReactNode {
-  const { devices, refreshDevices, enableBiometrics, revoke, thisDeviceId, deviceUnlockAvailable } =
-    useApp();
+  const {
+    devices,
+    refreshDevices,
+    enableBiometrics,
+    revoke,
+    hardRevoke,
+    thisDeviceId,
+    deviceUnlockAvailable,
+    vault,
+  } = useApp();
   const [busy, setBusy] = useState(false);
   const [mechanism, setMechanism] = useState<string | null>(null);
   const [prfAvailable] = useState(() => webauthnPrfAvailable());
+  const [rotateTarget, setRotateTarget] = useState<string | null>(null);
+  const [masterPassword, setMasterPassword] = useState("");
+  const [recoveryKeyText, setRecoveryKeyText] = useState("");
+  const needsRecoveryKey = Boolean(vault?.envelopes.some((env) => env.type === "recovery"));
 
   useEffect(() => {
     void refreshDevices();
@@ -98,22 +110,100 @@ export function DevicesPanel(): ReactNode {
                 {device.revokedAt ? (
                   <span className="muted small">revoked</span>
                 ) : (
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => void revoke(device.deviceId)}
-                  >
-                    Revoke
-                  </button>
+                  <div className="device-actions">
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => void revoke(device.deviceId)}
+                      disabled={busy}
+                    >
+                      Remove from sync
+                    </button>
+                    <button
+                      type="button"
+                      className="danger"
+                      data-testid={`rotate-key-${device.deviceId}`}
+                      onClick={() => setRotateTarget(device.deviceId)}
+                      disabled={busy}
+                    >
+                      Rotate vault key
+                    </button>
+                  </div>
                 )}
               </li>
             ))}
           </ul>
         )}
         <p className="hint">
-          Revoking drops the device envelope in the next revision. A device that already knows this
-          Vault Key still knows it, so a suspected compromise needs a key rotation.
+          “Remove from sync” drops the device envelope in the next revision. That is not cryptographic
+          erase — a device that already holds this vault key can still read snapshots sealed under it.
+          Suspected compromise needs “Rotate vault key”: new random vault key, re-encrypt, then
+          metadata revoke. Other devices re-enrol with the master password.
         </p>
+        {rotateTarget ? (
+          <form
+            className="rotate-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const target = rotateTarget;
+              setBusy(true);
+              void hardRevoke(target, masterPassword, recoveryKeyText || undefined)
+                .then(() => {
+                  setRotateTarget(null);
+                  setMasterPassword("");
+                  setRecoveryKeyText("");
+                })
+                .finally(() => setBusy(false));
+            }}
+          >
+            <h4>Rotate vault key</h4>
+            <p className="muted small mono">{rotateTarget}</p>
+            <label>
+              Master password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={masterPassword}
+                onChange={(event) => setMasterPassword(event.target.value)}
+                required
+                minLength={10}
+              />
+            </label>
+            {needsRecoveryKey ? (
+              <label>
+                Recovery key
+                <textarea
+                  value={recoveryKeyText}
+                  onChange={(event) => setRecoveryKeyText(event.target.value)}
+                  rows={3}
+                  placeholder="XXXXX-XXXXX-XXXXX-…"
+                  required
+                />
+              </label>
+            ) : null}
+            <p className="hint">
+              Confirms you still know the unwrap secrets, then seals revision N+1 under a new vault
+              key. DELETE runs only after that commit succeeds.
+            </p>
+            <div className="device-actions">
+              <button type="submit" className="danger" disabled={busy} data-testid="confirm-rotate">
+                {busy ? "Rotating…" : "Confirm rotation"}
+              </button>
+              <button
+                type="button"
+                className="link"
+                disabled={busy}
+                onClick={() => {
+                  setRotateTarget(null);
+                  setMasterPassword("");
+                  setRecoveryKeyText("");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
       </section>
     </div>
   );

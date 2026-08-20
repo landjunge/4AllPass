@@ -167,7 +167,8 @@ object and returns it unchanged. The client verifies it under VK
 - Rate limits are per-IP counters, not a full abuse platform.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
 
-Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`). Next:
-CAS-tie the Device-Key Envelope mirror to `active_revision`, wire a hard-revoke
-control in the devices UI, and optionally add server-side WebAuthn assertion
-verification as ceremony integrity — not as a replacement for client-side PRF.
+Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
+exposed as “Rotate vault key” on the devices panel. Next: CAS-tie the
+Device-Key Envelope mirror to `active_revision` (PR #24), and optionally add
+server-side WebAuthn assertion verification as ceremony integrity — not as
+a replacement for client-side PRF.

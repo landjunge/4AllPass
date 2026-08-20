@@ -2,7 +2,9 @@
 
 Self-hosted Zero-Knowledge password manager – for all browsers and devices.
 
-Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
+Argon2id, WebAuthn device unlock, PWA. Selective profile sharing is specified, not shipped in the PWA yet.
+
+**Positioning:** your devices own the vault cryptographically, not just organisationally. Not “a nicer Bitwarden.” See [`docs/positioning.md`](docs/positioning.md).
 
 ## Layout
 
@@ -14,9 +16,25 @@ Selective profile sharing, Argon2id, WebAuthn device unlock, PWA.
 | [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
 | [`docs`](docs) | The authoritative specifications |
 
+## Why trust this?
+
+The server is a blob store. It never sees the master password, vault key, or plaintext entries. You can check that claim against public specs and tests instead of a marketing page:
+
+- What the **running** backend + PWA actually enforce: [`docs/security-boundary.md`](docs/security-boundary.md)
+- Threat model: [`docs/threat-model.md`](docs/threat-model.md)
+- Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- AES-256-GCM KATs: [`docs/test-vectors.md`](docs/test-vectors.md)
+- Argon2id KATs: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
+- Recovery (no server reset): [`docs/recovery.md`](docs/recovery.md)
+- Audit map for a third party: [`docs/audit-scope.md`](docs/audit-scope.md)
+
+There is **no** independent third-party audit yet. Planned scope is in `docs/audit-scope.md`. Feature comparison (honest ✅ / ⏳): [`docs/comparison.md`](docs/comparison.md).
+
 ## Documentation
 
 - Agent playbook (review / code / improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
+- Product plan: [`docs/development-plan.md`](docs/development-plan.md)
+- Positioning: [`docs/positioning.md`](docs/positioning.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)

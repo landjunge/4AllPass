@@ -1,14 +1,14 @@
 :root {
-  --bg: #121316;
-  --bg-panel: #1a1b1f;
-  --bg-card: #1e1f24;
-  --bg-elev: #24262d;
-  --text: #e2e4e9;
-  --text-muted: #8b909a;
-  --border: #2e3138;
-  --accent: #6b7280;
-  --accent-hi: #a1a8b3;
-  --ok: #3d9b6a;
+  --bg: #111114;
+  --bg-panel: #1a1a1f;
+  --bg-card: #1e1e24;
+  --bg-elev: #24242b;
+  --text: #f0f0f2;
+  --text-muted: #b0b0ba;
+  --border: #2c2c34;
+  --accent: #e85d2a;
+  --accent-hi: #f0a070;
+  --ok: #3dba6e;
   --err: #c45c5c;
   --line: var(--border);
   --muted: var(--text-muted);
@@ -59,8 +59,8 @@ button {
   cursor: pointer;
 }
 button:hover {
-  background: #1c7ed6;
-  border-color: #1c7ed6;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 button.link {

@@ -7,6 +7,7 @@ import {
   type EntryDraft,
   type VaultEntry,
 } from "../lib/entries.ts";
+import { parsePlaintextExport, plaintextImportWarning } from "../lib/import.ts";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 
 export function VaultPage(): ReactNode {
@@ -16,6 +17,9 @@ export function VaultPage(): ReactNode {
   const [draft, setDraft] = useState<EntryDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<"entries" | "devices">("entries");
+  const [importPending, setImportPending] = useState<{ count: number; entries: VaultEntry[] } | null>(
+    null,
+  );
 
   const entries = vault?.entries ?? [];
   const filtered = useMemo(() => {
@@ -59,6 +63,30 @@ export function VaultPage(): ReactNode {
       setSelectedId(null);
     } catch {
       // The banner shows the reason.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onImportFile(file: File): Promise<void> {
+    const text = await file.text();
+    try {
+      const parsed = parsePlaintextExport(text);
+      if (parsed.entries.length === 0) throw new Error("no login entries in this file");
+      setImportPending({ count: parsed.entries.length, entries: parsed.entries });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function confirmImport(): Promise<void> {
+    if (!importPending || !vault) return;
+    setBusy(true);
+    try {
+      await saveEntries([...entries, ...importPending.entries]);
+      setImportPending(null);
+    } catch {
+      // banner
     } finally {
       setBusy(false);
     }
@@ -117,6 +145,19 @@ export function VaultPage(): ReactNode {
               <button type="button" onClick={startNew} data-testid="new-entry">
                 New
               </button>
+              <label className="import-file">
+                Import
+                <input
+                  type="file"
+                  accept=".json,.csv,application/json,text/csv"
+                  data-testid="import-file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void onImportFile(file);
+                  }}
+                />
+              </label>
             </div>
             {filtered.length === 0 ? (
               <p className="muted empty">No entries yet.</p>
@@ -225,6 +266,32 @@ export function VaultPage(): ReactNode {
           </section>
         </div>
       )}
+      {importPending ? (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="card kit">
+            <h2>Import plaintext file</h2>
+            <p>{plaintextImportWarning()}</p>
+            <p className="muted">
+              {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
+              this device, then committed as the next revision.
+            </p>
+            <div className="actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                data-testid="confirm-import"
+                onClick={() => void confirmImport()}
+              >
+                Encrypt and import
+              </button>
+              <button type="button" disabled={busy} onClick={() => setImportPending(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

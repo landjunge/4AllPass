@@ -1,0 +1,24 @@
+name: Security gap
+description: A concrete attack against the crypto, CAS, or claim surface.
+labels: ["security"]
+body:
+  - type: textarea
+    id: attack
+    attributes:
+      label: Attack
+      description: What a malicious server, stolen snapshot, or hostile store can do. Not a style note.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options: [packages/crypto, packages/webauthn, backend, frontend, extension, docs]
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Test that should fail if this is reverted
+    validations:
+      required: true

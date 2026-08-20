@@ -1,0 +1,24 @@
+name: Bug
+description: Something the running product does that the docs say it must not.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Observed behaviour, including UI copy if it over-claims (e.g. “erased”).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What docs/security-boundary.md says should happen
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Browser, PWA vs extension, and steps.
+    validations:
+      required: true

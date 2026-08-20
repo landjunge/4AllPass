@@ -79,7 +79,7 @@ Follow [references/coding.md](references/coding.md).
 - Open paths take **caller expectations** (`expectType`, `entryId`, `vaultId`…) and compare **before** decrypt. Self-referential AAD is not enough.
 - `revision` is a cryptographic statement via the sealed manifest, not a server integer.
 - `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = `vaultKeyVersion`++. The PWA rotates via `hardRevokeDevice`.
-- WebAuthn rows on the server are `verification: "client_asserted"` until COSE assertion verification lands. Do not imply the server verified PRF.
+- WebAuthn rows may be `cose_verified` (ceremony signature only). Do not imply the server verified PRF.
 - Foreign vault/device ids → 404, never 403.
 - Snapshot write: `SELECT … FOR UPDATE`, CAS `expectedRevision`, reject `vaultKeyVersion` decrease, 409 on conflict.
 - New crypto behavior needs an adversarial test in the matching class (`adversarial-aead|identity|freshness|kdf-prf|toctou`).
@@ -98,12 +98,11 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Server-side WebAuthn **COSE assertion** against the issued challenge (ceremony integrity, not a PRF replacement) — `security-boundary.md` §6
-2. Envelope fuzzing (`fast-check`) and reproducible frontend/extension builds
-3. Offline: last good snapshot stays on the device; pin still applies
-4. Then Selective Sharing UI — after the above, not before
+1. Envelope fuzzing (`fast-check`) and reproducible frontend/extension builds
+2. Offline: last good snapshot stays on the device; pin still applies
+3. Then Selective Sharing UI — after the above, not before
 
-Hard revoke, DK-mirror CAS, server-issued challenges, Chromium autofill, Bitwarden/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
+Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, Chromium autofill, Bitwarden/CSV import, and recovery-kit copy are **on main**. Do not reimplement them.
 
 Do not start orgs, social-login-as-crypto, native apps, or “passkey store as vault” before the above.
 

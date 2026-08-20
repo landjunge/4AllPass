@@ -41,7 +41,7 @@ Metadata revoke is not cryptographic erase. A device that already holds VK can s
 ## Server
 
 - Stores opaque envelopes and ciphertext only.
-- Issues and consumes one-time WebAuthn challenges. Credential metadata is `client_asserted` until COSE assertion verification lands. The server never verifies PRF.
+- Issues and consumes one-time WebAuthn challenges. When the client sends the authenticator response, the server COSE-verifies it (`cose_verified`). The server never verifies PRF.
 - Ownership: wrong id → 404, not 403.
 - Snapshot publish is atomic (row lock + CAS + unique `(vault_id, revision)`).
 - `FOURALLPASS_SESSION_SECRET` default is refused in production.

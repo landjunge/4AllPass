@@ -34,7 +34,6 @@ Erledigt:
 
 Offen (ehrlich):
 
-- Server-side WebAuthn COSE-Assertion gegen die issued Challenge (Ceremony-Integrität, kein PRF)
 - Selective-Sharing-UI (Crypto-Modell da, PWA nicht verdrahtet)
 - Native iOS/Android Autofill; Firefox/Safari-Extension-Ports
 - Reproducible Builds, Envelope-Fuzzing, Post-Quantum-Konzept

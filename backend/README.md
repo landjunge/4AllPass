@@ -25,8 +25,9 @@ Device Wrapping Key, or the WebAuthn PRF output. See the authoritative specs at 
 - Device register / list / revoke, credential metadata, Device-Key Envelope
   mirror. `DELETE` is metadata-only (`revocation: "metadata_only"`).
   Cryptographic revoke is the next snapshot without that device envelope.
-  WebAuthn rows are `verification: "client_asserted"` — the server does not
-  verify ceremonies. See [`../docs/security-boundary.md`](../docs/security-boundary.md).
+  WebAuthn rows are `client_asserted` until the client posts an attestation or
+  assertion the server COSE-verifies (`cose_verified`). That is ceremony
+  integrity, not PRF. See [`../docs/security-boundary.md`](../docs/security-boundary.md).
 - Optional opaque `sealedManifest` on snapshot GET/POST. The server stores it
   as-is; the client verifies it under the Vault Key.
 - Snapshot writers take a vault row lock. Concurrent `N → N+1` commits: one

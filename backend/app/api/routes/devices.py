@@ -11,7 +11,10 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import get_db, get_owned_vault, get_session_store
 from app.api.rate_limit import enforce_write_rate_limit
 from app.core.sessions import SessionStore
+from app.core.config import get_settings
+from app.core.challenges import get_challenge_store, ChallengeStore
 from app.core.encoding import b64decode, b64encode, b64url_decode
+from app.core.webauthn_cose import CeremonyError, verify_attestation
 from app.models.device import Device
 from app.models.device_key_envelope import DeviceKeyEnvelope
 from app.models.enums import EnvelopeType
@@ -61,6 +64,8 @@ def _credential_out(cred: WebAuthnCredential, mirrored_for: set) -> CredentialSu
         created_at=cred.created_at,
         last_used_at=cred.last_used_at,
         revoked_at=cred.revoked_at,
+        server_verified=cred.public_key is not None,
+        verification="cose_verified" if cred.public_key is not None else "client_asserted",
     )
 
 
@@ -212,6 +217,18 @@ async def revoke_device(
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 
+def _attestation_fields(payload: RegisterCredentialRequest) -> bool:
+    present = [
+        payload.challenge_id is not None,
+        payload.challenge is not None,
+        payload.client_data_json is not None,
+        payload.attestation_object is not None,
+    ]
+    if any(present) and not all(present):
+        raise HTTPException(status_code=422, detail="incomplete WebAuthn registration response")
+    return all(present)
+
+
 @router.post("/{device_id}/credentials", response_model=CredentialSummary)
 async def register_credential(
     device_id: str,
@@ -220,6 +237,7 @@ async def register_credential(
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
+    challenges: Annotated[ChallengeStore, Depends(get_challenge_store)],
 ) -> CredentialSummary:
     await enforce_write_rate_limit(store, request, "credential")
     device = await _get_device(db, vault, device_id)
@@ -228,6 +246,43 @@ async def register_credential(
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    public_key: bytes | None = None
+    sign_count = 0
+    if _attestation_fields(payload):
+        assert payload.challenge_id is not None
+        assert payload.challenge is not None
+        assert payload.client_data_json is not None
+        assert payload.attestation_object is not None
+        try:
+            raw_challenge = b64decode(payload.challenge, label="challenge")
+            client_data = b64decode(payload.client_data_json, label="clientDataJSON")
+            attestation = b64decode(payload.attestation_object, label="attestationObject")
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        record = await challenges.consume(
+            challenge_id=payload.challenge_id,
+            user_id=vault.owner_user_id,
+            vault_id=vault.id,
+            purpose="create",
+            challenge=raw_challenge,
+        )
+        if record is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="challenge not found")
+        try:
+            verified = verify_attestation(
+                credential_id=credential_id,
+                client_data_json=client_data,
+                attestation_object=attestation,
+                expected_challenge=raw_challenge,
+                expected_rp_id=payload.rp_id,
+                settings=get_settings(),
+            )
+        except CeremonyError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        public_key = verified.public_key
+        sign_count = verified.sign_count
+
     existing = await db.execute(
         select(WebAuthnCredential).where(WebAuthnCredential.credential_id == credential_id)
     )
@@ -237,6 +292,8 @@ async def register_credential(
             device_id=device.id,
             rp_id=payload.rp_id,
             credential_id=credential_id,
+            public_key=public_key,
+            sign_count=sign_count,
             mechanism=payload.mechanism,
             prf_supported=payload.prf_supported,
             large_blob_supported=payload.large_blob_supported,
@@ -251,6 +308,10 @@ async def register_credential(
         cred.prf_supported = payload.prf_supported
         cred.large_blob_supported = payload.large_blob_supported
         cred.revoked_at = None
+        if public_key is not None:
+            cred.public_key = public_key
+            cred.sign_count = sign_count
+            cred.rp_id = payload.rp_id
         await db.flush()
     return _credential_out(cred, set())
 

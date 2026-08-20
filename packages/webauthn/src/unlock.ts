@@ -18,7 +18,7 @@ import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockError, DeviceUnlockUnavailableError } from "./errors.ts";
 import { readLargeBlob } from "./large-blob.ts";
 import { assertPrfOutput } from "./prf.ts";
-import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
+import { reportCeremony, resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import type {
   DeviceUnlockMechanism,
   DeviceUnlockRecord,
@@ -160,6 +160,13 @@ async function runMechanism(
     userVerification: "required",
   });
   assertUserVerified(assertion.authenticatorData, record.rpId);
+  reportCeremony(options.challenges, {
+    purpose: "assert",
+    credentialId,
+    clientDataJSON: assertion.clientDataJSON,
+    authenticatorData: assertion.authenticatorData,
+    signature: assertion.signature,
+  });
   const deviceKeyEnvelope = localDeviceKeyEnvelope(record);
   const wrappingKey = storedWrappingKey(record);
   try {

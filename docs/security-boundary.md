@@ -80,13 +80,23 @@ PRF output.
 
 The server still does **not**:
 
-- verify an attestation or assertion signature (`signCount` / COSE)
 - treat `prfSupported: true` as proof of possession
 - mix the challenge into HKDF / DWK
+- verify PRF output (it never sees it)
 
-`CredentialSummary.verification` is always `"client_asserted"` and
-`serverVerified` is always `false`. Those fields exist so the API cannot be
-read as “the server verified this passkey.”
+When the PWA posts a registration response (`clientDataJSON` + `attestationObject`
++ the create challenge), the server verifies `fmt=none` attestation, stores the
+COSE public key, and sets `verification: "cose_verified"`. A later `consume` of
+an assertion verifies the signature against that key and the issued challenge,
+and bumps `signCount`.
+
+`fmt=none` is not hardware attestation. `cose_verified` means **ceremony
+integrity**, not “the server unlocked the vault” and not “PRF was checked.”
+Rows posted without an attestation remain `client_asserted` / `serverVerified:
+false`.
+
+`serverVerified` is `true` only when a COSE public key was stored after a
+verified registration. It is not a passkey-login proof.
 
 Vault unlock still requires the real authenticator on the client
 (`packages/webauthn` + `docs/webauthn-prf.md`). A fabricated
@@ -158,7 +168,8 @@ object and returns it unchanged. The client verifies it under VK
 
 ## 6. Remaining limitations (honest)
 
-- No server-side WebAuthn assertion verification.
+- WebAuthn COSE verification is ceremony integrity (`fmt=none` + assertion
+  signature). It is not PRF verification and does not wrap a Vault Key.
 - Hard revoke does not rewrap foreign device envelopes (or this device’s when
   the DK needs a WebAuthn ceremony); those devices re-enrol after master unlock.
 - Account session is bound to a client-asserted `X-Device-Id`, not to a
@@ -175,5 +186,6 @@ object and returns it unchanged. The client verifies it under VK
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope
 mirror is CAS-tied to `active_revision`. WebAuthn challenges are server-issued
-and single-use. Next: COSE assertion verification against that challenge —
+and single-use. Assertions and `fmt=none` registrations are COSE-verified
+against that challenge when the PWA sends the authenticator response. That is
 ceremony integrity, not a replacement for client-side PRF.

@@ -19,7 +19,7 @@ import { assertUserVerified } from "./authenticator-data.ts";
 import { DeviceUnlockUnavailableError, WebAuthnUnavailableError } from "./errors.ts";
 import { writeLargeBlob } from "./large-blob.ts";
 import { assertPrfOutput, readPrfFirst } from "./prf.ts";
-import { resolveChallenge, type ChallengeProvider } from "./challenge.ts";
+import { reportCeremony, resolveChallenge, type ChallengeProvider } from "./challenge.ts";
 import { MECHANISM_RANK } from "./types.ts";
 import type {
   AttestationLike,
@@ -113,6 +113,12 @@ export async function enableDeviceUnlock(
     if (credentialId.length === 0) {
       throw new WebAuthnUnavailableError("authenticator returned an empty credential id");
     }
+    reportCeremony(options.challenges, {
+      purpose: "create",
+      credentialId,
+      clientDataJSON: attestation.clientDataJSON,
+      attestationObject: attestation.attestationObject,
+    });
     // Some platforms already return PRF results at create time (§2.1 step 5).
     try {
       createTimePrf = readPrfFirst(attestation.extensionResults);
@@ -229,6 +235,13 @@ async function provision(
       userVerification: "required",
     });
     assertUserVerified(assertion.authenticatorData, options.rpId);
+    reportCeremony(options.challenges, {
+      purpose: "assert",
+      credentialId,
+      clientDataJSON: assertion.clientDataJSON,
+      authenticatorData: assertion.authenticatorData,
+      signature: assertion.signature,
+    });
     const record: DeviceUnlockRecord = {
       ...base,
       mechanism,

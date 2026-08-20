@@ -85,7 +85,12 @@ export class FakeAuthenticator implements WebAuthnClient {
     if (request.requestLargeBlob) {
       extensionResults.largeBlob = { supported: this.options.supportsLargeBlob === true };
     }
-    return { rawId: toArrayBuffer(id), extensionResults };
+    return {
+      rawId: toArrayBuffer(id),
+      clientDataJSON: new ArrayBuffer(0),
+      attestationObject: new ArrayBuffer(0),
+      extensionResults,
+    };
   }
 
   async get(request: GetAssertionRequest): Promise<AssertionLike> {
@@ -124,6 +129,8 @@ export class FakeAuthenticator implements WebAuthnClient {
     return {
       rawId: toArrayBuffer(credential.id),
       authenticatorData: toArrayBuffer(this.authenticatorData(credential.rpId)),
+      clientDataJSON: new ArrayBuffer(0),
+      signature: new ArrayBuffer(0),
       extensionResults,
     };
   }

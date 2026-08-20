@@ -21,7 +21,7 @@ This is a map of what to review, what the running system actually enforces, and 
 | Specs | `docs/` | Protocol claims vs implementation. Over-claims are findings |
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 
-Out of scope until they exist in tree: native apps, org/team features, selective-sharing UI, server-side WebAuthn **assertion** verification (COSE against the issued challenge — specified as next in `security-boundary.md` §6).
+Out of scope until they exist in tree: native apps, org/team features, selective-sharing UI.
 
 ---
 
@@ -59,7 +59,7 @@ Known-answer tests: `npm test` (default) and `npm run test:crypto:heavy` (large 
 
 - PRF output → HKDF → DWK → Device-Key Envelope → DK → Device Envelope → VK (`docs/webauthn-prf.md`).
 - Fallback order PRF > largeBlob > UV-gated store.
-- Server rows are `verification: "client_asserted"`. Challenges are server-issued and single-use; consuming them does **not** verify the authenticator signature. Do not treat metadata as possession proof (`docs/security-boundary.md` §3).
+- Challenges are server-issued and single-use. When the PWA sends the authenticator response, the server COSE-verifies `fmt=none` registration and later assertions. That is **not** PRF proof. Rows without attestation stay `client_asserted` (`docs/security-boundary.md` §3).
 
 ### M3 — Backend auth, ownership, CAS
 
@@ -80,12 +80,12 @@ Known-answer tests: `npm test` (default) and `npm run test:crypto:heavy` (large 
 
 From `docs/security-boundary.md` §6 — treat as known, not surprises:
 
-1. No server-side WebAuthn assertion verification (COSE against the issued challenge).
-2. Account session bound to client-asserted `X-Device-Id`, not a WebAuthn credential.
-3. Bearer token in `sessionStorage` (XSS = account takeover, not vault plaintext by itself).
-4. Rate limits are per-IP counters.
-5. Soft `DELETE` remains `metadata_only` — it is not cryptographic erase (hard revoke is a separate PWA path).
-6. Chromium autofill only; no native iOS/Android Autofill, no Selective-Sharing UI.
+1. Account session bound to client-asserted `X-Device-Id`, not a WebAuthn credential.
+2. Bearer token in `sessionStorage` (XSS = account takeover, not vault plaintext by itself).
+3. Rate limits are per-IP counters.
+4. Soft `DELETE` remains `metadata_only` — it is not cryptographic erase (hard revoke is a separate PWA path).
+5. Chromium autofill only; no native iOS/Android Autofill, no Selective-Sharing UI.
+6. `cose_verified` is ceremony integrity (`fmt=none` + assertion). It is not hardware attestation and not PRF.
 
 ---
 

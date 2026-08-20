@@ -30,10 +30,12 @@ Backend (Postgres + Redis + API) und PWA:
 ```sh
 cd ~/4AllPass
 docker compose up -d postgres redis
-# API auf :8000 — entweder Docker-Backend oder lokal:
-cd backend && source .venv/bin/activate && alembic upgrade head && uvicorn app.main:app --reload
+# API auf :8010 — :8000 is another app on this machine, not 4AllPass:
+cd backend && source .venv/bin/activate && alembic upgrade head \
+  && FOURALLPASS_SESSION_SECRET=dev-e2e-session-not-for-production \
+     uvicorn app.main:app --host 127.0.0.1 --port 8010
 # anderes Terminal:
-cd ~/4AllPass && npm run dev
+cd ~/4AllPass/frontend && API_ORIGIN=http://127.0.0.1:8010 npm run dev -- --host 127.0.0.1
 ```
 
 Browser-Engines für Playwright (einmal):
@@ -97,7 +99,7 @@ Wenn Schritt 2 die Einträge ohne Vault-Passwort zeigt, ist das ein Bug — nich
 - Recovery Key statt Vault-Passwort
 - Tastatur-only in Chrome
 
-Hard-Revoke über zwei echte Browser: `frontend/e2e/live/hard-revoke.spec.ts` (VK++ ; Opfer entsperrt weiter mit dem **Vault-Passwort**, nicht mit einem alten Device-Unlock). Noch nicht automatisiert: echtes Touch ID in Safari.app, Extension-Fill in Safari.app.
+Hard-Revoke über zwei echte Browser: `frontend/e2e/live/hard-revoke.spec.ts` (API **:8010**; VK++ ; Rotation killt Sessions des Opfers — neu anmelden, dann Vault-Passwort → VK₂). Noch nicht automatisiert: echtes Touch ID in Safari.app, Extension-Fill in Safari.app. Installed Firefox.app may fail Playwright’s protocol; Chrome + Brave is enough for two-app proof.
 
 ---
 

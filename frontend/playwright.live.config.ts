@@ -22,10 +22,11 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --host 127.0.0.1",
     url: process.env.E2E_BASE_URL ?? "http://127.0.0.1:5173",
-    reuseExistingServer: !process.env.API_ORIGIN,
+    reuseExistingServer: true,
     timeout: 60_000,
     env: {
-      API_ORIGIN: process.env.API_ORIGIN ?? "http://127.0.0.1:8000",
+      // :8000 on this machine is not 4AllPass. Match playwright.config.ts.
+      API_ORIGIN: process.env.API_ORIGIN ?? "http://127.0.0.1:8010",
     },
   },
 });

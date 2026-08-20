@@ -116,7 +116,7 @@ These numbers are a **target if and only if** the matching function is finished,
 |---|---:|---|
 | Cryptography | 9.5 | Strong v1 (AES-256-GCM, Argon2id, envelopes) — **no third-party audit** |
 | Zero-Knowledge architecture | 9.5 | Server is storage; claims live in `security-boundary.md` |
-| Device security | 9.5 | PRF unlock + hard revoke on main; freeze still wants two-browser proof |
+| Device security | 9.5 | PRF unlock + hard revoke on main; two-Playwright-profile hard-revoke e2e on main |
 | Vault integrity | 9.5 | Sealed manifest + CAS |
 | Recovery | 9 | Recovery key + kit; no server reset |
 | WebAuthn | 9 | PRF > largeBlob > UV-gated; COSE is ceremony only |

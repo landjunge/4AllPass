@@ -12,8 +12,9 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Security freeze. Next work is proof, not product:
 
-- Hard-revoke **across two browsers** (VK₂; victim device-unlock fails; master still works)
-- Do not start TOTP, iOS Autofill, Plus, or public-key wrapping
+- Hard-revoke **across two Playwright profiles** is on main (`frontend/e2e/device-unlock.spec.ts`: VK₂; victim device-unlock fails; master still works). Live two-app suite: `frontend/e2e/live/hard-revoke.spec.ts` (API **:8010**, not :8000).
+- Still unproven in **Safari.app**: extension fill; real Touch ID. Do not confuse WebKit Playwright with Safari.app.
+- Do not start TOTP, iOS Autofill, Plus, public-key wrapping, Provider templates, SAL, or 4AP-CAP-1
 
 Item-share files are on main (`docs/sharing.md`).
 

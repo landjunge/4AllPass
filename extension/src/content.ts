@@ -1,3 +1,5 @@
+import { pickPassword, pickUsername, type InputLike } from "./fill.ts";
+
 function visibleInputs(): HTMLInputElement[] {
   return [...document.querySelectorAll("input")].filter((input) => {
     if (input.type === "hidden" || input.disabled) return false;
@@ -6,16 +8,13 @@ function visibleInputs(): HTMLInputElement[] {
   });
 }
 
-function pickUsername(inputs: HTMLInputElement[]): HTMLInputElement | null {
-  const scored = inputs.filter((input) => input.type !== "password");
-  const named = scored.find((input) =>
-    /user|email|login|id/i.test(`${input.name} ${input.id} ${input.autocomplete}`),
-  );
-  return named ?? scored[0] ?? null;
-}
-
-function pickPassword(inputs: HTMLInputElement[]): HTMLInputElement | null {
-  return inputs.find((input) => input.type === "password") ?? null;
+function describe(input: HTMLInputElement): InputLike {
+  return {
+    type: input.type,
+    name: input.name,
+    id: input.id,
+    autocomplete: input.getAttribute("autocomplete") ?? "",
+  };
 }
 
 function setValue(input: HTMLInputElement, value: string): void {
@@ -27,13 +26,20 @@ function setValue(input: HTMLInputElement, value: string): void {
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function fillForm(username: string, password: string): boolean {
+  const inputs = visibleInputs();
+  const likes = inputs.map(describe);
+  const userLike = pickUsername(likes);
+  const passLike = pickPassword(likes);
+  const user = userLike ? inputs[likes.indexOf(userLike)] : null;
+  const pass = passLike ? inputs[likes.indexOf(passLike)] : null;
+  if (user && username) setValue(user, username);
+  if (pass && password) setValue(pass, password);
+  return Boolean(user || pass);
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "fill-form") return;
-  const inputs = visibleInputs();
-  const user = pickUsername(inputs);
-  const pass = pickPassword(inputs);
-  if (user && typeof message.username === "string") setValue(user, message.username);
-  if (pass && typeof message.password === "string") setValue(pass, message.password);
-  sendResponse({ ok: Boolean(user || pass) });
-  return true;
+  const ok = fillForm(String(message.username ?? ""), String(message.password ?? ""));
+  sendResponse({ ok });
 });

@@ -184,6 +184,9 @@ object and returns it unchanged. The client verifies it under VK
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
+- The Chromium extension decrypts on-device via `@4allpass/crypto`. Unlocked
+  entries sit in service-worker memory until Lock or worker eviction — not in
+  `chrome.storage`. Fill matching uses the entry URL host, not the page title.
 
 Hard Vault Key rotation in the PWA is implemented (`hardRevokeDevice`) and
 exposed as “Rotate vault key” on the devices panel. The Device-Key Envelope

@@ -17,3 +17,21 @@ test("entriesForPage matches host and ignores unrelated", () => {
     ["1"],
   );
 });
+
+test("entriesForPage does not match on title and rejects lookalike hosts", () => {
+  const entries = [
+    { id: "1", title: "github.com", username: "ada", password: "x", url: "" },
+    { id: "2", title: "GitHub", username: "ada", password: "y", url: "https://github.com" },
+  ];
+  assert.deepEqual(
+    entriesForPage(entries, "https://github.com/login").map((entry) => entry.id),
+    ["2"],
+  );
+  assert.deepEqual(entriesForPage(entries, "https://github.com.evil.test"), []);
+  assert.deepEqual(entriesForPage(entries, "https://notgithub.com"), []);
+});
+
+test("entriesForPage allows subdomains of the saved host", () => {
+  const entries = [{ id: "1", title: "Ex", username: "ada", password: "x", url: "https://example.com" }];
+  assert.equal(entriesForPage(entries, "https://app.example.com/login").length, 1);
+});

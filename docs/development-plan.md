@@ -37,7 +37,7 @@ Browser-Extension, die über `@4allpass/crypto` clientseitig entschlüsselt. Kei
 
 Akzeptanzkriterium: Login auf einer Testseite via Extension in ≤2 Klicks, ohne Copy-Paste.
 
-Chromium-MVP **auf main** (`extension/`, `#30`): MV3, Entschlüsselung über `@4allpass/crypto`, Fill auf `frontend/public/test-login.html`. Native iOS/Android Autofill bleibt Folgephase. Firefox/Safari-Ports nicht begonnen.
+Chromium **auf main** (`extension/`, `#30`): MV3, Entschlüsselung über `@4allpass/crypto`, Fill auf `frontend/public/test-login.html`, Host-Match, Shortcut/Kontextmenü. Native iOS/Android Autofill bleibt Folgephase. Firefox/Safari-Ports nicht begonnen.
 
 ### A3. WebAuthn/Biometrie als Standard-Unlock
 

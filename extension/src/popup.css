@@ -48,6 +48,10 @@ button.link {
   padding: 0;
   margin: 8px 0 0;
 }
+#shortcut {
+  margin: 6px 0 0;
+  font-size: 11px;
+}
 #picks button {
   background: #16204a;
   color: #eaf0ff;

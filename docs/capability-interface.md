@@ -4,7 +4,7 @@
 **Date:** 2026-08-20  
 **Not this document:** a merge of the three repos, a FastAPI grant API, Tollgate-in-4AllPass, 4AllPass-as-policy-engine, or an orchestrator.
 
-Companion: `secret-access-layer.md` (egress), `provider-service-vision.md` (vault shape), `positioning-target.md` (category).  
+Companion: `capability-contract-v1.md` (**4AP-CAP-1** — the small contract, not a new protocol), `secret-access-layer.md` (egress), `provider-service-vision.md` (vault shape), `positioning-target.md` (category).  
 Tracker: [#70](https://github.com/landjunge/4AllPass/issues/70). Related: [#67](https://github.com/landjunge/4AllPass/issues/67), [#65](https://github.com/landjunge/4AllPass/issues/65).
 
 Sibling products (separate codebases, keep them that way):
@@ -24,7 +24,9 @@ Gnom-Hub     = Orchestration     (which agent runs)
 Tollgate     = Execution Authority (what that principal may do with it)
 ```
 
-Do **not** merge the products. Define a **small, stable Capability** between them.
+Do **not** merge the products. Do **not** invent a proprietary super-protocol. The join is the **Capability contract** (`capability-contract-v1.md`): Issue / Verify / Inspect / Revoke.
+
+> 4AllPass knows no Tollgate policies. Tollgate knows no vault contents. Gnom-Hub knows no secrets.
 
 | Product | Question it answers | Must not start doing |
 |---|---|---|
@@ -58,7 +60,7 @@ Words to keep using:
 
 ## 2. What a Capability is
 
-Not “API key.” A Capability is a **bounded grant**.
+Not “API key.” A Capability is a **bounded grant**. **Capability ≠ Secret.** Claims live in 4AP-CAP-1; secret bytes never do.
 
 ```text
 id:          cap_123
@@ -120,18 +122,19 @@ Human path (browser fill) does **not** go through Tollgate. Plane 1 stays 4AllPa
 
 1. **Keep three repos.** A shared schema/doc is allowed. A monorepo “AI security suite” is not this plan.
 2. **Tollgate is a Trusted Application** of the Secret Access Layer (`secret-access-layer.md` Phase D), default DENY like any other process.
-3. **Prefer a handle, not `export OPENAI_API_KEY`.** Today Tollgate’s keys module can keep provider keys on disk. The target is: long-lived secrets live in the 4AllPass vault; Tollgate sees a capability (and in-memory material only for the TTL), or asks the local broker. Do not copy the vault into `keys_app.json`.
-4. **4AllPass FastAPI never sees capabilities.** Grants stay on the device, in ciphertext after unlock — same as SAL.
-5. **4AllPass does not enforce Tollgate policy.** No spend ledgers, no model lists, no tool-loop counters in `packages/crypto` or the PWA.
-6. **Tollgate does not unwrap Vault Keys.** If it needs bytes, it gets them through the local broker after approval, like n8n.
-7. **Gnom-Hub does not become a second broker.**
+3. **Prefer a signed capability, not `export OPENAI_API_KEY`.** 4AllPass must not *have* to trust Tollgate with the permanent secret. How the provider gets bytes is **A/B/C** in `capability-contract-v1.md` §5 — pick later; prefer short-lived upstream credentials (C). Do not copy the vault into `keys_app.json`.
+4. **MCP is not the security interface.** It stays the tool protocol above this contract.
+5. **4AllPass FastAPI never sees capabilities.** Grants stay on the device, in ciphertext after unlock — same as SAL.
+6. **4AllPass does not enforce Tollgate policy.** No spend ledgers, no model lists, no tool-loop counters in `packages/crypto` or the PWA.
+7. **Tollgate does not unwrap Vault Keys.** If it needs bytes, it gets them through the local broker after approval, like n8n — and only after Verify of a cap.
+8. **Gnom-Hub does not become a second broker.**
 
 ---
 
 ## 5. Triggers to reopen this file
 
 - Secret Access Layer (`#67`) is in implementation **and** someone is ready to make Tollgate a Trusted Application instead of a disk key store.
-- Explicit request for the **Capability interface** (not “weiter”, not “merge Tollgate”, not “put budgets in 4AllPass”).
+- Explicit request for **4AP-CAP-1** / the Capability contract (not “weiter”, not “merge Tollgate”, not “put budgets in 4AllPass”, not “MCP as security”).
 
 Until then: **4AllPass is a password manager; Tollgate is a separate safety layer that still holds its own keys; there is no shared capability object in this repository.**
 

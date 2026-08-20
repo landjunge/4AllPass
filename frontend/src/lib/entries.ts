@@ -19,6 +19,7 @@ export interface VaultEntry {
   port: string;
   protocol: string;
   capabilities: string;
+  credentialType: string;
   notes: string;
   updatedAt: string;
 }
@@ -42,6 +43,7 @@ export function emptyDraft(kind: EntryKind = "web"): EntryDraft {
     port: kind === "sftp" ? "22" : "",
     protocol: kind === "sftp" ? "sftp" : "",
     capabilities: kind === "api" ? "repository.read" : "",
+    credentialType: kind === "api" ? "api_key" : "password",
     notes: "",
   };
 }
@@ -63,6 +65,7 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     port: entry.port,
     protocol: entry.protocol,
     capabilities: entry.capabilities,
+    credentialType: entry.credentialType,
     notes: entry.notes,
     updatedAt: entry.updatedAt,
   };
@@ -86,6 +89,7 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     port: parsed.port ?? "",
     protocol: parsed.protocol ?? "",
     capabilities: parsed.capabilities ?? "",
+    credentialType: parsed.credentialType ?? "",
     notes: parsed.notes ?? "",
     updatedAt: parsed.updatedAt ?? new Date().toISOString(),
   };

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { detectCredential, draftFromDetection } from "../lib/detect.ts";
+import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../lib/providers.ts";
 import {
   emptyDraft,
   generatePassword,
@@ -39,6 +40,7 @@ export function VaultPage(): ReactNode {
   const [shareImport, setShareImport] = useState<{ text: string; key: string } | null>(null);
   const [paste, setPaste] = useState("");
   const [detectedLabel, setDetectedLabel] = useState<string | null>(null);
+  const [customTemplate, setCustomTemplate] = useState("");
 
   useEffect(() => {
     setRevealPassword(false);
@@ -83,6 +85,7 @@ export function VaultPage(): ReactNode {
       port: entry.port,
       protocol: entry.protocol,
       capabilities: entry.capabilities,
+      credentialType: entry.credentialType,
       notes: entry.notes,
     });
   }
@@ -245,9 +248,9 @@ export function VaultPage(): ReactNode {
                     >
                       <strong>{entry.title || "(untitled)"}</strong>
                       <span className="muted">
-                        {entry.kind}
-                        {entry.provider ? ` · ${entry.provider}` : ""}
-                        {entry.username ? ` · ${entry.username}` : ""}
+                        {entry.provider || entry.kind}
+                        {entry.account ? ` / ${entry.account}` : ""}
+                        {entry.credentialType ? ` / ${entry.credentialType}` : ` / ${entry.kind}`}
                       </span>
                     </button>
                   </li>
@@ -318,6 +321,52 @@ export function VaultPage(): ReactNode {
                     </button>
                   ))}
                 </div>
+                <p className="hint">Provider ≠ account ≠ credential. Templates stay on this device.</p>
+                <div className="tabs">
+                  {BUILTIN_TEMPLATES.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      data-testid={`template-${template.id}`}
+                      onClick={() =>
+                        setDraft({
+                          ...applyTemplate(template, draft.account || "personal"),
+                          password: draft.password || generatePassword(),
+                        })
+                      }
+                    >
+                      {template.name}
+                    </button>
+                  ))}
+                </div>
+                <label>
+                  Custom template
+                  <textarea
+                    rows={4}
+                    value={customTemplate}
+                    onChange={(event) => setCustomTemplate(event.target.value)}
+                    data-testid="custom-template"
+                    placeholder={"id: acme\nname: Acme\n  - widget.read"}
+                  />
+                </label>
+                <button
+                  type="button"
+                  data-testid="apply-custom-template"
+                  onClick={() => {
+                    try {
+                      const template = parseProviderTemplate(customTemplate);
+                      setDraft({
+                        ...applyTemplate(template, draft.account || "personal"),
+                        password: draft.password || generatePassword(),
+                      });
+                      setDetectedLabel(`Template ${template.name}. Save encrypts it. Access still needs Allow.`);
+                    } catch (error) {
+                      setDetectedLabel(error instanceof Error ? error.message : String(error));
+                    }
+                  }}
+                >
+                  Apply custom template
+                </button>
                 <label>
                   Title
                   <input

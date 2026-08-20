@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { useApp } from "../state/app-state.tsx";
 
 function kitText(vaultId: string, recoveryKey: string): string {
@@ -57,6 +58,7 @@ function printKit(vaultId: string, recoveryKey: string): void {
 export function RecoveryKitDialog(): ReactNode {
   const { recoveryKey, activeVaultId, dismissRecoveryKey } = useApp();
   const [confirmed, setConfirmed] = useState(false);
+  const [copied, setCopied] = useState(false);
   if (!recoveryKey || !activeVaultId) return null;
 
   return (
@@ -80,7 +82,22 @@ export function RecoveryKitDialog(): ReactNode {
           <button type="button" onClick={() => printKit(activeVaultId, recoveryKey)}>
             Print
           </button>
+          <button
+            type="button"
+            data-testid="copy-recovery-key"
+            onClick={() => {
+              void copySecret(recoveryKey).then(() => setCopied(true));
+            }}
+          >
+            Copy key
+          </button>
         </div>
+        {copied ? (
+          <p className="hint">
+            Key copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000} seconds if it
+            still holds this value. Prefer download or print for the offline kit.
+          </p>
+        ) : null}
         <label className="checkbox">
           <input
             type="checkbox"

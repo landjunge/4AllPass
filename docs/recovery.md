@@ -117,6 +117,10 @@ Known-answer tests: **TV-RWK-01**, **TV-RWK-WRONG-VAULT**, **TV-ENV-RECOVERY-RWK
    the `vault_id`.
 4. Zeroize the Recovery Key in memory as soon as the kit has been displayed or printed.
 
+The PWA offers Download, Print, and Copy key. Copy uses the OS clipboard and is
+overwritten after 30 seconds if that clipboard still holds the key
+(`crypto-protocol.md` §10). Prefer Download or Print for the offline kit.
+
 The Emergency Kit contains: `vault_id`, the formatted Recovery Key, the creation
 date, and a plain statement that this is the only recovery path and that 4AllPass
 cannot restore access without it.

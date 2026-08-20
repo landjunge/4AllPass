@@ -313,6 +313,13 @@ button.link {
   gap: 12px;
 }
 
+.field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: -4px;
+}
+
 .actions {
   display: flex;
   gap: 8px;

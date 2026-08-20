@@ -1,10 +1,16 @@
 # 4AllPass
 
-Self-hosted Zero-Knowledge password manager – for all browsers and devices.
+**Secure credential access for humans, applications and AI agents.**
 
-Argon2id, WebAuthn device unlock, PWA. You can share a login as an encrypted file plus a share key; the server never sees either. Wrapping to someone else’s device key is not in v1.
+Your agents need access. They don't need your secrets.
 
-**Positioning:** your devices own the vault cryptographically, not just organisationally. Not “a nicer Bitwarden.” See [`docs/positioning.md`](docs/positioning.md).
+```text
+Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
+```
+
+Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). That access path is **not shipped** yet.
+
+Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
 
 ## Layout
 
@@ -39,7 +45,8 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Agent playbook (review / code / improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
 - Product plan: [`docs/development-plan.md`](docs/development-plan.md)
 - Positioning (current claims): [`docs/positioning.md`](docs/positioning.md)
-- Target category (far later, not current): [`docs/positioning-target.md`](docs/positioning-target.md)
+- 8-week agent-access plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
+- Target category (not current): [`docs/positioning-target.md`](docs/positioning-target.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)

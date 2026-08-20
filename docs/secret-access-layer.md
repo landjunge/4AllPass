@@ -4,7 +4,7 @@
 **Date:** 2026-08-20  
 **Not this document:** a broker binary, MCP server, FastAPI grant API, env-var export, clipboard watcher, or an orchestrator.
 
-Companion: `provider-service-vision.md` (vault *shape*), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
+Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
 Trackers: [#67](https://github.com/landjunge/4AllPass/issues/67) (this layer), [#65](https://github.com/landjunge/4AllPass/issues/65) (Provider / Account / Secret), [#59](https://github.com/landjunge/4AllPass/issues/59) (clipboard *ingest*; MCP as a future *client*).
 
 ---
@@ -212,6 +212,6 @@ If this is ever implemented:
 - Explicit request to implement the **Secret Access Layer** (not “weiter”, not “API keys”, not “MCP”, not “n8n”).
 - Phase B only: a small extension UX on top of existing host fill, still click-to-fill — still not a broker.
 
-Until then the honest line is: **v1 autofill is host-match after unlock in the extension; there is no local broker, no grant matrix, and no agent capability.**
+Until then the honest line is: **v1 autofill is host-match after unlock in the extension; there is no local broker, no grant matrix, and no agent capability.** Public positioning stays `positioning.md`; the “personal secret access control” story is `positioning-target.md` and must not leak onto the README.
 
 No code in this repository implements a Secret Broker, application identity, or grant records.

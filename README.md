@@ -38,7 +38,8 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 
 - Agent playbook (review / code / improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
 - Product plan: [`docs/development-plan.md`](docs/development-plan.md)
-- Positioning: [`docs/positioning.md`](docs/positioning.md)
+- Positioning (current claims): [`docs/positioning.md`](docs/positioning.md)
+- Target category (far later, not current): [`docs/positioning-target.md`](docs/positioning-target.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
 - WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)

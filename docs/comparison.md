@@ -1,6 +1,6 @@
 # 4AllPass — Feature-Vergleich
 
-Nur Zeilen mit ✅ sind im **laufenden** Produkt nachweisbar (`docs/security-boundary.md`, PWA, Backend). Geplantes steht als ⏳. Unbelegte Behauptungen sind ein Defekt.
+Nur Zeilen mit ✅ sind im **laufenden** Produkt nachweisbar (`docs/security-boundary.md`, PWA, Backend). Geplantes steht als ⏳. Unbelegte Behauptungen sind ein Defekt. Eine *Zielkategorie* (Password Manager + persönlicher Secret Access für Apps/Agenten) steht in [`positioning-target.md`](positioning-target.md) — deren Scorecard **nicht** hierher kopieren.
 
 Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nicht vorhanden · ⏳ geplant
 

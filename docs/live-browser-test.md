@@ -97,7 +97,7 @@ Wenn Schritt 2 die Einträge ohne Vault-Passwort zeigt, ist das ein Bug — nich
 - Recovery Key statt Vault-Passwort
 - Tastatur-only in Chrome
 
-Noch nicht automatisiert (nächster Ausbau): echtes Touch ID in Safari, Opera-Install, Hard-Revoke-Klick über zwei Browser, Extension-Autofill.
+Hard-Revoke über zwei echte Browser: `frontend/e2e/live/hard-revoke.spec.ts` (VK++ ; Opfer entsperrt weiter mit dem **Vault-Passwort**, nicht mit einem alten Device-Unlock). Noch nicht automatisiert: echtes Touch ID in Safari.app, Extension-Fill in Safari.app.
 
 ---
 

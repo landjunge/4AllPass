@@ -8,9 +8,14 @@ Product north star: devices own the vault **cryptographically**. Features that d
 
 Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope, DK-mirror CAS, server-issued WebAuthn challenges, COSE registration/assertion verification (ceremony integrity, not PRF), envelope property tests (`fast-check`), reproducible PWA/extension tree hashes, offline wire-snapshot cache (pin still applies), recovery-kit copy, Chromium MV3 autofill, Bitwarden/1Password/KeePass/CSV plaintext import.
 
-## Now (product you can feel)
+## Now (prove, do not build features)
 
-No queued item. Item-share files are on main (`docs/sharing.md`). Do not add public-key wrapping unless asked.
+Security freeze. Next work is proof, not product:
+
+- Hard-revoke **across two browsers** (VK₂; victim device-unlock fails; master still works)
+- Do not start TOTP, iOS Autofill, Plus, or public-key wrapping
+
+Item-share files are on main (`docs/sharing.md`).
 
 ## Later (do not start)
 

@@ -1,0 +1,79 @@
+const statusEl = document.getElementById("status") as HTMLParagraphElement;
+const errorEl = document.getElementById("error") as HTMLParagraphElement;
+const unlockForm = document.getElementById("unlock") as HTMLFormElement;
+const unlockedEl = document.getElementById("unlocked") as HTMLDivElement;
+const picksEl = document.getElementById("picks") as HTMLUListElement;
+
+function showError(text: string): void {
+  errorEl.hidden = false;
+  errorEl.textContent = text;
+}
+
+function clearError(): void {
+  errorEl.hidden = true;
+  errorEl.textContent = "";
+}
+
+async function send(message: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return (await chrome.runtime.sendMessage(message)) as Record<string, unknown>;
+}
+
+async function render(): Promise<void> {
+  const status = await send({ type: "status" });
+  const unlocked = status.unlocked === true;
+  unlockForm.hidden = unlocked;
+  unlockedEl.hidden = !unlocked;
+  statusEl.textContent = unlocked
+    ? `Unlocked · ${String(status.entryCount)} entries on this device`
+    : "Locked. Decryption stays on this device.";
+}
+
+unlockForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  clearError();
+  const apiOrigin = (document.getElementById("api") as HTMLInputElement).value;
+  const email = (document.getElementById("email") as HTMLInputElement).value;
+  const accountPassword = (document.getElementById("account") as HTMLInputElement).value;
+  const vaultPassword = (document.getElementById("vault") as HTMLInputElement).value;
+  void send({ type: "unlock", apiOrigin, email, accountPassword, vaultPassword }).then(
+    (result) => {
+      if (!result.ok) showError(String(result.error ?? "unlock failed"));
+      else void render();
+    },
+  );
+});
+
+document.getElementById("lock")?.addEventListener("click", () => {
+  void send({ type: "lock" }).then(() => render());
+});
+
+document.getElementById("fill")?.addEventListener("click", () => {
+  clearError();
+  picksEl.replaceChildren();
+  void send({ type: "fill-tab" }).then((result) => {
+    if (!result.ok) {
+      showError(String(result.error ?? "fill failed"));
+      return;
+    }
+    if (result.needsPick && Array.isArray(result.entries)) {
+      for (const entry of result.entries as Array<{ id: string; title: string; username: string }>) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `${entry.title || entry.username}`;
+        button.addEventListener("click", () => {
+          void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
+            if (!filled.ok) showError(String(filled.error ?? "fill failed"));
+            else statusEl.textContent = `Filled ${String(filled.filled)}`;
+          });
+        });
+        item.append(button);
+        picksEl.append(item);
+      }
+      return;
+    }
+    statusEl.textContent = `Filled ${String(result.filled)}`;
+  });
+});
+
+void render();

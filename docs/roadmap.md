@@ -99,6 +99,7 @@ Reihenfolge: Hard-Revoke in der PWA zuerst, dann:
 - Passkey-Store als eigenes Feature
 - Komplexe Sharing-Modelle
 - **Provider & Service Management** (Konzept: [`provider-service-vision.md`](provider-service-vision.md), `#65`) — strukturierte Infrastruktur + Credentials im Ciphertext, kein API-Gateway, kein Server-Graph
+- **Secret Access Layer** (Konzept: [`secret-access-layer.md`](secret-access-layer.md), `#67`) — Capability/Approval, kein Auto-Vergabe; lokaler Broker nie FastAPI; Unknown = DENY; 4AllPass wird kein Orchestrator
 
 ---
 

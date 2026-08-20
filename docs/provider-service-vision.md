@@ -2,9 +2,9 @@
 
 **Status:** Concept only. Far later. Protocol v1 is unchanged.  
 **Date:** 2026-08-20  
-**Not this document:** a schema bump, TOTP generator, API gateway, server-side graph, MCP/n8n injection, or clipboard watcher.
+**Not this document:** a schema bump, TOTP generator, API gateway, server-side graph, MCP/n8n injection, clipboard watcher, or Secret Broker.
 
-Companion: `development-plan.md`, `security-boundary.md`, `sharing.md`, `.cursor/skills/4allpass/references/improve.md`. Tracker: [#65](https://github.com/landjunge/4AllPass/issues/65).
+Companion: `development-plan.md`, `security-boundary.md`, `sharing.md`, `secret-access-layer.md` (who may *read* a Secret), `.cursor/skills/4allpass/references/improve.md`. Tracker: [#65](https://github.com/landjunge/4AllPass/issues/65).
 
 ---
 
@@ -16,7 +16,7 @@ The long-term product is **structured digital infrastructure and the credentials
 
 **Provider** here means a **service / account type**, not an API vendor and not a credential-injection agent. It is a **template/definition**, not the secret.
 
-That is a different product from “API-key management” and from the far-later MCP/n8n Plus shell (`#59`). Those stay separate.
+How an application *receives* a Secret (approval, local broker, capabilities) is the **Secret Access Layer** (`secret-access-layer.md`, `#67`) — one later module together with auto-detection, not a second protocol. Clipboard *ingest* stays `#59`.
 
 Positioning shift:
 
@@ -138,7 +138,7 @@ If this is ever implemented:
 5. **Custom fields on every template.** A hoster’s `Account ID` must not require a protocol change.
 6. **Autofill stays host-match after decrypt.** Do not add a server-side “this entry is a website for example.com” index to make fill faster.
 7. **TOTP / passkeys / SSH keys / certs / recovery codes** are Secret types in this model. Shipping a TOTP generator is a separate **later** item and is not implied by parking this vision.
-8. **Do not mix** this with clipboard watch (`#59`) or MCP/n8n credential injection (`#59`). Capture and agent injection are different modules, default off, same envelopes if they ever exist.
+8. **Do not mix** this with clipboard watch (`#59`) or with the Secret Access Layer (`#67`). Templates are vault *shape*. Capture is *ingest*. The broker is *egress* after approval. All default off.
 
 `packages/crypto` wrapping (VK, DK, DWK, recovery) does not need a new envelope type for structured entries. This is entry plaintext shape, not a new key path.
 
@@ -148,7 +148,7 @@ If this is ever implemented:
 
 - Community vote, or a maintainer-defined **Plus shell**, after the security freeze.
 - A `schemaVersion` bump that is happening anyway (new entry format) — then this can ride along if the PWA is ready to render it.
-- Explicit request to implement **Provider templates** (not “weiter”, not “API keys”, not “MCP”).
+- Explicit request to implement **Provider templates** (not “weiter”, not “API keys”, not “MCP”, not the Secret Access Layer).
 
 Until then the honest line is: **v1 is a login list in ciphertext; structured Provider / Account / Secret is a product vision, not a shipped feature.**
 

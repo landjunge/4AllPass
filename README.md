@@ -1,18 +1,29 @@
 # 4AllPass
 
-<p align="center"><img src="frontend/public/logo.png" alt="4AllPass — magpie with a gold key" width="420" /></p>
+[![CI](https://github.com/landjunge/4AllPass/actions/workflows/ci.yml/badge.svg)](https://github.com/landjunge/4AllPass/actions/workflows/ci.yml)
 
-**Secure credential access for humans, applications and AI agents.**
+<p align="center"><img src="frontend/public/logo.png" alt="4AllPass — magpie with a gold key. Self-hosted zero-knowledge password manager by landjunge." width="420" /></p>
+
+**Self-hosted zero-knowledge password manager** with a local **agent credential access** wedge.
 
 Your agents need access. They don't need your secrets.
+
+For self-hosters and people who run n8n or AI agents and do not want long-lived API keys sitting in a workflow.
+
+| Try | What you get today |
+|---|---|
+| [`docker compose up --build`](#docker-compose) | ZK vault: Argon2id, WebAuthn device unlock, PWA + browser fill |
+| [Two-minute Access demo](docs/two-minute-demo.md) | Allow / deny / TTL on the unlocked device — FastAPI never sees the secret |
 
 ```text
 Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
 ```
 
-Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The Access tab has a local [two-minute demo](docs/two-minute-demo.md). Optional loopback broker for a foreign process: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, pairing token, not FastAPI). Launch note: [Your AI Agent Doesn't Need Your API Keys](docs/your-ai-agent-doesnt-need-your-api-keys.md). FastAPI still never mints tokens. There is no n8n marketplace node.
+Not “a nicer Bitwarden.” Not [All Pass Hub](https://allpasshub.com/). Not the Flutter [Allpass](https://github.com/sunyongsheng/Allpass) app. This is **landjunge/4AllPass**.
 
-Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
+Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). Optional loopback broker for a foreign process: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, pairing token, not FastAPI). Launch note: [Your AI Agent Doesn't Need Your API Keys](docs/your-ai-agent-doesnt-need-your-api-keys.md). FastAPI still never mints tokens. Grants copy the stored secret with a client TTL; they are not scoped upstream tokens. There is no n8n marketplace node.
+
+Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md). How we get found: [`docs/discoverability.md`](docs/discoverability.md).
 
 ## Layout
 
@@ -52,6 +63,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Local loopback broker (optional, not FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)
 - Launch article: [`docs/your-ai-agent-doesnt-need-your-api-keys.md`](docs/your-ai-agent-doesnt-need-your-api-keys.md)
 - Launch post drafts: [`docs/launch-posts.md`](docs/launch-posts.md)
+- Discoverability checklist (GitHub topics, first release, launch): [`docs/discoverability.md`](docs/discoverability.md)
 - Target category (not current): [`docs/positioning-target.md`](docs/positioning-target.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
@@ -152,3 +164,9 @@ docker compose up --build
 ```
 
 Starts Postgres, Redis, and the backend on `http://localhost:8000`.
+
+## Name
+
+**4AllPass** (also written `4allpass`) is the project at [github.com/landjunge/4AllPass](https://github.com/landjunge/4AllPass). It is a self-hosted zero-knowledge password manager / vault with WebAuthn unlock and local agent credential access.
+
+It is not All Pass Hub, not the Flutter Allpass app, and not a Bitwarden-compatible server. License is still unset (`UNLICENSED` in the packages) — that is an owner decision, not an implied MIT/AGPL badge.

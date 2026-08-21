@@ -6,7 +6,7 @@
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.
 
-**Wedge (8 Wochen):** [`eight-week-agent-access.md`](eight-week-agent-access.md) — Agent credential access, 4AllPass eigenständig, Broker lokal, FastAPI ohne Tokens. Tollgate erst danach als Client. Provider-Vision `#65`, SAL `#67`, 4AP-CAP-1 `#70` bleiben die Specs darunter. Clipboard-Ingest `#59` bleibt far later. Keine Ist-Claims in README, solange die Demo nicht existiert.
+**Wedge (8 Wochen):** [`eight-week-agent-access.md`](eight-week-agent-access.md) — Agent credential access, 4AllPass eigenständig, Broker lokal, FastAPI ohne Tokens. Tollgate erst danach als Client. Provider-Vision `#65`, SAL `#67`, 4AP-CAP-1 `#70` bleiben die Specs darunter. Clipboard-Ingest `#59` bleibt far later. Demo: [`two-minute-demo.md`](two-minute-demo.md). Artikel: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Posts nicht auto-publishen.
 
 ---
 

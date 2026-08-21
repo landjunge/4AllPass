@@ -10,7 +10,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 ## Now
 
-1. **8-week agent-access plan** — `docs/eight-week-agent-access.md`. Week 1 is positioning (README wedge). Weeks 2+ (n8n demo, local broker, three provider classes) only when executing that plan. FastAPI must not grow a token API. Tollgate is a later *client*.
+1. **Agent access wedge is in the tree**, including the optional loopback broker (`npm run broker`, pairing token, not FastAPI). Do not auto-publish. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
 2. Safari.app fill / real Touch ID still unproven. Do not block the wedge on it.
 3. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
 

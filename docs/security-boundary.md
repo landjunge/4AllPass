@@ -193,10 +193,10 @@ object and returns it unchanged. The client verifies it under VK
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
-- The PWA Access tab is a **local** n8n demo. Policy and grants never leave the
-  unlocked page. A grant is the stored secret plus a client TTL, not a scoped
+- A local Access grant is the stored secret plus a client TTL, not a scoped
   upstream token. Detect prefills a draft; it does not approve. FastAPI has no
-  `/v1/access` route.
+  `/v1/access` route. Optional loopback broker is pairing-token + `127.0.0.1`
+  (see §7).
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See
@@ -208,3 +208,22 @@ mirror is CAS-tied to `active_revision`. WebAuthn challenges are server-issued
 and single-use. Assertions and `fmt=none` registrations are COSE-verified
 against that challenge when the PWA sends the authenticator response. That is
 ceremony integrity, not a replacement for client-side PRF.
+
+---
+
+## 7. Local access broker (not FastAPI)
+
+The Access tab and `/agent-request.html` implement `POST /v1/access/request` on
+the **unlocked page** via `BroadcastChannel` `4allpass-access-v1`. FastAPI has
+no `/v1/access` route and must not grow one. Grants live in page memory.
+Unknown applications are denied. Audit rows omit the secret. Application
+identity is a string (`n8n`) — spoofable by anyone who can post on the channel.
+TTL expiry stops future handoffs; a copy already given is not un-known. See
+[`two-minute-demo.md`](two-minute-demo.md).
+
+An optional loopback sidecar (`npm run broker`, `scripts/local-access-broker.mjs`)
+relays the same JSON on `127.0.0.1:8787` so a **foreign process** (n8n HTTP
+Request) can call it. Default off. Pairing token required. Browser `Origin` on
+the grant path is rejected. The sidecar never decrypts envelopes and must not
+log `access_token`. Without a connected unlocked PWA the response is
+`vault_locked`. See [`local-access-broker.md`](local-access-broker.md).

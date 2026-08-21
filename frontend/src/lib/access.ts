@@ -17,9 +17,18 @@ export interface AccessRequest {
 export type DenyReason =
   | "application_not_allowed"
   | "no_credential"
+  | "unknown_provider"
   | "scope_not_permitted"
   | "expired"
-  | "denied_by_user";
+  | "denied_by_user"
+  | "malformed_request"
+  | "revoked_credential"
+  | "vault_locked"
+  | "broker_timeout";
+
+export type AccessApiResponse =
+  | { status: "approved"; access_token: string; expires_in: number }
+  | { status: "denied"; reason: DenyReason };
 
 export type AccessVerdict =
   | { status: "pending"; entryId: string; risk: boolean }
@@ -40,6 +49,7 @@ export interface AccessAudit {
   application: string;
   provider: string;
   scope: string[];
+  ttlSeconds: number;
   decision: "APPROVED" | "DENIED" | "EXPIRED";
   reason?: DenyReason;
 }
@@ -60,13 +70,38 @@ function matchesProvider(entry: VaultEntry, provider: string): boolean {
   return keys.includes(provider);
 }
 
+export function parseAccessBody(input: unknown): AccessRequest | { status: "denied"; reason: "malformed_request" } {
+  if (!input || typeof input !== "object") return { status: "denied", reason: "malformed_request" };
+  const body = input as Record<string, unknown>;
+  if (typeof body.application !== "string" || typeof body.provider !== "string") {
+    return { status: "denied", reason: "malformed_request" };
+  }
+  if (!Array.isArray(body.scope) || body.scope.some((item) => typeof item !== "string")) {
+    return { status: "denied", reason: "malformed_request" };
+  }
+  const ttl = body.ttl ?? body.ttlSeconds;
+  if (typeof ttl !== "number" || !Number.isFinite(ttl) || ttl <= 0) {
+    return { status: "denied", reason: "malformed_request" };
+  }
+  return {
+    application: body.application,
+    provider: body.provider,
+    credential: typeof body.credential === "string" ? body.credential : "personal",
+    scope: body.scope as string[],
+    ttlSeconds: ttl,
+  };
+}
+
 export function decideAccess(request: AccessRequest, entries: VaultEntry[]): AccessVerdict {
   if (!isTrustedApplication(request.application)) {
     return { status: "denied", reason: "application_not_allowed" };
   }
+  if (!request.provider.trim()) {
+    return { status: "denied", reason: "unknown_provider" };
+  }
   const provider = request.provider.trim().toLowerCase();
   const account = request.credential.trim().toLowerCase();
-  if (!provider || !account) {
+  if (!account) {
     return { status: "denied", reason: "no_credential" };
   }
   const match = entries.find((entry) => {
@@ -75,6 +110,9 @@ export function decideAccess(request: AccessRequest, entries: VaultEntry[]): Acc
     return a === account;
   });
   if (!match) return { status: "denied", reason: "no_credential" };
+  if (match.capabilities.trim() === "revoked") {
+    return { status: "denied", reason: "revoked_credential" };
+  }
   const caps = capabilitiesOf(match);
   if (request.scope.length === 0 || !request.scope.every((scope) => caps.includes(scope))) {
     return { status: "denied", reason: "scope_not_permitted" };
@@ -123,12 +161,45 @@ export function auditLine(
     application: request.application,
     provider: request.provider,
     scope: [...request.scope],
+    ttlSeconds: request.ttlSeconds,
     decision,
     ...(reason ? { reason } : {}),
   };
 }
 
+export function formatAuditClock(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleTimeString(undefined, { hour12: false });
+}
+
 export function auditContainsSecret(row: AccessAudit, secret: string): boolean {
   if (!secret) return false;
   return JSON.stringify(row).includes(secret);
+}
+
+export function approvedResponse(grant: AccessGrant, now = Date.now()): AccessApiResponse {
+  const live = readGrant(grant, now);
+  if ("status" in live) return { status: "denied", reason: "expired" };
+  const expiresIn = Math.max(0, Math.floor((grant.expiresAt - now) / 1000));
+  return { status: "approved", access_token: live.material, expires_in: expiresIn };
+}
+
+export function deniedResponse(reason: DenyReason): AccessApiResponse {
+  return { status: "denied", reason };
+}
+
+export const ACCESS_CHANNEL = "4allpass-access-v1";
+
+export interface AccessWireRequest {
+  v: 1;
+  id: string;
+  method: "POST /v1/access/request";
+  body: unknown;
+}
+
+export interface AccessWireReply {
+  v: 1;
+  id: string;
+  body: AccessApiResponse;
 }

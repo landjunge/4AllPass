@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  approvedResponse,
   auditContainsSecret,
   auditLine,
   decideAccess,
   issueGrant,
+  parseAccessBody,
   readGrant,
   wipeGrant,
   type AccessRequest,
@@ -78,9 +80,16 @@ test("provider substring does not match a different provider", () => {
   if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
 });
 
-test("empty provider or credential is DENY", () => {
-  assert.equal(decideAccess(req({ provider: "" }), [github()]).status, "denied");
-  assert.equal(decideAccess(req({ credential: "   " }), [github()]).status, "denied");
+test("empty provider is unknown_provider", () => {
+  const verdict = decideAccess(req({ provider: "  " }), [github()]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "unknown_provider");
+});
+
+test("empty credential is DENY", () => {
+  const verdict = decideAccess(req({ credential: "   " }), [github()]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
 });
 
 test("API entry without capabilities does not default to repository.read", () => {
@@ -107,8 +116,33 @@ test("OpenAI key is not a GitHub credential", () => {
   if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
 });
 
+test("revoked credential is DENY", () => {
+  const entry = { ...github(), capabilities: "revoked" };
+  const verdict = decideAccess(req(), [entry]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "revoked_credential");
+});
+
+test("malformed POST body is DENY", () => {
+  const bad = parseAccessBody({ application: "n8n", provider: "GitHub", scope: "read", ttl: 600 });
+  assert.equal(bad.status, "denied");
+  if (bad.status === "denied") assert.equal(bad.reason, "malformed_request");
+});
+
+test("approved response shape matches the access API", () => {
+  const entry = github();
+  const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);
+  const body = approvedResponse(grant, 1_000);
+  assert.equal(body.status, "approved");
+  if (body.status === "approved") {
+    assert.equal(body.access_token, secret);
+    assert.equal(body.expires_in, 10);
+  }
+});
+
 test("audit rows never contain the secret", () => {
   const row = auditLine(req(), "APPROVED");
   assert.equal(auditContainsSecret(row, secret), false);
   assert.equal(JSON.stringify(row).includes(secret), false);
+  assert.equal(row.ttlSeconds, 600);
 });

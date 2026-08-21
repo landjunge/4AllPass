@@ -7,7 +7,7 @@
 
 Companion: `secret-access-layer.md`, `provider-service-vision.md`, `capability-contract-v1.md` (4AP-CAP-1), `security-boundary.md`.
 
-**Today (honest):** the PWA is a device-centric ZK **vault**. This plan is how a stranger can try the *wedge* in eight weeks. Do not put week-8 claims on the README until the demo exists.
+**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–8 of this plan are in the tree (article + post drafts). Do not paste slogans communities cannot click: [`two-minute-demo.md`](two-minute-demo.md). Posts are **not** auto-published.
 
 ---
 
@@ -72,7 +72,7 @@ Paste credential / host → detect provider + type + fields. **Never unlock from
 
 ### 3–4 — Provider ≠ Account ≠ Credential
 
-Templates (YAML-shaped, in ciphertext). Custom providers allowed. Not hardcoded into `packages/crypto`.
+Templates in the PWA (`providers.ts`): GitHub, OpenAI, Stripe, Website, SSH/SFTP, plus a custom YAML/JSON paste. Applied drafts still sit in **ciphertext**. Not in `packages/crypto`. FastAPI does not index provider ids.
 
 ### 4 — Application identity
 
@@ -87,7 +87,7 @@ POST /v1/access/request
 JSON: `application`, `provider`, `credential`, `scope`, `ttl`.  
 Response: `approved` + time-boxed material **or** `denied`.
 
-Host: **local broker**, same envelopes. Clients later: n8n, Gnom-Hub-V1, agents, Tollgate.
+Host: **local broker**, same envelopes. In the PWA: `BroadcastChannel` `4allpass-access-v1` plus `/agent-request.html` (same origin). FastAPI is not this method. Clients later: n8n, Gnom-Hub-V1, agents, Tollgate.
 
 ### 5 — Approval UI
 
@@ -103,11 +103,17 @@ Tests: unknown app DENY, bad scope DENY, expired DENY, unknown provider DENY, ta
 
 ### 7 — Two-minute demo
 
+**Shipped** in the Access tab. Walkthrough: [`two-minute-demo.md`](two-minute-demo.md).
+
 Allow n8n GitHub read → works → `repository.delete` DENY → TTL expire → unknown app DENY.
+
+Not shipped here: a real n8n node, HTTP localhost broker, FastAPI tokens.
 
 ### 8 — Launch
 
-Article: *Your AI Agent Doesn't Need Your API Keys.* Then posts and communities (agents, n8n, MCP first; security/DevOps second). **Promote only after the demo exists.**
+**Shipped in the repo:** article [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md) and copy-paste posts [`launch-posts.md`](launch-posts.md) (agents, n8n, MCP first; security/DevOps second).
+
+Not shipped here: actually submitting those posts. Promote only what the Access tab can demonstrate. No FastAPI tokens, no n8n marketplace node.
 
 Tollgate **after** week 8:
 

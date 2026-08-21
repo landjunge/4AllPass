@@ -303,7 +303,9 @@ handoffs; a copy already given is not un-known. See
 [`two-minute-demo.md`](two-minute-demo.md) and
 [`local-access-broker.md`](local-access-broker.md).
 
-Vite-only dev can still run the Node relay (`npm run broker` on `:8787`).
+Vite-only dev can still run the Node relay (`npm run broker` → `@4allpass/broker` on `:8787`).
+That package queues HTTP; it does not call `evaluatePolicy`. The sidecar
+(`backend/app/broker.py`) is what the desktop app starts.
 
 `@4allpass/access` (`fourAllPass.request({ provider, capability, ttl })`) is a
 Node client for that relay. It refuses non-loopback URLs, does not set

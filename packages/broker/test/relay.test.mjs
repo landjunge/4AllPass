@@ -7,7 +7,7 @@ import {
   originsFromEnv,
   postJson,
   pwaOriginAllowed,
-} from "./local-access-broker.mjs";
+} from "../src/relay.mjs";
 
 async function start() {
   const token = newBrokerToken();

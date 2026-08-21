@@ -1,0 +1,19 @@
+{
+  "name": "@4allpass/broker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only Node loopback relay on :8787. Product path is the sidecar (backend/app/broker.py). Never decrypts, never mints provider tokens.",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/relay.mjs"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "broker": "node src/relay.mjs",
+    "test": "node --test test/relay.test.mjs",
+    "typecheck": "node -e \"process.exit(0)\""
+  }
+}

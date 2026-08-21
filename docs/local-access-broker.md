@@ -4,8 +4,9 @@
 
 `npm run app` / `python -m app.local` serves the relay on the **same origin**
 (`http://127.0.0.1:8788/v1/access/request`). The process still never decrypts
-and never mints provider tokens. Manual `npm run broker` (Node, `:8787`) remains
-for a Vite-only session.
+and never mints provider tokens. Manual `npm run broker` runs `@4allpass/broker`
+(Node, `:8787`) for a Vite-only session. That package is **not** the product
+path and does not evaluate policy.
 
 A foreign process (n8n HTTP Request, `@4allpass/access`, `examples/n8n-access-client.mjs`) can ask the unlocked app for a time-boxed credential without using `BroadcastChannel`.
 

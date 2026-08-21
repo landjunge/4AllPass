@@ -38,7 +38,7 @@ export default defineConfig({
         name: '4AllPass',
         short_name: '4AllPass',
         description:
-          'Secure credential access for humans, applications and AI agents.',
+          'Self-hosted zero-knowledge password manager with local agent credential access. Your agents need access. They don\'t need your secrets.',
         // Matches the app shell in src/styles.css, so the splash and the
         // browser chrome do not flash a different colour on launch.
         theme_color: '#121316',

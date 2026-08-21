@@ -18,6 +18,7 @@ test("launch-at-login copy is DE+EN and does not claim auto-unlock", () => {
 
 test("sleep/screen-lock copy does not claim FileVault or auto-unlock", () => {
   assert.match(SLEEP_LOCK_HINT, /FileVault/);
-  assert.match(SLEEP_LOCK_HINT, /macOS/);
+  assert.match(SLEEP_LOCK_HINT, /Bildschirm-Sperre/);
+  assert.match(SLEEP_LOCK_HINT, /Screen lock/);
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(SLEEP_LOCK_HINT), false);
 });

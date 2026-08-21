@@ -11,4 +11,4 @@ export const LAUNCH_AT_LOGIN_BROWSER =
   "Nur in 4AllPass.app. / Desktop app only.";
 
 export const SLEEP_LOCK_HINT =
-  "Bildschirm-Sperre und Schlaf sperren den Tresor in dieser App (macOS). Das ist kein FileVault. / Screen lock and sleep lock the vault in this app (macOS). That is not FileVault.";
+  "Bildschirm-Sperre und Schlaf sperren den Tresor in dieser App. Das ist kein FileVault. / Screen lock and sleep lock the vault in this app. That is not FileVault.";

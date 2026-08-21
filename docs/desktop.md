@@ -69,8 +69,9 @@ with `--hidden` (menu bar). That does **not** unlock the vault and does **not**
 auto-allow access. Password still required. Browser / `npm run app` has no login
 item.
 
-macOS **screen lock** and **sleep** lock the vault (same Lock button). Not
-FileVault. Windows/Linux do not send that event yet.
+**Screen lock** and **sleep** lock the vault (same Lock button): macOS notify,
+Windows input-desktop, Linux `loginctl LockedHint`, plus a stall if the process
+was frozen >5s. Not FileVault. Not hibernation-safe.
 
 An access request from n8n raises the main window, a desktop notification, and a
 small always-on-top prompt (application / provider / scope / TTL — **not** the

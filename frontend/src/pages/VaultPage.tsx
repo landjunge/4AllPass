@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { demoGithubDraft } from "../lib/access-demo.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { detectCredential, draftFromDetection } from "../lib/detect.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../lib/providers.ts";
@@ -209,7 +210,26 @@ export function VaultPage(): ReactNode {
       {tab === "devices" ? (
         <DevicesPanel />
       ) : tab === "access" ? (
-        <AccessPanel entries={entries} />
+        <AccessPanel
+          entries={entries}
+          onSeedDemo={async () => {
+            setBusy(true);
+            try {
+              await saveEntries([
+                ...entries,
+                {
+                  id: newEntryId(),
+                  ...demoGithubDraft(),
+                  updatedAt: new Date().toISOString(),
+                },
+              ]);
+            } catch {
+              // The banner shows the reason.
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
       ) : (
         <div className="columns">
           <section className="card list">

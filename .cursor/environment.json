@@ -1,4 +1,4 @@
 {
   "name": "4AllPass",
-  "install": "npm ci && pip install --user -r scripts/requirements-dev.txt"
+  "install": "./scripts/cloud-agent-install.sh"
 }

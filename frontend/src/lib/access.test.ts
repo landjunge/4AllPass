@@ -108,4 +108,5 @@ test("audit rows never contain the secret", () => {
   const row = auditLine(req(), "APPROVED");
   assert.equal(auditContainsSecret(row, secret), false);
   assert.equal(JSON.stringify(row).includes(secret), false);
+  assert.equal(row.ttlSeconds, 600);
 });

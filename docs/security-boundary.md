@@ -216,3 +216,10 @@ Unknown applications are denied. Audit rows omit the secret. Application
 identity is a string (`n8n`) — spoofable by anyone who can post on the channel.
 TTL expiry stops future handoffs; a copy already given is not un-known. See
 [`two-minute-demo.md`](two-minute-demo.md).
+
+An optional loopback sidecar (`npm run broker`, `scripts/local-access-broker.mjs`)
+relays the same JSON on `127.0.0.1:8787` so a **foreign process** (n8n HTTP
+Request) can call it. Default off. Pairing token required. Browser `Origin` on
+the grant path is rejected. The sidecar never decrypts envelopes and must not
+log `access_token`. Without a connected unlocked PWA the response is
+`vault_locked`. See [`local-access-broker.md`](local-access-broker.md).

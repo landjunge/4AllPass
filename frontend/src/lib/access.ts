@@ -22,7 +22,9 @@ export type DenyReason =
   | "expired"
   | "denied_by_user"
   | "malformed_request"
-  | "revoked_credential";
+  | "revoked_credential"
+  | "vault_locked"
+  | "broker_timeout";
 
 export type AccessApiResponse =
   | { status: "approved"; access_token: string; expires_in: number }
@@ -47,6 +49,7 @@ export interface AccessAudit {
   application: string;
   provider: string;
   scope: string[];
+  ttlSeconds: number;
   decision: "APPROVED" | "DENIED" | "EXPIRED";
   reason?: DenyReason;
 }
@@ -156,9 +159,16 @@ export function auditLine(
     application: request.application,
     provider: request.provider,
     scope: [...request.scope],
+    ttlSeconds: request.ttlSeconds,
     decision,
     ...(reason ? { reason } : {}),
   };
+}
+
+export function formatAuditClock(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleTimeString(undefined, { hour12: false });
 }
 
 export function auditContainsSecret(row: AccessAudit, secret: string): boolean {

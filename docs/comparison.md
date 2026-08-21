@@ -6,7 +6,7 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 
 | Kriterium | 4AllPass | Bitwarden | 1Password | Proton Pass |
 |---|---|---|---|---|
-| Self-Hosting | ✅ Kern (`docker-compose.yml`) | ✅ optional (eigener Server / Vaultwarden) | ❌ | ❌ |
+| Self-Hosting | ✅ Kern (Homebrew Postgres + Redis, uvicorn, Vite; `docker-compose.yml` optional) | ✅ optional (eigener Server / Vaultwarden) | ❌ | ❌ |
 | Zero-Knowledge | ✅ Server sieht keine Klartext-Einträge und keine Vault Keys | ✅ | ✅ | ✅ |
 | Master-Passwort-Ableitung | ✅ Argon2id (Profile in `packages/crypto`) | ⚠️ PBKDF2/Argon2id konfigurierbar | ⚠️ PBKDF2 + Secret Key | ✅ Argon2 |
 | WebAuthn / Passkey-Unlock | ✅ PRF > largeBlob > UV-gated local; PWA bietet Biometrie als Unlock | ⚠️ vorhanden, oft Zusatzschritt | ⚠️ vorhanden | ✅ |
@@ -23,7 +23,7 @@ Wettbewerber-Spalten stützen sich auf öffentliche Produktangaben und Nutzerfee
 
 Quellen für die 4AllPass-Spalte:
 
-- Self-Hosting: `docker-compose.yml`
+- Self-Hosting: README Einrichten (native); `docker-compose.yml` optional
 - ZK / KDF / PRF: `packages/crypto`, `packages/webauthn`, `docs/crypto-protocol.md`, `docs/webauthn-prf.md`
 - Recovery: `frontend/src/components/RecoveryKitDialog.tsx`, `docs/recovery.md`
 - Unlock-UX: `frontend/src/pages/UnlockPage.tsx`

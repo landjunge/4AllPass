@@ -20,31 +20,30 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. Setup: same commands as below.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. Setup: native Homebrew Postgres + Redis, same commands as below. Docker is optional and not required.
 
 ---
 
 ## Einrichten / Setup
 
-Logo inkl. Schriftzug. Konto-Passwort ≠ Vault-Passwort.
+**Kein Docker.** Homebrew Postgres + Redis, dann API + PWA. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
 
-Frisch einrichten: **Docker**. Native nur, wenn du schon Postgres + Redis auf dem Host hast — nicht beides gleichzeitig (Ports 5432 / 6379 / 8000).
-
-### Docker (PWA + API)
+### 1. Postgres und Redis
 
 ```sh
-git clone https://github.com/landjunge/4AllPass.git
-cd 4AllPass
-docker compose up --build
+brew install postgresql@17 redis
+brew services start postgresql@17
+brew services start redis
+
+createuser fourallpass --pwprompt    # Passwort: fourallpass
+createdb fourallpass -O fourallpass
 ```
 
-PWA: [http://127.0.0.1:8080](http://127.0.0.1:8080) · API: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+User, Passwort und Datenbank heißen `fourallpass` (siehe `backend/.env.example`). User/DB überspringen, wenn sie schon existieren.
 
-Dann im Browser: Konto anlegen → Tresor → Recovery-Kit bestätigen → Access-Tab (Zwei-Minuten-Demo).
+### 2. API und PWA
 
-### Native (dieses Mac: API auf :8010, weil :8000 schon belegt ist)
-
-Postgres + Redis müssen laufen (`fourallpass` / `fourallpass` / DB `fourallpass`). Nicht parallel zu `docker compose`.
+Dieses Mac: Port **8000** gehört einer anderen App → API **8010**, PWA **5173**. Ist 8000 frei: `--port 8000` und `API_ORIGIN` weglassen.
 
 ```sh
 git clone https://github.com/landjunge/4AllPass.git   # oder bestehendes Clone
@@ -74,6 +73,10 @@ PWA: [http://127.0.0.1:5173](http://127.0.0.1:5173)
 Dann: Konto anlegen → Tresor → Recovery-Kit bestätigen → Access-Tab (Zwei-Minuten-Demo).
 
 GitHub sichtbar machen: [`docs/github-sichtbarkeit.md`](docs/github-sichtbarkeit.md).
+
+### Optional: Docker
+
+Nicht nötig. Wer Container will: `docker compose up --build` → PWA `:8080`, API `:8000`. Nicht parallel zum Native-Pfad (Ports 5432 / 6379 / 8000).
 
 ## Aufbau
 
@@ -147,7 +150,7 @@ Der Vault Key ist immer zufällig, nie aus einem Passwort abgeleitet. Roher PRF-
 ├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-Unlock
 ├── backend/              FastAPI + SQLAlchemy + Alembic + Redis
 ├── frontend/             React + TypeScript + PWA (Vite)
-├── docker-compose.yml    Postgres + Redis + Backend
+├── docker-compose.yml    optional; Native braucht das nicht
 └── scripts/              unabhängige Testvektor-Prüfung
 ```
 
@@ -200,7 +203,9 @@ pytest
 
 Siehe [`backend/README.md`](backend/README.md).
 
-## Docker Compose
+## Docker Compose (optional)
+
+Nicht der empfohlene Weg. Native: Abschnitt Einrichten.
 
 ```sh
 docker compose up --build

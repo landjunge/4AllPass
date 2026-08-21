@@ -96,7 +96,7 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 | Frontend         | React + TypeScript                   |
 | Crypto           | Gemeinsame Library (Web + Extensions)|
 | Extensions       | Chromium (Manifest V3) + Firefox     |
-| Deployment       | Docker + docker-compose              |
+| Deployment       | Native (Postgres + Redis + uvicorn + Vite); Docker optional |
 | Biometrie        | WebAuthn                             |
 
 ---

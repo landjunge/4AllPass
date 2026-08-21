@@ -193,6 +193,13 @@ send `vaultKeyVersion >=` the live value (a same-VK retry after a VK++ win is
 HTTP 422). The server still does not open envelopes; “rebuild under VK₂” is a
 client duty.
 
+A Device-Key Envelope mirror PUT with `expectedRevision: N` racing a snapshot
+`N→N+1` is the same CAS pointer: the PUT is 200 only if it still sees revision
+N, otherwise 409 (`test_concurrent_snapshot_commit_and_stale_mirror_put`).
+After an omit-envelope commit, GET of that mirror is 404 and PUT at the new
+head is 409 (`test_concurrent_omit_envelope_commit_and_mirror_put`). The PWA
+order (commit, then PUT) is the one that lands a mirror on the live head.
+
 The server does not open the sealed manifest. It stores the client-supplied
 object and returns it unchanged. The client verifies it under VK
 (`verifySnapshotManifest`) before pinning `revisionFromManifest`.
@@ -212,7 +219,11 @@ object and returns it unchanged. The client verifies it under VK
 - Hard revoke does not rewrap foreign device envelopes (or this device’s when
   the DK needs a WebAuthn ceremony); those devices re-enrol after master unlock.
 - Account session is bound to a client-asserted `X-Device-Id`, not to a
-  WebAuthn credential. Stolen token + stolen device id still works.
+  WebAuthn credential. Stolen token + stolen device id still works. A VK++
+  snapshot alone does **not** drop other sessions; metadata `DELETE /devices`
+  does (`test_hard_revoke_snapshot_does_not_kill_sessions_until_metadata_delete`).
+  Re-POSTing the same `deviceId` after revoke is one row (`uq_devices_vault_device_id`);
+  two concurrent re-enrols both 200 (`test_concurrent_reenrol_same_device_id_one_row`).
 - Device-Key Envelope mirror is gated on the active snapshot: PUT requires
   `expectedRevision` and a matching device envelope; GET refuses a missing
   envelope (404) or a stale `deviceKeyVersion` (409). The PWA commits the

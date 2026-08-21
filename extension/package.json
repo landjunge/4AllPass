@@ -13,8 +13,8 @@
     "@4allpass/crypto": "*"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.287",
-    "esbuild": "^0.25.0",
+    "@types/chrome": "^0.2.6",
+    "esbuild": "^0.28.2",
     "tsx": "^4.20.0",
     "typescript": "^5.8.0"
   }

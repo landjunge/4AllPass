@@ -38,19 +38,25 @@ export default defineConfig({
         name: '4AllPass',
         short_name: '4AllPass',
         description:
-          'Self-hosted Zero-Knowledge password manager — for all browsers and devices.',
+          'Secure credential access for humans, applications and AI agents.',
         // Matches the app shell in src/styles.css, so the splash and the
         // browser chrome do not flash a different colour on launch.
-        theme_color: '#080c18',
-        background_color: '#080c18',
+        theme_color: '#121316',
+        background_color: '#121316',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
-            src: 'icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: 'icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any',
+          },
+          {
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
           },
         ],
       },

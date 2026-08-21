@@ -41,9 +41,25 @@ header {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.02em;
+}
+
+.brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.logo {
+  display: block;
+  width: min(280px, 100%);
+  height: auto;
+  margin: 0 auto 8px;
 }
 
 .header-actions {

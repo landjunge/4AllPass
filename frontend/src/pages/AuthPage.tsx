@@ -24,7 +24,7 @@ export function AuthPage(): ReactNode {
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <h1>4AllPass</h1>
+        <img className="logo" src="/logo.png" alt="4AllPass" />
         <p className="muted">
           {mode === "sign-in"
             ? "Sign in to your account. This does not open the vault."

@@ -16,6 +16,6 @@
     "@types/chrome": "^0.0.287",
     "esbuild": "^0.25.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.8.0"
+    "typescript": "^7.0.2"
   }
 }

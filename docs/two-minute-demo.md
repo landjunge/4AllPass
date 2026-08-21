@@ -6,7 +6,7 @@ A stranger with an unlocked vault can try this without a lecture:
 
 > Allow n8n GitHub read → works → `repository.delete` DENY → TTL expire → unknown app DENY.
 
-**Not this document:** a real n8n node, a FastAPI token API, week-8 launch copy, Tollgate, MCP as a security boundary.
+**Not this document:** a real n8n node, a FastAPI token API, Tollgate, MCP as a security boundary. Launch copy lives in [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md).
 
 ---
 
@@ -45,7 +45,7 @@ Optional: open `/agent-request.html` in another tab of the **same origin** while
 - The dummy token never talks to GitHub. “Works” means the local broker issued a time-boxed copy of whatever is in the entry.
 - A copy already given is not un-known. TTL and Deny only stop *future* handoffs.
 - There is no n8n credential type, no localhost HTTP broker, no FastAPI `/v1/access/request`.
-- Do not put week-8 launch claims on the README until someone has actually clicked this.
+- Launch posts must not claim a production n8n node or FastAPI tokens.
 
 ---
 

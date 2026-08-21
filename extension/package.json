@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Fill logins from a self-hosted 4AllPass vault. Decryption stays on this device.",
-  "homepage": "https://github.com/landjunge/4AllPass",
+  "homepage": "https://netzwerkpunkt.de",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/landjunge/4AllPass.git",

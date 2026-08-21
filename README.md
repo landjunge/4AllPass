@@ -25,6 +25,8 @@ Devices still own the vault cryptographically. The **wedge** is agent credential
 
 Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md). How we get found: [`docs/discoverability.md`](docs/discoverability.md).
 
+Suite home: [netzwerkpunkt.de](https://netzwerkpunkt.de) (Hauptseite / in Arbeit — products will appear there). This GitHub repo stays the source.
+
 ## Layout
 
 | Path | What it is |
@@ -167,6 +169,6 @@ Starts Postgres, Redis, and the backend on `http://localhost:8000`.
 
 ## Name
 
-**4AllPass** (also written `4allpass`) is the project at [github.com/landjunge/4AllPass](https://github.com/landjunge/4AllPass). It is a self-hosted zero-knowledge password manager / vault with WebAuthn unlock and local agent credential access.
+**4AllPass** (also written `4allpass`) is the project at [github.com/landjunge/4AllPass](https://github.com/landjunge/4AllPass). Suite home: [netzwerkpunkt.de](https://netzwerkpunkt.de) (Hauptseite / in Arbeit). It is a self-hosted zero-knowledge password manager / vault with WebAuthn unlock and local agent credential access.
 
 It is not All Pass Hub, not the Flutter Allpass app, and not a Bitwarden-compatible server. License is still unset (`UNLICENSED` in the packages) — that is an owner decision, not an implied MIT/AGPL badge.

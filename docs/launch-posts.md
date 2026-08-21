@@ -1,6 +1,6 @@
 # Launch posts (week 8)
 
-Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass. Visibility checklist: [`discoverability.md`](discoverability.md).
+Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass. Suite home: https://netzwerkpunkt.de (Hauptseite / in Arbeit — point posts there once a 4AllPass product page exists; until then the repo). Visibility checklist: [`discoverability.md`](discoverability.md).
 
 **Not posted automatically.** FastAPI still does not mint tokens. There is no n8n marketplace node.
 
@@ -69,3 +69,4 @@ Deine Agenten brauchen Zugang. Nicht deine Secrets.
 n8n fragt GitHub `repository.read` → Allow → zeitlich begrenzter Handoff. Delete und unbekannte Apps: DENY. Der Server sieht den Token nicht.
 
 https://github.com/landjunge/4AllPass
+Suite (in Arbeit): https://netzwerkpunkt.de

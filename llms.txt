@@ -6,7 +6,8 @@
 
 ## Start here
 
-- Website: https://landjunge.github.io/4AllPass/
+- Suite home (Hauptseite / in Arbeit): https://netzwerkpunkt.de
+- GitHub Pages fallback: https://landjunge.github.io/4AllPass/
 - [README](README.md)
 - [docs/security-boundary.md](docs/security-boundary.md) — what the running backend + PWA actually enforce
 - [docs/two-minute-demo.md](docs/two-minute-demo.md)

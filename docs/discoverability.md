@@ -18,13 +18,17 @@ Die Erwartung „4 Monate, 0 Klicks“ passt **nicht** zum öffentlichen GitHub-
 | Stars / Forks / Watcher | GitHub API | **0 / 0 / 0** |
 | Releases / Tags | `gh release list`, `/tags` | **keine** |
 | License-Datei | `LICENSE` 404, Community-Profil | **fehlt** (`licenseInfo: null`, Packages `UNLICENSED`) |
-| Website / Homepage | `homepageUrl` | **leer** |
+| Website / Homepage | `homepageUrl` | **leer** (soll `https://netzwerkpunkt.de` werden) |
 | GitHub Pages | `GET /pages` | **404** (Tollgate und Gnom-Hub haben Pages) |
 | Custom Social Preview | `usesCustomOpenGraphImage` | **false** (nur der Default-Octocat-Graph) |
 | Discussions | GraphQL | **aus**, 0 Threads |
 | npm/GitHub Packages | `/users/landjunge/packages` | **leer** |
 | Traffic Insights | `/traffic/views|clones|referrers` | **403** für dieses Token — Owner muss Insights selbst lesen |
 | Community health | `/community/profile` | **71 %** (README + CONTRIBUTING + SECURITY ja; License + CoC nein) |
+
+### Suite-Hauptseite `netzwerkpunkt.de`
+
+`docs/DESIGN.md` nennt die Domain schon als Dach für alle Produkte. Öffentliche Suche indexiert sie als **KI-Portfolio von landjunge** (Berlin): Tollgate und Gnom-Hub-V1 stehen dort als „in Arbeit“. **4AllPass war in diesem Index noch nicht.** Kein Verkaufskatalog. DNS: netcup (`185.243.11.43`). Dieses Token konnte HTTPS nicht laden (`SSL_ERROR_SYSCALL`; HTTP `403`) — also nicht behaupten, wir hätten die HTML-Seite hier Zeile für Zeile gesehen. Claim: Hauptseite / in Arbeit, nicht „listet schon alle Repos“.
 
 Was schon da war (nicht das Problem):
 
@@ -73,7 +77,7 @@ Gemessen 2026-08-21 (`gh repo view`):
 
 Gemeinsam, und bei uns bis zu diesem PR fehlend:
 
-1. **Eine Website-URL im About-Kasten** (auch wenn es nur GitHub Pages ist).
+1. **Eine Website-URL im About-Kasten** — Suite-Hauptseite `https://netzwerkpunkt.de`, nicht nur github.io.
 2. **SPDX-License im Repo-Root** — sonst kein awesome-selfhosted, kein License-Filter.
 3. **Release-Tags** — auch `v0.1.0` zählt; die 4-Monats-Uhr für Listen startet hier.
 4. **README-Erste-15-Zeilen:** Was / für wen / Try / Screenshot. Caveats darunter.
@@ -94,7 +98,7 @@ GitHub → `landjunge/4AllPass` → Zahnrad neben **About**.
 | Feld | Wert |
 |---|---|
 | **Description** (≤350) | `Self-hosted zero-knowledge password manager with WebAuthn unlock and local agent credential access. Your agents need access — they don't need your secrets. Not All Pass Hub.` |
-| **Website** | `https://landjunge.github.io/4AllPass/` (nach Pages-Enable; bis dahin die Repo-URL) |
+| **Website** | `https://netzwerkpunkt.de` (Suite-Hauptseite. github.io/4AllPass bleibt Fallback-Landing, nicht der About-Wert.) |
 | **Releases** | angehakt |
 | **Packages** | aus, bis etwas publiziert ist |
 
@@ -103,7 +107,7 @@ Oder:
 ```sh
 gh repo edit landjunge/4AllPass \
   --description "Self-hosted zero-knowledge password manager with WebAuthn unlock and local agent credential access. Your agents need access — they don't need your secrets. Not All Pass Hub." \
-  --homepage "https://landjunge.github.io/4AllPass/"
+  --homepage "https://netzwerkpunkt.de"
 ```
 
 ### 3.2 Topics (max. 20) — ersetze die bestehenden 8
@@ -145,8 +149,8 @@ Datei im Repo: [`docs/assets/social-preview.png`](assets/social-preview.png) (12
 
 1. Settings → Pages → **Source: GitHub Actions**
 2. Workflow [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) ist im Repo (skipped, solange Pages aus ist — gleiches Muster wie Tollgate).
-3. Nach dem ersten grünen `Pages`-Run: Website-URL im About auf `https://landjunge.github.io/4AllPass/` setzen.
-4. Optional: IndexNow / Search Console später, nicht am Tag 1.
+3. Nach dem ersten grünen `Pages`-Run: github.io bleibt **Fallback**. About-Website bleibt `https://netzwerkpunkt.de`.
+4. Optional: IndexNow / Search Console auf der Hauptdomain, nicht am Tag 1.
 
 ### 3.5 Discussions + Wiki
 
@@ -156,7 +160,7 @@ Datei im Repo: [`docs/assets/social-preview.png`](assets/social-preview.png) (12
 ### 3.6 Profil
 
 - `landjunge/landjunge` verlinkt 4AllPass bereits. **Pin** das Repo auf dem Profil (UI: Profil → Customize pins).
-- 4AllPass hat keine eigene `github.io`-Erwähnung in der Pin-Beschreibung — die Website-URL im About reicht.
+- Pin-Beschreibung darf `netzwerkpunkt.de` nennen. github.io ist nur Fallback.
 
 ### 3.7 License (Owner-Entscheidung, nicht in diesem PR)
 
@@ -201,13 +205,14 @@ Voraussetzung: About, Topics, Pages, Social Preview, Pin. License + `v0.1.0` so 
 | Tag | Aktion | Kanal | Regel |
 |---|---|---|---|
 | 0 | Dieser PR mergen. Owner-Schritte §3. | GitHub | Keine Fake-Stars. |
-| 1 | Pages prüfen: `https://landjunge.github.io/4AllPass/` lädt, `og.png` sichtbar. | Browser | Canonical zeigt auf github.io. |
-| 1 | X-Thread aus [`launch-posts.md`](launch-posts.md) §1 + §5. | X | Nicht auto-posten durch Bots. Link = Repo oder github.io, nicht nur der Blob. |
+| 1 | 4AllPass auf [netzwerkpunkt.de](https://netzwerkpunkt.de) eintragen (steht im indexierten Portfolio noch nicht; Tollgate und Gnom-Hub-V1 ja, als „in Arbeit“). | Hub | Kein fertiger Katalog behaupten. |
+| 1 | Pages-Fallback prüfen: `https://landjunge.github.io/4AllPass/` lädt. | Browser | About-Website bleibt netzwerkpunkt.de. |
+| 1 | X-Thread aus [`launch-posts.md`](launch-posts.md) §1 + §5. | X | Nicht auto-posten. Klickziel = netzwerkpunkt.de sobald die Produktseite existiert, sonst Repo. |
 | 2 | n8n-Community-Post aus `launch-posts.md` §2. | n8n community | Titel ehrlich: kein Node. Walkthrough-Link. |
 | 3 | MCP/Agent-Post §3 **oder** DevOps §4 — nicht alle vier an einem Tag. | X / passendes Forum | Ein Keil pro Thread. |
-| 4–7 | **Show HN** (nicht am Wochenende; Di–Do 8–11 ET). | news.ycombinator.com | Titel: `Show HN: 4AllPass – local allow/deny for agent credentials on a ZK vault`. Link = github.io oder Repo. Erster Kommentar: warum, technische Wahl (local broker, nicht FastAPI), ehrliche Limits. 2–3 h im Thread bleiben. Kein Vote-Ring. |
+| 4–7 | **Show HN** (nicht am Wochenende; Di–Do 8–11 ET). | news.ycombinator.com | Titel: `Show HN: 4AllPass – local allow/deny for agent credentials on a ZK vault`. Link = netzwerkpunkt.de-Produktseite wenn sie existiert, sonst Repo. Erster Kommentar: warum, local broker, Limits. 2–3 h im Thread. Kein Vote-Ring. |
 | 7–10 | r/selfhosted **ein** Textpost (Rules lesen: meist Self-Promo-Faden / 10 %-Regel). | Reddit | Titel ohne Superlative. Compose + Demo. Nicht r/netsec mit Marketing. |
-| 10–14 | Week-8-Artikel nach Dev.to / eigenem Blog **unverändert** (keine stärkeren Claims). | Dev.to | Canonical / Footer-Link auf github.io + Repo. |
+| 10–14 | Week-8-Artikel nach Dev.to / eigenem Blog **unverändert** (keine stärkeren Claims). | Dev.to | Footer: netzwerkpunkt.de + Repo. |
 | 14–20 | Discussions: ein „Show the Access tab“-Thread als Anlaufpunkt. | GitHub | Keine Fake-Issues. |
 | 20–30 | Zweiter kleiner Release nur wenn sich das Claim-Surface ändert. | GitHub | Leere Releases sind Lärm. |
 | **Nicht vor ~4 Monaten nach `v0.1.0` + License** | PR auf [awesome-selfhosted-data](https://github.com/awesome-selfhosted/awesome-selfhosted-data) | YAML-Addition | Tag `Password Managers`. Description &lt; 250 Zeichen, sentence case. Siehe deren `addition.md`. |
@@ -253,10 +258,10 @@ GitHub → Insights → Traffic (nur Owner/Admin):
 |---|---|---|
 | Unique visitors / views | Ob Posts ankommen | >0 in der Woche nach Show HN / X |
 | Unique cloners | Ob jemand *try* meint | Clones ≫ Stars am Anfang ist ok |
-| Referring sites | Welcher Post wirkte | github.io, news.ycombinator.com, t.co, reddit.com |
+| Referring sites | Welcher Post wirkte | netzwerkpunkt.de, news.ycombinator.com, t.co, reddit.com |
 | Popular content | README vs. Demo vs. Article | Demo sollte klettern |
 | Stars / Forks / Watchers | Nachlauf, nicht Ziel | Nicht täglich anstarren |
-| Search: `site:github.com/landjunge/4AllPass` | Google-Index | Innerhalb ~2 Wochen nach Pages + Backlink |
+| Search: `site:netzwerkpunkt.de 4AllPass` | Hub-Index | Erst nachdem die Produktkarte live ist |
 | Search: `4AllPass landjunge` | Namenskollision | Muss uns zeigen, nicht nur All Pass Hub |
 
 Traffic-API (`/repos/…/traffic/views`) braucht `repo` Admin. Dieses Agent-Token bekam 403.
@@ -270,7 +275,7 @@ Traffic-API (`/repos/…/traffic/views`) braucht `repo` Admin. Dieses Agent-Toke
 - awesome-selfhosted **jetzt** (keine License, Release &lt; 4 Monate).
 - Keyword-Stuffing oder „military-grade“ / Audit-Claims.
 - n8n-Marketplace oder FastAPI-Token-Mint behaupten.
-- Den Namen „4AllPass“ gegen All Pass Hub **ohne** `landjunge` / `github.io` / „not All Pass Hub“ zu führen.
+- Den Namen „4AllPass“ gegen All Pass Hub **ohne** `landjunge` / `netzwerkpunkt.de` / „not All Pass Hub“ zu führen.
 - Eine fünfte parallele Feature-Branch statt Launch.
 - Tollgate und 4AllPass in einem Pitch vermischen.
 
@@ -280,12 +285,12 @@ Traffic-API (`/repos/…/traffic/views`) braucht `repo` Admin. Dieses Agent-Toke
 
 Erledigt, soweit Git das kann:
 
-- README: scannbare erste Fläche, CI-Badge, Namens-Disambiguierung.
-- `package.json` / Workspace-Pakete: `description`, `repository`, `homepage`, Keywords.
+- README: scannbare erste Fläche, CI-Badge, Namens-Disambiguierung, Suite-Home `netzwerkpunkt.de`.
+- `package.json` / Workspace-Pakete: `description`, `repository`, `homepage` → `https://netzwerkpunkt.de`, Keywords.
 - PWA `index.html` + Vite-Manifest: Title, Description, Open Graph, Twitter Card.
 - `site/` + Pages-Workflow (Deploy erst nach Owner-Enable).
 - `docs/assets/social-preview.png` zum Hochladen.
 - `llms.txt`.
 - Dieses Dokument.
 
-Nicht erledigt (Owner): About-Website, restliche Topics, Social-Preview-Upload, Pages-Source, Discussions, License, `v0.1.0`, die Posts in `launch-posts.md`.
+Nicht erledigt (Owner): About-Website auf `https://netzwerkpunkt.de`, 4AllPass-Karte auf dem Hub, restliche Topics, Social-Preview-Upload, Pages-Source, Discussions, License, `v0.1.0`, die Posts in `launch-posts.md`.

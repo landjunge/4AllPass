@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "4AllPass PWA — self-hosted zero-knowledge vault UI. All cryptography stays in the browser.",
-  "homepage": "https://github.com/landjunge/4AllPass",
+  "homepage": "https://netzwerkpunkt.de",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/landjunge/4AllPass.git",

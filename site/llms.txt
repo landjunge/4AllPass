@@ -6,7 +6,8 @@
 
 ## Start here
 
-- Website: https://landjunge.github.io/4AllPass/
+- Suite home (Hauptseite / in Arbeit): https://netzwerkpunkt.de
+- GitHub Pages fallback: https://landjunge.github.io/4AllPass/
 - Repo: https://github.com/landjunge/4AllPass
 - Demo: https://github.com/landjunge/4AllPass/blob/main/docs/two-minute-demo.md
 - Launch note: https://github.com/landjunge/4AllPass/blob/main/docs/your-ai-agent-doesnt-need-your-api-keys.md

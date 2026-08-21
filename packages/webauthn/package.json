@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "WebAuthn device unlock for 4AllPass: PRF > largeBlob > UV-gated local store",
-  "homepage": "https://github.com/landjunge/4AllPass",
+  "homepage": "https://netzwerkpunkt.de",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/landjunge/4AllPass.git",

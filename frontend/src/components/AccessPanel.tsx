@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   auditLine,
   decideAccess,
+  formatAuditClock,
   issueGrant,
   readGrant,
   wipeGrant,
@@ -9,6 +10,7 @@ import {
   type AccessGrant,
   type AccessRequest,
 } from "../lib/access.ts";
+import { LocalBrokerConnect } from "./LocalBrokerConnect.tsx";
 import {
   DEMO_TTL_SECONDS,
   demoDeleteRequest,
@@ -237,6 +239,7 @@ export function AccessPanel({
           <code>docs/two-minute-demo.md</code>.
         </p>
       </section>
+      <LocalBrokerConnect />
       <section className="card">
         <h3>Audit</h3>
         <p className="hint">No secret is stored in these rows.</p>
@@ -248,7 +251,8 @@ export function AccessPanel({
               <li key={row.at + row.decision + row.application}>
                 <strong>{row.decision}</strong>
                 <span className="muted small">
-                  {row.application} → {row.provider} {row.scope.join(", ")}
+                  {formatAuditClock(row.at)} · {row.application} → {row.provider} ·{" "}
+                  {row.scope.join(", ")} · {row.ttlSeconds}s
                   {row.reason ? ` · ${row.reason}` : ""}
                 </span>
               </li>

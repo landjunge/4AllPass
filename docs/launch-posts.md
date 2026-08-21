@@ -1,6 +1,10 @@
 # Launch posts (week 8)
 
-Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass. Suite home: https://netzwerkpunkt.de (Hauptseite / in Arbeit — point posts there once a 4AllPass product page exists; until then the repo). Visibility checklist: [`discoverability.md`](discoverability.md).
+Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass.
+
+**Click target:** use the repo (or the GitHub Pages product front) until a 4AllPass section exists on https://netzwerkpunkt.de. Then switch posts to the hub. Do not claim the hub already lists 4AllPass.
+
+Visibility: [`discoverability.md`](discoverability.md). Cards: [`../site/produkte.json`](../site/produkte.json).
 
 **Not posted automatically.** FastAPI still does not mint tokens. There is no n8n marketplace node.
 

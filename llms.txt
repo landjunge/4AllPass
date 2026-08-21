@@ -4,20 +4,31 @@
 > Your agents need access. They don't need your secrets.
 > Not All Pass Hub. Not the Flutter Allpass app. Not a nicer Bitwarden.
 
+## Front door
+
+| Surface | Role |
+|---|---|
+| https://netzwerkpunkt.de | Suite home (Hauptseite / in Arbeit). 4AllPass not listed there yet. |
+| https://landjunge.github.io/4AllPass/ | Product front + fallback landing |
+| https://github.com/landjunge/4AllPass | Source |
+
 ## Start here
 
-- Suite home (Hauptseite / in Arbeit): https://netzwerkpunkt.de
-- GitHub Pages fallback: https://landjunge.github.io/4AllPass/
 - [README](README.md)
-- [docs/security-boundary.md](docs/security-boundary.md) — what the running backend + PWA actually enforce
+- [docs/security-boundary.md](docs/security-boundary.md)
 - [docs/two-minute-demo.md](docs/two-minute-demo.md)
 - [docs/your-ai-agent-doesnt-need-your-api-keys.md](docs/your-ai-agent-doesnt-need-your-api-keys.md)
 - [docs/discoverability.md](docs/discoverability.md)
+- Product cards: [site/produkte.json](site/produkte.json)
 
-## Related
+## Family (honest status, 2026-08-21)
 
-- Tollgate (may I act?): https://github.com/landjunge/tollgate
-- Gnom-Hub (local multi-agent desk): https://github.com/landjunge/gnom-hub-v1
+- 4AllPass — credentials — GitHub source, hub listing pending
+- Gnom-Hub-V1 — execution — on the hub: in progress
+- Tollgate — network/safety — on the hub: in progress
+- ThreadDesk — context — GitHub source, hub listing pending
+- Detektivspiel — documentation only
+- Meridian — experiment, source only
 
 ## Honest limits
 

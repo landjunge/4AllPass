@@ -13,8 +13,21 @@
     <loc>https://landjunge.github.io/4AllPass/de.html</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/"/>
     <xhtml:link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/de.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://landjunge.github.io/4AllPass/"/>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://landjunge.github.io/4AllPass/produkte/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/produkte/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/produkte/en.html"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://landjunge.github.io/4AllPass/produkte/en.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/produkte/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/produkte/en.html"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

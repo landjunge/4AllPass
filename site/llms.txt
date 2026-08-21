@@ -1,25 +1,9 @@
-# 4AllPass
+# 4AllPass public front
 
-> Self-hosted zero-knowledge password manager with local agent credential access.
-> Your agents need access. They don't need your secrets.
-> Not All Pass Hub. Not the Flutter Allpass app. Not a nicer Bitwarden.
+> Product front for https://landjunge.github.io/4AllPass/
+> Suite home: https://netzwerkpunkt.de (in progress; 4AllPass not listed yet)
 
-## Start here
-
-- Suite home (Hauptseite / in Arbeit): https://netzwerkpunkt.de
-- GitHub Pages fallback: https://landjunge.github.io/4AllPass/
-- Repo: https://github.com/landjunge/4AllPass
-- Demo: https://github.com/landjunge/4AllPass/blob/main/docs/two-minute-demo.md
-- Launch note: https://github.com/landjunge/4AllPass/blob/main/docs/your-ai-agent-doesnt-need-your-api-keys.md
-- Security boundary: https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md
-
-## Related
-
-- Tollgate (may I act?): https://github.com/landjunge/tollgate
-- Gnom-Hub (local multi-agent desk): https://github.com/landjunge/gnom-hub-v1
-
-## Honest limits
-
-- FastAPI never mints tokens. Grants live on the unlocked device.
-- There is no n8n marketplace node.
-- The server never sees the master password, vault key, or plaintext entries.
+- DE: de.html
+- EN: index.html
+- Cards: produkte/ · produkte.json
+- Source: https://github.com/landjunge/4AllPass

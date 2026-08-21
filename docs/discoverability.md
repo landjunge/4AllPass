@@ -28,7 +28,17 @@ Die Erwartung „4 Monate, 0 Klicks“ passt **nicht** zum öffentlichen GitHub-
 
 ### Suite-Hauptseite `netzwerkpunkt.de`
 
-`docs/DESIGN.md` nennt die Domain schon als Dach für alle Produkte. Öffentliche Suche indexiert sie als **KI-Portfolio von landjunge** (Berlin): Tollgate und Gnom-Hub-V1 stehen dort als „in Arbeit“. **4AllPass war in diesem Index noch nicht.** Kein Verkaufskatalog. DNS: netcup (`185.243.11.43`). Dieses Token konnte HTTPS nicht laden (`SSL_ERROR_SYSCALL`; HTTP `403`) — also nicht behaupten, wir hätten die HTML-Seite hier Zeile für Zeile gesehen. Claim: Hauptseite / in Arbeit, nicht „listet schon alle Repos“.
+`docs/DESIGN.md` nennt die Domain schon als Dach. Öffentliche Suche indexiert sie als **KI-Portfolio von landjunge**: Tollgate und Gnom-Hub-V1 als „in Arbeit“. **4AllPass war in diesem Index noch nicht.** Kein Shop. DNS: netcup (`185.243.11.43`). HTTPS von diesem Token: `SSL_ERROR_SYSCALL` (HTTP `403`) — kein Zeilen-Claim auf Live-HTML.
+
+Informationsarchitektur:
+
+| Fläche | Rolle |
+|---|---|
+| `https://netzwerkpunkt.de` | Hauptseite. About-Website. Klickziel **nach** 4AllPass-Abschnitt. |
+| `site/` (github.io Fallback) | Produktfront DE/EN + Karten in `site/produkte/`. |
+| GitHub | Quelle. |
+
+Karten und Status: [`../site/produkte.json`](../site/produkte.json). 4AllPass-Karte: Quelle GitHub, Hub-Eintrag noch ausstehend.
 
 Was schon da war (nicht das Problem):
 
@@ -151,6 +161,8 @@ Datei im Repo: [`docs/assets/social-preview.png`](assets/social-preview.png) (12
 2. Workflow [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) ist im Repo (skipped, solange Pages aus ist — gleiches Muster wie Tollgate).
 3. Nach dem ersten grünen `Pages`-Run: github.io bleibt **Fallback**. About-Website bleibt `https://netzwerkpunkt.de`.
 4. Optional: IndexNow / Search Console auf der Hauptdomain, nicht am Tag 1.
+5. Custom-Domain / TLS / CNAME-Reste gehören auf **netzwerkpunkt.de** (netcup), nicht auf den github.io-Fallback.
+6. **4AllPass-Abschnitt auf dem Hub anlegen, bevor** Launch-Posts `netzwerkpunkt.de` als Klickziel nutzen. Bis dahin: Repo oder `site/`-Fallback.
 
 ### 3.5 Discussions + Wiki
 
@@ -278,6 +290,7 @@ Traffic-API (`/repos/…/traffic/views`) braucht `repo` Admin. Dieses Agent-Toke
 - Den Namen „4AllPass“ gegen All Pass Hub **ohne** `landjunge` / `netzwerkpunkt.de` / „not All Pass Hub“ zu führen.
 - Eine fünfte parallele Feature-Branch statt Launch.
 - Tollgate und 4AllPass in einem Pitch vermischen.
+- Launch-Posts auf `netzwerkpunkt.de` zeigen, **bevor** dort ein 4AllPass-Abschnitt steht.
 
 ---
 
@@ -285,12 +298,15 @@ Traffic-API (`/repos/…/traffic/views`) braucht `repo` Admin. Dieses Agent-Toke
 
 Erledigt, soweit Git das kann:
 
-- README: scannbare erste Fläche, CI-Badge, Namens-Disambiguierung, Suite-Home `netzwerkpunkt.de`.
-- `package.json` / Workspace-Pakete: `description`, `repository`, `homepage` → `https://netzwerkpunkt.de`, Keywords.
-- PWA `index.html` + Vite-Manifest: Title, Description, Open Graph, Twitter Card.
-- `site/` + Pages-Workflow (Deploy erst nach Owner-Enable).
-- `docs/assets/social-preview.png` zum Hochladen.
-- `llms.txt`.
-- Dieses Dokument.
+- README: scannbare erste Fläche, Suite-Tabelle (Hub / `site/` / Quelle).
+- `package.json` homepage → `https://netzwerkpunkt.de`.
+- `site/`: Produktfront DE/EN, Karten aus `produkte.json`, Desk-Chrome.
+- `llms.txt` + dieses Dokument.
 
-Nicht erledigt (Owner): About-Website auf `https://netzwerkpunkt.de`, 4AllPass-Karte auf dem Hub, restliche Topics, Social-Preview-Upload, Pages-Source, Discussions, License, `v0.1.0`, die Posts in `launch-posts.md`.
+Nicht erledigt (Owner):
+
+1. `gh repo edit landjunge/4AllPass --homepage "https://netzwerkpunkt.de"`
+2. 4AllPass auf netzwerkpunkt.de eintragen (Karten: `site/produkte/` zum Kopieren)
+3. Pages-Source GitHub Actions, Social Preview, Topics
+4. Launch-Posts erst dann auf den Hub zeigen
+5. License + `v0.1.0`

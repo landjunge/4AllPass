@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>4AllPass (landjunge) — selbst gehosteter Zero-Knowledge-Passwortmanager</title>
-  <meta name="description" content="4AllPass von landjunge ist ein selbst gehosteter Zero-Knowledge-Passwortmanager mit WebAuthn-Unlock und lokalem Agent-Credential-Access. Nicht All Pass Hub."/>
+  <title>4AllPass — selbst gehosteter Zero-Knowledge-Vault (landjunge)</title>
+  <meta name="description" content="4AllPass ist ein selbst gehosteter Zero-Knowledge-Passwortmanager mit lokalem Agent-Zugang. Hauptseite: netzwerkpunkt.de (in Arbeit). Quelle: GitHub. Nicht All Pass Hub."/>
   <meta name="author" content="Daniel / landjunge"/>
   <meta name="robots" content="index, follow"/>
   <meta name="theme-color" content="#121316"/>
@@ -16,24 +16,26 @@
   <meta property="og:site_name" content="4AllPass"/>
   <meta property="og:locale" content="de_DE"/>
   <meta property="og:url" content="https://landjunge.github.io/4AllPass/de.html"/>
-  <meta property="og:title" content="4AllPass (landjunge) — selbst gehosteter Zero-Knowledge-Vault"/>
-  <meta property="og:description" content="Passwortmanager + lokaler Agent-Zugang. Der Server speichert nur Envelopes. Nicht All Pass Hub."/>
+  <meta property="og:title" content="4AllPass — selbst gehosteter Zero-Knowledge-Vault"/>
+  <meta property="og:description" content="Passwortmanager + lokaler Agent-Zugang. Hauptseite netzwerkpunkt.de ist in Arbeit. Nicht All Pass Hub."/>
   <meta property="og:image" content="https://landjunge.github.io/4AllPass/og.png"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <link rel="icon" href="favicon.png" type="image/png"/>
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
+  <div class="suite-bar">
+    <span><strong>netzwerkpunkt.de</strong> — Hauptseite, in Arbeit</span>
+    <span><a href="https://netzwerkpunkt.de">Hub</a> · <a href="produkte/">Produktkarten</a> · <a href="index.html" hreflang="en">English</a></span>
+  </div>
   <header>
-    <img class="logo" src="assets/logo.png" width="420" height="298" alt="4AllPass — Elster mit goldenem Schlüssel"/>
+    <img class="logo" src="assets/logo.png" width="380" height="269" alt="4AllPass — Elster mit goldenem Schlüssel"/>
     <h1>4AllPass</h1>
     <p class="tag">Selbst gehosteter Zero-Knowledge-Passwortmanager.<br/>Deine Agenten brauchen Zugang. Nicht deine Secrets.</p>
     <nav class="links" aria-label="Primär">
-      <a href="https://netzwerkpunkt.de">netzwerkpunkt.de</a>
       <a href="https://github.com/landjunge/4AllPass">GitHub (Quelle)</a>
       <a href="https://github.com/landjunge/4AllPass/blob/main/docs/two-minute-demo.md">Zwei-Minuten-Demo</a>
       <a href="https://github.com/landjunge/4AllPass/blob/main/docs/your-ai-agent-doesnt-need-your-api-keys.md">Launch-Notiz</a>
-      <a href="index.html" hreflang="en" lang="en">English</a>
     </nav>
   </header>
   <main>
@@ -42,7 +44,7 @@
       <pre>git clone https://github.com/landjunge/4AllPass.git
 cd 4AllPass
 docker compose up --build</pre>
-      <p class="muted">Startet Postgres, Redis und das Backend auf <code>http://localhost:8000</code>. Vault in der PWA entsperren, dann den Access-Tab öffnen.</p>
+      <p class="muted">Startet Postgres, Redis und das Backend auf <code>http://localhost:8000</code>. Vault in der PWA entsperren, dann den Access-Tab öffnen. FastAPI gibt keine Tokens aus. Es gibt keinen n8n-Marketplace-Node.</p>
     </div>
     <div class="card">
       <table>
@@ -51,15 +53,41 @@ docker compose up --build</pre>
           <tr><td>Argon2id, WebAuthn-Unlock, PWA + Browser-Fill</td><td>Ein netterer Bitwarden</td></tr>
           <tr><td>Server speichert nur undurchsichtige Envelopes</td><td>All Pass Hub (kommerziell)</td></tr>
           <tr><td>Lokales Allow / Deny / TTL für Agent-Handoffs</td><td>Flutter-App Allpass</td></tr>
-          <tr><td>FastAPI gibt keine Tokens aus</td><td>Ein n8n-Marketplace-Node</td></tr>
+          <tr><td>Hub-Eintrag noch ausstehend</td><td>Ein fertiger Shop auf netzwerkpunkt.de</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Was der laufende Code wirklich erzwingt: <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">docs/security-boundary.md</a>. Sichtbarkeit: <a href="https://github.com/landjunge/4AllPass/blob/main/docs/discoverability.md">docs/discoverability.md</a>.</p>
+
+    <h2>So ist die Haustür gedacht</h2>
+    <div class="card">
+      <table>
+        <tbody>
+          <tr><th>netzwerkpunkt.de</th><td>Hauptseite der Suite. Klickziel, sobald ein 4AllPass-Abschnitt existiert.</td></tr>
+          <tr><th>Diese Seite</th><td>GitHub-Pages-Fallback — Produktfront, die der Hub verlinken kann.</td></tr>
+          <tr><th>GitHub</th><td>Quelle, Specs, Issues. Kein Schaufenster.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Produkte unter demselben Dach</h2>
+    <p class="muted" data-products-note>Kein Shop. Status nach öffentlichem Beleg vom 2026-08-21.</p>
+    <div class="grid" data-products data-lang="de" data-src="produkte.json"></div>
+    <noscript>
+      <ul>
+        <li>4AllPass — Quelle GitHub, Hub-Eintrag noch ausstehend</li>
+        <li>Gnom-Hub-V1 — auf dem Hub: in Arbeit</li>
+        <li>Tollgate — auf dem Hub: in Arbeit</li>
+        <li>ThreadDesk — Quelle GitHub, Hub-Eintrag noch ausstehend</li>
+        <li>Detektivspiel — nur Dokumentation</li>
+        <li>Meridian — Experiment, nur Quelle</li>
+      </ul>
+    </noscript>
+    <p><a href="produkte/">Nur die Karten</a>, falls der Hub genau das einbetten soll.</p>
+    <p>Was der Code erzwingt: <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">docs/security-boundary.md</a>.</p>
   </main>
   <footer>
-    <p>Hauptseite: <a href="https://netzwerkpunkt.de">netzwerkpunkt.de</a> (in Arbeit — 4AllPass steht dort noch nicht). Diese Seite ist der GitHub-Pages-Fallback. Quelle: <a href="https://github.com/landjunge/4AllPass">landjunge/4AllPass</a>.</p>
-    <p>Verwandt: Tollgate beantwortet „darf ich handeln?“ — 4AllPass beantwortet „darf ich zugreifen?“</p>
+    <p>Hauptseite: <a href="https://netzwerkpunkt.de">netzwerkpunkt.de</a> (in Arbeit — 4AllPass steht dort noch nicht). Quelle: <a href="https://github.com/landjunge/4AllPass">landjunge/4AllPass</a>.</p>
   </footer>
+  <script src="produkte.js" defer></script>
 </body>
 </html>

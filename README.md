@@ -25,7 +25,15 @@ Devices still own the vault cryptographically. The **wedge** is agent credential
 
 Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md). How we get found: [`docs/discoverability.md`](docs/discoverability.md).
 
-Suite home: [netzwerkpunkt.de](https://netzwerkpunkt.de) (Hauptseite / in Arbeit — products will appear there). This GitHub repo stays the source.
+## Suite
+
+| Surface | Role |
+|---|---|
+| [netzwerkpunkt.de](https://netzwerkpunkt.de) | Suite home (Hauptseite / in Arbeit). 4AllPass is **not** listed there yet. |
+| [site/](site/) | Product front (DE/EN) + [product cards](site/produkte/) for the hub to link or copy |
+| This repo | Source, specs, issues |
+
+Do not point launch posts at the hub until a 4AllPass section exists. GitHub Pages is the fallback, not the About website.
 
 ## Layout
 

@@ -45,7 +45,7 @@ Gleiche Tokens für 4AllPass PWA, Extension-Popup und Tollgate Control Room. **K
 
 Logos bleiben produktspezifisch (4AllPass-Elster, Gnom-G, Tollgate-Marke).
 
-Aktuelles Icon (`frontend/public/icon.svg`): Schild + Schloss — Logo-Brief unten, Chrome ist Desk.
+Aktuelles Logo: Elster mit goldenem Schlüssel auf dem Schriftzug (`frontend/public/logo.png`). App-Icon: Elster allein (`icon-512.png`). Chrome bleibt Gnom-Hub-V1.
 
 ## Logo-Brief 4AllPass
 
@@ -72,8 +72,8 @@ Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, moder
 
 ## Nächste Schritte
 
-1. Logo-Varianten 4AllPass in Canva finalisieren (Elster bleibt; Chrome bleibt Desk)
-2. `frontend/public/icon.svg` ersetzen, ohne Desk-Tokens zu verwerfen
+1. Logo-Varianten in Canva bleiben editierbar; PWA/Extension nutzen die Elster-PNGs
+2. Desk-Tokens nicht anfassen — Gold nur im Logo / `--warn`
 3. Tollgate-Marketing-Site (`site/styles.css`) weiter auf dieselben Tokens ziehen
 4. Optional Light-Mode — nur wenn Gnom-Hub-V1 ihn hat
 5. 4AllPass + korrekte **Gnom-Hub-V1**-Bezeichnung auf netzwerkpunkt.de eintragen

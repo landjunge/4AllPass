@@ -1,5 +1,7 @@
 # 4AllPass
 
+<p align="center"><img src="frontend/public/logo.png" alt="4AllPass — magpie with a gold key" width="420" /></p>
+
 **Secure credential access for humans, applications and AI agents.**
 
 Your agents need access. They don't need your secrets.

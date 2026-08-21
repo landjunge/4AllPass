@@ -21,7 +21,10 @@ export function App(): ReactNode {
   return (
     <div className="app">
       <header>
-        <span className="brand">4AllPass</span>
+        <span className="brand">
+          <img src="/icon.png" alt="" width={28} height={28} />
+          4AllPass
+        </span>
         {email ? (
           <div className="header-actions">
             <span className="muted small" data-testid="account-email">

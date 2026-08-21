@@ -72,6 +72,12 @@ Attack, impact, fix, test that would fail if reverted.
 ## Improve next (only if in scope)
 ```
 
+## Language, logo, SEO (standing)
+
+- **DE und EN** on every user-facing surface in the same PR: README, `index.html` title/description, PWA manifest, store/GitHub About. Specs in `docs/` may stay as they are until touched.
+- **SEO every time** we ship something people land on: `<title>`, `meta name="description"`, Open Graph, GitHub description + topics. Keywords match the wedge (credential access, agents, Zero-Knowledge, self-hosted) — not “better Bitwarden.”
+- **Logo is 4AllPass only:** Elster + goldener Schlüssel + Schriftzug `4AllPass`. Do not mix this mark with other products. Do not drop the wordmark.
+
 ## How to code
 
 Follow [references/coding.md](references/coding.md).

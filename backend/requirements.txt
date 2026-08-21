@@ -9,6 +9,6 @@ pydantic==2.13.4
 pydantic-settings==2.15.0
 email-validator==2.3.0
 argon2-cffi==25.1.0
-redis==5.2.1
+redis==8.1.0
 python-dotenv==1.2.3
 webauthn==2.7.0

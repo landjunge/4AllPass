@@ -1,6 +1,6 @@
 # Launch posts (week 8)
 
-Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass
+Copy-paste. Do not strengthen the claims. Source article: [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md). Demo: [`two-minute-demo.md`](two-minute-demo.md). Repo: https://github.com/landjunge/4AllPass. Visibility checklist: [`discoverability.md`](discoverability.md).
 
 **Not posted automatically.** FastAPI still does not mint tokens. There is no n8n marketplace node.
 

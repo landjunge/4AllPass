@@ -18,7 +18,7 @@ Sidecar: `npm run sidecar` → `scripts/package-sidecar.py` (PyInstaller **on th
 | Windows | `4AllPass-Setup.exe` (NSIS, current user) | `%APPDATA%\4AllPass\` |
 | Linux | `.AppImage` | `~/.local/share/4allpass/` |
 
-This machine: `src-tauri/target/release/bundle/dmg/4AllPass_0.1.0_x64.dmg`. Ad-hoc signed, not notarized — first open via right-click → Open. Windows/Linux installers are **CI** (`.github/workflows/desktop.yml`, tags `v*` or workflow_dispatch). Not SmartScreen-certified. Not a store listing.
+Downloads: [GitHub Releases](https://github.com/landjunge/4AllPass/releases) (tag `v*` → CI attaches DMG / NSIS / AppImage as a **prerelease**). Ad-hoc signed, not notarized — first open via right-click → Open. Not SmartScreen. Not a store listing. Local Intel DMG: `src-tauri/target/release/bundle/dmg/`.
 
 `npm run app` builds `frontend/dist` if missing, then `python -m app.local`.
 The SQLite file holds opaque envelopes. `session.secret` is account-auth only.

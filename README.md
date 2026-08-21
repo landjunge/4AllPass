@@ -20,7 +20,7 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)): `npm run tauri:build` → DMG, or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Windows NSIS / Linux AppImage via CI. Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)). Download: [Releases](https://github.com/landjunge/4AllPass/releases). Or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
 
 ---
 
@@ -29,6 +29,10 @@ Your agents need access. They don't need your secrets. Self-hosted zero-knowledg
 **App zuerst.** Kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
 
 ### 1. Desktop (normal)
+
+Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`). macOS-DMG nach Programme. **Erstes Öffnen:** Rechtsklick → Öffnen (ad-hoc, nicht notariert, nicht SmartScreen). Tresor anlegen. Access-Broker läuft mit.
+
+Selbst bauen:
 
 ```sh
 git clone https://github.com/landjunge/4AllPass.git
@@ -40,7 +44,7 @@ cd ..
 npm run tauri:build
 ```
 
-DMG: `src-tauri/target/release/bundle/dmg/`. Nach Programme ziehen. **Erstes Öffnen:** Rechtsklick → Öffnen (ad-hoc signiert, nicht notariert, nicht SmartScreen). Tresor anlegen. Access-Broker läuft mit. Windows-NSIS / Linux-AppImage: `desktop.yml` (Tags `v*`) oder `npm run tauri:build:windows` / `:linux` auf dem jeweiligen OS.
+Windows-NSIS / Linux-AppImage entstehen in CI (`desktop.yml`) oder mit `npm run tauri:build:windows` / `:linux` auf dem jeweiligen OS.
 
 Ohne Installer, ein Prozess: `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788). Dev-Fenster: `npm run tauri:dev`.
 

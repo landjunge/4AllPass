@@ -13,7 +13,7 @@
 | **Topics** (max. 20) | Filter auf github.com/topics/… | `ai-agents`, `credentials`, `zero-knowledge`, `n8n`, `webauthn`, `self-hosted`, `desktop`, `tauri` |
 | **README** (H1, erste 20 Zeilen, Bild) | Landing + Open-Graph-Bild | diese Datei / `README.md` |
 | **Social preview** | Karte bei Link-Shares | Settings → General → Social preview — Datei `frontend/public/og.png` (1280×640, Logo inkl. Schriftzug). GitHub hat **keine** öffentliche Upload-API; PAT reicht nicht. |
-| **Releases** | Version, Changelog, GitHub-Suche | nach echten Meilensteinen, nicht leer |
+| **Releases** | Version, Changelog, GitHub-Suche | Tags `v*` → Desktop-Installer (prerelease) |
 | **Discussions** | Google indexiert oft die Discussions-Startseite | Settings → Features |
 | **Issues** mit klaren Titeln | Suche + Contributor-Einstieg | keine Secrets in Issues |
 | **Public** + Aktivität | Crawler sehen nur public | private Beiträge zählen nicht |

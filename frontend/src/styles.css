@@ -369,6 +369,19 @@ button.link {
   align-items: stretch;
 }
 
+.demo-steps {
+  list-style: decimal;
+  margin: 8px 0 12px;
+  padding-left: 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.demo-steps .active {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .rotate-form {
   display: grid;
   gap: 10px;

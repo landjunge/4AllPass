@@ -204,3 +204,15 @@ mirror is CAS-tied to `active_revision`. WebAuthn challenges are server-issued
 and single-use. Assertions and `fmt=none` registrations are COSE-verified
 against that challenge when the PWA sends the authenticator response. That is
 ceremony integrity, not a replacement for client-side PRF.
+
+---
+
+## 7. Local access broker (not FastAPI)
+
+The Access tab and `/agent-request.html` implement `POST /v1/access/request` on
+the **unlocked page** via `BroadcastChannel` `4allpass-access-v1`. FastAPI has
+no `/v1/access` route and must not grow one. Grants live in page memory.
+Unknown applications are denied. Audit rows omit the secret. Application
+identity is a string (`n8n`) — spoofable by anyone who can post on the channel.
+TTL expiry stops future handoffs; a copy already given is not un-known. See
+[`two-minute-demo.md`](two-minute-demo.md).

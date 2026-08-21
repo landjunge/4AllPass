@@ -8,7 +8,7 @@ Your agents need access. They don't need your secrets.
 Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
 ```
 
-Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). That access path is **not shipped** yet.
+Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The Access tab has a local [two-minute demo](docs/two-minute-demo.md). FastAPI still never mints tokens. There is no n8n node and no public launch yet.
 
 Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
 
@@ -46,6 +46,7 @@ There is **no** independent third-party audit yet. Planned scope is in `docs/aud
 - Product plan: [`docs/development-plan.md`](docs/development-plan.md)
 - Positioning (current claims): [`docs/positioning.md`](docs/positioning.md)
 - 8-week agent-access plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
+- Two-minute Access demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
 - Target category (not current): [`docs/positioning-target.md`](docs/positioning-target.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)

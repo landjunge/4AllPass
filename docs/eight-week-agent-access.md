@@ -7,7 +7,7 @@
 
 Companion: `secret-access-layer.md`, `provider-service-vision.md`, `capability-contract-v1.md` (4AP-CAP-1), `security-boundary.md`.
 
-**Today (honest):** the PWA is a device-centric ZK **vault**. This plan is how a stranger can try the *wedge* in eight weeks. Do not put week-8 claims on the README until the demo exists.
+**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–7 of this plan are in the tree. Do not put week-8 launch claims on the README until someone has clicked [`two-minute-demo.md`](two-minute-demo.md).
 
 ---
 
@@ -103,7 +103,11 @@ Tests: unknown app DENY, bad scope DENY, expired DENY, unknown provider DENY, ta
 
 ### 7 — Two-minute demo
 
+**Shipped** in the Access tab. Walkthrough: [`two-minute-demo.md`](two-minute-demo.md).
+
 Allow n8n GitHub read → works → `repository.delete` DENY → TTL expire → unknown app DENY.
+
+Not shipped here: a real n8n node, HTTP localhost broker, FastAPI tokens.
 
 ### 8 — Launch
 

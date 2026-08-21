@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   auditLine,
   decideAccess,
@@ -9,16 +9,51 @@ import {
   type AccessGrant,
   type AccessRequest,
 } from "../lib/access.ts";
+import {
+  DEMO_TTL_SECONDS,
+  demoDeleteRequest,
+  demoReadRequest,
+  demoSceneCopy,
+  demoUnknownRequest,
+  hasGithubReadCredential,
+  nextDemoScene,
+  redactToken,
+  remainingSeconds,
+  startingScene,
+  type DemoSceneId,
+} from "../lib/access-demo.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 
-const DEMO_TTL = 15;
-
-export function AccessPanel({ entries }: { entries: VaultEntry[] }): ReactNode {
+export function AccessPanel({
+  entries,
+  onSeedDemo,
+}: {
+  entries: VaultEntry[];
+  onSeedDemo?: () => Promise<void>;
+}): ReactNode {
+  const ready = hasGithubReadCredential(entries);
+  const [scene, setScene] = useState<DemoSceneId>(() => startingScene(entries));
   const [pending, setPending] = useState<AccessRequest | null>(null);
   const [grant, setGrant] = useState<AccessGrant | null>(null);
   const [audit, setAudit] = useState<AccessAudit[]>([]);
-  const [flash, setFlash] = useState<string>("");
+  const [flash, setFlash] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
+  const [seeding, setSeeding] = useState(false);
+
+  useEffect(() => {
+    if (scene === "setup" && ready) setScene("read");
+  }, [ready, scene]);
+
+  useEffect(() => {
+    if (scene !== "read" && scene !== "expire") return;
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [scene]);
+
+  const live = grant ? readGrant(grant, nowTick) : null;
+  const expired = Boolean(grant && live && "status" in live && live.status === "denied");
+  const left = grant && live && "material" in live ? remainingSeconds(grant.expiresAt, nowTick) : 0;
+  const copy = demoSceneCopy(scene);
 
   function run(request: AccessRequest): void {
     const verdict = decideAccess(request, entries);
@@ -42,107 +77,165 @@ export function AccessPanel({ entries }: { entries: VaultEntry[] }): ReactNode {
     setAudit((rows) => [auditLine(pending, "APPROVED"), ...rows]);
     setPending(null);
     setFlash("ACCESS GRANTED");
-    window.setTimeout(() => setNowTick(Date.now()), (DEMO_TTL + 1) * 1000);
+    setNowTick(Date.now());
+    window.setTimeout(() => setNowTick(Date.now()), (DEMO_TTL_SECONDS + 1) * 1000);
   }
 
-  const live = grant ? readGrant(grant, nowTick) : null;
-  const expired = Boolean(grant && live && "status" in live && live.status === "denied");
+  function expireNow(): void {
+    if (!grant) return;
+    setGrant(wipeGrant(grant));
+    setNowTick(Date.now());
+    setAudit((rows) => [
+      auditLine(
+        {
+          application: grant.application,
+          provider: grant.provider,
+          credential: "",
+          scope: grant.scope,
+          ttlSeconds: 0,
+        },
+        "EXPIRED",
+        "expired",
+      ),
+      ...rows,
+    ]);
+    setFlash("Credential expired.");
+  }
+
+  function reset(): void {
+    setGrant(null);
+    setPending(null);
+    setAudit([]);
+    setFlash("");
+    setScene(startingScene(entries));
+  }
 
   return (
     <div className="columns">
       <section className="card">
-        <h3>n8n demo</h3>
+        <h3>Two-minute demo</h3>
         <p className="muted">
-          Local policy only. The FastAPI server never sees this request or the secret. Unknown apps
-          are denied. Auto-detect is not auto-approve — there is no detect in this panel.
+          Your agents need access. They don&apos;t need your secrets. Local policy only — FastAPI
+          never sees this request or the secret.
         </p>
-        <p className="hint">
-          Agent page (same origin):{" "}
-          <a href="/agent-request.html" target="_blank" rel="noreferrer">
-            /agent-request.html
-          </a>{" "}
-          speaks POST /v1/access/request over BroadcastChannel.
+        <ol className="demo-steps" data-testid="demo-steps">
+          {(["read", "delete", "expire", "unknown"] as const).map((id) => (
+            <li key={id} className={scene === id ? "active" : ""}>
+              {demoSceneCopy(id).title}
+            </li>
+          ))}
+        </ol>
+        <p className="hint" data-testid="demo-scene">
+          {copy.step} — {copy.title}
         </p>
-        <div className="device-actions">
-          <button
-            type="button"
-            className="primary"
-            data-testid="demo-n8n-read"
-            onClick={() =>
-              run({
-                application: "n8n",
-                provider: "GitHub",
-                credential: "personal",
-                scope: ["repository.read"],
-                ttlSeconds: DEMO_TTL,
-              })
-            }
-          >
-            n8n asks GitHub repository.read ({DEMO_TTL}s)
-          </button>
-          <button
-            type="button"
-            data-testid="demo-n8n-delete"
-            onClick={() =>
-              run({
-                application: "n8n",
-                provider: "GitHub",
-                credential: "personal",
-                scope: ["repository.delete"],
-                ttlSeconds: DEMO_TTL,
-              })
-            }
-          >
-            n8n asks repository.delete
-          </button>
-          <button
-            type="button"
-            data-testid="demo-unknown-app"
-            onClick={() =>
-              run({
-                application: "malicious-agent",
-                provider: "GitHub",
-                credential: "personal",
-                scope: ["repository.read"],
-                ttlSeconds: DEMO_TTL,
-              })
-            }
-          >
-            unknown app asks GitHub
-          </button>
-        </div>
+        <p>{copy.body}</p>
+        {scene === "setup" ? (
+          <div className="device-actions">
+            <button
+              type="button"
+              className="primary"
+              data-testid="demo-seed"
+              disabled={!onSeedDemo || seeding}
+              onClick={() => {
+                if (!onSeedDemo) return;
+                setSeeding(true);
+                void onSeedDemo().finally(() => setSeeding(false));
+              }}
+            >
+              {seeding ? "Encrypting…" : copy.action}
+            </button>
+          </div>
+        ) : null}
+        {scene === "read" ? (
+          <div className="device-actions">
+            <button
+              type="button"
+              className="primary"
+              data-testid="demo-n8n-read"
+              onClick={() => run(demoReadRequest())}
+            >
+              {copy.action}
+            </button>
+          </div>
+        ) : null}
+        {scene === "delete" ? (
+          <div className="device-actions">
+            <button
+              type="button"
+              className="primary"
+              data-testid="demo-n8n-delete"
+              onClick={() => run(demoDeleteRequest())}
+            >
+              {copy.action}
+            </button>
+          </div>
+        ) : null}
+        {scene === "expire" ? (
+          <div className="device-actions">
+            <button
+              type="button"
+              className="primary"
+              data-testid="demo-expire-now"
+              disabled={!grant}
+              onClick={expireNow}
+            >
+              {copy.action}
+            </button>
+          </div>
+        ) : null}
+        {scene === "unknown" ? (
+          <div className="device-actions">
+            <button
+              type="button"
+              className="primary"
+              data-testid="demo-unknown-app"
+              onClick={() => run(demoUnknownRequest())}
+            >
+              {copy.action}
+            </button>
+          </div>
+        ) : null}
+        {scene === "done" ? (
+          <div className="device-actions">
+            <button type="button" className="primary" data-testid="demo-replay" onClick={reset}>
+              {copy.action}
+            </button>
+          </div>
+        ) : null}
         {flash ? (
           <p className={flash.startsWith("DENIED") ? "error-text" : "ok"} data-testid="access-flash">
             {flash}
-            {expired ? " Credential expired." : ""}
+            {expired && scene !== "expire" ? " Credential expired." : ""}
+          </p>
+        ) : null}
+        {grant && live && "material" in live ? (
+          <p className="hint" data-testid="demo-grant-status">
+            Scoped handoff to {grant.application}: {redactToken(live.material)} · {left}s left
           </p>
         ) : null}
         {expired && grant ? (
+          <p className="hint" data-testid="demo-expired">
+            Future handoffs stop. Rotate the upstream secret to revoke a leak.
+          </p>
+        ) : null}
+        {scene !== "setup" && scene !== "done" ? (
           <button
             type="button"
             className="link"
-            onClick={() => {
-              setGrant(wipeGrant(grant));
-              setAudit((rows) => [
-                auditLine(
-                  {
-                    application: grant.application,
-                    provider: grant.provider,
-                    credential: "",
-                    scope: grant.scope,
-                    ttlSeconds: 0,
-                  },
-                  "EXPIRED",
-                  "expired",
-                ),
-                ...rows,
-              ]);
-              setFlash("Credential expired.");
-            }}
+            data-testid="demo-next"
+            onClick={() => setScene(nextDemoScene(scene))}
           >
-            Mark expired
+            Next scene
           </button>
         ) : null}
+        <p className="hint">
+          Same-origin agent page:{" "}
+          <a href="/agent-request.html" target="_blank" rel="noreferrer">
+            /agent-request.html
+          </a>{" "}
+          speaks POST /v1/access/request over BroadcastChannel. Walkthrough:{" "}
+          <code>docs/two-minute-demo.md</code>.
+        </p>
       </section>
       <section className="card">
         <h3>Audit</h3>

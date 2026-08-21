@@ -63,7 +63,7 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 - Live item-sharing to another person’s device key (v1 is an encrypted file plus share key only).
 - Unabhängiges Drittaudit.
 - „DELETE Gerät löscht den Schlüssel“ — Soft-Revoke ist `metadata_only`; Hard-Revoke rotiert den Vault Key in der PWA.
-- Application/Agent Secret Access, Provider-Templates, n8n-Broker, `POST /v1/access/request` — Plan in `eight-week-agent-access.md`, **kein Ist**. FastAPI gibt keine Tokens aus.
+- Production n8n node, OS application identity, FastAPI token minting, week-8 launch. The Access tab **does** have a local two-minute demo (`docs/two-minute-demo.md`): same-origin `BroadcastChannel` `4allpass-access-v1`, not FastAPI. FastAPI gibt keine Tokens aus.
 
 Vergleichstabelle: [`comparison.md`](comparison.md).
 

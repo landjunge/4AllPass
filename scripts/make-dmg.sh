@@ -13,5 +13,12 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -R "$APP" "$STAGE/4AllPass.app"
 ln -s /Applications "$STAGE/Applications"
 mkdir -p "$OUTDIR"
-hdiutil create -volname "4AllPass" -srcfolder "$STAGE" -ov -format UDZO "$OUTDIR/4AllPass_0.1.0_x64.dmg"
-echo "$OUTDIR/4AllPass_0.1.0_x64.dmg"
+ARCH="$(uname -m)"
+case "$ARCH" in
+  arm64) SLUG="aarch64" ;;
+  x86_64) SLUG="x64" ;;
+  *) SLUG="$ARCH" ;;
+esac
+OUT="$OUTDIR/4AllPass_0.1.0_${SLUG}.dmg"
+hdiutil create -volname "4AllPass" -srcfolder "$STAGE" -ov -format UDZO "$OUT"
+echo "$OUT"

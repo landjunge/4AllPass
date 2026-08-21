@@ -22,19 +22,19 @@ export npm_config_fetch_retry_maxtimeout="${npm_config_fetch_retry_maxtimeout:-1
 tls_reaches() {
   local url="$1"
   local code
-  code="$(curl -4 -sS -o /dev/null -w '%{http_code}' --max-time 15 "$url" || true)"
+  code="$(curl -4 -sS -o /dev/null -w '%{http_code}' --max-time 15 "$url" 2>/dev/null || true)"
   # 000 = connect/TLS failed. Any HTTP status means the handshake worked.
   [ -n "$code" ] && [ "$code" != "000" ]
 }
 
-require_https() {
-  local url="$1"
-  local host="$2"
-  if tls_reaches "$url"; then
-    return 0
-  fi
+echo "Checking package registries…"
+missing=()
+tls_reaches "https://registry.npmjs.org/" || missing+=("registry.npmjs.org")
+tls_reaches "https://pypi.org/" || missing+=("pypi.org")
+tls_reaches "https://files.pythonhosted.org/" || missing+=("files.pythonhosted.org")
+if [ "${#missing[@]}" -gt 0 ]; then
   cat >&2 <<EOF
-4AllPass cloud install: TLS to ${host} is reset (ECONNRESET / SSL_ERROR_SYSCALL).
+4AllPass cloud install: TLS to the package registries is reset (ECONNRESET / SSL_ERROR_SYSCALL).
 TCP connects and the Client Hello is sent; the peer then closes the handshake.
 npm/pip then either hang on retries or crash with "Exit handler never called!".
 
@@ -43,15 +43,10 @@ Add these hosts to the Cloud Agent environment egress allowlist, then rerun:
   pypi.org
   files.pythonhosted.org
 
-Failed host: ${host}
+Unreachable now: ${missing[*]}
 EOF
-  return 1
-}
-
-echo "Checking package registries…"
-require_https "https://registry.npmjs.org/" "registry.npmjs.org"
-require_https "https://pypi.org/" "pypi.org"
-require_https "https://files.pythonhosted.org/" "files.pythonhosted.org"
+  exit 1
+fi
 
 echo "npm ci"
 npm ci --no-audit --no-fund

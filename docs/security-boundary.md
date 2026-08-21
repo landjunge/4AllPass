@@ -282,7 +282,11 @@ secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
 Browser `Origin` on the grant path is 403. Pairing token required.
 `GET /api/v1/local/broker` returns that pairing token only after local storage
 auth. The **server** profile does not mount these routes. Grants live in page
-memory. Unknown applications are denied. Audit rows omit the secret.
+memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):
+unknown app DENY, missing scope DENY. `decision: "allow"` means the request is
+eligible for a **human** Allow — it is not auto-handoff. Core grants have no
+secret; the unlocked UI still attaches `material` for the existing broker
+response. Unknown applications are denied. Audit rows omit the secret.
 Application identity is a string (`n8n`) — spoofable. TTL expiry stops future
 handoffs; a copy already given is not un-known. See
 [`two-minute-demo.md`](two-minute-demo.md) and

@@ -1,6 +1,28 @@
 {
   "name": "4allpass",
   "private": true,
+  "description": "Self-hosted zero-knowledge password manager with WebAuthn unlock and local agent credential access. Your agents need access — they don't need your secrets.",
+  "homepage": "https://netzwerkpunkt.de",
+  "bugs": {
+    "url": "https://github.com/landjunge/4AllPass/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/landjunge/4AllPass.git"
+  },
+  "keywords": [
+    "4allpass",
+    "password-manager",
+    "zero-knowledge",
+    "vault",
+    "webauthn",
+    "passkey",
+    "argon2id",
+    "self-hosted",
+    "pwa",
+    "agent-credentials",
+    "n8n"
+  ],
   "type": "module",
   "workspaces": [
     "packages/*",

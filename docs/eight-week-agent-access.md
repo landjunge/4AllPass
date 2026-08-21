@@ -7,7 +7,7 @@
 
 Companion: `secret-access-layer.md`, `provider-service-vision.md`, `capability-contract-v1.md` (4AP-CAP-1), `security-boundary.md`.
 
-**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–8 of this plan are in the tree (article + post drafts). Do not paste slogans communities cannot click: [`two-minute-demo.md`](two-minute-demo.md). Posts are **not** auto-published.
+**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–8 of this plan are in the tree (article + post drafts). Do not paste slogans communities cannot click: [`two-minute-demo.md`](two-minute-demo.md). Posts are **not** auto-published. How the public repo gets found: [`discoverability.md`](discoverability.md).
 
 ---
 

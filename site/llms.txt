@@ -1,0 +1,9 @@
+# 4AllPass public front
+
+> Product front for https://landjunge.github.io/4AllPass/
+> Suite home: https://netzwerkpunkt.de (in progress; 4AllPass not listed yet)
+
+- DE: de.html
+- EN: index.html
+- Cards: produkte/ · produkte.json
+- Source: https://github.com/landjunge/4AllPass

@@ -1,0 +1,38 @@
+# 4AllPass
+
+> Self-hosted zero-knowledge password manager with local agent credential access.
+> Your agents need access. They don't need your secrets.
+> Not All Pass Hub. Not the Flutter Allpass app. Not a nicer Bitwarden.
+
+## Front door
+
+| Surface | Role |
+|---|---|
+| https://netzwerkpunkt.de | Suite home (Hauptseite / in Arbeit). 4AllPass not listed there yet. |
+| https://landjunge.github.io/4AllPass/ | Product front + fallback landing |
+| https://github.com/landjunge/4AllPass | Source |
+
+## Start here
+
+- [README](README.md)
+- [docs/security-boundary.md](docs/security-boundary.md)
+- [docs/two-minute-demo.md](docs/two-minute-demo.md)
+- [docs/your-ai-agent-doesnt-need-your-api-keys.md](docs/your-ai-agent-doesnt-need-your-api-keys.md)
+- [docs/discoverability.md](docs/discoverability.md)
+- Product cards: [site/produkte.json](site/produkte.json)
+
+## Family (honest status, 2026-08-21)
+
+- 4AllPass — credentials — GitHub source, hub listing pending
+- Gnom-Hub-V1 — execution — on the hub: in progress
+- Tollgate — network/safety — on the hub: in progress
+- ThreadDesk — context — GitHub source, hub listing pending
+- Detektivspiel — documentation only
+- Meridian — experiment, source only
+
+## Honest limits
+
+- FastAPI never mints tokens. Grants live on the unlocked device.
+- There is no n8n marketplace node.
+- The server never sees the master password, vault key, or plaintext entries.
+- Packages are still `UNLICENSED` until the owner publishes a license.

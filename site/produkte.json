@@ -1,0 +1,136 @@
+{
+  "suite": "https://netzwerkpunkt.de",
+  "updated": "2026-08-21",
+  "note": {
+    "de": "Kein Shop. Karten nur für öffentliche Original-Repos mit Beleg. 4AllPass steht auf dem Hub noch nicht.",
+    "en": "Not a shop. Cards only for public original repos with evidence. 4AllPass is not on the hub yet."
+  },
+  "products": [
+    {
+      "id": "4allpass",
+      "name": "4AllPass",
+      "layer": { "de": "Zugang", "en": "Credentials" },
+      "line": {
+        "de": "Selbst gehosteter Zero-Knowledge-Vault. Agenten brauchen Zugang, nicht deine Secrets.",
+        "en": "Self-hosted zero-knowledge vault. Agents need access, not your secrets."
+      },
+      "who": {
+        "de": "Self-Hoster und Leute, die n8n oder Agenten betreiben und keine langlebigen Keys im Workflow parken wollen.",
+        "en": "Self-hosters and people who run n8n or agents and do not want long-lived keys in a workflow."
+      },
+      "status": "quelle",
+      "statusLabel": {
+        "de": "Quelle GitHub — Hub-Eintrag noch ausstehend",
+        "en": "GitHub source — hub listing still pending"
+      },
+      "repo": "https://github.com/landjunge/4AllPass",
+      "fallback": "https://landjunge.github.io/4AllPass/",
+      "hub": null
+    },
+    {
+      "id": "gnom-hub-v1",
+      "name": "Gnom-Hub-V1",
+      "layer": { "de": "Ausführung", "en": "Execution" },
+      "line": {
+        "de": "Lokaler Multi-Agent-Desk. Brainstorm frei, Execute bewusst.",
+        "en": "Local multi-agent desk. Brainstorm freely, execute on purpose."
+      },
+      "who": {
+        "de": "Wer mehrere lokale Agenten steuern will, ohne Docker und ohne unattended Autonomy.",
+        "en": "People who want to steer local agents without Docker and without unattended autonomy."
+      },
+      "status": "hub-in-arbeit",
+      "statusLabel": {
+        "de": "Auf dem Hub: in Arbeit",
+        "en": "On the hub: in progress"
+      },
+      "repo": "https://github.com/landjunge/gnom-hub-v1",
+      "fallback": "https://landjunge.github.io/gnom-hub-v1/",
+      "hub": "https://netzwerkpunkt.de"
+    },
+    {
+      "id": "tollgate",
+      "name": "Tollgate",
+      "layer": { "de": "Netz / Safety", "en": "Network / safety" },
+      "line": {
+        "de": "Safety-Schicht zwischen Agenten und Netz. Protect · Route · Prove.",
+        "en": "Safety layer between agents and the network. Protect · Route · Prove."
+      },
+      "who": {
+        "de": "Wer Budgets, Loops und Failover vor dem Internetzugriff der Agenten will. Nicht das Nostr/Cashu-TollGate.",
+        "en": "People who want budgets, loop stops, and failover before agents hit the network. Not the Nostr/Cashu TollGate."
+      },
+      "status": "hub-in-arbeit",
+      "statusLabel": {
+        "de": "Auf dem Hub: in Arbeit",
+        "en": "On the hub: in progress"
+      },
+      "repo": "https://github.com/landjunge/tollgate",
+      "fallback": "https://landjunge.github.io/tollgate/",
+      "hub": "https://netzwerkpunkt.de"
+    },
+    {
+      "id": "threaddesk",
+      "name": "ThreadDesk",
+      "layer": { "de": "Kontext", "en": "Context" },
+      "line": {
+        "de": "Persistente Threads für KI-Arbeit. Speichert Kontext, führt nichts aus.",
+        "en": "Persistent threads for AI work. Stores context. Never executes."
+      },
+      "who": {
+        "de": "Wer Kontext halten will, ohne daraus automatisch Aktionen zu machen.",
+        "en": "People who want to keep context without turning it into actions."
+      },
+      "status": "quelle",
+      "statusLabel": {
+        "de": "Quelle GitHub — Hub-Eintrag noch ausstehend",
+        "en": "GitHub source — hub listing still pending"
+      },
+      "repo": "https://github.com/landjunge/threaddesk",
+      "fallback": null,
+      "hub": null
+    },
+    {
+      "id": "detektivspiel",
+      "name": "Detektivspiel",
+      "layer": { "de": "Notiz", "en": "Note" },
+      "line": {
+        "de": "Pflichtenheft und Projektdokumentation für ein KI-Detektivspiel.",
+        "en": "Spec and project notes for a KI detective game."
+      },
+      "who": {
+        "de": "Interne Planung, kein auslieferbares Produkt.",
+        "en": "Internal planning, not a shipped product."
+      },
+      "status": "notiz",
+      "statusLabel": {
+        "de": "Nur Dokumentation",
+        "en": "Documentation only"
+      },
+      "repo": "https://github.com/landjunge/detektivspiel",
+      "fallback": null,
+      "hub": null
+    },
+    {
+      "id": "meridian",
+      "name": "Meridian",
+      "layer": { "de": "Experiment", "en": "Experiment" },
+      "line": {
+        "de": "Leuchtender 3D-Atlas. Drehen, Pin klicken, hinfliegen.",
+        "en": "A luminous 3D atlas. Drag to orbit, click a pin to fly there."
+      },
+      "who": {
+        "de": "Öffentliches Experiment, kein Agent-Layer.",
+        "en": "A public experiment, not an agent layer."
+      },
+      "status": "notiz",
+      "statusLabel": {
+        "de": "Nur Quelle, kein Hub",
+        "en": "Source only, not on the hub"
+      },
+      "repo": "https://github.com/landjunge/meridian",
+      "fallback": null,
+      "hub": null
+    }
+  ]
+}

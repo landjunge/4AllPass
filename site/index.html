@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>4AllPass — self-hosted zero-knowledge vault (landjunge)</title>
+  <meta name="description" content="4AllPass is a self-hosted zero-knowledge password manager with local agent credential access. Suite home: netzwerkpunkt.de (in progress). Source: GitHub. Not All Pass Hub."/>
+  <meta name="author" content="Daniel / landjunge"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="theme-color" content="#121316"/>
+  <link rel="canonical" href="https://landjunge.github.io/4AllPass/"/>
+  <link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/"/>
+  <link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/de.html"/>
+  <link rel="alternate" hreflang="x-default" href="https://landjunge.github.io/4AllPass/"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="4AllPass"/>
+  <meta property="og:locale" content="en_US"/>
+  <meta property="og:url" content="https://landjunge.github.io/4AllPass/"/>
+  <meta property="og:title" content="4AllPass — self-hosted zero-knowledge vault"/>
+  <meta property="og:description" content="Password manager + local agent credential access. Suite home netzwerkpunkt.de is in progress. Not All Pass Hub."/>
+  <meta property="og:image" content="https://landjunge.github.io/4AllPass/og.png"/>
+  <meta property="og:image:alt" content="4AllPass magpie-and-key mark"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="4AllPass — self-hosted zero-knowledge vault"/>
+  <meta name="twitter:description" content="Self-hosted ZK password manager with WebAuthn unlock and local agent credential access."/>
+  <meta name="twitter:image" content="https://landjunge.github.io/4AllPass/og.png"/>
+  <link rel="icon" href="favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "4AllPass",
+    "alternateName": ["4allpass", "landjunge/4AllPass"],
+    "disambiguatingDescription": "Self-hosted zero-knowledge vault by landjunge. Not All Pass Hub and not the Flutter Allpass app.",
+    "applicationCategory": "SecurityApplication",
+    "url": "https://landjunge.github.io/4AllPass/",
+    "sameAs": ["https://netzwerkpunkt.de", "https://github.com/landjunge/4AllPass"],
+    "codeRepository": "https://github.com/landjunge/4AllPass",
+    "author": { "@type": "Person", "name": "Daniel", "url": "https://github.com/landjunge" }
+  }
+  </script>
+</head>
+<body>
+  <div class="suite-bar">
+    <span><strong>netzwerkpunkt.de</strong> — suite home, in progress</span>
+    <span><a href="https://netzwerkpunkt.de">Hub</a> · <a href="produkte/en.html">Product cards</a> · <a href="de.html" hreflang="de">Deutsch</a></span>
+  </div>
+  <header>
+    <img class="logo" src="assets/logo.png" width="380" height="269" alt="4AllPass — magpie with a gold key"/>
+    <h1>4AllPass</h1>
+    <p class="tag">Self-hosted zero-knowledge password manager.<br/>Your agents need access. They don't need your secrets.</p>
+    <nav class="links" aria-label="Primary">
+      <a href="https://github.com/landjunge/4AllPass">GitHub (source)</a>
+      <a href="https://github.com/landjunge/4AllPass/blob/main/docs/two-minute-demo.md">Two-minute demo</a>
+      <a href="https://github.com/landjunge/4AllPass/blob/main/docs/your-ai-agent-doesnt-need-your-api-keys.md">Launch note</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card">
+      <p>For self-hosters and people who run n8n or AI agents and do not want long-lived API keys sitting in a workflow.</p>
+      <pre>git clone https://github.com/landjunge/4AllPass.git
+cd 4AllPass
+docker compose up --build</pre>
+      <p class="muted">Starts Postgres, Redis, and the backend on <code>http://localhost:8000</code>. Unlock a vault in the PWA, then open the Access tab. FastAPI never mints tokens. There is no n8n marketplace node.</p>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Today</th><th>Not this product</th></tr></thead>
+        <tbody>
+          <tr><td>Argon2id, WebAuthn unlock, PWA + browser fill</td><td>A nicer Bitwarden</td></tr>
+          <tr><td>Server stores opaque envelopes only</td><td>All Pass Hub (commercial)</td></tr>
+          <tr><td>Local allow / deny / TTL for agent handoffs</td><td>Flutter Allpass</td></tr>
+          <tr><td>Hub listing still pending</td><td>A finished storefront on netzwerkpunkt.de</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>How the front door is meant to work</h2>
+    <div class="card">
+      <table>
+        <tbody>
+          <tr><th>netzwerkpunkt.de</th><td>Suite home. Click target once a 4AllPass section exists.</td></tr>
+          <tr><th>This page</th><td>GitHub Pages fallback — product front you can also link from the hub.</td></tr>
+          <tr><th>GitHub</th><td>Source, specs, issues. Not the shop window.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Products under the same roof</h2>
+    <p class="muted" data-products-note>Not a shop. Status matches public evidence from 2026-08-21.</p>
+    <div class="grid" data-products data-lang="en" data-src="produkte.json"></div>
+    <noscript>
+      <ul>
+        <li>4AllPass — GitHub source, hub listing pending</li>
+        <li>Gnom-Hub-V1 — on the hub: in progress</li>
+        <li>Tollgate — on the hub: in progress</li>
+        <li>ThreadDesk — GitHub source, hub listing pending</li>
+        <li>Detektivspiel — documentation only</li>
+        <li>Meridian — experiment, source only</li>
+      </ul>
+    </noscript>
+    <p><a href="produkte/en.html">Open the card list</a> if you want to embed just the family on the hub.</p>
+    <p>Specs: <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">docs/security-boundary.md</a>.</p>
+  </main>
+  <footer>
+    <p>Suite home: <a href="https://netzwerkpunkt.de">netzwerkpunkt.de</a> (in progress — 4AllPass is not listed there yet). Source: <a href="https://github.com/landjunge/4AllPass">landjunge/4AllPass</a>.</p>
+  </footer>
+  <script src="produkte.js" defer></script>
+</body>
+</html>

@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "description": "4AllPass Crypto Protocol v1 — Argon2id, AES-256-GCM, envelopes",
+  "homepage": "https://netzwerkpunkt.de",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/landjunge/4AllPass.git",
+    "directory": "packages/crypto"
+  },
   "license": "UNLICENSED",
   "exports": {
     ".": "./src/index.ts",

@@ -1,10 +1,11 @@
 /**
- * Unlocked PWA talks to scripts/local-access-broker.mjs.
- * FastAPI is not on this path. Pairing token required.
+ * Unlocked UI talks to the local-process relay (same origin :8788) or the
+ * Node Vite helper on :8787. Pairing token required. FastAPI does not mint
+ * provider tokens.
  */
 import type { AccessApiResponse, AccessWireRequest } from "./access.ts";
 
-export const DEFAULT_BROKER_URL = "http://127.0.0.1:8787";
+export const DEFAULT_BROKER_URL = "http://127.0.0.1:8788";
 
 export type BrokerStatus = "off" | "connecting" | "live" | "error";
 
@@ -65,7 +66,7 @@ export function connectLocalBroker(url: string, token: string): void {
     cancelled = true;
   };
   session = { url: base, token: trimmed };
-  status = "connecting";
+  status = "live";
   lastError = "";
   emit();
 
@@ -83,9 +84,6 @@ export function connectLocalBroker(url: string, token: string): void {
           emit();
           return;
         }
-        status = "live";
-        lastError = "";
-        emit();
         if (res.status === 204) continue;
         const msg = (await res.json()) as AccessWireRequest;
         if (msg && msg.v === 1 && msg.method === "POST /v1/access/request") {

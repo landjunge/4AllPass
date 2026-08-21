@@ -43,4 +43,5 @@ async def health_v1(db: AsyncSession = Depends(get_db)) -> dict[str, object]:
         "database": database,
         "redis": redis_ok,
         "webauthn_rp_id": settings.webauthn_rp_id,
+        "profile": settings.profile,
     }

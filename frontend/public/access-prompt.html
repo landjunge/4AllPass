@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>4AllPass — Zugriff / Access</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #121316;
+        --card: #1e1f24;
+        --text: #e2e4e9;
+        --muted: #8b909a;
+        --line: #2e3138;
+        --ok: #3d9b6a;
+        --err: #c45c5c;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      .card {
+        width: min(420px, 100%);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+      }
+      h1 { font-size: 16px; margin: 0; }
+      .muted { color: var(--muted); margin: 0; }
+      code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .actions { display: flex; gap: 8px; margin-top: 8px; }
+      button {
+        flex: 1;
+        border: 1px solid var(--line);
+        background: #24262d;
+        color: var(--text);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button.allow { background: color-mix(in srgb, var(--ok) 35%, #24262d); }
+      button.deny { background: color-mix(in srgb, var(--err) 35%, #24262d); }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Zugriff / Access request</h1>
+      <p id="summary"></p>
+      <p class="muted">Kein Secret in diesem Fenster. / No secret in this window.</p>
+      <div class="actions">
+        <button class="allow" type="button" id="allow">Erlauben / Allow</button>
+        <button class="deny" type="button" id="deny">Ablehnen / Deny</button>
+      </div>
+    </div>
+    <script src="/access-prompt.js"></script>
+  </body>
+</html>

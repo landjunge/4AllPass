@@ -145,10 +145,17 @@ async def load_active_snapshot(db: AsyncSession, vault: Vault) -> VaultSnapshot 
 async def _lock_vault_and_current(
     db: AsyncSession, vault: Vault
 ) -> tuple[Vault, VaultSnapshot | None]:
-    """Serialize writers and read the live CAS pointer (docs/vault-revision.md B7)."""
-    result = await db.execute(
-        select(Vault.active_snapshot_id).where(Vault.id == vault.id).with_for_update()
-    )
+    """Serialize writers and read the live CAS pointer (docs/vault-revision.md B7).
+
+    Postgres: ``SELECT … FOR UPDATE``. SQLite: the engine already opened
+    ``BEGIN IMMEDIATE`` (docs/security-boundary.md §5). Unique
+    ``(vault_id, revision)`` is the last line of defence on both.
+    """
+    stmt = select(Vault.active_snapshot_id).where(Vault.id == vault.id)
+    bind = db.get_bind()
+    if bind.dialect.name != "sqlite":
+        stmt = stmt.with_for_update()
+    result = await db.execute(stmt)
     pointer = result.scalar_one()
     vault.active_snapshot_id = pointer
     if pointer is None:

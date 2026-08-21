@@ -4,10 +4,10 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID
 from app.models.mixins import CreatedUpdatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -33,13 +33,13 @@ class Vault(UUIDPrimaryKeyMixin, CreatedUpdatedAtMixin, Base):
     __tablename__ = "vaults"
 
     owner_user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     crypto_protocol_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     active_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey(
             "vault_snapshots.id",
             use_alter=True,

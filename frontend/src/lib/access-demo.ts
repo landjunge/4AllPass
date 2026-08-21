@@ -82,6 +82,12 @@ export function redactToken(token: string): string {
   return `${trimmed.slice(0, 4)}••••`;
 }
 
+/** UI copy for a live grant. Must never include the secret or a prefix of it. */
+export function grantHandoffCopy(application: string, secondsLeft: number): string {
+  const app = application.trim() || "app";
+  return `Scoped handoff to ${app} · ${secondsLeft}s left`;
+}
+
 export function remainingSeconds(expiresAt: number, now = Date.now()): number {
   return Math.max(0, Math.ceil((expiresAt - now) / 1000));
 }

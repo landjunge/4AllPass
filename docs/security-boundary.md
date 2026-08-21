@@ -3,7 +3,7 @@
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
 **Date:** 2026-08-18
 
-This document describes what the **running backend + PWA** actually enforce.
+This document describes what the **running backend + PWA / local app** actually enforce.
 It does not restate the crypto protocol. If a sentence here disagrees with
 `packages/crypto`, the library and its tests win.
 
@@ -65,8 +65,29 @@ protection is “the browser will not attach `Authorization` to a foreign form
 POST.” SameSite is therefore not the CSRF control here. If cookies are
 introduced later, CSRF tokens become mandatory; SameSite alone is not enough.
 
-Production refuses to start if `FOURALLPASS_SESSION_SECRET` is still the
-insecure default.
+Production (`profile=server`) refuses to start if `FOURALLPASS_SESSION_SECRET`
+is still the insecure default. The **local** profile writes a random secret
+into the data directory (`session.secret`, mode 0600) and uses memory sessions.
+That secret still cannot unwrap a Vault Key.
+
+**Local profile** (`python -m app.local` / `npm run app`): one origin
+`http://127.0.0.1:8788` serves the UI and `/api/v1`. SQLite file in
+`~/Library/Application Support/4AllPass/` (macOS), `%APPDATA%\4AllPass\`
+(Windows), `~/.local/share/4allpass/` (Linux). Bind is loopback only.
+The process still never sees master password, VK, DK, DWK, PRF, or plaintext
+entries. FastAPI still has no `/v1/access` token route.
+
+Local first-run skips email and account password. `POST /api/v1/auth/local`
+mints a storage session for a singleton row (`local@127.0.0.1`, no account
+password hash). That is **authentication for the blob store**, not vault
+unlock. The UI never shows that address. Server profile returns 404 for this
+route. Access-grant UI shows application / provider / TTL only — not the
+secret or a prefix of it.
+
+**I have a vault** on first-run opens a `4allpass-share-v1` file with its share
+key, then creates a **new** local vault (new VK, new recovery key) and commits
+the decrypted entries under that VK. The share key is not the recovery key.
+A printed recovery key without the encrypted blobs cannot recreate the store.
 
 ---
 
@@ -147,7 +168,9 @@ commits that re-attach a revoked device’s envelope (HTTP 422).
 
 `POST /vaults/{vault_id}/snapshots`:
 
-1. `SELECT … FOR UPDATE` on the vault row (writers serialize).
+1. Serialize writers. Postgres: `SELECT … FOR UPDATE` on the vault row.
+   SQLite (local app / default pytest): the engine opens `BEGIN IMMEDIATE`.
+   The CAS comparison is the same on both.
 2. Compare `expectedRevision` / `revision` against the active snapshot.
 3. Reject `vaultKeyVersion` decreases.
 4. When `current_revision >= 1`, require `sealedManifest` (stored opaque; not decrypted).
@@ -205,21 +228,54 @@ and single-use. Assertions and `fmt=none` registrations are COSE-verified
 against that challenge when the PWA sends the authenticator response. That is
 ceremony integrity, not a replacement for client-side PRF.
 
+The desktop app (`src-tauri/`, `docs/desktop.md`) loads the same frontend in
+a Tauri WKWebView. Measured on macOS 15.7 / this build
+(`GET /api/v1/local/webview-caps` after UI boot): `PublicKeyCredential` and
+`credentials.create` exist; `isUserVerifyingPlatformAuthenticatorAvailable`
+is **false**; `prf` is **null** (no `getClientCapabilities` report). That is
+not a successful PRF ceremony. Master-password and recovery-key unlock are
+the supported paths in `4AllPass.app`. Do not claim Touch ID / passkey unlock
+until a ceremony returns PRF. No new wrap protocol (no “Tauri biometrics
+envelope”). Hiding the window to the tray does **not** lock the vault (the
+access broker still needs the unlocked process). Inactivity auto-lock still
+runs. **Launch at login** (Settings, default off) starts the process hidden in
+the tray. It does not unwrap the Vault Key, does not skip the password, and
+does not auto-allow. A cold start after login is LOCKED until the user unlocks.
+On macOS, **screen lock** and **system sleep** emit `desktop-lock`; the UI
+calls the same lock path and zeroizes the in-process Vault Key as well as JS
+allows. That is not FileVault, not hibernation-safe, and not implemented on
+Windows/Linux yet. The race vs actual sleep is real: a dump of RAM after a
+missed notification can still hold VK. An access request opens a small always-on-top prompt with Allow / Deny;
+that window receives only application / provider / scope / TTL. The grant
+material is issued in the unlocked main webview after the prompt event. The
+prompt is not a second crypto context.
+
 ---
 
 ## 7. Local access broker (not FastAPI)
 
 The Access tab and `/agent-request.html` implement `POST /v1/access/request` on
-the **unlocked page** via `BroadcastChannel` `4allpass-access-v1`. FastAPI has
-no `/v1/access` route and must not grow one. Grants live in page memory.
-Unknown applications are denied. Audit rows omit the secret. Application
-identity is a string (`n8n`) — spoofable by anyone who can post on the channel.
-TTL expiry stops future handoffs; a copy already given is not un-known. See
-[`two-minute-demo.md`](two-minute-demo.md).
+the **unlocked page** via `BroadcastChannel` `4allpass-access-v1`. The local
+profile also serves the **same relay** on this process
+(`POST /v1/access/request` on `http://127.0.0.1:8788`). That route is a pairing
+queue, not a token mint: the server never decrypts, never invents a GitHub
+secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
+Browser `Origin` on the grant path is 403. Pairing token required.
+`GET /api/v1/local/broker` returns that pairing token only after local storage
+auth. The **server** profile does not mount these routes. Grants live in page
+memory. Unknown applications are denied. Audit rows omit the secret.
+Application identity is a string (`n8n`) — spoofable. TTL expiry stops future
+handoffs; a copy already given is not un-known. See
+[`two-minute-demo.md`](two-minute-demo.md) and
+[`local-access-broker.md`](local-access-broker.md).
 
-An optional loopback sidecar (`npm run broker`, `scripts/local-access-broker.mjs`)
-relays the same JSON on `127.0.0.1:8787` so a **foreign process** (n8n HTTP
-Request) can call it. Default off. Pairing token required. Browser `Origin` on
-the grant path is rejected. The sidecar never decrypts envelopes and must not
-log `access_token`. Without a connected unlocked PWA the response is
-`vault_locked`. See [`local-access-broker.md`](local-access-broker.md).
+Vite-only dev can still run the Node relay (`npm run broker` on `:8787`).
+
+`@4allpass/access` (`fourAllPass.request({ provider, capability, ttl })`) is a
+Node client for that relay. It refuses non-loopback URLs, does not set
+`Origin`, and redacts grant material in helper output. It is not FastAPI, not
+a second policy engine, and not an n8n marketplace node. Application name is
+still a string the vault may DENY. The Access tab also copies an **n8n HTTP
+Request** recipe (POST JSON, pairing token only in `Authorization`, displayed
+curl redacts that token). n8n-in-Docker must not treat container `127.0.0.1`
+as the host. See [`local-access-broker.md`](local-access-broker.md).

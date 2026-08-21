@@ -4,6 +4,7 @@ import {
   browserGrantOrigin,
   createBroker,
   newBrokerToken,
+  originsFromEnv,
   postJson,
   pwaOriginAllowed,
 } from "./local-access-broker.mjs";
@@ -16,6 +17,12 @@ async function start() {
   const base = `http://127.0.0.1:${port}`;
   return { broker, token, base };
 }
+
+test("local app origin is allowed to poll", () => {
+  assert.equal(pwaOriginAllowed("http://127.0.0.1:8788"), true);
+  assert.equal(pwaOriginAllowed("http://localhost:8788"), true);
+  assert.equal(originsFromEnv("").includes("http://127.0.0.1:8788"), true);
+});
 
 test("pairing token is required", async () => {
   const { broker, base } = await start();

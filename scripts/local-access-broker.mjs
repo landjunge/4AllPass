@@ -10,11 +10,22 @@ import { pathToFileURL } from "node:url";
 export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 8787;
 export const DEFAULT_PWA_ORIGINS = [
+  "http://127.0.0.1:8788",
+  "http://localhost:8788",
   "http://127.0.0.1:5173",
   "http://localhost:5173",
   "http://127.0.0.1:4173",
   "http://localhost:4173",
 ];
+
+export function originsFromEnv(raw = process.env.FOURALLPASS_BROKER_PWA_ORIGINS) {
+  if (!raw || !String(raw).trim()) return DEFAULT_PWA_ORIGINS;
+  const extra = String(raw)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return [...new Set([...DEFAULT_PWA_ORIGINS, ...extra])];
+}
 
 const MAX_BODY = 64 * 1024;
 const POLL_MS = 25_000;
@@ -293,6 +304,7 @@ if (isCli) {
   const broker = createBroker({
     token,
     port,
+    pwaOrigins: originsFromEnv(),
     log: {
       info: (...args) => console.info("[broker]", ...args),
       warn: (...args) => console.warn("[broker]", ...args),

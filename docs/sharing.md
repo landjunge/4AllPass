@@ -21,6 +21,11 @@ The file is downloaded. The share key is shown once. **Neither is uploaded.** Th
 
 Import: choose the file, enter the share key, confirm. Entries are decrypted on this device, given new ids, then committed under the **recipient vault’s** Vault Key.
 
+Local first-run **Ich habe einen Tresor / I have a vault** is the same file: it
+opens the share, then creates a **new** vault (new Vault Key, new recovery key)
+and commits those entries. The share key is not the new recovery key. This is
+not a server restore and not “recovery key alone rebuilds the database.”
+
 ## Honest limits
 
 - Anyone who has **both** the file and the share key can read those logins. You cannot remotely un-share a copy they already have (same class of fact as a printed recovery kit).

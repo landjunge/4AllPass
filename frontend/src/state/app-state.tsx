@@ -17,7 +17,10 @@ import {
 } from "react";
 import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
 import { clearCopiedSecret } from "../lib/clipboard.ts";
+import { openSharePackage } from "../lib/share.ts";
 import { deviceId } from "../lib/device-identity.ts";
+import { listenDesktopLock } from "../lib/desktop.ts";
+import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
   commitEntries,
@@ -42,6 +45,7 @@ export const AUTO_LOCK_MS = 5 * 60 * 1000;
 interface AppState {
   ready: boolean;
   email: string | null;
+  localMode: boolean;
   vaults: VaultSummary[];
   activeVaultId: string | null;
   lockState: LockState;
@@ -60,6 +64,7 @@ interface AppActions {
   signOut(): Promise<void>;
   selectVault(vaultId: string): Promise<void>;
   createNewVault(masterPassword: string, profile?: Argon2idProfileName): Promise<void>;
+  restoreFromShare(fileText: string, shareKey: string, masterPassword: string): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -93,6 +98,7 @@ function describeError(error: unknown): string {
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [localMode, setLocalMode] = useState(false);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [activeVaultId, setActiveVaultId] = useState<string | null>(null);
   const [lockState, setLockState] = useState<LockState>("LOCKED");
@@ -131,16 +137,39 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
   useEffect(() => {
     void (async () => {
-      if (getToken()) {
-        try {
+      try {
+        const health = await api.health();
+        const local = health.profile === "local";
+        setLocalMode(local);
+        if (local && !getToken()) {
+          const session = await api.localSession();
+          setEmail(session.email);
+          await loadVaults();
+          void probeWebviewWebauthn()
+            .then((caps) => api.reportWebviewCaps(caps))
+            .catch(() => undefined);
+          return;
+        }
+        if (getToken()) {
           const account = await api.me();
           setEmail(account.email);
           await loadVaults();
-        } catch {
+        }
+      } catch {
+        if (getToken()) {
+          try {
+            const account = await api.me();
+            setEmail(account.email);
+            await loadVaults();
+          } catch {
+            setEmail(null);
+          }
+        } else {
           setEmail(null);
         }
+      } finally {
+        setReady(true);
       }
-      setReady(true);
     })();
   }, [loadVaults]);
 
@@ -153,17 +182,27 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       timer = window.setTimeout(lock, AUTO_LOCK_MS);
     };
     const onVisibility = (): void => {
-      if (document.visibilityState === "hidden") lock();
+      // Tray hide must not lock — the desktop product keeps the vault in process
+      // memory so the access broker can still prompt. Browser tabs still lock.
+      if (document.visibilityState === "hidden" && !(localMode && isTauriShell())) lock();
     };
     const events = ["pointerdown", "keydown", "focus"] as const;
     for (const event of events) window.addEventListener(event, reset);
     document.addEventListener("visibilitychange", onVisibility);
+    let cancelled = false;
+    let unlistenLock: (() => void) | undefined;
+    void listenDesktopLock(lock).then((fn) => {
+      if (cancelled) fn();
+      else unlistenLock = fn;
+    });
     return () => {
+      cancelled = true;
       window.clearTimeout(timer);
       for (const event of events) window.removeEventListener(event, reset);
       document.removeEventListener("visibilitychange", onVisibility);
+      unlistenLock?.();
     };
-  }, [lockState, lock]);
+  }, [lockState, lock, localMode]);
 
   const withStatus = useCallback(
     async <T,>(action: () => Promise<T>, success?: string): Promise<T> => {
@@ -232,6 +271,25 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             throw failure;
           }
         }, "Vault created. Store the recovery key now.");
+      },
+
+      async restoreFromShare(fileText, shareKey, masterPassword) {
+        await withStatus(async () => {
+          const entries = openSharePackage(fileText, shareKey);
+          if (entries.length === 0) throw new Error("share file has no entries");
+          setLockState("UNLOCKING");
+          try {
+            const created = await createVault(masterPassword, "mobile_safe");
+            const next = await commitEntries(created.vault, entries);
+            setActiveVaultId(next.vaultId);
+            setUnlocked(next);
+            setRecoveryKey(created.recoveryKey);
+            await loadVaults();
+          } catch (failure) {
+            setLockState("LOCKED");
+            throw failure;
+          }
+        }, "Vault restored from share file. Store the new recovery key. The share key is not this key.");
       },
 
       async unlockWithPassword(masterPassword) {
@@ -348,6 +406,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     () => ({
       ready,
       email,
+      localMode,
       vaults,
       activeVaultId,
       lockState,
@@ -363,6 +422,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     [
       ready,
       email,
+      localMode,
       vaults,
       activeVaultId,
       lockState,

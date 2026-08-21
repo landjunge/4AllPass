@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 
-export function CreateVaultPage(): ReactNode {
+export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode {
   const { createNewVault } = useApp();
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
@@ -26,13 +26,13 @@ export function CreateVaultPage(): ReactNode {
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <h2>Create your vault</h2>
+        <h2>Tresor anlegen / Create your vault</h2>
         <p className="muted">
-          Choose a vault password. If you forget it, only the recovery key on the next screen can
-          open this vault. Nobody can reset it for you — not even this server.
+          Wähle ein Tresor-Passwort. Wenn du es vergisst, öffnet nur der Recovery-Schlüssel auf dem
+          nächsten Schirm diesen Tresor. Niemand kann ihn zurücksetzen — auch dieser Rechner nicht.
         </p>
         <label>
-          Vault password
+          Tresor-Passwort / Vault password
           <input
             type="password"
             autoComplete="new-password"
@@ -40,25 +40,32 @@ export function CreateVaultPage(): ReactNode {
             onChange={(event) => setPassword(event.target.value)}
             minLength={10}
             required
+            data-testid="vault-password"
           />
         </label>
         <label>
-          Repeat
+          Wiederholen / Repeat
           <input
             type="password"
             autoComplete="new-password"
             value={repeat}
             onChange={(event) => setRepeat(event.target.value)}
             required
+            data-testid="vault-password-repeat"
           />
         </label>
-        {mismatch ? <p className="error-text">The passwords do not match.</p> : null}
+        {mismatch ? <p className="error-text">Die Passwörter stimmen nicht überein.</p> : null}
         <p className="hint">
-          The vault password never leaves this device. Setup takes a few seconds on purpose.
+          Das Tresor-Passwort verlässt dieses Gerät nicht. Ein paar Sekunden Wartezeit sind Absicht.
         </p>
-        <button type="submit" disabled={busy || mismatch}>
-          {busy ? "Creating vault…" : "Create vault"}
+        <button type="submit" disabled={busy || mismatch} data-testid="create-vault">
+          {busy ? "Tresor wird erzeugt…" : "Tresor anlegen / Create vault"}
         </button>
+        {onBack ? (
+          <button type="button" className="link" onClick={onBack} data-testid="create-back">
+            Zurück / Back
+          </button>
+        ) : null}
       </form>
     </div>
   );

@@ -5,10 +5,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, LargeBinary, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID, OpaqueJSON
 from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class WebAuthnCredential(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "webauthn_credentials"
 
     device_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True
     )
     rp_id: Mapped[str] = mapped_column(String(255), nullable=False)
     credential_id: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True, index=True)
@@ -39,7 +39,7 @@ class WebAuthnCredential(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     # Null on client_asserted legacy rows. Never PRF material.
     public_key: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     sign_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
-    transports: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    transports: Mapped[list[str] | None] = mapped_column(OpaqueJSON, nullable=True)
 
     mechanism: Mapped[str | None] = mapped_column(String(32), nullable=True)
     prf_supported: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

@@ -7,10 +7,7 @@ import pytest
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
-MIGRATIONS_TEST_DATABASE_URL = os.environ.get(
-    "FOURALLPASS_MIGRATIONS_TEST_DATABASE_URL",
-    "postgresql+asyncpg://fourallpass:fourallpass@localhost:5432/fourallpass_migrations_test",
-)
+MIGRATIONS_TEST_DATABASE_URL = os.environ.get("FOURALLPASS_MIGRATIONS_TEST_DATABASE_URL", "")
 
 
 def _run_alembic(*args: str) -> subprocess.CompletedProcess:
@@ -25,8 +22,8 @@ def _run_alembic(*args: str) -> subprocess.CompletedProcess:
 
 
 @pytest.mark.skipif(
-    os.environ.get("FOURALLPASS_SKIP_MIGRATION_TESTS") == "1",
-    reason="migration tests require a scratch Postgres database",
+    not MIGRATIONS_TEST_DATABASE_URL.startswith("postgresql"),
+    reason="migration round-trip is Postgres-only; SQLite uses create_all",
 )
 def test_migrations_upgrade_downgrade_upgrade_round_trip_and_no_drift():
     upgrade = _run_alembic("upgrade", "head")

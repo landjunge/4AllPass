@@ -14,11 +14,6 @@ from app.models.user import User
 from app.models.vault import Vault
 from app.models.webauthn_credential import WebAuthnCredential
 
-os.environ.setdefault(
-    "FOURALLPASS_DATABASE_URL",
-    "postgresql+asyncpg://fourallpass:fourallpass@localhost:5432/fourallpass_test",
-)
-
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 

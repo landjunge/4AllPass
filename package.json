@@ -20,6 +20,19 @@
     "build": "npm run build -w @4allpass/frontend",
     "hash:dist": "node scripts/hash-dist.mjs",
     "verify:reproducible": "node scripts/verify-reproducible-build.mjs",
-    "broker": "node scripts/local-access-broker.mjs"
+    "broker": "node scripts/local-access-broker.mjs",
+    "access:demo": "tsx examples/n8n-access-client.mjs",
+    "app": "node scripts/run-local-app.mjs --open",
+    "app:sidecar": "node scripts/run-local-app.mjs",
+    "sidecar": "node scripts/run-sidecar.mjs",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build --bundles app && bash scripts/make-dmg.sh",
+    "tauri:build:windows": "tauri build --bundles nsis",
+    "tauri:build:linux": "tauri build --bundles appimage"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "tsx": "^4.20.0"
   }
 }

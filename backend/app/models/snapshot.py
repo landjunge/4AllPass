@@ -4,10 +4,10 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import ForeignKey, Integer, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID, OpaqueJSON
 from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class VaultSnapshot(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
 
     vault_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
     )
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     vault_key_version: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -41,7 +41,7 @@ class VaultSnapshot(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     # Opaque sealed manifest (docs/vault-revision.md B3). Stored and returned
     # as the client sent it. The server never opens or rebuilds it.
     sealed_manifest: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB(none_as_null=True), nullable=True
+        OpaqueJSON, nullable=True
     )
 
     vault: Mapped["Vault"] = relationship(back_populates="snapshots", foreign_keys=[vault_id])

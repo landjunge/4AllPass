@@ -5,10 +5,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID
 from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -29,14 +29,14 @@ class Device(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     does **not** erase key material. Soft cryptographic revocation is the
     next snapshot without this device's ``KeyEnvelope`` (type="device").
     Hard revocation is Vault Key rotation (``vault_key_version + 1``),
-    which the PWA does not implement yet. See docs/security-boundary.md.
+    which the client does via ``hardRevokeDevice``. See docs/security-boundary.md.
     """
 
     __tablename__ = "devices"
     __table_args__ = (UniqueConstraint("vault_id", "device_id", name="uq_devices_vault_device_id"),)
 
     vault_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
     )
     device_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)

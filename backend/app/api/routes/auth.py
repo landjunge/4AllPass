@@ -16,6 +16,9 @@ from app.schemas.auth import AccountMe, AccountSession, LoginRequest, RegisterRe
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Internal storage identity for profile=local. Never a login form field.
+LOCAL_ACCOUNT_EMAIL = "local@127.0.0.1"
+
 
 def _require_device_id(x_device_id: str | None) -> str:
     try:
@@ -48,6 +51,33 @@ async def _mint(
         get_settings().session_ttl_seconds,
     )
     return _session_out(token, user, device_id)
+
+
+@router.post("/local", response_model=AccountSession)
+async def local_bootstrap(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
+    x_device_id: Annotated[str | None, Header()] = None,
+) -> AccountSession:
+    """Mint a storage session for the local app. No email, no account password.
+
+    Only ``profile=local``. The account password is not a vault key. Server
+    deployments keep email register/login.
+    """
+    if not get_settings().is_local():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
+    await enforce_rate_limit(store, request, "login")
+    device_id = _require_device_id(x_device_id)
+    result = await db.execute(select(User).where(User.email == LOCAL_ACCOUNT_EMAIL))
+    user = result.scalar_one_or_none()
+    if user is None:
+        user = User(email=LOCAL_ACCOUNT_EMAIL, account_password_hash=None, is_active=True)
+        db.add(user)
+        await db.flush()
+    elif not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+    return await _mint(store, user, device_id)
 
 
 @router.post("/register", response_model=AccountSession)

@@ -258,7 +258,9 @@ runs. **Launch at login** (Settings, default off) starts the process hidden in
 the tray. It does not unwrap the Vault Key, does not skip the password, and
 does not auto-allow. A cold start after login is LOCKED until the user unlocks.
 **Screen lock** and **system sleep** emit `desktop-lock` (macOS notify, Windows
-input-desktop, Linux logind `LockedHint`, and a >5s poll stall after freeze).
+input-desktop, Linux logind `LockedHint`, and a >5s **wall-clock** gap between
+polls). `Instant` / CLOCK_MONOTONIC stops during suspend with the process, so a
+lid-close looks like one 400ms tick and must not be the stall clock.
 The UI calls the same lock path and zeroizes the in-process Vault Key as well as
 JS allows. A pending access prompt is denied. That is not FileVault and not
 hibernation-safe. The race vs actual sleep is real: a dump of RAM after a

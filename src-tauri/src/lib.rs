@@ -4,7 +4,7 @@ use std::{
     process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
 use tauri::{
@@ -13,6 +13,9 @@ use tauri::{
     Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 use tauri_plugin_notification::NotificationExt;
+
+mod sleep_stall;
+use sleep_stall::slept_through;
 
 const CORE_HOST: &str = "127.0.0.1";
 const CORE_PORT: u16 = 8788;
@@ -156,10 +159,6 @@ fn start_hidden() -> bool {
 const DESKTOP_LOCK_EVENT: &str = "desktop-lock";
 const LOCK_POLL: Duration = Duration::from_millis(400);
 const SLEEP_STALL: Duration = Duration::from_secs(5);
-
-fn slept_through(prev: Instant, now: Instant, threshold: Duration) -> bool {
-    now.saturating_duration_since(prev) > threshold
-}
 
 fn emit_desktop_lock(app: &tauri::AppHandle) {
     hide_prompt(app);
@@ -312,10 +311,10 @@ fn watch_desktop_lock(app: tauri::AppHandle) {
     thread::spawn(move || {
         let probe = OsLockProbe::new();
         let mut announced = false;
-        let mut last_tick = Instant::now();
+        let mut last_tick = SystemTime::now();
         loop {
             thread::sleep(LOCK_POLL);
-            let now = Instant::now();
+            let now = SystemTime::now();
             let stalled = slept_through(last_tick, now, SLEEP_STALL);
             last_tick = now;
             if stalled || probe.is_locked() {
@@ -530,15 +529,3 @@ pub fn run() {
     });
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sleep_stall_detects_gap_over_threshold() {
-        let t0 = Instant::now();
-        let t1 = t0 + Duration::from_secs(6);
-        assert!(slept_through(t0, t1, Duration::from_secs(5)));
-        assert!(!slept_through(t0, t0 + Duration::from_millis(400), Duration::from_secs(5)));
-    }
-}

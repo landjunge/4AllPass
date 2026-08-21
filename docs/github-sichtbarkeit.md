@@ -12,7 +12,7 @@
 | **About**-Beschreibung | Meta-Description für Google + GitHub | Sidebar, API |
 | **Topics** (max. 20) | Filter auf github.com/topics/… | `ai-agents`, `credentials`, `zero-knowledge`, `n8n`, `webauthn`, `self-hosted`, `pwa` |
 | **README** (H1, erste 20 Zeilen, Bild) | Landing + Open-Graph-Bild | diese Datei / `README.md` |
-| **Social preview** | Karte bei Link-Shares | Settings → General → Social preview (Upload `icon-512.png` falls GitHub keins aus dem README zieht) |
+| **Social preview** | Karte bei Link-Shares | Settings → General → Social preview — Datei `frontend/public/og.png` (1280×640, Logo inkl. Schriftzug). GitHub hat **keine** öffentliche Upload-API; PAT reicht nicht. |
 | **Releases** | Version, Changelog, GitHub-Suche | nach echten Meilensteinen, nicht leer |
 | **Discussions** | Google indexiert oft die Discussions-Startseite | Settings → Features |
 | **Issues** mit klaren Titeln | Suche + Contributor-Einstieg | keine Secrets in Issues |
@@ -38,6 +38,6 @@ Profile README and repo README must agree: 4AllPass is credential access, not �
 ## Checklist (every public change)
 
 - [ ] README: DE **und** EN, Logo inkl. Schriftzug oben
-- [ ] `index.html`: title, description, og:title, og:description, og:image, locale de + en
+- [ ] `index.html`: title, description, og:title, og:description, og:image (`/og.png`), locale de + en
 - [ ] GitHub About description + topics updated if the pitch changed
 - [ ] No secrets in README, issues, or release notes

@@ -1,0 +1,46 @@
+{
+  "name": "4AllPass — GitHub repository.read",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "4allpass-n8n-github-read-v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8788/v1/access/request",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.FOURALLPASS_BROKER_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"application\": \"n8n\",\n  \"provider\": \"GitHub\",\n  \"credential\": \"personal\",\n  \"scope\": [\"repository.read\"],\n  \"ttl\": 600\n}",
+        "options": {
+          "timeout": 70000
+        }
+      },
+      "id": "4allpass-http-access",
+      "name": "4AllPass request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 0]
+    }
+  ],
+  "connections": {},
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

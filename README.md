@@ -10,7 +10,7 @@ Deine Agenten brauchen Zugang. Nicht deine Secrets.
 Mensch / App / Agent → Anfrage → Richtlinie → erlauben / ablehnen → zeitlich begrenzter Zugang → Anbieter
 ```
 
-Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). Im Access-Tab gibt es eine lokale [Zwei-Minuten-Demo](docs/two-minute-demo.md) und ein n8n-HTTP-Request-Rezept (kein Marketplace-Node). Optionaler Loopback-Broker für einen fremden Prozess: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, Pairing-Token, nicht FastAPI). Node-SDK: `@4allpass/access` (`fourAllPass.request`). FastAPI gibt **keine** Tokens aus.
+Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)), nicht `localhost:5173`. Im Access-Tab: [Zwei-Minuten-Demo](docs/two-minute-demo.md) und n8n-HTTP-Rezept (kein Marketplace-Node). Loopback-Broker startet mit der App. Node-SDK: `@4allpass/access`. FastAPI gibt **keine** Tokens aus.
 
 Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentsperrung, PWA, Autofill in Chromium/Firefox/macOS Safari. Item-Share ist eine verschlüsselte Datei plus Share-Key; der Server sieht beides nicht. Umschlagen auf den Device Key einer anderen Person ist nicht in v1. Siehe [`docs/positioning.md`](docs/positioning.md).
 
@@ -20,13 +20,15 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **App (one process):** `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Native window: `npm run tauri:dev` — [`docs/desktop.md`](docs/desktop.md). Installers: macOS DMG here; Windows NSIS / Linux AppImage via CI (`desktop.yml`). Launch at login is off until Settings; it does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: HTTP Request recipe on the Access tab (not a marketplace node). WebAuthn PRF in that webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)): `npm run tauri:build` → DMG, or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Windows NSIS / Linux AppImage via CI. Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
 
 ---
 
 ## Einrichten / Setup
 
-**App zuerst** — ein Origin, kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
+**App zuerst.** Kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
+
+### 1. Desktop (normal)
 
 ```sh
 git clone https://github.com/landjunge/4AllPass.git
@@ -35,12 +37,16 @@ npm install
 cd backend && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 cd ..
-npm run app
+npm run tauri:build
 ```
 
-Dann: [http://127.0.0.1:8788](http://127.0.0.1:8788) (oder Chrome-App-Fenster). Tresor anlegen oder Share-Datei wiederherstellen → Recovery-Kit. Keine E-Mail. Access-Relay auf demselben Origin (`POST /v1/access/request`, Pairing-Token, kein FastAPI-Token).
+DMG: `src-tauri/target/release/bundle/dmg/`. Nach Programme ziehen. **Erstes Öffnen:** Rechtsklick → Öffnen (ad-hoc signiert, nicht notariert, nicht SmartScreen). Tresor anlegen. Access-Broker läuft mit. Windows-NSIS / Linux-AppImage: `desktop.yml` (Tags `v*`) oder `npm run tauri:build:windows` / `:linux` auf dem jeweiligen OS.
 
-Desktop-Fenster (kein Browser-Tab): `npm run tauri:dev`. Installer: macOS-DMG `npm run tauri:build`; Windows-NSIS und Linux-AppImage auf einem Windows-/Linux-Rechner oder per GitHub Action `desktop.yml` (Tags `v*`). Ad-hoc / nicht notariert, nicht SmartScreen. **Beim Anmelden starten** ist aus, bis du es unter Settings einschaltest — startet die App in der Menüleiste, entsperrt den Tresor nicht. WebAuthn-PRF in der Webview ist unbewiesen; Master-Passwort ist der Unlock. Details: [`docs/desktop.md`](docs/desktop.md).
+Ohne Installer, ein Prozess: `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788). Dev-Fenster: `npm run tauri:dev`.
+
+n8n (kein Marketplace-Node): Workflow [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) importieren, Pairing-Token als Header. Details: [`docs/local-access-broker.md`](docs/local-access-broker.md).
+
+WebAuthn-PRF in der Webview ist unbewiesen; Unlock ist das Tresor-Passwort. Beim Anmelden starten entsperrt den Tresor nicht. [`docs/desktop.md`](docs/desktop.md).
 
 ### Server (Postgres, mehrere Nutzer)
 

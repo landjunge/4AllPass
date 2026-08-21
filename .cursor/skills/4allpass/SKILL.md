@@ -98,7 +98,7 @@ Follow [references/improve.md](references/improve.md). Prefer the next **honest*
 
 Current recommended order:
 
-1. Execute `docs/eight-week-agent-access.md` in order. Weeks 1–7 are in the tree (Access tab two-minute demo). Week 8 is launch/community only after that walkthrough. Broker is **local**; FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked.
+1. The 8-week plan is in the tree (`docs/eight-week-agent-access.md`, article, Access demo). Broker is **local**; FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked. Do not auto-publish `docs/launch-posts.md`.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 

@@ -7,7 +7,7 @@
 
 Companion: `secret-access-layer.md`, `provider-service-vision.md`, `capability-contract-v1.md` (4AP-CAP-1), `security-boundary.md`.
 
-**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–7 of this plan are in the tree. Do not put week-8 launch claims on the README until someone has clicked [`two-minute-demo.md`](two-minute-demo.md).
+**Today (honest):** the PWA is a device-centric ZK **vault** plus a **local** Access tab. Weeks 1–8 of this plan are in the tree (article + post drafts). Do not paste slogans communities cannot click: [`two-minute-demo.md`](two-minute-demo.md). Posts are **not** auto-published.
 
 ---
 
@@ -111,7 +111,9 @@ Not shipped here: a real n8n node, HTTP localhost broker, FastAPI tokens.
 
 ### 8 — Launch
 
-Article: *Your AI Agent Doesn't Need Your API Keys.* Then posts and communities (agents, n8n, MCP first; security/DevOps second). **Promote only after the demo exists.**
+**Shipped in the repo:** article [`your-ai-agent-doesnt-need-your-api-keys.md`](your-ai-agent-doesnt-need-your-api-keys.md) and copy-paste posts [`launch-posts.md`](launch-posts.md) (agents, n8n, MCP first; security/DevOps second).
+
+Not shipped here: actually submitting those posts. Promote only what the Access tab can demonstrate. No FastAPI tokens, no n8n marketplace node.
 
 Tollgate **after** week 8:
 

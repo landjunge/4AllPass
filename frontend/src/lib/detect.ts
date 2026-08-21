@@ -93,18 +93,30 @@ export function detectCredential(raw: string): DetectedCredential | null {
     /:22\b/.test(blob);
   if (looksFtp && sftp) {
     const host = sftp[1]!.replace(/^(?:sftp|ftp):\/\//i, "");
-    const userLine = lines(text).find((line) => !/ftp\.|:22|sftp|password/i.test(line) && !line.includes("."));
+    const allLines = lines(text);
+    const last = allLines.at(-1) ?? "";
+    const password = last === token || last === host ? "" : last;
+    const username =
+      allLines.find(
+        (line) =>
+          line !== host &&
+          line !== password &&
+          line !== token &&
+          !line.includes(host) &&
+          !/^(?:sftp|ftp|password)$/i.test(line),
+      ) ?? "";
+    const isSftp = /\bsftp\b/i.test(blob) || /:22\b/.test(blob);
     return {
       kind: "sftp",
       provider: host,
       title: host,
-      password: lines(text).at(-1) === token ? "" : (lines(text).at(-1) ?? ""),
+      password,
       url: "",
       host,
-      port: /:22\b/.test(blob) ? "22" : "22",
-      protocol: /\bsftp\b/i.test(blob) || /:22\b/.test(blob) ? "sftp" : "ftp",
+      port: isSftp ? "22" : "21",
+      protocol: isSftp ? "sftp" : "ftp",
       capabilities: "sftp.read",
-      username: userLine && userLine !== host ? userLine : "",
+      username,
       label: `FTP/SFTP · ${host}`,
     };
   }
@@ -112,8 +124,15 @@ export function detectCredential(raw: string): DetectedCredential | null {
   const http = blob.match(/https?:\/\/[^\s]+/i);
   if (http) {
     let host = "";
+    let username = "";
+    let password = "";
+    let url = http[0]!;
     try {
-      host = new URL(http[0]!).hostname;
+      const parsed = new URL(http[0]!);
+      host = parsed.hostname;
+      username = decodeURIComponent(parsed.username);
+      password = decodeURIComponent(parsed.password);
+      url = `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
     } catch {
       host = "";
     }
@@ -121,14 +140,14 @@ export function detectCredential(raw: string): DetectedCredential | null {
       kind: "web",
       provider: host,
       title: host || "Website",
-      password: "",
-      url: http[0]!,
+      password,
+      url,
       host: "",
       port: "",
       protocol: "",
       capabilities: "login",
-      username: "",
-      label: `Web · ${host || http[0]}`,
+      username,
+      label: `Web · ${host || url}`,
     };
   }
 

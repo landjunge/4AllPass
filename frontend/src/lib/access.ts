@@ -59,15 +59,15 @@ export function isTrustedApplication(name: string): boolean {
 }
 
 export function capabilitiesOf(entry: VaultEntry): string[] {
-  const raw = entry.capabilities.trim();
-  if (raw) return raw.split(/[,\s]+/).filter(Boolean);
-  if (entry.kind === "api") return ["repository.read"];
-  if (entry.kind === "sftp") return ["sftp.read"];
-  return ["login"];
+  return entry.capabilities.trim().split(/[,\s]+/).filter(Boolean);
 }
 
-function providerKey(entry: VaultEntry): string {
-  return (entry.provider || entry.title).trim().toLowerCase();
+function matchesProvider(entry: VaultEntry, provider: string): boolean {
+  if (!provider) return false;
+  const keys = [entry.provider, entry.title]
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return keys.includes(provider);
 }
 
 export function parseAccessBody(input: unknown): AccessRequest | { status: "denied"; reason: "malformed_request" } {
@@ -101,10 +101,12 @@ export function decideAccess(request: AccessRequest, entries: VaultEntry[]): Acc
   }
   const provider = request.provider.trim().toLowerCase();
   const account = request.credential.trim().toLowerCase();
+  if (!account) {
+    return { status: "denied", reason: "no_credential" };
+  }
   const match = entries.find((entry) => {
-    if (providerKey(entry) !== provider && !providerKey(entry).includes(provider)) return false;
-    const a = entry.account.trim().toLowerCase();
-    if (!account || account === "personal") return a === "" || a === "personal" || a === account;
+    if (!matchesProvider(entry, provider)) return false;
+    const a = entry.account.trim().toLowerCase() || "personal";
     return a === account;
   });
   if (!match) return { status: "denied", reason: "no_credential" };

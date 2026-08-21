@@ -677,16 +677,23 @@ export async function enableDeviceUnlockForVault(
  * Soft revocation (crypto-protocol.md §7): drop the device envelope in the next
  * revision. A device that already knows this Vault Key still knows it, so a
  * suspected compromise needs a hard rotation instead.
+ *
+ * Order is mandatory: CAS commit (same vaultKeyVersion, envelope omitted)
+ * succeeds before metadata DELETE. On 409, DELETE is not called.
  */
 export async function revokeDevice(
   vault: UnlockedVault,
   targetDeviceId: string,
 ): Promise<UnlockedVault> {
-  await api.revokeDevice(vault.vaultId, targetDeviceId);
   const envelopes = vault.envelopes.filter(
     (envelope) => !(envelope.type === "device" && envelope.deviceId === targetDeviceId),
   );
-  return commitSnapshot(vault, vault.entries, envelopes);
+  // CAS first, same as hard revoke. DELETE-then-commit on a 409 leaves
+  // revoked_at set while the active snapshot still has the envelope, so the
+  // next saveEntries 422s (server refuses re-attaching a revoked device).
+  const updated = await commitSnapshot(vault, vault.entries, envelopes);
+  await api.revokeDevice(vault.vaultId, targetDeviceId);
+  return updated;
 }
 
 /**

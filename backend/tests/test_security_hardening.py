@@ -717,7 +717,7 @@ async def test_commit_requires_sealed_manifest_after_first_revision(client):
 
 
 async def test_soft_revoke_commit_omitting_envelope_still_works(client):
-    """Soft path: metadata DELETE, then commit without that device envelope, same VKV."""
+    """Soft path: commit without that device envelope, same VKV. Client CAS then DELETE."""
     _, alice = await _signup(client)
     vault_id = await _vault(client, alice)
     assert (

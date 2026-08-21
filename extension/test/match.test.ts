@@ -35,3 +35,10 @@ test("entriesForPage allows subdomains of the saved host", () => {
   const entries = [{ id: "1", title: "Ex", username: "ada", password: "x", url: "https://example.com" }];
   assert.equal(entriesForPage(entries, "https://app.example.com/login").length, 1);
 });
+
+test("hostnameOf accepts a host without a scheme (imports)", () => {
+  assert.equal(hostnameOf("github.com/login"), "github.com");
+  assert.equal(hostnameOf("www.github.com"), "github.com");
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "github.com" }];
+  assert.equal(entriesForPage(entries, "https://github.com/login").length, 1);
+});

@@ -56,6 +56,13 @@ export function AccessPanel({ entries }: { entries: VaultEntry[] }): ReactNode {
           Local policy only. The FastAPI server never sees this request or the secret. Unknown apps
           are denied. Auto-detect is not auto-approve — there is no detect in this panel.
         </p>
+        <p className="hint">
+          Agent page (same origin):{" "}
+          <a href="/agent-request.html" target="_blank" rel="noreferrer">
+            /agent-request.html
+          </a>{" "}
+          speaks POST /v1/access/request over BroadcastChannel.
+        </p>
         <div className="device-actions">
           <button
             type="button"

@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  approvedResponse,
   auditContainsSecret,
   auditLine,
   decideAccess,
   issueGrant,
+  parseAccessBody,
   readGrant,
   wipeGrant,
   type AccessRequest,
@@ -70,6 +72,36 @@ test("n8n GitHub read can be approved then expires", () => {
   if (dead.status === "denied") assert.equal(dead.reason, "expired");
   const wiped = wipeGrant(grant);
   assert.equal(wiped.material, "");
+});
+
+test("empty provider is unknown_provider", () => {
+  const verdict = decideAccess(req({ provider: "  " }), [github()]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "unknown_provider");
+});
+
+test("revoked credential is DENY", () => {
+  const entry = { ...github(), capabilities: "revoked" };
+  const verdict = decideAccess(req(), [entry]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "revoked_credential");
+});
+
+test("malformed POST body is DENY", () => {
+  const bad = parseAccessBody({ application: "n8n", provider: "GitHub", scope: "read", ttl: 600 });
+  assert.equal(bad.status, "denied");
+  if (bad.status === "denied") assert.equal(bad.reason, "malformed_request");
+});
+
+test("approved response shape matches the access API", () => {
+  const entry = github();
+  const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);
+  const body = approvedResponse(grant, 1_000);
+  assert.equal(body.status, "approved");
+  if (body.status === "approved") {
+    assert.equal(body.access_token, secret);
+    assert.equal(body.expires_in, 10);
+  }
 });
 
 test("audit rows never contain the secret", () => {

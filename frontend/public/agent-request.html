@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>4AllPass — agent request (local)</title>
+    <style>
+      :root {
+        --bg: #121316;
+        --bg-card: #1e1f24;
+        --border: #2e3138;
+        --text: #e2e4e9;
+        --muted: #8b909a;
+        --err: #c45c5c;
+        --ok: #3d9b6a;
+      }
+      body {
+        margin: 0;
+        font: 14px/1.4 system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px;
+      }
+      .card {
+        max-width: 420px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        background: var(--bg-card);
+      }
+      button {
+        margin-top: 8px;
+        margin-right: 8px;
+        padding: 6px 12px;
+        border-radius: 3px;
+        border: 1px solid var(--border);
+        background: #24262d;
+        color: var(--text);
+        cursor: pointer;
+      }
+      pre { white-space: pre-wrap; color: var(--muted); }
+      .ok { color: var(--ok); }
+      .err { color: var(--err); }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>POST /v1/access/request</h1>
+      <p>Local BroadcastChannel only. Unlock 4AllPass in another tab of this origin. FastAPI is not used.</p>
+      <button id="n8n-read" type="button">n8n · GitHub · repository.read</button>
+      <button id="n8n-delete" type="button">n8n · repository.delete</button>
+      <button id="unknown" type="button">malicious-agent · GitHub</button>
+      <pre id="out"></pre>
+    </div>
+    <script>
+      const CHANNEL = "4allpass-access-v1";
+      const out = document.getElementById("out");
+      function send(body) {
+        const id = "req_" + Math.random().toString(16).slice(2);
+        const ch = new BroadcastChannel(CHANNEL);
+        out.textContent = "waiting for unlocked 4AllPass…";
+        const timer = setTimeout(() => {
+          out.textContent = "DENIED — vault locked or no broker";
+          out.className = "err";
+          ch.close();
+        }, 8000);
+        ch.onmessage = (event) => {
+          if (!event.data || event.data.id !== id) return;
+          clearTimeout(timer);
+          const reply = event.data.body;
+          out.className = reply.status === "approved" ? "ok" : "err";
+          const copy = { ...reply };
+          if (copy.access_token) copy.access_token = "(redacted in this page)";
+          out.textContent = JSON.stringify(copy, null, 2);
+          ch.close();
+        };
+        ch.postMessage({ v: 1, id, method: "POST /v1/access/request", body });
+      }
+      document.getElementById("n8n-read").onclick = () =>
+        send({ application: "n8n", provider: "GitHub", credential: "personal", scope: ["repository.read"], ttl: 15 });
+      document.getElementById("n8n-delete").onclick = () =>
+        send({ application: "n8n", provider: "GitHub", credential: "personal", scope: ["repository.delete"], ttl: 15 });
+      document.getElementById("unknown").onclick = () =>
+        send({ application: "malicious-agent", provider: "GitHub", credential: "personal", scope: ["repository.read"], ttl: 15 });
+    </script>
+  </body>
+</html>

@@ -74,10 +74,46 @@ test("n8n GitHub read can be approved then expires", () => {
   assert.equal(wiped.material, "");
 });
 
+test("provider substring does not match a different provider", () => {
+  const verdict = decideAccess(req({ provider: "hub" }), [github()]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
+});
+
 test("empty provider is unknown_provider", () => {
   const verdict = decideAccess(req({ provider: "  " }), [github()]);
   assert.equal(verdict.status, "denied");
   if (verdict.status === "denied") assert.equal(verdict.reason, "unknown_provider");
+});
+
+test("empty credential is DENY", () => {
+  const verdict = decideAccess(req({ credential: "   " }), [github()]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
+});
+
+test("API entry without capabilities does not default to repository.read", () => {
+  const entry = github();
+  entry.capabilities = "";
+  const verdict = decideAccess(req(), [entry]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "scope_not_permitted");
+});
+
+test("OpenAI key is not a GitHub credential", () => {
+  const openai: VaultEntry = {
+    id: newEntryId(),
+    ...emptyDraft("api"),
+    title: "OpenAI",
+    provider: "OpenAI",
+    account: "personal",
+    password: "sk-not-a-github-pat",
+    capabilities: "api.read",
+    updatedAt: new Date().toISOString(),
+  };
+  const verdict = decideAccess(req(), [openai]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "no_credential");
 });
 
 test("revoked credential is DENY", () => {

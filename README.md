@@ -10,7 +10,7 @@ Your agents need access. They don't need your secrets.
 Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
 ```
 
-Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The Access tab has a local [two-minute demo](docs/two-minute-demo.md). Optional loopback broker for a foreign process: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, pairing token, not FastAPI). Launch note: [Your AI Agent Doesn't Need Your API Keys](docs/your-ai-agent-doesnt-need-your-api-keys.md). FastAPI still never mints tokens. There is no n8n marketplace node.
+Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The Access tab has a local [two-minute demo](docs/two-minute-demo.md). Optional loopback broker for a foreign process: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, pairing token, not FastAPI). Launch note: [Your AI Agent Doesn't Need Your API Keys](docs/your-ai-agent-doesnt-need-your-api-keys.md). FastAPI still never mints tokens. Grants copy the stored secret with a client TTL; they are not scoped upstream tokens. There is no n8n marketplace node.
 
 Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
 

@@ -7,8 +7,11 @@ export interface FillEntry {
 }
 
 export function hostnameOf(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
   try {
-    const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+    const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+    const host = new URL(withScheme).hostname.toLowerCase().replace(/^www\./, "");
     return host || null;
   } catch {
     return null;

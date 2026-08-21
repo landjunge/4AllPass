@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>4AllPass (landjunge) — self-hosted zero-knowledge password manager</title>
+  <meta name="description" content="4AllPass by landjunge is a self-hosted zero-knowledge password manager with WebAuthn unlock and local agent credential access. Your agents need access — they don't need your secrets. Not All Pass Hub."/>
+  <meta name="author" content="Daniel / landjunge"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="theme-color" content="#121316"/>
+  <meta name="application-name" content="4AllPass"/>
+  <link rel="canonical" href="https://landjunge.github.io/4AllPass/"/>
+  <link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/"/>
+  <link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/de.html"/>
+  <link rel="alternate" hreflang="x-default" href="https://landjunge.github.io/4AllPass/"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="4AllPass"/>
+  <meta property="og:locale" content="en_US"/>
+  <meta property="og:url" content="https://landjunge.github.io/4AllPass/"/>
+  <meta property="og:title" content="4AllPass (landjunge) — self-hosted zero-knowledge vault"/>
+  <meta property="og:description" content="Password manager + local agent credential access. Server stores envelopes only. Not All Pass Hub."/>
+  <meta property="og:image" content="https://landjunge.github.io/4AllPass/og.png"/>
+  <meta property="og:image:alt" content="4AllPass magpie-and-key mark"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="4AllPass — self-hosted zero-knowledge vault"/>
+  <meta name="twitter:description" content="Self-hosted ZK password manager with WebAuthn unlock and local agent credential access."/>
+  <meta name="twitter:image" content="https://landjunge.github.io/4AllPass/og.png"/>
+  <link rel="icon" href="favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "4AllPass",
+    "alternateName": ["4allpass", "FourAllPass", "landjunge/4AllPass"],
+    "disambiguatingDescription": "Self-hosted zero-knowledge vault by landjunge. Not All Pass Hub and not the Flutter Allpass app.",
+    "applicationCategory": "SecurityApplication",
+    "applicationSubCategory": "Password manager",
+    "operatingSystem": "Linux, macOS, Windows (self-hosted PWA)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "Self-hosted zero-knowledge password manager with WebAuthn device unlock and local agent credential access. The server never sees the master password or plaintext entries.",
+    "url": "https://landjunge.github.io/4AllPass/",
+    "downloadUrl": "https://github.com/landjunge/4AllPass",
+    "author": { "@type": "Person", "name": "Daniel", "url": "https://github.com/landjunge" },
+    "codeRepository": "https://github.com/landjunge/4AllPass",
+    "programmingLanguage": ["TypeScript", "Python"],
+    "featureList": [
+      "Argon2id master-password KDF",
+      "WebAuthn PRF device unlock",
+      "Client-side AES-256-GCM envelopes",
+      "Local agent access allow/deny/TTL",
+      "Self-hosted Docker Compose stack"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <img class="logo" src="assets/logo.png" width="420" height="298" alt="4AllPass — magpie with a gold key"/>
+    <h1>4AllPass</h1>
+    <p class="tag">Self-hosted zero-knowledge password manager.<br/>Your agents need access. They don't need your secrets.</p>
+    <nav class="links" aria-label="Primary">
+      <a href="https://github.com/landjunge/4AllPass">GitHub</a>
+      <a href="https://github.com/landjunge/4AllPass/blob/main/docs/two-minute-demo.md">Two-minute demo</a>
+      <a href="https://github.com/landjunge/4AllPass/blob/main/docs/your-ai-agent-doesnt-need-your-api-keys.md">Launch note</a>
+      <a href="de.html" hreflang="de" lang="de">Deutsch</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card">
+      <p>For self-hosters and people who run n8n or AI agents and do not want long-lived API keys sitting in a workflow.</p>
+      <pre>git clone https://github.com/landjunge/4AllPass.git
+cd 4AllPass
+docker compose up --build</pre>
+      <p class="muted">Starts Postgres, Redis, and the backend on <code>http://localhost:8000</code>. Unlock a vault in the PWA, then open the Access tab.</p>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Today</th><th>Not this product</th></tr></thead>
+        <tbody>
+          <tr><td>Argon2id, WebAuthn unlock, PWA + browser fill</td><td>A nicer Bitwarden</td></tr>
+          <tr><td>Server stores opaque envelopes only</td><td>All Pass Hub (commercial)</td></tr>
+          <tr><td>Local allow / deny / TTL for agent handoffs</td><td>Flutter Allpass</td></tr>
+          <tr><td>FastAPI never mints tokens</td><td>An n8n marketplace node</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Specs and the honest security boundary live in the repo: <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">docs/security-boundary.md</a>.</p>
+  </main>
+  <footer>
+    <p>4AllPass by <a href="https://github.com/landjunge">landjunge</a>. Related: <a href="https://landjunge.github.io/tollgate/">Tollgate</a> answers “may I act?” — 4AllPass answers “may I access?”</p>
+  </footer>
+</body>
+</html>

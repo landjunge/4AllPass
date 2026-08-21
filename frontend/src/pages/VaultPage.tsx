@@ -19,6 +19,7 @@ import {
   shareWarning,
   type BuiltShare,
 } from "../lib/share.ts";
+import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 
@@ -174,6 +175,7 @@ export function VaultPage(): ReactNode {
 
   return (
     <div className="vault">
+      <AccessBrokerHost entries={entries} />
       <nav className="tabs">
         <button
           type="button"

@@ -87,7 +87,7 @@ POST /v1/access/request
 JSON: `application`, `provider`, `credential`, `scope`, `ttl`.  
 Response: `approved` + time-boxed material **or** `denied`.
 
-Host: **local broker**, same envelopes. Clients later: n8n, Gnom-Hub-V1, agents, Tollgate.
+Host: **local broker**, same envelopes. In the PWA: `BroadcastChannel` `4allpass-access-v1` plus `/agent-request.html` (same origin). FastAPI is not this method. Clients later: n8n, Gnom-Hub-V1, agents, Tollgate.
 
 ### 5 — Approval UI
 

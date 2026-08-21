@@ -4,10 +4,10 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, LargeBinary, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID
 from app.models.mixins import CreatedUpdatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -58,13 +58,13 @@ class DeviceKeyEnvelope(UUIDPrimaryKeyMixin, CreatedUpdatedAtMixin, Base):
     )
 
     vault_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("vaults.id", ondelete="CASCADE"), nullable=False, index=True
     )
     device_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True
+        GUID, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True
     )
     webauthn_credential_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey("webauthn_credentials.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

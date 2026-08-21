@@ -15,6 +15,16 @@ playwright-report/
 # filled by npm run build -w @4allpass/extension
 extension/safari/FourAllPass/FourAllPass Extension/Resources/
 
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/
+
+# PyInstaller
+backend/build/
+backend/dist/
+backend/*.spec
+
 # Python / backend
 .venv/
 backend/.venv/

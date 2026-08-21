@@ -10,7 +10,7 @@ Deine Agenten brauchen Zugang. Nicht deine Secrets.
 Mensch / App / Agent → Anfrage → Richtlinie → erlauben / ablehnen → zeitlich begrenzter Zugang → Anbieter
 ```
 
-Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). Im Access-Tab gibt es eine lokale [Zwei-Minuten-Demo](docs/two-minute-demo.md). Optionaler Loopback-Broker für einen fremden Prozess: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, Pairing-Token, nicht FastAPI). FastAPI gibt **keine** Tokens aus. Es gibt keinen n8n-Marketplace-Node.
+Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). Im Access-Tab gibt es eine lokale [Zwei-Minuten-Demo](docs/two-minute-demo.md) und ein n8n-HTTP-Request-Rezept (kein Marketplace-Node). Optionaler Loopback-Broker für einen fremden Prozess: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, Pairing-Token, nicht FastAPI). Node-SDK: `@4allpass/access` (`fourAllPass.request`). FastAPI gibt **keine** Tokens aus.
 
 Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentsperrung, PWA, Autofill in Chromium/Firefox/macOS Safari. Item-Share ist eine verschlüsselte Datei plus Share-Key; der Server sieht beides nicht. Umschlagen auf den Device Key einer anderen Person ist nicht in v1. Siehe [`docs/positioning.md`](docs/positioning.md).
 
@@ -20,13 +20,31 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. Setup: native Homebrew Postgres + Redis, same commands as below. Docker is optional and not required.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **App (one process):** `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Native window: `npm run tauri:dev` — [`docs/desktop.md`](docs/desktop.md). Installers: macOS DMG here; Windows NSIS / Linux AppImage via CI (`desktop.yml`). Launch at login is off until Settings; it does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: HTTP Request recipe on the Access tab (not a marketplace node). WebAuthn PRF in that webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
 
 ---
 
 ## Einrichten / Setup
 
-**Kein Docker.** Homebrew Postgres + Redis, dann API + PWA. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
+**App zuerst** — ein Origin, kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort ≠ Vault-Passwort. Logo inkl. Schriftzug.
+
+```sh
+git clone https://github.com/landjunge/4AllPass.git
+cd 4AllPass
+npm install
+cd backend && python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cd ..
+npm run app
+```
+
+Dann: [http://127.0.0.1:8788](http://127.0.0.1:8788) (oder Chrome-App-Fenster). Tresor anlegen oder Share-Datei wiederherstellen → Recovery-Kit. Keine E-Mail. Access-Relay auf demselben Origin (`POST /v1/access/request`, Pairing-Token, kein FastAPI-Token).
+
+Desktop-Fenster (kein Browser-Tab): `npm run tauri:dev`. Installer: macOS-DMG `npm run tauri:build`; Windows-NSIS und Linux-AppImage auf einem Windows-/Linux-Rechner oder per GitHub Action `desktop.yml` (Tags `v*`). Ad-hoc / nicht notariert, nicht SmartScreen. **Beim Anmelden starten** ist aus, bis du es unter Settings einschaltest — startet die App in der Menüleiste, entsperrt den Tresor nicht. WebAuthn-PRF in der Webview ist unbewiesen; Master-Passwort ist der Unlock. Details: [`docs/desktop.md`](docs/desktop.md).
+
+### Server (Postgres, mehrere Nutzer)
+
+Homebrew Postgres + Redis, wenn du die API auf einem Rechner für mehrere Clients betreibst — nicht nötig für die lokale App.
 
 ### 1. Postgres und Redis
 
@@ -68,7 +86,7 @@ cd 4AllPass/frontend
 API_ORIGIN=http://127.0.0.1:8010 npm run dev -- --host 127.0.0.1
 ```
 
-PWA: [http://127.0.0.1:5173](http://127.0.0.1:5173)
+PWA-Dev mit Vite (zwei Prozesse, nur zum Frontend-Hacken): [http://127.0.0.1:5173](http://127.0.0.1:5173)
 
 Dann: Konto anlegen → Tresor → Recovery-Kit bestätigen → Access-Tab (Zwei-Minuten-Demo).
 
@@ -84,8 +102,9 @@ Nicht nötig. Wer Container will: `docker compose up --build` → PWA `:8080`, A
 |---|---|
 | [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1. Kein UI, kein Netz, kein Authenticator-I/O |
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — Geräteentsperrung: PRF > largeBlob > UV-gespeicherter Store |
-| [`backend`](backend) | FastAPI + PostgreSQL + Redis. Konto-Session, Besitz, Snapshot-CAS. Nur undurchsichtige Envelopes |
-| [`frontend`](frontend) | React + TypeScript PWA. Die gesamte Kryptographie läuft hier |
+| [`backend`](backend) | FastAPI. Lokal: SQLite + Memory-Sessions (`python -m app.local`). Server: PostgreSQL + Redis. Nur undurchsichtige Envelopes |
+| [`frontend`](frontend) | React + TypeScript. Die gesamte Kryptographie läuft hier |
+| [`src-tauri`](src-tauri) | Desktop-Fenster (Tauri). UI kommt vom lokalen Origin `:8788`, nicht aus einem Browser-Tab |
 | [`extension`](extension) | Chromium + Firefox MV3 + macOS-Safari-Autofill. Entschlüsselt auf dem Gerät über `@4allpass/crypto` |
 | [`docs`](docs) | Die verbindlichen Spezifikationen |
 

@@ -13,7 +13,13 @@ import {
   type AccessWireReply,
   type AccessWireRequest,
 } from "../lib/access.ts";
-import { decideLocalBroker, onBrokerRequest } from "../lib/local-broker-client.ts";
+import { api } from "../lib/api.ts";
+import {
+  dismissDesktopAccess,
+  listenDesktopAccessDecision,
+  promptDesktopAccess,
+} from "../lib/desktop.ts";
+import { connectLocalBroker, decideLocalBroker, disconnectLocalBroker, onBrokerRequest } from "../lib/local-broker-client.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 
 function isWireRequest(value: unknown): value is AccessWireRequest {
@@ -29,9 +35,12 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
     request: AccessRequest;
     via: "channel" | "loopback";
   } | null>(null);
+  const [desktopPrompt, setDesktopPrompt] = useState(false);
   const [audit, setAudit] = useState<AccessAudit[]>([]);
   const entriesRef = useRef(entries);
+  const pendingRef = useRef(pending);
   entriesRef.current = entries;
+  pendingRef.current = pending;
 
   function sendReply(id: string, body: AccessApiResponse, via: "channel" | "loopback"): void {
     if (via === "loopback") {
@@ -58,6 +67,13 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
       return;
     }
     setPending({ id: msg.id, request, via });
+    void promptDesktopAccess({
+      requestId: msg.id,
+      application: request.application,
+      provider: request.provider,
+      scope: request.scope,
+      ttlSeconds: request.ttlSeconds,
+    }).then((shown) => setDesktopPrompt(shown));
   }
 
   useEffect(() => {
@@ -79,15 +95,72 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
     return () => onBrokerRequest(null);
   }, []);
 
-  function finish(body: AccessApiResponse): void {
-    if (!pending) return;
-    if (pending.via === "loopback") void decideLocalBroker(pending.id, body);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const info = await api.localBroker();
+        if (cancelled || !info.token) return;
+        connectLocalBroker(info.url, info.token);
+      } catch {
+        // Server profile, or local core without a broker process.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      disconnectLocalBroker();
+    };
+  }, []);
+
+  function finish(body: AccessApiResponse, from = pendingRef.current): void {
+    if (!from) return;
+    if (from.via === "loopback") void decideLocalBroker(from.id, body);
     else if (channelRef.current) {
-      const message: AccessWireReply = { v: 1, id: pending.id, body };
+      const message: AccessWireReply = { v: 1, id: from.id, body };
       channelRef.current.postMessage(message);
     }
+    pendingRef.current = null;
     setPending(null);
+    setDesktopPrompt(false);
+    void dismissDesktopAccess();
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    void listenDesktopAccessDecision((decision) => {
+      const current = pendingRef.current;
+      if (!current || current.id !== decision.requestId) return;
+      if (decision.allow) {
+        const verdict = decideAccess(current.request, entriesRef.current);
+        if (verdict.status !== "pending") {
+          finish(
+            deniedResponse(verdict.status === "denied" ? verdict.reason : "no_credential"),
+            current,
+          );
+          return;
+        }
+        const entry = entriesRef.current.find((item) => item.id === verdict.entryId);
+        if (!entry) {
+          finish(deniedResponse("no_credential"), current);
+          return;
+        }
+        const grant = issueGrant(current.request, entry);
+        setAudit((rows) => [auditLine(current.request, "APPROVED"), ...rows]);
+        finish(approvedResponse(grant), current);
+        return;
+      }
+      setAudit((rows) => [auditLine(current.request, "DENIED", "denied_by_user"), ...rows]);
+      finish(deniedResponse("denied_by_user"), current);
+    }).then((fn) => {
+      if (cancelled) fn();
+      else unlisten = fn;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
 
   return (
     <>
@@ -96,7 +169,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
           Last broker call: {audit[0]?.decision} {audit[0]?.application}
         </p>
       ) : null}
-      {pending ? (
+      {pending && !desktopPrompt ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
             <h2>Access request</h2>

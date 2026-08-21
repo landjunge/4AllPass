@@ -1,59 +1,38 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx tsx
 /**
- * Stand-in for an n8n HTTP Request node.
- * Not a marketplace node. Talks to the local loopback broker, not FastAPI.
+ * Stand-in for an n8n HTTP Request / Code node.
+ * Not a marketplace node. Uses @4allpass/access against the loopback relay,
+ * not FastAPI.
  *
- *   FOURALLPASS_BROKER_TOKEN=… node examples/n8n-access-client.mjs
- *   node examples/n8n-access-client.mjs delete
- *   node examples/n8n-access-client.mjs unknown
+ *   FOURALLPASS_BROKER_TOKEN=… npx tsx examples/n8n-access-client.mjs
+ *   npx tsx examples/n8n-access-client.mjs delete
+ *   npx tsx examples/n8n-access-client.mjs unknown
  */
-const base = (process.env.FOURALLPASS_BROKER_URL || "http://127.0.0.1:8787").replace(/\/$/, "");
-const token = process.env.FOURALLPASS_BROKER_TOKEN || "";
+import { GitHub, fourAllPass, redactGrant } from "@4allpass/access";
+
 const kind = process.argv[2] || "read";
 
-const bodies = {
-  read: {
-    application: "n8n",
-    provider: "GitHub",
-    credential: "personal",
-    scope: ["repository.read"],
-    ttl: 15,
-  },
-  delete: {
-    application: "n8n",
-    provider: "GitHub",
-    credential: "personal",
-    scope: ["repository.delete"],
-    ttl: 15,
-  },
-  unknown: {
-    application: "malicious-agent",
-    provider: "GitHub",
-    credential: "personal",
-    scope: ["repository.read"],
-    ttl: 15,
-  },
-};
+const client = fourAllPass({
+  application: kind === "unknown" ? "malicious-agent" : "n8n",
+});
 
-if (!token) {
-  console.error("FOURALLPASS_BROKER_TOKEN is required");
-  process.exit(1);
-}
-const body = bodies[kind];
-if (!body) {
+const capability =
+  kind === "delete" ? GitHub.repositoryDelete : GitHub.repositoryRead;
+
+if (kind !== "read" && kind !== "delete" && kind !== "unknown") {
   console.error("use: read | delete | unknown");
   process.exit(1);
 }
 
-const res = await fetch(`${base}/v1/access/request`, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify(body),
-});
-const json = await res.json();
-if (json.access_token) json.access_token = "(redacted in this client)";
-console.log(JSON.stringify(json, null, 2));
-if (json.status !== "approved") process.exit(2);
+try {
+  const result = await client.request({
+    provider: GitHub.provider,
+    capability,
+    ttl: 15,
+  });
+  console.log(JSON.stringify(redactGrant(result), null, 2));
+  if (result.status !== "approved") process.exit(2);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}

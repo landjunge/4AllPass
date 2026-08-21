@@ -69,6 +69,19 @@ async def test_me_without_token(client):
     assert response.status_code == 401
 
 
+async def test_local_bootstrap_is_absent_on_server_profile(client):
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    response = await client.post("/api/v1/auth/local")
+    assert response.status_code == 404
+    broker = await client.get("/api/v1/local/broker")
+    assert broker.status_code in {401, 404}
+    caps = await client.get("/api/v1/local/webview-caps")
+    assert caps.status_code == 404
+    get_settings.cache_clear()
+
+
 async def test_register_rejects_short_password(client):
     response = await client.post(
         "/api/v1/auth/register",

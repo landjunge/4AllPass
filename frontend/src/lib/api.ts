@@ -253,7 +253,32 @@ export const api = {
     return request("POST", `/vaults/${vaultId}/webauthn/challenges/${challengeId}/consume`, body);
   },
 
-  health(): Promise<{ status: string; database: boolean; redis: boolean; webauthn_rp_id: string }> {
+  health(): Promise<{
+    status: string;
+    database: boolean;
+    redis: boolean;
+    webauthn_rp_id: string;
+    profile: string;
+  }> {
     return request("GET", "/health");
+  },
+
+  async localSession(): Promise<AccountSession> {
+    const session = await request<AccountSession>("POST", "/auth/local");
+    setToken(session.token);
+    return session;
+  },
+
+  localBroker(): Promise<{ url: string; token: string }> {
+    return request("GET", "/local/broker");
+  },
+
+  reportWebviewCaps(caps: {
+    publicKeyCredential: boolean;
+    credentialsCreate: boolean;
+    platformAuthenticator: boolean | null;
+    prf: boolean | null;
+  }): Promise<typeof caps> {
+    return request("POST", "/local/webview-caps", caps);
   },
 };

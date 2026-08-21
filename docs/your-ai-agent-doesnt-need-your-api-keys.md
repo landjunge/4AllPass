@@ -23,7 +23,7 @@ The agent asked for **GitHub read for a few seconds**. It did not need the PAT f
 
 Unlock a vault. Open the **Access** tab.
 
-1. n8n asks GitHub `repository.read` → **Allow** → a time-boxed handoff (token redacted, countdown).
+1. n8n asks GitHub `repository.read` → **Allow** → a time-boxed handoff (countdown, secret not shown).
 2. n8n asks `repository.delete` → **DENY**. Scope is not “GitHub, whatever.”
 3. The grant expires. Future handoffs stop.
 4. An unknown app asks GitHub → **DENY**.

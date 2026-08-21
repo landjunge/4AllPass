@@ -23,6 +23,7 @@ import {
 import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
+import { SettingsPanel } from "../components/SettingsPanel.tsx";
 
 export function VaultPage(): ReactNode {
   const { vault, saveEntries } = useApp();
@@ -30,7 +31,7 @@ export function VaultPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EntryDraft | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"entries" | "devices" | "access">("entries");
+  const [tab, setTab] = useState<"entries" | "devices" | "access" | "settings">("entries");
   const [importPending, setImportPending] = useState<{
     count: number;
     entries: VaultEntry[];
@@ -202,12 +203,22 @@ export function VaultPage(): ReactNode {
         >
           Devices
         </button>
+        <button
+          type="button"
+          className={tab === "settings" ? "active" : ""}
+          onClick={() => setTab("settings")}
+          data-testid="tab-settings"
+        >
+          Settings
+        </button>
         <span className="revision" data-testid="revision">
           revision {vault.revision} · vault key v{vault.vaultKeyVersion}
         </span>
       </nav>
 
-      {tab === "devices" ? (
+      {tab === "settings" ? (
+        <SettingsPanel />
+      ) : tab === "devices" ? (
         <DevicesPanel />
       ) : tab === "access" ? (
         <AccessPanel

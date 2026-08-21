@@ -1,15 +1,20 @@
 import os
+import tempfile
 from collections.abc import AsyncIterator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-TEST_DATABASE_URL = os.environ.get(
-    "FOURALLPASS_TEST_DATABASE_URL",
-    "postgresql+asyncpg://fourallpass:fourallpass@localhost:5432/fourallpass_test",
-)
+
+def _default_sqlite_url() -> str:
+    handle = tempfile.NamedTemporaryFile(prefix="fourallpass-test-", suffix=".db", delete=False)
+    handle.close()
+    return f"sqlite+aiosqlite:///{handle.name}"
+
+
+TEST_DATABASE_URL = os.environ.get("FOURALLPASS_TEST_DATABASE_URL", _default_sqlite_url())
 os.environ.setdefault("FOURALLPASS_DATABASE_URL", TEST_DATABASE_URL)
 os.environ.setdefault("FOURALLPASS_SESSION_BACKEND", "memory")
 os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
@@ -17,6 +22,7 @@ os.environ.setdefault("FOURALLPASS_SESSION_SECRET", "test-session-secret")
 from app.api.deps import get_db  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
 from app.db.base import Base  # noqa: E402
+from app.db.session import create_db_engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 get_settings.cache_clear()
@@ -35,7 +41,7 @@ def _reset_memory_session_store():
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def engine():
-    eng = create_async_engine(TEST_DATABASE_URL, future=True)
+    eng = create_db_engine(TEST_DATABASE_URL)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

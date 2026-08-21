@@ -18,9 +18,9 @@ export function LocalBrokerConnect(): ReactNode {
     <section className="card" data-testid="local-broker">
       <h3>Loopback broker</h3>
       <p className="muted">
-        Optional. Default off. A foreign process (n8n HTTP Request) can POST{" "}
-        <code>/v1/access/request</code> to 127.0.0.1 after you paste the pairing token. FastAPI is
-        not this process. Browser Origin on the grant path is rejected. App name is still a string.
+        Local app pairs the access relay on this origin automatically while the vault is unlocked.
+        FastAPI does not mint provider tokens. Browser Origin on the grant path is rejected. App
+        name is still a string.
       </p>
       <label>
         Broker URL

@@ -11,6 +11,7 @@ import {
   type AccessRequest,
 } from "../lib/access.ts";
 import { LocalBrokerConnect } from "./LocalBrokerConnect.tsx";
+import { N8nHttpRecipe } from "./N8nHttpRecipe.tsx";
 import {
   DEMO_TTL_SECONDS,
   demoDeleteRequest,
@@ -19,7 +20,7 @@ import {
   demoUnknownRequest,
   hasGithubReadCredential,
   nextDemoScene,
-  redactToken,
+  grantHandoffCopy,
   remainingSeconds,
   startingScene,
   type DemoSceneId,
@@ -212,7 +213,7 @@ export function AccessPanel({
         ) : null}
         {grant && live && "material" in live ? (
           <p className="hint" data-testid="demo-grant-status">
-            Scoped handoff to {grant.application}: {redactToken(live.material)} · {left}s left
+            {grantHandoffCopy(grant.application, left)}
           </p>
         ) : null}
         {expired && grant ? (
@@ -239,6 +240,7 @@ export function AccessPanel({
           <code>docs/two-minute-demo.md</code>.
         </p>
       </section>
+      <N8nHttpRecipe />
       <LocalBrokerConnect />
       <section className="card">
         <h3>Audit</h3>

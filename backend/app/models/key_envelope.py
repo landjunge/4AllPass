@@ -4,10 +4,10 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import CheckConstraint, Enum, ForeignKey, Index, Integer, LargeBinary, String, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID, OpaqueJSON
 from app.models.enums import EnvelopeType
 from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 
@@ -47,6 +47,7 @@ class KeyEnvelope(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
             "type",
             unique=True,
             postgresql_where=text("type IN ('master', 'recovery')"),
+            sqlite_where=text("type IN ('master', 'recovery')"),
         ),
         # At most one envelope per (snapshot, device) for device envelopes.
         Index(
@@ -55,11 +56,12 @@ class KeyEnvelope(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
             "device_id",
             unique=True,
             postgresql_where=text("type = 'device'"),
+            sqlite_where=text("type = 'device'"),
         ),
     )
 
     snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey("vault_snapshots.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -86,7 +88,7 @@ class KeyEnvelope(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     # `none_as_null=True`: a Python `None` must become a SQL NULL here, not a
     # stored JSON `null`, or `kdf_params IS NOT NULL` below would never fire.
     kdf_params: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB(none_as_null=True), nullable=True
+        OpaqueJSON, nullable=True
     )
 
     encryption: Mapped[str] = mapped_column(String(32), nullable=False, default="AES-256-GCM")

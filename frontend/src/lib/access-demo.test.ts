@@ -11,6 +11,7 @@ import {
   demoReadRequest,
   demoSceneCopy,
   demoUnknownRequest,
+  grantHandoffCopy,
   hasGithubReadCredential,
   nextDemoScene,
   redactToken,
@@ -77,6 +78,14 @@ test("redacted token never contains the secret body", () => {
   assert.equal(shown.includes("not-a-real-key"), false);
   assert.ok(shown.startsWith("ghp_"));
   assert.ok(shown.endsWith("••••"));
+});
+
+test("grant UI copy never includes the secret or a prefix", () => {
+  const shown = grantHandoffCopy("n8n", 12);
+  assert.equal(shown.includes(DEMO_DUMMY_TOKEN), false);
+  assert.equal(shown.includes("ghp_"), false);
+  assert.match(shown, /n8n/);
+  assert.match(shown, /12s left/);
 });
 
 test("remaining seconds hits zero at expiry", () => {

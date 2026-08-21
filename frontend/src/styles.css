@@ -214,6 +214,12 @@ button.link {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+pre.mono {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
 .block {
   display: block;
   padding: 10px 12px;
@@ -346,6 +352,12 @@ button.link {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.stack-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .placeholder {

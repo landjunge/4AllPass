@@ -4,10 +4,10 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, LargeBinary, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.types import GUID
 from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ class EncryptedEntry(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
 
     snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey("vault_snapshots.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

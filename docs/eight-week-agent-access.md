@@ -87,7 +87,7 @@ POST /v1/access/request
 JSON: `application`, `provider`, `credential`, `scope`, `ttl`.  
 Response: `approved` + time-boxed material **or** `denied`.
 
-Host: **local broker**, same envelopes. In the PWA: `BroadcastChannel` `4allpass-access-v1` plus `/agent-request.html` (same origin). FastAPI is not this method. Clients later: n8n, Gnom-Hub-V1, agents, Tollgate.
+Host: **local broker**, same envelopes. In the PWA: `BroadcastChannel` `4allpass-access-v1` plus `/agent-request.html` (same origin). FastAPI is not this method. Node agents: `@4allpass/access` (`fourAllPass.request`). n8n: HTTP Request recipe on the Access tab (copy JSON / curl). Not a marketplace n8n node. Later clients: Gnom-Hub-V1, Tollgate.
 
 ### 5 — Approval UI
 
@@ -107,7 +107,7 @@ Tests: unknown app DENY, bad scope DENY, expired DENY, unknown provider DENY, ta
 
 Allow n8n GitHub read → works → `repository.delete` DENY → TTL expire → unknown app DENY.
 
-Not shipped here: a real n8n node, HTTP localhost broker, FastAPI tokens.
+Not shipped here: a marketplace n8n node, FastAPI tokens. Local loopback relay and `@4allpass/access` are in the tree.
 
 ### 8 — Launch
 

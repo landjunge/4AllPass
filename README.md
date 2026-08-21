@@ -112,6 +112,9 @@ Nicht nötig. Wer Container will: `docker compose up --build` → PWA `:8080`, A
 |---|---|
 | [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1. Kein UI, kein Netz, kein Authenticator-I/O |
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — Geräteentsperrung: PRF > largeBlob > UV-gespeicherter Store |
+| [`packages/core`](packages/core) | `@4allpass/core` — Access-Policy, Grant-Metadaten, Audit. Kein Secret, kein React. `allow` = menschlicher Allow, nicht Auto-Handoff / policy allow means a human Allow, not auto-handoff |
+| [`packages/access`](packages/access) | `@4allpass/access` — Loopback-Client für Agenten (`fourAllPass.request`). Nicht FastAPI |
+| [`packages/broker`](packages/broker) | `@4allpass/broker` — Dev-Relay `:8787`. Produkt-Broker ist der Sidecar (`broker.py` auf `:8788`) / product relay is the sidecar |
 | [`backend`](backend) | FastAPI. Lokal: SQLite + Memory-Sessions (`python -m app.local`). Server: PostgreSQL + Redis. Nur undurchsichtige Envelopes |
 | [`frontend`](frontend) | React + TypeScript. Die gesamte Kryptographie läuft hier |
 | [`src-tauri`](src-tauri) | Desktop-Fenster (Tauri). UI kommt vom lokalen Origin `:8788`, nicht aus einem Browser-Tab |
@@ -177,8 +180,12 @@ Der Vault Key ist immer zufällig, nie aus einem Passwort abgeleitet. Roher PRF-
 ├── docs/                 verbindliche Specs
 ├── packages/crypto/      Zero-Knowledge-Crypto-Kern
 ├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-Unlock
+├── packages/core/        Access-Policy + Grant-Metadaten (kein Secret)
+├── packages/access/      Agent-Loopback-Client
+├── packages/broker/      Dev-Node-Relay :8787 (Produkt: Sidecar)
 ├── backend/              FastAPI + SQLAlchemy + Alembic + Redis
 ├── frontend/             React + TypeScript + PWA (Vite)
+├── src-tauri/            Desktop (Tauri)
 ├── docker-compose.yml    optional; Native braucht das nicht
 └── scripts/              unabhängige Testvektor-Prüfung
 ```
@@ -187,9 +194,11 @@ Der Vault Key ist immer zufällig, nie aus einem Passwort abgeleitet. Roher PRF-
 
 ```sh
 npm install
-npm test                    # KATs + Adversarial-Suite
+npm test                    # KATs + Adversarial-Suite + core/broker
 npm run test:crypto:heavy   # inkl. 32–128 MiB Argon2id-Profile
 npm run test:webauthn
+npm test -w @4allpass/core
+npm test -w @4allpass/broker
 npm run test -w @4allpass/frontend
 npm run test:e2e -w @4allpass/frontend   # braucht Postgres, Redis und laufendes Backend
 npm run test:e2e:live                    # sichtbares Chrome/Firefox/Brave/WebKit auf diesem Mac

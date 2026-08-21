@@ -52,3 +52,10 @@ Optional: open `/agent-request.html` in another tab of the **same origin** while
 ## Tests
 
 `frontend/src/lib/access-demo.test.ts` encodes the five beats without a browser. Policy cases stay in `access.test.ts`.
+
+Headed Chrome, real mouse (API on `:8010`, PWA on `:5173`):
+
+```sh
+cd ~/4AllPass
+LIVE_SLOWMO=500 npm run test:e2e:live -w @4allpass/frontend -- e2e/live/two-minute-demo.spec.ts
+```

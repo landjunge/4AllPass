@@ -261,6 +261,10 @@ The FastAPI backend implements B1, B2, B4–B8:
 - `SELECT … FOR UPDATE` on the vault row serializes concurrent writers.
 - Unique `(vault_id, revision)` → HTTP 409, never a merge or a 500.
 - `vault_key_version` is rejected if it decreases.
+- A same-VK commit and a hard-revoke (VK++) aimed at the same `expectedRevision`
+  are the same CAS race: one 200, one 409. Measured:
+  `backend/tests/test_security_hardening.py::test_concurrent_same_vk_commit_and_hard_revoke_one_wins`.
+  See `docs/security-boundary.md` §5.
 
 B3: the sealed manifest is stored opaquely when the client sends it. The
 server does not open it. Legacy snapshots without a manifest are still

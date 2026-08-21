@@ -61,7 +61,9 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 
 ## n8n HTTP Request (no marketplace node)
 
-The Access tab copies this recipe. n8n: **HTTP Request** node, method POST, JSON body, header `Authorization: Bearer <pairing token>`. Do not add an `Origin` header (browser grant path is 403).
+Import [`examples/n8n-github-read.workflow.json`](../examples/n8n-github-read.workflow.json) into n8n (n8n Desktop / npm on the **same machine** as 4AllPass). Set env `FOURALLPASS_BROKER_TOKEN` to the pairing token. 4AllPass must be unlocked. Allow in the app. n8n-in-Docker still needs `host.docker.internal`.
+
+The Access tab copies the same recipe. n8n: **HTTP Request** node, method POST, JSON body, header `Authorization: Bearer <pairing token>`. Do not add an `Origin` header (browser grant path is 403).
 
 ```http
 POST http://127.0.0.1:8788/v1/access/request

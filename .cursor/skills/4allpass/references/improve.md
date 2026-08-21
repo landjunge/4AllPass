@@ -10,7 +10,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 ## Now
 
-1. **Agent access wedge is in the tree**, including the optional loopback broker (`npm run broker`, pairing token, not FastAPI). Do not auto-publish. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
+1. **Desktop + agent access are on main** (`src-tauri/`, local SQLite core, loopback broker in-process). Dev leftover: `npm run broker`. Do not auto-publish. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
 2. Safari.app fill / real Touch ID still unproven. Do not block the wedge on it.
 3. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
 
@@ -20,7 +20,7 @@ Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-shar
 
 - Organizations / teams
 - Social login as a crypto factor
-- Native apps
+- Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android)
 - Passkey store as a separate vault product
 - Shamir, TOTP
 - Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)

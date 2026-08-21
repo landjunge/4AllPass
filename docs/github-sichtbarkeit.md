@@ -10,7 +10,7 @@
 |---|---|---|
 | Repo-**Name** | Exact-Match in GitHub-Suche | `4AllPass` |
 | **About**-Beschreibung | Meta-Description für Google + GitHub | Sidebar, API |
-| **Topics** (max. 20) | Filter auf github.com/topics/… | `ai-agents`, `credentials`, `zero-knowledge`, `n8n`, `webauthn`, `self-hosted`, `pwa` |
+| **Topics** (max. 20) | Filter auf github.com/topics/… | `ai-agents`, `credentials`, `zero-knowledge`, `n8n`, `webauthn`, `self-hosted`, `desktop`, `tauri` |
 | **README** (H1, erste 20 Zeilen, Bild) | Landing + Open-Graph-Bild | diese Datei / `README.md` |
 | **Social preview** | Karte bei Link-Shares | Settings → General → Social preview — Datei `frontend/public/og.png` (1280×640, Logo inkl. Schriftzug). GitHub hat **keine** öffentliche Upload-API; PAT reicht nicht. |
 | **Releases** | Version, Changelog, GitHub-Suche | nach echten Meilensteinen, nicht leer |

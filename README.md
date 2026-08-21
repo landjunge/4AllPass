@@ -1,114 +1,171 @@
 # 4AllPass
 
-<p align="center"><img src="frontend/public/logo.png" alt="4AllPass — magpie with a gold key" width="420" /></p>
+<p align="center"><img src="frontend/public/logo.png" alt="4AllPass" width="420" /></p>
+
+**Sicherer Credential-Zugang für Menschen, Anwendungen und KI-Agenten.**
+
+Deine Agenten brauchen Zugang. Nicht deine Secrets.
+
+```text
+Mensch / App / Agent → Anfrage → Richtlinie → erlauben / ablehnen → zeitlich begrenzter Zugang → Anbieter
+```
+
+Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). Im Access-Tab gibt es eine lokale [Zwei-Minuten-Demo](docs/two-minute-demo.md). Optionaler Loopback-Broker für einen fremden Prozess: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, Pairing-Token, nicht FastAPI). FastAPI gibt **keine** Tokens aus. Es gibt keinen n8n-Marketplace-Node.
+
+Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentsperrung, PWA, Autofill in Chromium/Firefox/macOS Safari. Item-Share ist eine verschlüsselte Datei plus Share-Key; der Server sieht beides nicht. Umschlagen auf den Device Key einer anderen Person ist nicht in v1. Siehe [`docs/positioning.md`](docs/positioning.md).
+
+---
+
+## English
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. Setup: same commands as below.
 
-```text
-Human / App / Agent → request → Policy → allow / deny → scoped credential → Provider
+---
+
+## Einrichten / Setup
+
+Logo inkl. Schriftzug. Konto-Passwort ≠ Vault-Passwort.
+
+Frisch einrichten: **Docker**. Native nur, wenn du schon Postgres + Redis auf dem Host hast — nicht beides gleichzeitig (Ports 5432 / 6379 / 8000).
+
+### Docker (PWA + API)
+
+```sh
+git clone https://github.com/landjunge/4AllPass.git
+cd 4AllPass
+docker compose up --build
 ```
 
-Not “a nicer Bitwarden.” Devices still own the vault cryptographically. The **wedge** is agent credential access — 8-week plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). The Access tab has a local [two-minute demo](docs/two-minute-demo.md). Optional loopback broker for a foreign process: [`docs/local-access-broker.md`](docs/local-access-broker.md) (`npm run broker`, pairing token, not FastAPI). Launch note: [Your AI Agent Doesn't Need Your API Keys](docs/your-ai-agent-doesnt-need-your-api-keys.md). FastAPI still never mints tokens. There is no n8n marketplace node.
+PWA: [http://127.0.0.1:8080](http://127.0.0.1:8080) · API: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-Today: self-hosted Zero-Knowledge vault, Argon2id, WebAuthn device unlock, PWA, Chromium/Firefox/macOS Safari fill. Item share is an encrypted file plus share key; the server never sees either. Wrapping to someone else’s device key is not in v1. See [`docs/positioning.md`](docs/positioning.md).
+Dann im Browser: Konto anlegen → Tresor → Recovery-Kit bestätigen → Access-Tab (Zwei-Minuten-Demo).
 
-## Layout
+### Native (dieses Mac: API auf :8010, weil :8000 schon belegt ist)
 
-| Path | What it is |
+Postgres + Redis müssen laufen (`fourallpass` / `fourallpass` / DB `fourallpass`). Nicht parallel zu `docker compose`.
+
+```sh
+git clone https://github.com/landjunge/4AllPass.git   # oder bestehendes Clone
+cd 4AllPass
+npm install
+cp -n backend/.env.example backend/.env
+# in backend/.env: FOURALLPASS_SESSION_SECRET auf einen eigenen Wert setzen
+
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+alembic upgrade head
+FOURALLPASS_SESSION_SECRET=dev-local-not-for-production \
+  uvicorn app.main:app --host 127.0.0.1 --port 8010
+```
+
+Zweites Terminal:
+
+```sh
+cd 4AllPass/frontend
+API_ORIGIN=http://127.0.0.1:8010 npm run dev -- --host 127.0.0.1
+```
+
+PWA: [http://127.0.0.1:5173](http://127.0.0.1:5173)
+
+Dann: Konto anlegen → Tresor → Recovery-Kit bestätigen → Access-Tab (Zwei-Minuten-Demo).
+
+GitHub sichtbar machen: [`docs/github-sichtbarkeit.md`](docs/github-sichtbarkeit.md).
+
+## Aufbau
+
+| Pfad | Was es ist |
 |---|---|
-| [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1 core. No UI, no network, no authenticator I/O |
-| [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — device unlock: PRF > largeBlob > UV-gated local store |
-| [`backend`](backend) | FastAPI + PostgreSQL + Redis. Account-Session, Ownership, Snapshot-CAS. Stores opaque envelopes only |
-| [`frontend`](frontend) | React + TypeScript PWA. All cryptography happens here |
-| [`extension`](extension) | Chromium + Firefox MV3 + macOS Safari autofill. Decrypts on-device via `@4allpass/crypto` |
-| [`docs`](docs) | The authoritative specifications |
+| [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1. Kein UI, kein Netz, kein Authenticator-I/O |
+| [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — Geräteentsperrung: PRF > largeBlob > UV-gespeicherter Store |
+| [`backend`](backend) | FastAPI + PostgreSQL + Redis. Konto-Session, Besitz, Snapshot-CAS. Nur undurchsichtige Envelopes |
+| [`frontend`](frontend) | React + TypeScript PWA. Die gesamte Kryptographie läuft hier |
+| [`extension`](extension) | Chromium + Firefox MV3 + macOS-Safari-Autofill. Entschlüsselt auf dem Gerät über `@4allpass/crypto` |
+| [`docs`](docs) | Die verbindlichen Spezifikationen |
 
-How to contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md). Security reports: [`SECURITY.md`](SECURITY.md). Board: [4AllPass project](https://github.com/users/landjunge/projects/2).
+Mitmachen: [`CONTRIBUTING.md`](CONTRIBUTING.md). Sicherheitsmeldungen: [`SECURITY.md`](SECURITY.md). Board: [4AllPass-Projekt](https://github.com/users/landjunge/projects/2).
 
-## Why trust this?
+## Warum dem trauen?
 
-The server is a blob store. It never sees the master password, vault key, or plaintext entries. You can check that claim against public specs and tests instead of a marketing page:
+Der Server ist ein Blob-Store. Er sieht weder Master-Passwort noch Vault Key noch Klartext-Einträge. Das kannst du an öffentlichen Specs und Tests prüfen, nicht an einer Marketingseite:
 
-- What the **running** backend + PWA actually enforce: [`docs/security-boundary.md`](docs/security-boundary.md)
-- Threat model: [`docs/threat-model.md`](docs/threat-model.md)
-- Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
-- AES-256-GCM KATs: [`docs/test-vectors.md`](docs/test-vectors.md)
-- Argon2id KATs: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
-- Recovery (no server reset): [`docs/recovery.md`](docs/recovery.md)
-- Audit map for a third party: [`docs/audit-scope.md`](docs/audit-scope.md)
-- Reproducible PWA / extension tree hash: [`docs/reproducible-builds.md`](docs/reproducible-builds.md)
+- Was Backend + PWA **wirklich** erzwingen: [`docs/security-boundary.md`](docs/security-boundary.md)
+- Bedrohungsmodell: [`docs/threat-model.md`](docs/threat-model.md)
+- Adversarial Review des Crypto-Cores: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- AES-256-GCM-KATs: [`docs/test-vectors.md`](docs/test-vectors.md)
+- Argon2id-KATs: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
+- Recovery (kein Server-Reset): [`docs/recovery.md`](docs/recovery.md)
+- Audit-Karte für Dritte: [`docs/audit-scope.md`](docs/audit-scope.md)
+- Reproduzierbarer PWA-/Extension-Tree-Hash: [`docs/reproducible-builds.md`](docs/reproducible-builds.md)
 
-There is **no** independent third-party audit yet. Planned scope is in `docs/audit-scope.md`. Feature comparison (honest ✅ / ⏳): [`docs/comparison.md`](docs/comparison.md).
+Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-scope.md`. Feature-Vergleich (ehrlich ✅ / ⏳): [`docs/comparison.md`](docs/comparison.md).
 
-## Documentation
+## Dokumentation
 
-- Agent playbook (review / code / improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
-- Product plan: [`docs/development-plan.md`](docs/development-plan.md)
-- Positioning (current claims): [`docs/positioning.md`](docs/positioning.md)
-- 8-week agent-access plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
-- Two-minute Access demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
-- Local loopback broker (optional, not FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)
-- Launch article: [`docs/your-ai-agent-doesnt-need-your-api-keys.md`](docs/your-ai-agent-doesnt-need-your-api-keys.md)
-- Launch post drafts: [`docs/launch-posts.md`](docs/launch-posts.md)
-- Target category (not current): [`docs/positioning-target.md`](docs/positioning-target.md)
+- Agent-Playbook (Review / Code / Improve): [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
+- Produktplan: [`docs/development-plan.md`](docs/development-plan.md)
+- Positionierung (Ist-Behauptungen): [`docs/positioning.md`](docs/positioning.md)
+- 8-Wochen-Plan Agent-Zugang: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
+- Zwei-Minuten-Access-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
+- Lokaler Loopback-Broker (optional, nicht FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)
+- Launch-Artikel: [`docs/your-ai-agent-doesnt-need-your-api-keys.md`](docs/your-ai-agent-doesnt-need-your-api-keys.md)
+- Launch-Post-Entwürfe: [`docs/launch-posts.md`](docs/launch-posts.md)
+- GitHub sichtbar nutzen: [`docs/github-sichtbarkeit.md`](docs/github-sichtbarkeit.md)
 
 - Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
-- WebAuthn PRF construction: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
-- Vault revision / rotation / snapshot manifest: [`docs/vault-revision.md`](docs/vault-revision.md)
+- WebAuthn-PRF: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
+- Vault-Revision / Rotation / Snapshot-Manifest: [`docs/vault-revision.md`](docs/vault-revision.md)
 - Recovery Key & Emergency Kit: [`docs/recovery.md`](docs/recovery.md)
 - Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
-- Adversarial review of the crypto core: [`docs/adversarial-review.md`](docs/adversarial-review.md)
-- Security boundary (what is actually implemented): [`docs/security-boundary.md`](docs/security-boundary.md)
-- AES-256-GCM Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
-- Argon2id Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
-- Post-quantum roadmap (concept only): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
-- Selective item share (encrypted file, v1): [`docs/sharing.md`](docs/sharing.md)
-- Provider & service management (concept only, far later): [`docs/provider-service-vision.md`](docs/provider-service-vision.md)
-- Secret Access Layer (concept only, far later): [`docs/secret-access-layer.md`](docs/secret-access-layer.md)
-- Capability interface with Tollgate / Gnom-Hub (concept only, far later): [`docs/capability-interface.md`](docs/capability-interface.md)
-- Capability contract 4AP-CAP-1 (concept only, not a protocol): [`docs/capability-contract-v1.md`](docs/capability-contract-v1.md)
+- Adversarial Review: [`docs/adversarial-review.md`](docs/adversarial-review.md)
+- Security Boundary (was wirklich läuft): [`docs/security-boundary.md`](docs/security-boundary.md)
+- AES-256-GCM-Testvektoren: [`docs/test-vectors.md`](docs/test-vectors.md)
+- Argon2id-Testvektoren: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
+- Post-Quantum-Roadmap (nur Konzept): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
+- Selektiver Item-Share (verschlüsselte Datei, v1): [`docs/sharing.md`](docs/sharing.md)
 
-## Key path
+## Schlüsselpfad
 
 ```
-Master password ──Argon2id──► Master Key ──unwraps──► Master Envelope ──► Vault Key
+Master-Passwort ──Argon2id──► Master Key ──unwraps──► Master Envelope ──► Vault Key
 Recovery Key ─────────────────────────────unwraps──► Recovery Envelope ─► Vault Key
-WebAuthn assertion + PRF ──HKDF──► DWK ──unwraps──► Device-Key Envelope ─► Device Key
-                                                    Device Envelope ─────► Vault Key
+WebAuthn-Assertion + PRF ──HKDF──► DWK ──unwraps──► Device-Key Envelope ─► Device Key
+                                                     Device Envelope ─────► Vault Key
 ```
 
-The Vault Key is always random, never derived from a password. Raw PRF output is never used as a key.
+Der Vault Key ist immer zufällig, nie aus einem Passwort abgeleitet. Roher PRF-Output ist nie ein Schlüssel.
 
-## Project structure
+## Projektstruktur
 
 ```
 4allpass/
-├── docs/                 crypto & architecture specs (authoritative)
-├── packages/crypto/      Zero-Knowledge crypto core
-├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-gated unlock
+├── docs/                 verbindliche Specs
+├── packages/crypto/      Zero-Knowledge-Crypto-Kern
+├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-Unlock
 ├── backend/              FastAPI + SQLAlchemy + Alembic + Redis
 ├── frontend/             React + TypeScript + PWA (Vite)
-├── docker-compose.yml    Postgres + Redis + backend
-└── scripts/              standalone test-vector verification
+├── docker-compose.yml    Postgres + Redis + Backend
+└── scripts/              unabhängige Testvektor-Prüfung
 ```
 
 ## Tests
 
 ```sh
 npm install
-npm test                    # KATs + adversarial suite
-npm run test:crypto:heavy   # includes 32–128 MiB Argon2id profiles
+npm test                    # KATs + Adversarial-Suite
+npm run test:crypto:heavy   # inkl. 32–128 MiB Argon2id-Profile
 npm run test:webauthn
 npm run test -w @4allpass/frontend
-npm run test:e2e -w @4allpass/frontend   # needs Postgres, Redis and a running backend
-npm run test:e2e:live                    # headed Chrome/Firefox/Brave/WebKit on this Mac
-# see docs/live-browser-test.md
-npm run build -w @4allpass/extension     # unpacked: Chrome/Firefox; macOS Safari: open extension/safari/FourAllPass/FourAllPass.xcodeproj
-# see docs/autofill-extension.md
+npm run test:e2e -w @4allpass/frontend   # braucht Postgres, Redis und laufendes Backend
+npm run test:e2e:live                    # sichtbares Chrome/Firefox/Brave/WebKit auf diesem Mac
+# siehe docs/live-browser-test.md
+npm run build -w @4allpass/extension
+# siehe docs/autofill-extension.md
 npm run typecheck
-node scripts/generate-vectors.mjs           # regenerate the KAT JSON (independent impl)
+node scripts/generate-vectors.mjs
 node scripts/verify-aes-gcm-vectors.mjs
 pip install -r scripts/requirements-dev.txt
 python3 scripts/verify-argon2id-vectors.py
@@ -116,8 +173,7 @@ python3 scripts/verify-argon2id-vectors.py
 
 ## Backend
 
-Account and vault HTTP API (`/api/v1`). The account password is **not** the
-master password and cannot decrypt a vault.
+Konto- und Vault-HTTP-API (`/api/v1`). Das Konto-Passwort ist **nicht** das Master-Passwort und kann einen Tresor nicht entschlüsseln.
 
 ```
 POST /api/v1/auth/register | login | logout
@@ -126,13 +182,12 @@ GET/POST /api/v1/vaults
 GET      /api/v1/vaults/{id}
 GET      /api/v1/vaults/{id}/snapshot
 POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
-         /api/v1/vaults/{id}/devices…     # owner-only
-POST     /api/v1/vaults/{id}/webauthn/challenges           # one-time ceremony
+         /api/v1/vaults/{id}/devices…
+POST     /api/v1/vaults/{id}/webauthn/challenges
 POST     /api/v1/vaults/{id}/webauthn/challenges/{id}/consume
 ```
 
-Every vault/device/snapshot route requires `Authorization: Bearer`. Foreign
-vaults return **404** (no id enumeration).
+Jede Vault-/Device-/Snapshot-Route braucht `Authorization: Bearer`. Fremde Vaults liefern **404** (keine ID-Enumeration).
 
 ```sh
 cd backend
@@ -143,7 +198,7 @@ uvicorn app.main:app --reload
 pytest
 ```
 
-See [`backend/README.md`](backend/README.md).
+Siehe [`backend/README.md`](backend/README.md).
 
 ## Docker Compose
 
@@ -151,4 +206,4 @@ See [`backend/README.md`](backend/README.md).
 docker compose up --build
 ```
 
-Starts Postgres, Redis, and the backend on `http://localhost:8000`.
+Startet Postgres, Redis und das Backend auf `http://localhost:8000`.

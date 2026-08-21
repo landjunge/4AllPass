@@ -22,8 +22,7 @@ export function App(): ReactNode {
     <div className="app">
       <header>
         <span className="brand">
-          <img src="/icon.png" alt="" width={28} height={28} />
-          4AllPass
+          <img src="/logo.png" alt="4AllPass" />
         </span>
         {email ? (
           <div className="header-actions">

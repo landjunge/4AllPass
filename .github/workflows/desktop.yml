@@ -90,6 +90,8 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: List downloaded installers
+        run: find dist -type f | sort
       - uses: softprops/action-gh-release@v2
         with:
           prerelease: true
@@ -104,6 +106,9 @@ jobs:
             Unlock with the vault password. WebAuthn PRF in the webview is unproven.
             Loopback broker starts with the app. Not a n8n marketplace node.
           files: |
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
             dist/*.dmg
             dist/*.exe
             dist/*.AppImage

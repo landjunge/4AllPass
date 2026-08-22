@@ -20,7 +20,7 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 **Secure credential access for humans, applications and AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)). Download: [Releases](https://github.com/landjunge/4AllPass/releases). Or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
+Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)). Download: [Releases](https://github.com/landjunge/4AllPass/releases). Current builds are ad-hoc (macOS: right-click → Open). For strangers to double-click: Apple notarization + Windows Authenticode — [`docs/distribution.md`](docs/distribution.md). Or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
 
 ---
 
@@ -30,7 +30,7 @@ Your agents need access. They don't need your secrets. Self-hosted zero-knowledg
 
 ### 1. Desktop (normal)
 
-Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`). macOS-DMG nach Programme. **Erstes Öffnen:** Rechtsklick → Öffnen (ad-hoc, nicht notariert, nicht SmartScreen). Tresor anlegen. Access-Broker läuft mit.
+Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`). macOS-DMG nach Programme. **Aktuell ad-hoc:** Erstes Öffnen Rechtsklick → Öffnen. Damit **Fremde doppelklicken können:** Apple Developer ID + Notarisierung und Windows-Signatur — Anleitung [`docs/distribution.md`](docs/distribution.md). Tresor anlegen. Access-Broker läuft mit.
 
 Selbst bauen:
 
@@ -147,6 +147,7 @@ Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-sc
 - Produktreife (Fremde, Notarisierung): [`docs/product-maturity.md`](docs/product-maturity.md)
 - Zwei-Minuten-Access-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
 - Lokaler Loopback-Broker (optional, nicht FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)
+- Installer für Fremde (Notarisierung / Signatur): [`docs/distribution.md`](docs/distribution.md)
 - Launch-Artikel: [`docs/your-ai-agent-doesnt-need-your-api-keys.md`](docs/your-ai-agent-doesnt-need-your-api-keys.md)
 - Launch-Post-Entwürfe: [`docs/launch-posts.md`](docs/launch-posts.md)
 - GitHub sichtbar nutzen: [`docs/github-sichtbarkeit.md`](docs/github-sichtbarkeit.md)

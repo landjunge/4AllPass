@@ -41,10 +41,14 @@
     "externalBin": ["binaries/fourallpass-core"],
     "macOS": {
       "signingIdentity": "-",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.plist",
       "minimumSystemVersion": "12.0",
       "infoPlist": "Info.plist"
     },
     "windows": {
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "http://timestamp.digicert.com",
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": false

@@ -2,7 +2,8 @@ name: Desktop installers
 
 # Not on every PR — PyInstaller + Rust release is slow.
 # Tags v* build installers and attach them to a GitHub prerelease.
-# Not notarized / not SmartScreen.
+# Notarization / Authenticode run only when repo secrets are present.
+# Without secrets the build stays ad-hoc (right-click Open / SmartScreen).
 
 on:
   workflow_dispatch:
@@ -65,11 +66,63 @@ jobs:
           python scripts/package-sidecar.py
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      - name: Import Apple certificate
+        if: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != '' }}
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERT="$RUNNER_TEMP/apple.p12"
+          KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT"
+          KEYCHAIN_PASSWORD="${KEYCHAIN_PASSWORD:-$APPLE_CERTIFICATE_PASSWORD}"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERT" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN"
+      - name: Import Windows certificate
+        if: ${{ runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != '' }}
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "windows.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          Import-PfxCertificate -FilePath $pfx -Password (ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
       - name: Tauri bundle
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          TAURI_WINDOWS_SIGNING_CERT: ${{ secrets.WINDOWS_CERTIFICATE_THUMBPRINT }}
         run: npx tauri build --bundles ${{ matrix.bundle }}
       - name: macOS DMG
         if: runner.os == 'macOS'
         run: bash scripts/make-dmg.sh
+      - name: Notarize macOS DMG
+        if: ${{ runner.os == 'macOS' && secrets.APPLE_ID != '' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG="$(ls src-tauri/target/release/bundle/dmg/*.dmg | head -1)"
+          test -n "$DMG"
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$DMG"
       - uses: actions/upload-artifact@v4
         with:
           name: 4AllPass-${{ matrix.name }}
@@ -99,9 +152,8 @@ jobs:
           body: |
             Desktop alpha. FastAPI never mints provider tokens.
 
-            - macOS: drag to Applications. First open: right-click → Open (ad-hoc, not notarized).
-            - Windows NSIS: current user, not SmartScreen.
-            - Linux: AppImage.
+            Signing: see docs/distribution.md. Without Apple/Windows secrets this
+            build is ad-hoc (macOS: right-click → Open; Windows: SmartScreen).
 
             Unlock with the vault password. WebAuthn PRF in the webview is unproven.
             Loopback broker starts with the app. Not a n8n marketplace node.

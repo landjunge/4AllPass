@@ -144,6 +144,7 @@ Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-sc
 - Produktplan: [`docs/development-plan.md`](docs/development-plan.md)
 - Positionierung (Ist-Behauptungen): [`docs/positioning.md`](docs/positioning.md)
 - 8-Wochen-Plan Agent-Zugang: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
+- Produktreife (Fremde, Notarisierung): [`docs/product-maturity.md`](docs/product-maturity.md)
 - Zwei-Minuten-Access-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
 - Lokaler Loopback-Broker (optional, nicht FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)
 - Launch-Artikel: [`docs/your-ai-agent-doesnt-need-your-api-keys.md`](docs/your-ai-agent-doesnt-need-your-api-keys.md)

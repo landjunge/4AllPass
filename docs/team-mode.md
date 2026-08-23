@@ -1,30 +1,41 @@
 # Team Mode — Architecture Review and Phase-1 Spec
 
-**Status:** Review only. **Not implemented.** No code in this document is a license to start building.  
-**Date:** 2026-08-23  
-**Companion:** [`team-roadmap.md`](team-roadmap.md), [`security-boundary.md`](security-boundary.md), [`crypto-protocol.md`](crypto-protocol.md), [`recovery.md`](recovery.md), [`local-access-broker.md`](local-access-broker.md), [`threat-model.md`](threat-model.md), [`product-maturity.md`](product-maturity.md)
+**Status:** Review only. **Not implemented.**  
+**Date:** 2026-08-23 (rev. 2 — Trusted Recovery 2-of-2)  
+**Companion:** [`team-roadmap.md`](team-roadmap.md), [`recovery.md`](recovery.md), [`crypto-protocol.md`](crypto-protocol.md), [`security-boundary.md`](security-boundary.md), [`webauthn-prf.md`](webauthn-prf.md), [`local-access-broker.md`](local-access-broker.md), [`threat-model.md`](threat-model.md), [`vault-revision.md`](vault-revision.md)
 
-This document is the answer to: *what would a 3–5 person Trusted Team layer look like on the existing 4AllPass, without turning it into PAM?*
-
-P0/P1 (Install, Import, Autofill) stay the product sequence. Team Mode does not jump the queue. After this review we wait for an explicit decision.
+P0/P1 (Install, Import, Autofill) remain the next **code** sequence. This document is not a license to start Team Mode PRs.
 
 ---
 
-## 0. Decision recorded here
+## Verdict on the proposed recovery idea
 
-**Do not implement yet.**
+The dual-consent rule is right:
 
-If a later PR “just adds organizations”, it is out of scope until this spec is accepted slice by slice.
+> Recovery requires cooperation, not administrator access.
 
-The north star is **not**:
+The **hierarchy** in the prompt is also right: do not split the Vault Key; do not give the admin VK.
 
-```text
-Admin → Policy → Employee → Agent → Credential
-```
+Three parts of the prompt would be **wrong to implement as written**:
 
-That is PAM. 4AllPass must not become that.
+1. **Do not add a new Recovery Secret besides the existing Recovery Key.**  
+   `packages/crypto` already has a 256-bit CSPRNG Recovery Key that is **not** VK. It becomes RWK via HKDF (`4allpass-recovery-wrap-v1`) and unwraps the Recovery Envelope. A second RK that wraps the first is another envelope, another rotation story, and no extra confidentiality.
 
-The north star is:
+2. **Do not implement Shamir polynomials for MVP 2-of-2.**  
+   2-of-2 secret sharing of a 32-byte key **is XOR**: `shareB = RK ⊕ shareA` with `shareA` uniform random. Shamir over a prime field for `n=2` is more code, more encoding, more ways to get `mod p` wrong, and **zero** extra security. k-of-n (2-of-3, 3-of-5) is Shamir **later**. Do not pull a Shamir npm package for three-to-five people.
+
+3. **Do not give the employee the full Emergency Kit *and* Share A.**  
+   Then the employee recovers alone and “organization participation” is theater. Team split **replaces** the printable full RK: after both shares exist, the full RK is zeroized. Master password and enrolled devices stay independent unlock paths.
+
+Scratch-off / QR / “sealed envelope” are **print UX**. Crypto must not depend on them. Reconstruction **only** on the employee’s new device — never on the admin laptop, never on FastAPI. If RK hits admin RAM, the admin has VK after one unwrap. That is a backdoor.
+
+**Smallest correct construction:** split the **existing** Recovery Key with XOR 2-of-2; reconstruct locally; existing Recovery Envelope unchanged.
+
+---
+
+## 0. North star (not PAM)
+
+Not: `Admin → Policy → Employee → Agent → Credential`.
 
 ```text
                     ORGANIZATION
@@ -47,778 +58,734 @@ The north star is:
                enforce + assist
 ```
 
-Verbal form: *Trust the employee. Help when needed. Control the organization, not the person.*
-
-Technical form:
-
 - Organization controls the **boundary**.
 - Employee owns the **vault**.
-- Employee manages their **agents**.
-- 4AllPass enforces the **intersection**.
+- Employee manages **agents**.
+- Recovery needs **both** employee share and organization share.
+- 4AllPass enforces the intersection.
 
 ```text
-EffectiveAccess =
-  OrganizationBoundary
-  AND EmployeePolicy
-  AND AgentPolicy
+EffectiveAccess = OrganizationBoundary AND EmployeePolicy AND AgentPolicy
 ```
 
-Either side can deny. Neither side can force the other to allow. An org “allow” is a **ceiling**, not an order to use the resource.
+Org allow is a **ceiling**, not an order.
 
 ---
 
-## 1. Repository architecture review
+## 1. Current architecture map
 
-4AllPass is already one product: a **device-centric zero-knowledge password manager** with an optional local access broker. There is **no** Organization, Member, Resource, or Team table in the tree.
+One product, two run profiles, **no** org tables.
 
-| Layer | Path | What it is today |
+| Layer | Path | Today |
 |---|---|---|
-| Crypto protocol | `packages/crypto` | Argon2id, AES-256-GCM, Key Envelopes (master / device / recovery), sealed snapshot manifest, `vaultKeyVersion` |
-| WebAuthn | `packages/webauthn` | PRF > largeBlob > UV-gated store → DWK → DK → VK. Server never sees PRF |
-| Policy / grants | `packages/core` | `evaluatePolicy` / `decideAccess` / `issueGrant`. Application is a **string**. Unknown app = DENY. Grant has **no secret** |
-| Access client | `packages/access` | Loopback-only HTTP client. Pairing token. No FastAPI |
-| Broker (dev) | `packages/broker` | Node `:8787`. Queue only. **Not** the product path |
-| Broker (product) | `backend/app/broker.py` | Sidecar relay on `127.0.0.1:8788`. Origin 403 on grant path |
-| Providers | `packages/providers` | Domain ≠ provider. Confidence. Not an org catalog |
-| Storage API | `backend/` FastAPI | Accounts, vault ownership (`get_owned_vault` → 404), snapshot CAS, opaque blobs |
-| Models | `backend/app/models/` | `User`, `Vault`, `Device`, `VaultSnapshot`, `KeyEnvelope`, `EncryptedEntry`, `WebAuthnCredential` |
-| Desktop | `src-tauri/` + same frontend | Tauri WKWebView. Unlock = master password. PRF in webview **unproven** |
-| UI | `frontend/` | Tabs: Entries, Access, Devices, Settings. No Team tab |
-| Recovery | Emergency Kit + Recovery Envelope | No server reset. Share file is a **new** VK, not a backup of the same vault |
-| Audit | `packages/core` `auditLine` | Local access rows (application / provider / scope / decision). **No** org events. Secrets must not appear |
+| Crypto | `packages/crypto` | Argon2id, AES-256-GCM, envelopes (master / device / recovery), sealed manifest, `vaultKeyVersion` |
+| WebAuthn | `packages/webauthn` | PRF > largeBlob > UV-gated → DWK → DK → VK. Server never sees PRF |
+| Policy | `packages/core` | `evaluatePolicy` / `decideAccess` / `issueGrant`. Application is a **string**. Unknown = DENY. Grant has **no secret** |
+| Access client | `packages/access` | Loopback only. Pairing token. Not FastAPI |
+| Broker (dev) | `packages/broker` Node `:8787` | Queue. Not the product path |
+| Broker (product) | `backend/app/broker.py` | `127.0.0.1:8788`. Origin 403 on grant path. Relay only |
+| Providers | `packages/providers` | Domain ≠ provider |
+| Storage | `backend/` FastAPI | Accounts, `get_owned_vault` → 404, snapshot CAS, opaque blobs |
+| Models | `User`, `Vault`, `Device`, `VaultSnapshot`, envelopes, entries, WebAuthn rows | No Organization / Member / Resource |
+| Desktop | `src-tauri/` + same frontend | Unlock = master password. PRF in WKWebView **unproven** |
+| UI | Entries, Access, Devices, Settings | No Team |
+| Recovery | Emergency Kit + Recovery Envelope | Single 256-bit RK. No split. No server reset |
+| Audit | `auditLine` in core | Local access rows, no secrets. No org events |
 
-Two run profiles already exist and must stay distinct:
-
-| Profile | How | Identity |
+| Profile | Host | Identity |
 |---|---|---|
-| **Local / solo** (`python -m app.local`, `npm run app`) | SQLite in Application Support. Loopback only | Singleton `local@127.0.0.1`. No email. One person, one machine |
-| **Server** | FastAPI + SQLite or Postgres | Email + account password. Many `User` rows. Each user owns their vaults. Still never decrypts |
+| Local / solo | SQLite in Application Support, loopback | Singleton `local@127.0.0.1` |
+| Server | FastAPI + SQLite or Postgres | Email + account password. Many users. Still never decrypts |
 
-Team Mode **cannot** live inside the local singleton without breaking it. The smallest honest host for org metadata is the **existing server profile**, plus desktop apps that point at that URL. Solo local remains the default when no team URL is set.
-
----
-
-## 2. Existing security-boundary map
-
-Authoritative: [`security-boundary.md`](security-boundary.md). The three proofs must not be mixed, including for Team Mode.
-
-| Proof | Question | Mechanism today | Team Mode may |
-|---|---|---|---|
-| Authentication | This is account X | Email + account password → Bearer; local bootstrap has no email | Add invite-accept that mints a **storage** session. Never unwraps VK |
-| Authorization | Account X owns vault Y | `get_owned_vault` → foreign ids **404** | Keep. Org membership ≠ vault ownership. Admin 404 on employee vaults |
-| Crypto | Snapshot authentic; only authorized client decrypts | Client AES-GCM, envelopes, sealed manifest | **Unchanged.** No org envelope. No admin wrapping key |
-
-Server must never receive or derive: Master Password, VK, DK, DWK, PRF, plaintext entries, employee agent private keys, employee agent policy plaintext (unless the employee later opts into sharing a **redacted** diagnostic).
-
-Honest limits that Team Mode inherits (do not “fix” them by weakening ZK):
-
-1. `X-Device-Id` is **client-asserted**, not a WebAuthn proof. Org “this device belongs to member X” is the same class of metadata.
-2. `DELETE /devices/{id}` is `metadata_only`. Soft revoke = next snapshot omits the device envelope. Hard revoke = employee `hardRevokeDevice` (`vaultKeyVersion++`).
-3. Account session ≠ vault unlock.
-4. FastAPI has **no** `/v1/access` token mint. Broker is local.
-5. Application identity is a string (`n8n`) — spoofable. Pairing token is channel auth, not OS identity.
-6. PRF is unproven in the Tauri webview. Team device unlock is still master password / recovery key.
-7. A grant already handed to an agent cannot be un-known. TTL stops **future** handoffs.
+Team **cannot** live in the local singleton. Host org metadata on the **server profile**. Solo stays default when `teamServerUrl` is empty.
 
 ---
 
-## 3. Existing identity map
+## 2. Current crypto architecture
 
-```text
-Account (User)
-  email / local singleton
-  account password hash (server profile only)
-        │
-        │ owns (authorization, not crypto)
-        ▼
-      Vault
-        random VK, sealed snapshots
-        │
-        ├── Master Envelope     (Argon2id → MK → VK)
-        ├── Recovery Envelope   (printed kit → RWK → VK)
-        └── Device Envelope[]   (DK → VK)
-                │
-                Device.device_id   (stable string, AAD-bound)
-                localStorage `4allpass.deviceId`  (`frontend/src/lib/device-identity.ts`)
-                optional WebAuthn credential (PRF → DWK → DK)
-```
+Authoritative: [`crypto-protocol.md`](crypto-protocol.md). Hard invariants that Team Mode must not touch:
 
-**What a Device is today**
+1. Vault Key is always random — never derived from a password.
+2. AES-256-GCM nonces are library-generated; never reused with the same key.
+3. Every seal uses canonical AAD (`encodeAad`).
+4. Master password never leaves the client.
+5. Account password / OAuth have **zero** influence on unwrap.
+6. Versions are explicit (`vaultKeyVersion`, `deviceKeyVersion`, `cryptoVersion`).
+7. Open paths take the **caller’s expectation** (`expectType`, ids, versions) **before** decrypt.
+8. `revision` is only trusted after the sealed manifest verifies.
 
-- Stable string `device_id` chosen by the client (`dev_` + random hex).
-- Bound into Device Envelope AAD and DWK HKDF info.
-- Server row: `vault_id` + `device_id`, display name, platform, `revoked_at`.
-- Not a hardware TPM quote. Not an org principal. One vault, many devices.
+Server stores opaque envelopes and ciphertext. It does not “verify” PRF. It does not invent VK.
 
-**What an Agent is today**
-
-```text
-application: "n8n"          // string, TRUSTED_APPLICATIONS = ["n8n"]
-Authorization: Bearer <pairing token>   // printed, compare_digest, not a vault key
-Origin: http(s)://… on POST /v1/access/request  → 403
-```
-
-A foreign process can claim `"application": "n8n"` if it has the pairing token. The token is the only real gate on the wire. Policy still DENYs unknown **names**, but the name is not cryptographic.
-
-**What does not exist**
-
-- Organization, Member, Invite, OrgDevice, Resource
-- Agent keypair
-- Org boundary policy
-- Employee agent policy object (capabilities live on **credential entries** as strings)
-- Org audit chain
+Team Mode adds **no** new envelope `type`. Recovery shares are **not** a fourth envelope. They are an encoding of the existing Recovery Key.
 
 ---
 
-## 4. Existing broker map
+## 3. Current vault-key hierarchy
 
 ```text
-n8n / @4allpass/access
-        │  POST http://127.0.0.1:8788/v1/access/request
-        │  Bearer pairing token
-        │  no Origin (browser Origin → 403)
-        ▼
-backend/app/broker.py     // relay only
-        │  queue → UI poll GET /v1/broker/poll
-        │  UI POST /v1/broker/decide  { id, body }
-        ▼
-unlocked frontend
-        decideAccess() in @4allpass/core
-        unknown app DENY
-        missing scope DENY
-        decision "allow" = eligible for HUMAN Allow  (not auto-handoff)
-        issueGrant() — metadata, no secret
-        UI attaches material from the unlocked vault
-        auditLine() — no secret
+                    Random 256-bit Vault Key (VK)
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+  Master Envelope       Device Envelopes       Recovery Envelope
+  Argon2id → MK         DK (per device)        Recovery Key → HKDF → RWK
+        │                     │                     │
+        └─────────────────────┴─────────────────────┘
+                              │
+                              ▼
+                     AES-256-GCM + AAD
+                     (entries + sealed manifest)
 ```
 
-Rules that Team Mode must keep:
+WebAuthn is **not** an encryption oracle for VK:
 
-| Rule | Keep |
+```text
+PRF (32 bytes, never used as a key)
+  → HKDF → DWK
+  → unwrap Device-Key Envelope → DK
+  → unwrap Device Envelope → VK
+```
+
+**Do not** insert Organization or Shamir on the VK line. Dual-control belongs on the **Recovery Key**, which already exists solely for disaster unwrap.
+
+---
+
+## 4. Current device identity
+
+`frontend/src/lib/device-identity.ts`: stable `dev_` + 12 random bytes in `localStorage`. Bound into Device Envelope AAD and DWK HKDF `info`.
+
+Server row (`devices`): `vault_id` + `device_id`, display name, platform, `revoked_at`. Unique `(vault_id, device_id)`.
+
+`X-Device-Id` is **client-asserted**, not a WebAuthn proof. Stolen session + stolen device id still talks to the storage API. It still cannot decrypt VK₂ after hard revoke.
+
+Team binds **the same string** as `OrgDevice.deviceId`. No second identity system.
+
+---
+
+## 5. Current WebAuthn / PRF flow
+
+Authoritative: [`webauthn-prf.md`](webauthn-prf.md), [`security-boundary.md`](security-boundary.md) §3.
+
+- Challenges are server-issued, hashed at rest, single-use.
+- `cose_verified` = ceremony integrity (`fmt=none` + assertion). **Not** PRF proof.
+- Server never sees PRF output, DWK, or DK plaintext.
+- Fallback: PRF > largeBlob > UV-gated local store > master password.
+- Measured Tauri WKWebView: `prf` is **null**. Team must not claim passkey-bound org devices.
+
+OrgDevice enrolment is metadata: “this `device_id` belongs to member X.” Crypto unlock stays on the employee client.
+
+---
+
+## 6. Current broker architecture
+
+Authoritative: [`local-access-broker.md`](local-access-broker.md), [`security-boundary.md`](security-boundary.md) §7.
+
+```text
+agent  POST 127.0.0.1:8788/v1/access/request
+       Bearer <pairing token>
+       Origin http(s)://…  →  403
+            │
+            ▼
+broker.py   relay only (never decrypts, never mints provider tokens)
+            │
+            ▼
+unlocked UI  decideAccess() → human Allow/Deny → material from vault
+             auditLine() omits secrets
+```
+
+Keep: loopback, Origin 403, pairing token as **channel**, policy in the UI, FastAPI without `/v1/access`. Do not make the org server a credential broker.
+
+---
+
+## 7. Current agent access flow
+
+```text
+application: "n8n"     // TRUSTED_APPLICATIONS = ["n8n"]; unknown DENY
+parseAccessBody → evaluatePolicy(credentials)
+  deny: application_not_allowed | no_credential | scope_not_permitted | …
+  allow: eligible for HUMAN Allow (not auto-handoff)
+issueGrant → metadata, TTL, no secret
+UI attaches access_token / password only after Allow
+```
+
+Identity is a **string**. Pairing token is the wire gate. A process with the token can claim `"n8n"`.
+
+Team needs a keypair **in the access layer** (WebCrypto Ed25519, versioned `agent-identity-v1`), verified in the unlocked UI before `evaluatePolicy`. Not in `packages/crypto` vault protocol. Broker still only relays.
+
+---
+
+## 8. Current backup / snapshot architecture
+
+Authoritative: [`vault-revision.md`](vault-revision.md).
+
+The unit of backup **already is** the immutable snapshot: envelopes + encrypted entries + sealed manifest, CAS on `expectedRevision`, reject `vaultKeyVersion` decrease.
+
+| Mechanism | Same vault? | Plaintext? |
+|---|---|---|
+| Active snapshot on server | yes | no |
+| IndexedDB last verified wire snapshot | yes | no |
+| `4allpass-share-v1` | **no** (new VK) | no |
+| Emergency Kit | unwraps Recovery Envelope | the key **is** the secret |
+
+Team backup = **export the opaque wire snapshot**. Do not invent a parallel backup AEAD. Do not tell anyone to “send a share file” as restore of the same vault.
+
+Restore of the same vault: snapshot + master **or** reconstructed RK. First-run “I have a vault” currently imports a **share** into a **new** vault — different path.
+
+---
+
+## 9. Current revocation architecture
+
+| Name | Effect |
 |---|---|
-| Bind `127.0.0.1` | yes |
-| Browser Origin on grant path = 403 | yes |
-| Pairing token required | yes (channel). Agent pubkey is **identity**, not a replacement for loopback |
-| FastAPI never decrypts, never mints provider tokens | yes |
-| Policy in the unlocked UI, not in the sidecar | yes |
-| Core grant has no secret | yes |
-| Node `:8787` is not the product broker | yes |
-| Unknown app DENY | yes |
-| Human Allow still required for handoff | yes in Phase 1 (no silent agent grants) |
+| Metadata `DELETE /devices/{id}` | `revoked_at`. Response `revocation: "metadata_only"`. Not cryptographic erase |
+| Soft revoke | Next snapshot **omits** that device envelope, same `vaultKeyVersion` |
+| Hard revoke | Employee `hardRevokeDevice`: VK++, re-encrypt, omit target, CAS, then metadata DELETE |
 
-Do **not** move the broker onto the org server. Do **not** make FastAPI a credential broker. Do **not** index employee agent policies on the org server as plaintext.
+A client that already holds VK still decrypts snapshots sealed under that VK until hard rotate.
+
+**Team org-revoke is a fourth, organizational bit.** It must not be named “rotate vault key”. Stolen laptop that may hold VK still needs the **employee** to hard-revoke.
 
 ---
 
-## 5. Existing backup / recovery map
+## 10. Current audit architecture
 
-### Backup (already, under other names)
+`packages/core` `auditLine` / `auditEvent`: local access decisions (application, provider, scope, APPROVED/DENIED). `auditContainsSecret` tests that secrets are absent.
 
-| Mechanism | What it is | Plaintext? | Same vault? |
-|---|---|---|---|
-| Active sealed snapshot on the server | Opaque envelopes + entries + sealed manifest | no | yes |
-| Offline wire-snapshot cache (IndexedDB) | Last **verified** snapshot, pin still applies | no | yes |
-| `4allpass-share-v1` file | New random VK, subset of entries, recovery-encoded share key | no | **no** — copy, new vault on import |
-| Emergency Kit | 256-bit recovery key, printed. Unwraps Recovery Envelope | key is the secret | yes |
+No hash chain. No org events. No signatures.
 
-There is **no** separate “encrypted backup format” besides the snapshot. Do not invent one. A Team MVP backup is: **export the opaque wire snapshot** (same bytes the server already stores) plus the employee still holds master password and/or kit.
-
-Restore of the **same** vault: fetch or import that snapshot, unlock with master or recovery key, enrol a new device envelope. That path exists in the crypto library (`verifySnapshot` / `unwrapVaultKey`). The local first-run “I have a vault” UI currently opens a **share** file and creates a **new** vault — that is not same-vault restore. Same-vault restore from kit + snapshot is the crypto path; the desktop UI for “download my sealed snapshot” is thin.
-
-### Recovery (authoritative: [`recovery.md`](recovery.md))
-
-The only cryptographic ways back into a vault:
-
-1. Master password → Master Envelope → VK
-2. Recovery key → Recovery Envelope → VK
-3. Enrolled device with DK still available → Device Envelope → VK
-
-There is **no** e-mail reset, **no** OAuth unwrap, **no** server-held recovery secret.
-
-### What “admin helps recovery” can mean without breaking ZK
-
-| Employee still has | Admin can | Admin cannot |
-|---|---|---|
-| Master password, lost laptop | Org-revoke the old device; employee unlocks on a new device from the snapshot | See VK or entries |
-| Recovery kit, forgot master | Same org-revoke; employee uses kit locally | Hold or type the kit |
-| Second enrolled device | Employee unlocks there; optionally hard-rotates | Rotate VK for them |
-| Nothing (no kit, no master, no other device) | Sympathy and offboarding | Recover the vault. **Period.** |
-
-If we cannot recover cryptographically, we **document the gap**. We do **not** introduce an admin unwrap key, a server-held escrow, or a “break glass” copy of VK.
-
-Phase-2+ options (not MVP): Shamir (employee share + optional admin share, admin share **alone** cannot unwrap); public-key wrapping to a **new** device after the employee already unwrapped VK. Both need new primitives. Not now.
+Team org audit is a **new** table of membership/device/resource/recovery events, `prevHash` chain, **not** an export of `auditLine`. Shipping “opened GitHub at 14:32” to the admin is PAM.
 
 ---
 
-## 6. Gap analysis
+## 11. Team Mode gap analysis
 
 | Object | EXISTING | REUSE | MODIFY | NEW | DEPRECATED |
 |---|---|---|---|---|---|
-| Vault / VK / envelopes / manifest | yes | **must** | no protocol change | — | — |
-| User + vault ownership 404 | yes | org ≠ owner | none for solo | Member links `user_id` | — |
-| `device_id` + Device Envelope | yes | bind org row to **same** string | org-revoke is a **separate** flag | `OrgDevice` | do not invent a second device id |
-| WebAuthn / PRF | yes, unproven in Tauri | enrol as today | none | — | do not add a Tauri-biometrics envelope |
-| Agent string + pairing token | yes | keep token as **channel** | `evaluatePolicy` grows AND-layers | Agent keypair (WebCrypto, not `packages/crypto`) | string-only identity becomes insufficient **when Team is on**; solo may keep string until pairing upgrade |
-| Credential capabilities on entries | yes | employee policy can point at them | optional resource id on the policy, not on FastAPI entries | — | — |
-| `evaluatePolicy` | employee-only | keep default solo path | add optional `orgBoundary` + `agentPolicy` AND | `effectiveAccess()` | do not replace with an admin PDP |
-| Access audit | local, no secrets | employee diagnostics | do not ship rows to admin by default | org-event audit | do not log “opened GitHub at 14:32” for the org |
-| Snapshot as backup | yes | export/import wire snapshot | UI for full-snapshot export | — | do not treat share-v1 as backup |
-| Recovery kit | yes | only crypto recovery | recovery **assistance** UX (org device revoke + re-enrol) | honest “cannot recover” state | no admin recovery key |
-| Local solo profile | yes | **unchanged** | hidden Team chrome unless a team URL exists | — | — |
-| Server profile | yes | host org tables | new routes under `/api/v1/orgs` | Organization, Member, Invite, Resource, OrgBoundary, OrgAudit | — |
-| Organization vault / shared secrets | no | leave room (member ≠ vault) | — | Phase 2 only | do not sneak it into Phase 1 |
-| SSO / SCIM / LDAP / RBAC / HSM / JIT | no | — | — | Phase 3+ | — |
-| PAM / session recording / admin credential view | must never exist | — | — | — | if a design looks like this, reject it |
+| VK / envelopes / manifest | yes | must | no new envelope type | — | — |
+| Recovery Key + RWK + Recovery Envelope | yes | **split this RK** | share encode/decode next to `recovery.ts` | XOR 2-of-2 helpers + KATs | printable **full** RK for **team** members after split |
+| Emergency Kit (solo) | yes | unchanged | — | — | — |
+| User / vault ownership 404 | yes | org ≠ owner | — | Member → `user_id` | — |
+| `device_id` | yes | same string on OrgDevice | org-revoke flag | `OrgDevice` | second device id |
+| WebAuthn/PRF | yes, unproven in Tauri | enrol as today | — | — | Tauri-biometrics envelope |
+| Agent string + pairing token | yes | token = channel | `effectiveAccess` AND | Agent keypair (WebCrypto) | string-only identity **when Team is on** |
+| `evaluatePolicy` | employee-only | solo default | optional org + agent AND | — | admin PDP |
+| Snapshot as backup | yes | export/import UI | — | — | share-v1 as “backup” |
+| Recovery ceremony | kit typed locally | unwrap path | session + dual share input | RecoverySession, OrgRecoveryShare blob | admin unwrap key; server-side combine; Shamir-for-2 |
+| Access audit | local | diagnostics | do not copy to admin | OrgAudit events | credential-access org log |
+| Local solo | yes | unchanged | org routes 404 | — | — |
+| Server profile | yes | host org + opaque org share | `/api/v1/orgs` | Organization, Member, Invite, Resource, OrgBoundary, RecoverySession | `organization_id` on `Vault` |
+| Org vault / shared secrets | no | leave room | — | Phase 2 (needs public-key wrap) | fake it with share-v1 |
+| SSO / SCIM / LDAP / RBAC / PAM / HSM / JIT | no | — | — | Phase 3+ / never | — |
 
 ---
 
-## 7. Architecture conflicts (do not paper over)
-
-1. **Solo local vs team host.** Local SQLite is one user. Org membership needs a shared server. Resolution: Team is opt-in; desktop setting `teamServerUrl`; empty = today’s app.
-2. **Org device revoke ≠ vault hard-revoke.** Prompt example “Revoke MacBook → org access denied, vault still encrypted” is **org-layer**. Stolen-device **crypto** revoke remains the employee’s `hardRevokeDevice`. Admin cannot do VK++. UI must use different words: “Remove from organization” vs “Rotate vault key”.
-3. **Agent string vs keypair.** `packages/crypto` has no signing primitive. Resolution: Ed25519 (or equivalent) via WebCrypto **in the access layer**, versioned `agent-identity-v1`. Do **not** add a second vault wrap protocol.
-4. **Recovery vs “admin helps”.** Crypto cannot help if kit and master are gone. Resolution: assistance is operational. Document the dead end.
-5. **Access audit vs surveillance.** Today’s `auditLine` is local agent Allow/Deny. If that stream is copied to the org, we have PAM. Resolution: org audit = membership/device/resource/recovery **events** only.
-6. **Secret Access Layer note** (`secret-access-layer.md`): FastAPI should not index “n8n may read OpenAI”. Org **boundary** (Daniel may use AWS Production) is org metadata and may live on the server. Employee **agent policy** (this n8n may use AWS Staging) stays in the employee vault ciphertext. Do not collapse the two.
-7. **`X-Device-Id` honesty.** OrgDevice is metadata. A stolen session + stolen device id can still talk to the org API until membership/device is revoked. It still cannot decrypt another vault.
-8. **Default deny vs usability for 3–5 people.** Org resources start **deny** unless an admin allow-row exists. Personal vault entries that are **not** tagged as an org resource stay employee-only; org policy does not see them and must not need to.
-9. **Human Allow.** Phase 1 keeps the existing Allow/Deny prompt. Team Mode does not auto-issue because the org allowed it.
-10. **Sharing vs backup.** Share-v1 is the wrong restore primitive for a lost laptop (new VK). Do not tell admins to “send a share”.
-
----
-
-## 8. Philosophy and trust model
-
-### Who is trusted with what
-
-| Actor | Trusted to | Not trusted to |
-|---|---|---|
-| Employee | Own vault, own agents, own policies, own devices in normal operation | Another employee’s vault |
-| Admin | Org, members, invites, org devices, resources, org boundary, assistance, org audit | Employee plaintext, VK, master, kit, agent private keys, full agent policies |
-| Org server (even if the admin operates it) | Store opaque vault blobs + org metadata | Decrypt. Mint provider tokens. See pairing private material |
-| Agent | Speak to loopback after pairing; receive a TTL grant after human Allow | Claim a name; hold a durable org role; bypass employee deny |
-| 4AllPass software | Enforce AND, diagnose without secrets, help recover operationally | Escrow keys “for convenience” |
-
-### Trust the employee
-
-The org does not pre-approve each agent. The org does not watch each credential use. The org sets which **company resources** a **person** may touch at most. The person decides which of their agents may use that ceiling.
-
-### Help when needed
-
-Lost laptop: admin org-revokes the device, employee restores from snapshot + master/kit, enrols a new device, org binds the new `device_id`. Diagnostics: employee generates a redacted report and can send it.
-
-### Control the organization, not the person
-
-Suspend/remove member, revoke org device, define company resources, set the boundary. Never “open Daniel’s GitHub”.
-
----
-
-## 9. Proposed data model (Phase 1)
-
-All new objects are **versioned**. Soft-delete via `status` / `revoked_at`. No plaintext secrets in any column.
-
-### Organization
+## 12. Proposed organization model
 
 ```text
 Organization
-  id
-  name
-  createdAt
-  ownerUserId          // initial admin; still a User, not a crypto principal
-  status               // active | suspended
-  schemaVersion        // 1
-```
+  id, name, createdAt, ownerUserId, status (active|suspended), schemaVersion=1
 
-### Member
-
-```text
 Member
-  id
-  organizationId
-  userId               // same User that owns that person’s vaults
-  role                 // admin | member     (only these in v1)
-  status               // pending | active | suspended | removed
-  createdAt
-```
+  id, organizationId, userId, role (admin|member), status (pending|active|suspended|removed), createdAt
 
-Roles in v1: **admin** and **member**. No custom RBAC.
-
-### Invite
-
-```text
 Invite
-  id
-  organizationId
-  email
-  role
-  tokenHash            // only hash at rest
-  expiresAt
-  createdByMemberId
-  acceptedAt
+  id, organizationId, email, role, tokenHash, expiresAt, createdByMemberId, acceptedAt
 ```
 
-Accept: create or link `User`, set Member `active`. Employee then creates **their own** vault if they do not have one. Invite does not wrap VK.
+Admin: invite, suspend, remove, re-enable (`removed`/`suspended` → `active` if the user still exists). No custom RBAC.
 
-### OrgDevice
-
-```text
-OrgDevice
-  id
-  organizationId
-  memberId
-  deviceId             // SAME string as vault Device.device_id
-  displayName
-  status               // active | revoked
-  enrolledAt
-  revokedAt
-```
-
-Unique `(organizationId, deviceId)`. Org revoke sets `status=revoked`. It does **not** delete the Device Envelope. Employee vault on that laptop still decrypts if VK is there. Org APIs and EffectiveAccess treat the device as denied.
-
-### Resource (company-owned **names**, not credentials)
-
-```text
-Resource
-  id
-  organizationId
-  name                 // "AWS Production"
-  provider             // "aws" | "github" | …  (catalog string, not a secret)
-  status
-  metadata             // non-secret JSON (account alias, region label)
-  schemaVersion
-```
-
-Admin never sees which personal credential the employee stored for that name.
-
-### OrganizationBoundary
-
-```text
-OrgBoundary
-  id
-  organizationId
-  memberId
-  resourceId
-  effect               // allow | deny
-  version              // monotonic per row
-  updatedAt
-```
-
-Missing row = **deny** for that org resource. Personal (non-resource) vault items are out of this table.
-
-### Employee-side (ciphertext, in the employee vault — not FastAPI columns)
-
-```text
-AgentIdentity v1
-  version: 1
-  type: "agent-identity-v1"
-  id
-  label                // "n8n" — display only
-  publicKey            // WebCrypto signing key
-  deviceId             // which employee device paired it
-  status               // active | revoked
-  createdAt
-
-AgentPolicy v1
-  version: 1
-  type: "agent-policy-v1"
-  agentId
-  resourceId?          // org resource, if any
-  provider?            // personal provider name
-  capabilities[]
-  effect               // allow | deny
-```
-
-These objects are vault entries or a sealed sidecar blob under the same VK. The org server stores **at most** `agentId` + `publicKey` if we later need org-wide revoke-of-a-stolen-agent — **Phase 1 default: do not upload them.** Stolen agent: employee revokes locally; org can still deny the **resource** or **member**.
-
-### OrgAudit (server, no secrets)
-
-```text
-OrgAudit
-  id
-  organizationId
-  type                 // see §16
-  actorMemberId
-  targetType           // member | device | resource | invite | recovery
-  targetId
-  at
-  prevHash             // SHA-256 of previous row in this org (tamper-evident, not a transparency log)
-  rowHash
-```
-
-Event types in Phase 1:
-
-- `member.invited` `member.joined` `member.suspended` `member.removed`
-- `device.enrolled` `device.revoked`
-- `resource.created` `resource.changed`
-- `recovery.started` `recovery.completed` (operational flags, no keys)
-
-**Not** in Phase 1: `credential.accessed`, `agent.granted`, per-request trails for the admin.
-
-### Unchanged
-
-`User`, `Vault`, `VaultSnapshot`, `KeyEnvelope`, `EncryptedEntry`, `Device` (vault), `WebAuthnCredential`. No `organization_id` on `Vault`. That would invite “admin lists employee vaults”.
+Invite accept links/creates `User`, sets member `active`. Employee creates **their own** vault. Invite does not wrap VK.
 
 ---
 
-## 10. Effective access
+## 13. Proposed employee / device / agent identity
 
 ```text
-request from Agent A, Member M, Device D, Resource R, capability C
+Employee User
+  └── owns Vault (unchanged)
+        ├── devices[]           // crypto envelopes
+        └── OrgDevice bind      // metadata: this device_id belongs to Member
 
-1. Member M status == active?                         else DENY member_inactive
-2. OrgDevice D status == active for M?                else DENY device_revoked
-3. R is an org resource?
-     yes → OrgBoundary(M, R) == allow?                else DENY org_boundary
-     no  → org layer skips (personal credential)
-4. Agent A identity verifies (signature + not revoked)
-5. Employee AgentPolicy(A, R or provider, C) == allow
-6. Existing evaluatePolicy on the vault credential
-     (unknown app DENY, scope, revoked credential, …)
-7. Human Allow in the unlocked UI
+AgentIdentity v1  (vault ciphertext, not FastAPI)
+  version, type: "agent-identity-v1"
+  id, label, publicKey, deviceId, status, createdAt
+
+AgentPolicy v1    (vault ciphertext)
+  agentId, resourceId?, provider?, capabilities[], effect
+```
+
+Pairing: challenge from unlocked UI, agent signs, employee Allow stores pubkey. Pairing token remains loopback **channel** auth.
+
+Org does not approve each agent. Default: **do not upload** agent pubkeys. Stolen agent → employee revokes locally; org can deny member or resource.
+
+---
+
+## 14. Proposed access model
+
+```text
+1. Member active?                         else DENY member_inactive
+2. OrgDevice active for this device_id?   else DENY device_revoked
+3. Org resource? boundary allow?          else DENY org_boundary
+   (non-resource personal items: skip org layer)
+4. Agent signature valid and not revoked
+5. Employee AgentPolicy allow
+6. Existing evaluatePolicy on the credential
+7. Human Allow
 8. Grant TTL as today
 ```
 
-AND all the way down. Examples from the prompt:
-
-| Org | Employee | Result |
+| Org | Employee/Agent | Result |
 |---|---|---|
-| Daniel → AWS Prod allow | n8n → AWS Prod deny | DENY |
-| Daniel → AWS Prod deny | n8n → AWS Prod allow | DENY |
-| allow | allow | eligible for human Allow |
+| allow | deny | DENY |
+| deny | allow | DENY |
+| allow | allow | pending human Allow |
 
-Organization allow is **not** an instruction to the employee to use AWS Production.
-
-TTL: keep `issueGrant` / `grantIsValid`. Expired grant fails. Revoked device / member / agent fails **new** grants; copies already given are not un-known (same honesty as today).
+TTL and “already copied secret cannot be un-known” stay honest.
 
 ---
 
-## 11. Proposed API changes
+## 15. Proposed recovery key hierarchy
 
-Prefix: `/api/v1/orgs`. Server profile only. Local profile: 404, same as `/auth/local` inverted.
+**Do not change the VK line.** Add a split **under** the existing Recovery Key:
 
-All routes: Bearer session + `X-Device-Id`. Org routes additionally: caller is an **active** member (admin-only where noted). Foreign org ids → **404**, never 403 (same honesty as vaults).
+```text
+VK  (unchanged)
+ └── Recovery Envelope  (type="recovery", unchanged wrap)
+       wrapping key = RWK
+       RWK = HKDF-SHA-256(
+               IKM  = Recovery Key RK,          // existing 32-byte CSPRNG
+               salt = SHA-256(4allpass-rwk-salt-v1 || vault_id),
+               info = 4allpass-recovery-wrap-v1 || vault_id || crypto_version
+             )
 
-**Never accepted on these routes:** master password, VK, DK, DWK, PRF, recovery key, entry plaintext, agent private key, employee policy blob.
+RK  (existing; NOT VK; never stored on the server)
+ ├── Solo: printed Emergency Kit (today)
+ └── Team: XOR 2-of-2, then ZEROIZE RK
+       shareA  = CSPRNG(32)                    // employee card
+       shareB  = RK ⊕ shareA                   // organization envelope
+       RK      = shareA ⊕ shareB               // reconstruct locally only
+```
+
+Domain-separated **share encoding** (new, next to `formatRecoveryKey`):
+
+```text
+payload = share_bytes(32) || checksum(2)
+checksum = SHA-256( frame(["4allpass-recovery-share-checksum-v1",
+                           vault_id, recovery_id, share_index, share_bytes]) )[0..2]
+encoded  = Crockford-Base32, groups of 5  (reuse existing alphabet)
+header (printed, not secret): vault_id, recovery_id, share_index (1=employee, 2=org), schemaVersion=1
+```
+
+`recovery_id` is a new random id per RK generation (not the raw RK). It binds prints to one split. After RK rotation, old `recovery_id` must fail combine-or-unwrap (unwrap AEAD fails if someone combines the wrong generation; also check `recovery_id` before XOR).
+
+Integrity of the reconstructed RK is the existing Recovery Envelope GCM tag plus the share checksum (typos, not a second MAC).
+
+**Later k-of-n:** replace XOR with Shamir in the same encode/decode slot (`schemaVersion=2`). Do not design that now.
+
+---
+
+## 16. Proposed 2-of-2 recovery architecture
+
+### What each party holds
+
+| Party | Holds | Alone |
+|---|---|---|
+| Employee | Share A (card), master password, device keys, sealed snapshot (server or file) | Cannot reconstruct RK. **Can** still unlock with master or an enrolled device |
+| Organization | Share B (opaque server blob + printed org envelope). **Not** an admin’s personal kit | Cannot reconstruct RK. Cannot unwrap Recovery Envelope |
+| Server | Snapshot (Recovery Envelope + ciphertext) + optional Share B blob | Cannot reconstruct RK. Dump + Share A (stolen card) **can** — residual, see threat model |
+| Admin laptop | Never RK, never VK, never Share A | If we reconstruct there, the design has failed |
+
+### Independent paths (do not collapse)
+
+1. **Normal lost laptop, master remembered:** fetch snapshot, unlock with master, enrol new device, admin org-revokes the old `deviceId`. Shares unused.
+2. **Second device still enrolled:** unlock there. Shares unused.
+3. **Disaster (no device, no master):** Share A + Share B + snapshot + recovery **session** → local RK → RWK → Recovery Envelope → VK → new master + new split.
+
+Path 3 is the only path that needs the org. That is “help when needed,” not “admin owns recovery.”
+
+### Availability cost (must be said at enrolment)
+
+If the employee loses **Share A** and forgets the master and has no other device, the org **cannot** help. 2-of-2 dual control **is** that tradeoff. UI copy (DE+EN) at split time, confirmation required.
+
+### Where Share B lives
+
+Recommended for 3–5 people:
+
+- Opaque blob on the org server, keyed by `(organizationId, memberId, recoveryId)`. Any **active admin** may retrieve it for a ceremony. It is useless without Share A.
+- Printed Organization Recovery Envelope with the **same bytes**, stored as **org property** (safe), not on one admin’s USB. Admin turnover: the print stays; the new admin uses the server blob or the envelope.
+
+Share B is **not** wrapped under an admin personal key (that makes recovery die when that admin leaves, and puts RK-adjacent material in a personal vault).
+
+Share A **never** uploaded.
+
+### What we refuse
+
+| Idea | Why not |
+|---|---|
+| Split VK | Breaks master/device envelopes; reconstruct-on-unlock or store VK |
+| New RK wrapping the existing RK | Extra envelope, extra rotation, no confidentiality gain |
+| Shamir library in MVP | 2-of-2 = XOR |
+| Combine on FastAPI or admin UI | Admin/server would see RK → VK |
+| Full kit + Share A both given to employee | Dual control is fake |
+| Scratch-off as a cryptographic assumption | Ops only |
+| Org share in the admin’s own vault | Org material must survive admin change |
+| Reconstruct without the snapshot | RK without Recovery Envelope cannot produce VK — by design, keep it |
+
+---
+
+## 17. Physical Recovery Card / Organization Envelope
+
+Print templates in the app. Same Crockford string as the digital share. QR encodes that string, not a second secret.
+
+**Employee Recovery Card**
+
+- Title: 4AllPass Recovery Share A
+- `recovery_id`, `vault_id` (or short), org name
+- Human-readable grouped Crockford
+- QR of the same payload
+- Plain sentence: “Useless without the organization share. Not your vault password. 4AllPass cannot restore this if you lose it and forget your password.”
+- Optional scratch-off **covering the Crockford** — convenience against casual photos, **not** a security claim
+
+**Organization Recovery Envelope**
+
+- Title: 4AllPass Organization Recovery Share B
+- `organization_id`, `member_id` / employee label, `recovery_id`
+- Same encoding
+- “Property of the organization. Not a vault key. Useless without the employee share.”
+- Stored as org custody
+
+A photograph of either print **is** that share. Same class as today’s printed kit.
+
+---
+
+## 18. Recovery ceremony
+
+Server state (**no secrets**):
+
+```text
+RecoverySession
+  id, organizationId, memberId
+  newDeviceId              // claimed by employee client
+  challenge                // random, single-use
+  status                   // pending | employee_confirmed | combining | completed | failed | expired
+  expiresAt                // short, e.g. 15 minutes
+  recoveryId               // expected share generation
+  createdByMemberId        // admin
+```
+
+Flow:
+
+1. Member is `active`. Admin starts recovery → audit `recovery.started`.
+2. Employee, on a **new** device: storage login (account password — not VK). Confirms session + challenge. Binds `newDeviceId`.
+3. Admin org-revokes the lost device(s).
+4. Employee device fetches Share B **only** while session is `employee_confirmed` and unexpired. Share B is displayed **nowhere** on the admin screen as copy-paste into Slack; it is a binary download to the employee client over the authenticated session, or the employee types the org envelope while the admin holds the paper in the same room. Prefer in-app fetch during session so Share B is not sitting in chat logs.
+5. Employee scans/types Share A.
+6. Client: checksums → XOR → `deriveRecoveryWrappingKey` → `unwrapVaultKey({ expectType: "recovery" })` → VK.
+7. Client immediately: new master envelope, new RK, new XOR split, enrol this device, CAS snapshot. Old shares die because the Recovery Envelope is replaced.
+8. If the lost device may have held VK: employee **hard-revokes** (VK++) as part of the same unlocked session, then splits the **new** RK.
+9. Audit `recovery.completed` or `recovery.failed`. Session cannot be reused.
+
+Server receives: session ids, status, never RK, never shares in logs, never VK.
+
+Removed/suspended member: start or confirm → 404. Offline combine of stolen shares + stolen snapshot dump still works (same class as stolen full kit today). Session is **authorization**, not a cryptographic kill switch. Crypto kill switch = new RK in a newer pinned snapshot.
+
+Replay: consumed challenge + `expiresAt`. Expired session cannot fetch Share B.
+
+Old backup: combine checks `recovery_id`; unwrap checks `vaultKeyVersion`. A malicious server serving an older snapshot is the existing first-use / pin problem; ceremony should show `vaultKeyVersion` + `recovery_id` both parties expect.
+
+---
+
+## 19. Threat model (Team + recovery)
+
+Existing [`threat-model.md`](threat-model.md) still applies (malicious server cannot forge envelopes). Additions:
+
+| Attacker | Can | Cannot | Mitigation | Residual |
+|---|---|---|---|---|
+| Compromised server | Dump snapshots + Share B; withhold data; serve old authentic snapshot | Reconstruct RK without Share A; forge Recovery Envelope | Combine only locally; pin revision after unlock; session does not hold RK | Dump + stolen card = RK |
+| Malicious admin | Everything the server can for org metadata; retrieve Share B; suspend members | Unwrap Recovery Envelope alone; `get_owned_vault` of employee (404) | Dual control; no admin combine UI | Admin + stolen card = RK |
+| Stolen employee device | Use cached VK until lock/hard-revoke; org access until org-revoke | Other vaults | Org-revoke + employee hard-revoke; auto-lock | RAM dump race (already accepted) |
+| Stolen org envelope (Share B) | Hold 50% of RK | Unwrap | Employee keeps Share A offline; rotate RK if envelope theft is known | + stolen card |
+| Stolen employee card (Share A) | Hold 50% of RK | Unwrap | Org keeps Share B; rotate if card theft known | + server dump or stolen envelope |
+| Stolen Share B + compromised admin | Same as malicious admin | Alone, still no RK | Dual control | Hunt Share A |
+| Compromised agent | TTL grant already given | Bypass employee deny / unknown-app DENY / missing signature (once keypair exists) | Pairing + policy AND | Secret already copied |
+| Malicious local process | Loopback if pairing token stolen (today) | Browser Origin grant path | Origin 403; later agent signature | Token theft on the box |
+| Replay attacker | Repeat an old grant request | Reuse consumed recovery challenge; expired grant | Session consume; grant TTL | Copies already given |
+| Network attacker | See TLS to team server | See RK/VK if TLS holds | TLS; shares not in URLs | TLS MITM if client trusts a bad CA (self-host) |
+| Former employee | Offline decrypt **their** ciphertext if they kept RK or both shares + snapshot | Org APIs; other vaults; new snapshot after RK/VK rotate | Remove member; employee should rotate before offboarding if possible | Historical ciphertext they already had |
+| Compromised org admin device | Share B if they retrieve it | Share A, VK | Don’t display Share B in admin UI; fetch to employee client | Admin malware during ceremony |
+
+**Recovery-specific cases from the prompt**
+
+| Case | Result |
+|---|---|
+| Lost employee device, master known | No shares. New device + master. Admin org-revokes |
+| Lost recovery card | Disaster path dead. Master / other device still work. Print a **new** split from an unlocked vault |
+| Recovery session replay | Fail: consumed challenge / expired |
+| Recovery session expiration | Fail: no Share B fetch |
+| Already revoked org device used as “new” | Fail: bind a fresh `deviceId`; old id stays revoked |
+| Old backup + new shares | Fail: `recovery_id` / AEAD |
+| Vault-key rotation / hard-revoke | Old Recovery Envelope gone; must re-split **after** rotate |
+| Recovery of removed member | Session 404. Offline stolen shares still unwrap old ciphertext — honest residual |
+
+---
+
+## 20. API changes
+
+Prefix `/api/v1/orgs`. Server profile only. Local profile: 404.
+
+Never accepted: master, VK, DK, DWK, PRF, RK, reconstructed RK, entry plaintext, agent private key, employee policy blob.
+
+Foreign org/member ids → **404**.
 
 | Method | Path | Who | Effect |
 |---|---|---|---|
-| POST | `/orgs` | any authenticated user | create org, caller becomes admin member |
+| POST | `/orgs` | authenticated user | create org; caller admin |
 | GET | `/orgs/{id}` | member | metadata |
-| POST | `/orgs/{id}/invites` | admin | invite email + role |
-| POST | `/orgs/invites/{token}/accept` | invited user | member → active |
-| POST | `/orgs/{id}/members/{mid}/suspend` | admin | status suspended |
-| POST | `/orgs/{id}/members/{mid}/remove` | admin | status removed |
-| POST | `/orgs/{id}/devices` | member (self) | bind this `deviceId` |
+| POST | `/orgs/{id}/invites` | admin | invite |
+| POST | `/orgs/invites/{token}/accept` | invited | member active |
+| POST | `/orgs/{id}/members/{mid}/suspend\|remove\|reenable` | admin | status |
+| POST | `/orgs/{id}/devices` | member self | bind `deviceId` |
 | POST | `/orgs/{id}/devices/{did}/revoke` | admin | org-revoke |
-| CRUD | `/orgs/{id}/resources` | admin | company resources |
-| PUT | `/orgs/{id}/boundaries/{memberId}/{resourceId}` | admin | allow \| deny |
-| GET | `/orgs/{id}/boundaries/me` | member | **own** ceiling only |
+| CRUD | `/orgs/{id}/resources` | admin | company names |
+| PUT | `/orgs/{id}/boundaries/{memberId}/{resourceId}` | admin | allow\|deny |
+| GET | `/orgs/{id}/boundaries/me` | member | own ceiling |
+| PUT | `/orgs/{id}/members/{mid}/recovery-share` | **employee client** | upload **Share B** opaque (not A). Server stores bytes it cannot interpret |
+| GET | `/orgs/{id}/recovery-sessions/{sid}/share-b` | employee, session `employee_confirmed` | download Share B once |
+| POST | `/orgs/{id}/recovery-sessions` | admin | start |
+| POST | `/orgs/{id}/recovery-sessions/{sid}/confirm` | employee | challenge |
+| POST | `/orgs/{id}/recovery-sessions/{sid}/complete\|fail` | employee | status only |
 | GET | `/orgs/{id}/audit` | admin | org events |
-| POST | `/orgs/{id}/recovery/start` | admin or member | flag + audit; **no keys** |
-| POST | `/orgs/{id}/recovery/complete` | member | flag + audit |
+| GET | `/orgs/{id}/recovery-readiness/me` | member | flags: share A configured (client-asserted), share B present, snapshot exists — **no secrets** |
 
-**Not added:**
+No `GET /orgs/{id}/vaults`. No FastAPI `/v1/access`.
 
-- `GET /orgs/{id}/vaults`
-- `GET /orgs/{id}/members/{mid}/entries`
-- `POST /v1/access` on FastAPI
-- admin read of agent policies
-- JIT credential issue
-
-Existing `/api/v1/vaults/*` stays owner-only. An admin who is not the owner still gets 404.
-
-Broker routes stay on loopback. Optional later: request body may include `agentSignature` + `agentId`; UI verifies before `evaluatePolicy`. FastAPI still not in that path.
+Share B PUT happens **from the employee device at split time** (they generate both shares locally, keep A, upload B). The admin does not type Share B in.
 
 ---
 
-## 12. Proposed UI changes (existing Tauri/PWA, no second app)
+## 21. Data model (additions)
 
-4AllPass is not a desktop-browser-first team console. Team Mode is extra chrome in the **same** app. Solo: no Team tab.
-
-Tabs today: `entries | access | devices | settings`.
-
-**Employee (member, including admins in their personal role):**
+Versioned. No plaintext secrets.
 
 ```text
-My Vault          (today’s entries — default)
-My Devices
-My Agents         (pairing, revoke agent, was Access)
-Agent Policies
-Organization      (name, my status, my ceiling — not other people)
-Backup            (export sealed snapshot)
-Recovery          (kit reminder, new-device enrol)
-Diagnostics
+OrgDevice
+  organizationId, memberId, deviceId (same as vault Device.device_id)
+  displayName, status (active|revoked), enrolledAt, revokedAt
+  UNIQUE (organizationId, deviceId)
+
+Resource
+  organizationId, name, provider, status, metadata (non-secret), schemaVersion
+
+OrgBoundary
+  organizationId, memberId, resourceId, effect (allow|deny), version
+
+OrgRecoveryShare
+  organizationId, memberId, recoveryId, vaultId
+  shareIndex = 2
+  blob                 // opaque encoded Share B
+  schemaVersion
+  createdAt
+  supersededAt         // on RK rotate
+
+RecoverySession
+  (see §18)
+
+OrgAudit
+  organizationId, type, actorMemberId, targetType, targetId, at, prevHash, rowHash
 ```
 
-Access/Allow-Deny stays the grant UX, not the first screen (`product-maturity.md`).
+Event types: `member.invited|joined|suspended|removed|reenabled`, `device.enrolled|revoked`, `resource.created|changed`, `recovery.share_b_stored|started|completed|failed`, plus generic `security.event`.
 
-**Admin (additional):**
+**Not stored:** Share A, RK, VK, agent policies, credential access logs.
 
-```text
-Team
-  Members
-  Devices         (org device list — display names, not vault envelopes)
-  Resources
-  Boundaries      (member × resource allow/deny)
-  Recovery        (start assistance — revoke old org device, cannot unwrap)
-  Diagnostics     (receive a redacted report the employee generated)
-  Audit           (org events)
-```
-
-Admin UI and employee UI differ **only** where responsibility differs. An admin still has a personal vault tab. They do not get a “view member vault” control, including disabled-and-greyed. Absence, not a tease.
-
-Copy rules (DE+EN): never say “Admin can restore your passwords”. Say “Admin can remove the old device from the organization. Only you can unlock the vault.”
+**Unchanged tables:** `users`, `vaults`, `vault_snapshots`, envelopes, entries, vault `devices`. No `organization_id` on `Vault`.
 
 ---
 
-## 13. Threat model (additions)
+## 22. UI changes (same Tauri/PWA)
 
-Existing [`threat-model.md`](threat-model.md) still applies. New actors and goals:
+Solo: no Team chrome.
 
-### New assets
+**Employee:** My Vault (default), My Devices, My Agents (Access stays grant UX, not first screen), Agent Policies, Organization (own ceiling), Backup (sealed snapshot export), Recovery (kit vs team split, readiness), Diagnostics.
 
-| Asset | Sensitivity | Where |
-|---|---|---|
-| Org membership / boundary rows | Medium (infra map, not passwords) | Server |
-| Invite token | Medium | Hash at rest; raw only in the invite channel |
-| Agent private key | High | Employee device, never server |
-| Employee agent policy | Medium-high (which tools may touch which company systems) | Employee vault ciphertext |
-| Org audit chain | Low-medium | Server |
+**Admin extra:** Team → Members, Devices (org list), Resources, Boundaries, Recovery (start session — **cannot** paste VK), Diagnostics (receive redacted report), Audit.
 
-### New actors
+Split enrolment UI: generate, show Card A, confirm printed, upload B, **zeroize RK**, show readiness. DE+EN: admin cannot restore passwords; losing the card without master is final.
 
-| Actor | Can | Cannot |
-|---|---|---|
-| Org admin (honest) | Invite, suspend, org-revoke devices, set ceiling, read org audit | Decrypt employee vaults |
-| Org admin (malicious / same as self-hosted operator) | Everything a malicious server can already do to **blobs**; rewrite org metadata; withhold snapshots | Forge envelopes under VK; read plaintext without Argon2id / kit / unlocked client |
-| Employee malware | Same as today’s unlocked client | Other employees’ VK |
-| Fake agent (`application: "n8n"` without key) | Today: succeed if pairing token stolen. Phase 1 goal: fail signature |
-| Removed employee with old snapshot | Decrypt **their** historical ciphertext they already hold; cannot use org APIs | New org resources; other vaults |
-
-### Goals Team Mode must not regress
-
-- Full server dump still does not yield plaintext.
-- Admin session ≠ employee VK.
-- Org deny cannot be overridden by employee allow.
-- Employee deny cannot be overridden by org allow.
-- Revoked org device cannot pass step 2 of EffectiveAccess.
-- Removed member cannot pass step 1.
-- Diagnostics and org audit contain no secret, no password prefix, no recovery key.
-
-### New residual risks (accepted in Phase 1)
-
-- Org metadata reveals that “Daniel is allowed AWS Production”. That is the point of a boundary, not a defect. It is **not** Daniel’s password.
-- OrgDevice binding is as strong as `X-Device-Id` (client-asserted).
-- Admin can **availability-DoS** an employee’s org access (suspend). That is an org power. They still cannot open the vault.
-- First-use snapshot choice (malicious server) remains; Team does not fix pin-on-first-use.
+Admin recovery UI: pick member, start session, wait. No share fields. No “unwrap vault”.
 
 ---
 
-## 14. Backup, recovery, diagnostics, audit (Phase-1 behaviour)
+## 23. Test plan
 
-### Backup
+Crypto (new class `adversarial-kdf-prf` or recovery tests in `packages/crypto`):
 
-Employee action: **Download sealed snapshot** (wire format already produced by `encodeVaultSnapshot`). File contains envelopes + ciphertext + sealed manifest. Integrity = existing `verifySnapshotManifest`. `vaultKeyVersion` rides along. No plaintext.
+- `shareA ⊕ shareB = RK`; all-zero RK rejected as today
+- Share A alone / Share B alone cannot derive RWK that unwraps
+- Wrong `recovery_id` / swapped vault_id checksum fails
+- Tampered share bits fail checksum or AEAD
+- Combine then unwrap Recovery Envelope (KAT)
+- After new split, old shares fail unwrap
 
-Restore: open file or fetch from server, unlock with master or kit, enrol this device. Tests: file grep/scan must not contain known plaintext passwords.
+Backend / policy / UI:
 
-Do not store backups in an admin inbox.
+- Admin cannot decrypt employee vault (404 + ciphertext)
+- Org cannot decrypt employee vault
+- Employee cannot access another employee vault
+- Revoked org device cannot pass EffectiveAccess
+- Removed employee cannot call org APIs / start recovery
+- Revoked agent cannot request grants; fake identity fails
+- Org deny overrides employee allow; employee deny overrides org allow
+- Valid org + employee policy → pending human Allow
+- Expired grant fails; revoked device cannot use **new** grants
+- Recovery requires employee confirm **and** org-started session
+- Share A alone / Share B alone cannot recover
+- Stolen Share B / compromised server cannot recover without A
+- Session expires; consumed challenge cannot replay
+- Recovery does not bypass org device revoke for **org** access (new device must bind)
+- Recovery does not put VK/RK on admin API or in audit/diagnostics
+- Backup file contains no plaintext; restore with master and with combined RK
+- Diagnostics contain no secrets (`auditContainsSecret` style)
+- Audit records recovery events, not credential access
+- Solo: full kit still works; org routes 404; existing crypto tests green
 
-### Recovery (operational)
+---
 
-Flow for “laptop dead”:
+## 24. Migration strategy
 
-1. Employee (or admin with employee’s request) starts recovery → org audit `recovery.started`.
-2. Admin org-revokes the old `deviceId`.
-3. Employee on a new device: account login / invite still valid, fetch snapshot, unlock with master or kit, enrol new device, bind OrgDevice.
-4. If the old laptop may have been stolen **and** may hold VK: employee runs **hard revoke** (their master/kit). Admin cannot.
-5. `recovery.completed`.
-
-If unlock is impossible: UI states that 4AllPass cannot restore the vault. Offboard the member. Do not mint a replacement vault from org data.
-
-### Diagnostics
-
-Employee-generated, local, no secrets. Checklist:
-
-| Check | Source |
+| Who | What |
 |---|---|
-| Identity | session / member status |
-| Device | OrgDevice status + local `deviceId` |
-| Organization membership | member status |
-| Agent pairing | local AgentIdentity |
-| Organization boundary | `/boundaries/me` |
-| Employee policy | local AgentPolicy |
-| Credential availability | vault entry exists (id / provider only) |
-| Broker | loopback reachable, pairing token present (not printed in the report) |
-| Provider | `@4allpass/providers` resolution |
-| Authentication | e.g. GitHub 401 — **status code**, not the token |
+| Solo local, never joins a team | **No change.** Emergency Kit as today. |
+| New vault created **in** a team | Generate RK, wrap Recovery Envelope as today, XOR split, print A, upload B, zeroize RK. Never show full RK. |
+| Existing vault joins a team | Unlocked client (master or old kit) generates **new** RK (normal envelope replacement, revision N+1), then split. Old full kit dies when the new snapshot is pinned — same as today’s kit rotation. |
+| After hard-revoke | New VK, new Recovery Envelope, **new** split. Old A/B fail. |
+| Admin change | Share B stays on org table / org envelope. No re-wrap. |
+| Member removed | Session denied. Optionally org deletes Share B (availability only; they may have a print). Historical snapshot they already copied is still theirs. |
+| Rollback of Team Mode | Leave org tables unused. Solo kit path remains. XOR helpers unused is fine. |
 
-Example line: `Authentication ✗  Provider GitHub  HTTP 401`. Never the PAT.
-
-The employee **may** send this report to admin. Default is local-only.
-
-### Audit
-
-Org events only (§9). Hash-chain per organization (`prevHash`) is enough tamper-evidence for a 3–5 person host. Not a transparency log, not signed by `packages/crypto` VK (the org server would need a key that is **not** a vault key — skip signatures in v1 rather than invent a new org signing identity). Revisit in Phase 3.
-
-Local `auditLine` stays on the employee device.
+Do not migrate by uploading the **full** RK “so we can split later.” Split locally or not at all.
 
 ---
 
-## 15. MVP implementation plan (when unblocked)
+## 25. Exact MVP implementation order
 
-Do **not** start until the maintainer says which slices. Suggested order; each slice is a PR with tests; crypto package stays frozen unless a later decision says otherwise.
+Do not start until the maintainer names a slice.
 
-| Slice | What | Why this order |
-|---|---|---|
-| 0 | This review (done) | No parallel security architecture |
-| 1 | Organization + Member + Invite on **server profile**. Solo local untouched | Smallest org primitive |
-| 2 | OrgDevice bind + org-revoke. Copy: not vault hard-revoke | Reuses `device_id` |
-| 3 | Resources + OrgBoundary. Default deny. `/boundaries/me` | Ceiling without seeing credentials |
-| 4 | `effectiveAccess` in `@4allpass/core`: AND org + employee + existing policy. Solo path if org context absent | One policy function, two modes |
-| 5 | Employee AgentPolicy stored in vault ciphertext. UI for the employee. Admin cannot GET it | Autonomy |
-| 6 | Agent identity v1 (WebCrypto keypair, challenge/response pairing). Broker still loopback. Fake name fails | Stronger than string+token |
-| 7 | Sealed-snapshot export/import UI (same-vault). Tests: no plaintext in file | Backup without new crypto |
-| 8 | Recovery assistance UX + honest dead-end | Help without escrow |
-| 9 | Diagnostics report (no secrets) | Support |
-| 10 | OrgAudit hash-chain + admin list | Org events, not surveillance |
-| 11 | Admin/Employee chrome in the existing app | One product |
-| 12 | Adversarial tests from §18 | DoD |
+| Slice | What |
+|---|---|
+| 0 | This review |
+| 1 | Org + Member + Invite. Solo untouched |
+| 2 | OrgDevice bind + org-revoke (copy: not hard-revoke) |
+| 3 | Resources + OrgBoundary. Default deny. `/boundaries/me` |
+| 4 | `effectiveAccess` AND in `@4allpass/core`; solo if no org context |
+| 5 | Employee AgentPolicy in vault ciphertext |
+| 6 | Agent identity v1 (WebCrypto); broker still loopback |
+| 7 | Sealed-snapshot export/import (same vault) |
+| 8 | **XOR 2-of-2 in `packages/crypto`** + KATs + share encoding. No Shamir |
+| 9 | Split UX; Share B opaque PUT; recovery readiness flags |
+| 10 | RecoverySession + local combine + new split after success |
+| 11 | Print templates (card / org envelope). Scratch-off optional, not a claim |
+| 12 | Diagnostics (no secrets) |
+| 13 | OrgAudit including recovery events |
+| 14 | Admin/Employee chrome |
+| 15 | Tests in §23 |
 
-Stop after the smallest slice that a real 3–5 person group can use: 1–5 + 7–8 + 10–12 is already a team. Slice 6 (agent keypair) is in the written DoD — include it before calling the MVP done, but **after** org/member works, so we do not invent identity in a vacuum.
+Slices 8–11 are the recovery MVP. They **follow** org/member (need `memberId`) but the XOR library work (8) can land first with no API.
 
-**Out of this MVP:** SSO, SCIM, LDAP, custom roles, PAM, central credential broker, HSM, compliance packs, standing agent surveillance, admin vault access, Organization Vault, JIT issuing.
-
----
-
-## 16. Places the existing architecture would have to change
-
-| Place | Change | Risk if done wrong |
-|---|---|---|
-| `backend/app/models/` + Alembic | New org tables | Putting `organization_id` on `Vault` or allowing admin `get_owned_vault` |
-| `backend/app/api/routes/` | New `orgs.py` | Mounting access/grant on FastAPI |
-| `backend/app/local.py` | Keep 404 for org routes | Accidentally enabling team on the singleton |
-| `packages/core` policy | Optional AND-layers | Replacing unknown-app DENY; auto-allow when org allows |
-| `packages/core` audit types | Org event types **separate** from access audit | Shipping access rows to admin |
-| `frontend` tabs / new panels | Team vs personal | Access as first screen; “view member vault” |
-| `frontend/src/lib/access.ts` | Pass org ceiling + agent signature into decide | Broker starts evaluating policy |
-| `frontend/src/lib/device-identity.ts` | Reuse, register with org | Second device id |
-| `frontend` vault-session | Snapshot export | Using share-v1 as backup |
-| `backend/app/broker.py` | Optional signature field on the **relayed body** only | Broker verifies crypto or stores keys |
-| `packages/crypto` | **No change** for Phase 1 | “Org envelope”, admin wrap, new KDF |
-| Tests | New classes below | Claiming team is done without boundary tests |
+**Host:** server profile, SQLite enough for 3–5 people.
 
 ---
 
-## 17. Risks and open questions
+## 26. Risks and architectural conflicts
 
-**Decided in this review (unless the maintainer overrules):**
-
-- No admin recovery key.
-- No org vault in Phase 1.
-- No PAM audit of credential use.
-- OrgDevice uses the existing `device_id`.
-- Broker stays loopback.
-- `packages/crypto` frozen for Phase 1.
-- Solo local unchanged.
-
-**Open — need a human decision before code:**
-
-1. **When?** Team is specified; product-maturity still has P0→P1 Autofill as next **code**. Recommendation: keep that order. Team docs exist so a future slice does not invent PAM.
-2. **Where does the 3–5 person server run?** One shared FastAPI (SQLite is enough). Not P2P. Not each desktop pretending to be the org.
-3. **Invite channel?** Email send is ops. MVP can show a copy-paste invite URL in the admin UI (like the pairing token). No mail provider required.
-4. **Should agent public keys be uploaded?** Default no. Org revoke of an agent then requires employee action or member/resource deny. Uploading only `agentId`+`publicKey` is a Phase-2 discussion.
-5. **Must every org resource map 1:1 to `@4allpass/providers`?** Start with a name + provider string. Do not wait for 500 providers.
-6. **Shamir for “admin helps when kit is lost”?** Not Phase 1. If ever: admin share alone must fail a test.
-7. **Public-key wrap to a foreign device** (needed for true org vault later) does not exist. Phase 2 must not fake it with symmetric share files presented as “the org vault”.
-8. **PRF still unproven in Tauri.** Team must not claim passkey-bound org devices until a ceremony returns PRF.
+1. **Solo vs team host** — local singleton cannot be the org. Opt-in team URL.
+2. **Org-revoke ≠ hard-revoke** — different words in the UI.
+3. **Agent string vs keypair** — WebCrypto in access layer, not a new vault wrap.
+4. **2-of-2 vs availability** — lost card + no master = dead vault. Must be explicit.
+5. **Share B next to Recovery Envelope on the same server** — dump + stolen card = RK. Better than today’s dump + stolen **full** kit (kit is 100% of RK). Still document.
+6. **Session is not crypto revoke** — removed employee with both shares + snapshot decrypts offline.
+7. **Admin laptop combine** — forbidden. Easy to “simplify” in a PR. Block that PR.
+8. **Access audit vs PAM** — do not copy `auditLine` to org audit.
+9. **share-v1 vs backup** — different VK.
+10. **PRF unproven in Tauri** — no passkey-org-device claim.
+11. **`X-Device-Id` honesty** — OrgDevice is metadata.
+12. **Uploading Share B** — employee client only; if an admin can *replace* Share B they can DoS recovery (availability), not steal VK. Authenticate PUT as the member; CAS on `recoveryId`.
+13. **First-use snapshot choice** — unchanged malicious-server residual.
+14. **Shamir “for later” in the XOR encoder** — do not abstract a `ThresholdScheme` plugin now.
 
 ---
 
-## 18. Tests the MVP must add (before calling it done)
+## 27. Explicitly not in this MVP
 
-Minimum; names are intent, not filenames.
+- SSO, SCIM, LDAP
+- Custom RBAC
+- PAM, session recording, credential-access org logs, admin view of agent policies
+- Central credential broker / FastAPI token mint
+- HSM, compliance packs
+- Organization vault / shared credentials / JIT
+- Public-key wrapping to a foreign device
+- Shamir 2-of-3 / 2-of-5 / 3-of-5
+- A new Recovery Secret wrapping the existing RK
+- Splitting VK
+- Reconstruction on the server or admin UI
+- Second desktop app / browser-only admin console
+- New envelope types in `packages/crypto`
+- Tollgate merge, MCP as security interface
 
-- Admin cannot decrypt employee vault (404 on vault routes + ciphertext remains closed).
-- Employee cannot access another employee vault.
-- Revoked org device cannot pass EffectiveAccess.
-- Removed employee cannot call org APIs.
-- Revoked agent cannot request grants.
-- Fake agent identity (name only / wrong signature) fails.
-- Org deny overrides employee allow.
-- Employee deny overrides org allow.
-- Valid org + employee policy + existing credential policy → pending human Allow.
-- Expired grant fails.
-- Old revoked org-device state fails (replay of pre-revoke bind).
-- Backup file contains no plaintext.
-- Backup restore (same vault) works with master and with recovery key.
-- Recovery assistance does not put VK or kit on the admin API.
-- Diagnostics contain no secrets (reuse `auditContainsSecret` idea).
-- Audit records org events, not `credential.accessed`.
-- Solo local profile: no org routes, existing crypto tests green, Access string identity still works when team context is absent.
-
-Existing `packages/crypto` tests stay green. No protocol version bump unless crypto actually changes (it should not).
+Phase 2+ : [`team-roadmap.md`](team-roadmap.md).
 
 ---
 
-## 19. Definition of done (Trusted Team MVP)
+## Recovery readiness (UX flags)
 
-From the product brief; all must be true **and** tested:
+Client + server flags, **no secrets**:
 
-1. Admin can create an Organization.
-2. Admin can invite a member.
-3. Member can accept.
-4. Member has their own vault.
-5. Admin cannot decrypt that vault.
-6. Member can have several devices.
-7. Admin can org-revoke a lost device.
-8. Agent has a cryptographic identity.
-9. Agent pairing works (challenge/response, loopback intact).
-10. Employee can set their agent policy.
-11. Admin can define organization resources.
-12. Org boundary AND employee policy = Effective Access.
-13. Encrypted backup works (sealed snapshot).
-14. Restore works.
-15. Lost-device recovery works **without** giving vault plaintext to admin. If kit and master are both gone, the product says so instead of lying.
-16. Diagnostics locate typical agent failures without secrets.
-17. Audit records organizational events.
-18. Solo mode unchanged.
-19. Existing crypto tests green.
-20. New tests cover the team boundaries above.
+```text
+Vault backup     encrypted snapshot present     ✓/✗
+                 integrity (manifest verify)    ✓/✗  (client, after unlock or on cached wire)
+Recovery         employee share printed         ✓/✗  (client-asserted)
+                 organization share stored      ✓/✗  (server has OrgRecoveryShare)
+                 recovery_id matches snapshot   ✓/✗
+```
+
+“Ready” means path 3 **can** run, not that it already has.
 
 ---
 
-## 20. Security principles (non-negotiable)
+## Diagnostics
+
+Employee-generated, local, sendable. Checklist: Identity, Device, Org membership, Agent pairing, Org boundary, Employee policy, Credential **presence** (id/provider only), Broker (reachable, not the token), Provider resolution, Authentication (HTTP status, e.g. GitHub 401). Never PAT, password, RK, shares.
+
+---
+
+## Definition of done (Trusted Team)
+
+All of these, **tested**:
+
+Organization, invite, enrolment; employee-owned vault; admin cannot decrypt; devices; org-revoke; agent identity + pairing; resources; boundary; employee agent policy; Effective Access; sealed backup + restore; XOR 2-of-2; Share A / Share B; ceremony on the **employee** device; admin can help without seeing plaintext; diagnostics; org audit; security tests; **solo kit and local profile still work**.
+
+---
+
+## Security principles (non-negotiable)
 
 1. Admin must not decrypt an employee vault.
-2. Organization server must not see plaintext secrets.
-3. Agent identity must be stronger than string + bearer pairing token **when Team is on**.
-4. Device identity reuses WebAuthn/PRF binding; no second identity system.
-5. Loopback broker stays local.
-6. Broker must not become a central secret broker.
-7. Browser Origin protection stays.
-8. Do not bypass `packages/crypto` boundaries.
-9. No new parallel vault primitives without necessity.
-10. New security objects are versionable.
-11. Revoke applies to old grants / old device states for **new** access.
-12. TTLs remain on agent grants.
-13. Zero-knowledge is not traded for convenience.
-14. When choosing extra admin control vs employee autonomy + ZK, choose the latter unless a necessary org function disappears.
+2. Server must not see plaintext, RK, or reconstructed RK.
+3. Combine shares only on the employee device.
+4. RK is the existing Recovery Key, not VK, not a new wrap layer.
+5. 2-of-2 MVP is XOR; Shamir is later k-of-n.
+6. Device identity reuses `device_id` / WebAuthn.
+7. Loopback broker stays local; not a central secret server.
+8. Origin 403 stays.
+9. Do not bypass `packages/crypto` open-path expectations.
+10. New objects are versioned.
+11. Revoke applies to new access; copies already given are not un-known.
+12. Grant TTLs stay.
+13. Dual control is real: no full kit left with the employee after team split.
+14. When extra admin control fights employee autonomy + ZK, choose the latter unless a necessary org function disappears.
 
 ---
 
-## 21. Future extensions
-
-See [`team-roadmap.md`](team-roadmap.md). Phase 1 must not implement them. It must not make them impossible:
-
-- Organization-owned vault / shared credentials / key envelopes / rotation / ownership transfer (Phase 2) — needs public-key wrapping, which does not exist yet.
-- Optional enterprise (SSO, SCIM, LDAP, richer roles) (Phase 3).
-- Stronger machine identity (OS code signing, hardware-backed agent keys) (Phase 4).
-
-A Phase-1 schema that puts `organization_id` on `Vault` or stores employee agent policies in plaintext on the server **would** make Phase 2 harder and Phase 1 already PAM. Do not do that.
-
----
-
-**Stand:** 23. August 2026  
+**Stand:** 23. August 2026, rev. 2  
 **Implementation:** none  
-**Next step:** maintainer decision. Not “weiter, bau Team Mode”.
+**Next:** maintainer names a slice — or “not now, stay on Autofill.”

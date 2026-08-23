@@ -1,7 +1,9 @@
 # Plan — Terminal-Install (so wenig Klicks wie möglich)
 
-Stand: 2026-08-23. **Plan, noch nicht gebaut.**  
+Stand: 2026-08-23. **Plan, noch nicht gebaut.** Maintainer-Mac: **Intel (`x86_64`)**, macOS 15.  
 Phase A (Apple-Notarisierung) bleibt pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)). Dieser Weg **ersetzt Apple nicht**. Er umgeht die Klicks, nicht Gatekeeper als Sicherheitsmodell.
+
+`v0.1.1` hat nur `4AllPass_0.1.0_aarch64.dmg`. Das startet auf Intel **nicht** (Rosetta geht nur andersrum). Ohne `*_x64.dmg` ist der One-Liner auf diesem Mac wertlos.
 
 Kein Core-Rewrite, kein zweites Tauri, kein `curl | sh`, der den Vault anfasst. FastAPI mintet keine Tokens.
 
@@ -40,7 +42,7 @@ Aus dem Repo bauen ist schlimmer (Node, Python, Rust, `tauri:build`). Das ist **
 
 ## Soll (ein Befehl)
 
-**Mac (Apple Silicon zuerst — das ist das `v0.1.1`-DMG):**
+**Mac (Intel zuerst — das ist dieser Rechner; Apple Silicon mit):**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
@@ -67,10 +69,11 @@ Ein Script, OS wird erkannt. Kein Homebrew-Tap, kein `npm`, kein Compiler.
 Datei: `scripts/install.sh` (POSIX `sh`).
 
 1. OS + CPU erkennen. Unbekannt → eine Zeile Fehler, Exit 1.  
-   Zuerst: **macOS arm64**, **Linux x86_64**. Intel-Mac / Windows in Schritt 4.
+   Zuerst: **macOS Intel (`x86_64` → `*_x64.dmg`)**. Mit: **macOS arm64** (`*_aarch64.dmg`), **Linux x86_64**. Windows in Schritt 4.
 2. Neueste GitHub-Release finden (`/repos/landjunge/4AllPass/releases`, inkl. Prerelease — „latest“ ignoriert Pre).
 3. Passendes Asset laden:  
-   `4AllPass_*_aarch64.dmg` · `4AllPass_*_amd64.AppImage` · später `*_x64-setup.exe`.
+   `4AllPass_*_x64.dmg` (Intel-Mac) · `4AllPass_*_aarch64.dmg` · `4AllPass_*_amd64.AppImage` · später `*_x64-setup.exe`.  
+   Falsche CPU → Abbruch, nicht das ARM-DMG unter Intel starten.
 4. **Mac:** DMG mounten → `4AllPass.app` nach `/Applications` → unmounten.  
    `xattr -cr /Applications/4AllPass.app` (Quarantäne weg = die 2 Rechtsklick-Klicks).  
    `open -a 4AllPass`.
@@ -110,19 +113,21 @@ Optional später, nicht im ersten Schnitt: SHA-256 der Release-Assets prüfen.
 
 | # | Stück | Fertig wenn |
 |---|---|---|
-| 1 | `scripts/install.sh` — Mac arm64 | Auf einem **fremden** Mac: Befehl → Fenster, 0 Extra-Klicks |
+| 0 | CI: `macos-15-intel` zusätzlich zu `macos-latest` | Release enthält `4AllPass_*_x64.dmg` **und** `*_aarch64.dmg`. Sidecar nicht cross-compilen — Job muss auf Intel laufen. |
+| 1 | `scripts/install.sh` — Mac Intel, dann arm64 | Auf **diesem** Intel-Mac: Befehl → Fenster, 0 Extra-Klicks |
 | 2 | README „Einrichten“: One-Liner **oben**, DMG darunter, From-source ganz nach unten | 3 Zeilen lesen genügen |
 | 3 | Linux AppImage-Zweig im selben Script | Ein Befehl, App startet |
 | 4 | `scripts/install.ps1` Windows | Ein Befehl; SmartScreen kann noch warnen (kein Zertifikat) |
 | 5 | CI schreibt SHA-256 neben die Artefakte; Script prüft | Tamper an der Datei → Abbruch |
 
-Schritt 1+2 sind der Nutzen. 3–5 nicht parallel, nicht vorher.
+Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac. Kein Tag `v0.1.2` nur dafür — `workflow_dispatch` auf `desktop.yml` reicht für ein Test-Artefakt.
 
 ---
 
 ## Definition of Done (dieser Plan)
 
-- [ ] Fremder Mac (arm64, Terminal, kein Dev-Setup): **ein** Befehl, App-Fenster, kein Rechtsklick.
+- [ ] **Dieser Intel-Mac** (Terminal, kein Extra-Klick): **ein** Befehl, App-Fenster, kein Rechtsklick.
+- [ ] Apple-Silicon-Mac: derselbe Befehl, holt `aarch64`.
 - [ ] README DE+EN: One-Liner zuerst; Satz „nicht notariert / du vertraust GitHub“.
 - [ ] Update überschreibt die App, lässt den Vault liegen.
 - [ ] Intel-Mac / unpassendes OS: klare Fehlermeldung, kein halbes Install.
@@ -133,5 +138,5 @@ Schritt 1+2 sind der Nutzen. 3–5 nicht parallel, nicht vorher.
 
 ## Nächster Schritt (genau einer)
 
-`scripts/install.sh` für **macOS arm64**: Release-DMG holen, nach `/Applications`, Quarantäne weg, `open`.  
-Dann README-One-Liner. Erst danach Linux.
+CI Intel-Job (`macos-15-intel`) mergen, per `workflow_dispatch` ein `*_x64.dmg` erzeugen.  
+Dann `scripts/install.sh` auf **diesem Intel-Mac** prüfen. Erst danach Linux.

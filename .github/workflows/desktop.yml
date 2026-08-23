@@ -26,6 +26,9 @@ jobs:
           - name: macOS
             os: macos-latest
             bundle: app
+          - name: macOS-Intel
+            os: macos-15-intel
+            bundle: app
           - name: Windows
             os: windows-latest
             bundle: nsis

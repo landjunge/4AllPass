@@ -3,6 +3,7 @@ import {
   extensionInstall,
   importBrowserLogins,
   listBrowserProfiles,
+  openAutofillDemo,
   openBrowserForExtension,
   profileKey,
   type BrowserCard,
@@ -12,8 +13,10 @@ import {
 
 export function BrowserCards({
   onLogins,
+  onEnsureDemoLogin,
 }: {
   onLogins: (rows: BrowserLoginRow[]) => void;
+  onEnsureDemoLogin: () => Promise<void>;
 }): ReactNode {
   const [cards, setCards] = useState<BrowserCard[] | null | "loading">("loading");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -120,6 +123,16 @@ export function BrowserCards({
       const info = await extensionInstall(browserId);
       setHint(info);
       await openBrowserForExtension(browserId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function openDemo(browserId: string): Promise<void> {
+    setError(null);
+    try {
+      await onEnsureDemoLogin();
+      await openAutofillDemo(browserId);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -235,6 +248,13 @@ export function BrowserCards({
               <code>{hint.bundlePath}</code>
             </p>
           )}
+          <p>
+            Popup: nur Tresor-Passwort, API <code>http://127.0.0.1:8788</code>. / Popup: vault
+            password only.
+          </p>
+          <button type="button" data-testid="open-autofill-demo" onClick={() => void openDemo(hint.browserId)}>
+            Demo-Login öffnen / Open demo login
+          </button>
         </div>
       ) : null}
     </section>

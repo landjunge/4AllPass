@@ -43,6 +43,12 @@ export async function openBrowserForExtension(browserId: string): Promise<void> 
   await invoke("open_browser_for_extension", { browserId });
 }
 
+/** Opens the hardcoded loopback demo login in that browser. Not a general URL opener. */
+export async function openAutofillDemo(browserId: string): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("open_autofill_demo", { browserId });
+}
+
 export interface BrowserLoginRow {
   url: string;
   username: string;

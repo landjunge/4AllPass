@@ -471,6 +471,45 @@ pub fn extension_install(browser_id: String) -> Result<ExtensionInstall, String>
     })
 }
 
+/// Demo login page served by the local sidecar. Not an arbitrary URL opener.
+const AUTOFILL_DEMO_URL: &str = "http://127.0.0.1:8788/test-login.html";
+
+#[tauri::command]
+pub fn open_autofill_demo(browser_id: String) -> Result<(), String> {
+    let app = app_name_for(&browser_id);
+    #[cfg(target_os = "macos")]
+    {
+        let status = Command::new("open")
+            .args(["-a", app, AUTOFILL_DEMO_URL])
+            .status()
+            .map_err(|err| err.to_string())?;
+        if !status.success() {
+            return Err(format!("could not open demo login in {app}"));
+        }
+        return Ok(());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let _ = (browser_id, app);
+        Command::new("cmd")
+            .args(["/C", "start", "", AUTOFILL_DEMO_URL])
+            .status()
+            .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = (browser_id, app);
+        Command::new("xdg-open")
+            .arg(AUTOFILL_DEMO_URL)
+            .status()
+            .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    #[allow(unreachable_code)]
+    Err("open demo login is not supported on this OS".into())
+}
+
 #[tauri::command]
 pub fn open_browser_for_extension(browser_id: String) -> Result<(), String> {
     let app = app_name_for(&browser_id);
@@ -523,6 +562,12 @@ mod tests {
         ));
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn autofill_demo_stays_on_loopback() {
+        assert_eq!(AUTOFILL_DEMO_URL, "http://127.0.0.1:8788/test-login.html");
+        assert!(!AUTOFILL_DEMO_URL.contains("github.com"));
     }
 
     #[test]

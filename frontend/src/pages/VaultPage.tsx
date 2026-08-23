@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 import { demoGithubDraft } from "../lib/access-demo.ts";
+import { autofillDemoDraft, isAutofillDemoEntry } from "../lib/autofill-demo.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { detectCredential, draftFromDetection } from "../lib/detect.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../lib/providers.ts";
@@ -284,6 +285,17 @@ export function VaultPage(): ReactNode {
               source: "browser",
               picked: incoming.map((entry) => entry.id),
             });
+          }}
+          onEnsureDemoLogin={async () => {
+            if (entries.some(isAutofillDemoEntry)) return;
+            await saveEntries([
+              ...entries,
+              {
+                id: newEntryId(),
+                ...autofillDemoDraft(),
+                updatedAt: new Date().toISOString(),
+              },
+            ]);
           }}
         />
         <div className="columns">
@@ -623,9 +635,9 @@ export function VaultPage(): ReactNode {
               <div className="placeholder">
                 <h3>Dein Tresor / Your vault</h3>
                 <p className="muted">
-                  Oben die Browser-Karten: Profile anhaken, Passwörter holen, dann hier in der Liste.
-                  Agent Access ist der Access-Tab, nicht dieser Bildschirm. Der Server sieht nur
-                  Ciphertext.
+                  Oben die Browser-Karten: Profile anhaken, Passwörter holen, Extension laden, dann
+                  Demo-Login öffnen. Popup: nur Tresor-Passwort. Agent Access ist der Access-Tab,
+                  nicht dieser Bildschirm.
                 </p>
               </div>
             )}

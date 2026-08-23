@@ -471,6 +471,7 @@ pub fn run() {
             browsers::list_browser_profiles,
             browsers::extension_install,
             browsers::open_browser_for_extension,
+            browsers::open_autofill_demo,
             browser_passwords::import_browser_logins
         ])
         .setup(|app| {

@@ -51,6 +51,19 @@ test("unknown shop stays unknown with heuristic possibleName", () => {
   assert.ok(got.confidence < 0.7);
 });
 
+test("userinfo phishing github.com@evil.com is not GitHub", () => {
+  const got = resolveProvider("https://github.com@evil.com/login");
+  assert.equal(got.normalizedDomain, "evil.com");
+  assert.equal(got.providerId, null);
+  assert.notEqual(got.matchType, "exact-domain");
+});
+
+test("IDN homograph github.com is not GitHub", () => {
+  const got = resolveProvider("https://g\u0456thub.com/login");
+  assert.equal(got.normalizedDomain, "xn--gthub-n2e.com");
+  assert.equal(got.providerId, null);
+});
+
 test("user override wins over built-in", () => {
   const got = resolveProvider("https://git.example.com", {
     overrides: [{ host: "git.example.com", match: "exact", providerId: "github" }],

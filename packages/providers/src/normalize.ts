@@ -5,6 +5,9 @@ export function normalizeDomain(input: string): string | null {
   if (!raw) return null;
   let hostname = "";
   try {
+    // URL.hostname (not ad-hoc splits): userinfo is not the host
+    // (`github.com@evil.com` → evil.com) and IDN becomes punycode
+    // (`gіthub.com` → xn--…, not github.com). Tests in normalize.test.ts.
     const url = raw.includes("://") ? new URL(raw) : new URL(`https://${raw}`);
     hostname = url.hostname;
   } catch {

@@ -7,6 +7,7 @@ URL → normalizeDomain → resolveProvider → { providerId, confidence, matchT
 ```
 
 - Exact host or `endsWith("." + host)` — never `endsWith("github.com")` (would match `evilgithub.com`).
+- Hostname comes from `URL.hostname`: `github.com@evil.com` is `evil.com`; IDN homographs become punycode (`gіthub.com` ≠ `github.com`). Do not replace this with string splits.
 - Login hosts like `login.microsoftonline.com` → Microsoft (`known-login-domain`).
 - Unknown stays unknown. Heuristic only suggests a possible registrable name (`shop.example.de` → `example.de`), never a provider id.
 - User overrides are local, not written into the built-in registry.

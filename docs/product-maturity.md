@@ -111,6 +111,8 @@ Was ein Fremder merkt: App auf, Tresor, Browser erkannt, Import bestätigt.
 
 Die Extension ist der **Ausführungsarm**, nicht das Produkt. Ziel: **Credential Interaction Engine** — eine Schicht für Import, Autofill und später Agenten.
 
+**Spec (verbindlich):** [`autofill-v1.md`](autofill-v1.md).
+
 V1 (bauen, nicht alles auf einmal):
 
 ```text
@@ -120,7 +122,7 @@ Seite → Field Intelligence → Login-Modell → Provider → Vault-Match
 
 Bestehendes [`extension/src/fill.ts`](../extension/src/fill.ts) ist der Startpunkt, kein zweites Engine.
 
-**Field Intelligence (Spec-Tokens zuerst):**
+**Field Intelligence (Spec-Tokens zuerst):** siehe Tabelle in [`autofill-v1.md`](autofill-v1.md) §3. Kurz:
 
 | Autocomplete-Token | Aktion | Confidence |
 |---|---|---|
@@ -134,7 +136,7 @@ Bestehendes [`extension/src/fill.ts`](../extension/src/fill.ts) ist der Startpun
 
 Nicht raten unter Confidence **0,70**. Nicht `value = password` als einzige Strategie. `webauthn` als Suffix ignorieren (Passkeys später).
 
-**Safe Fill:** native (`InputEvent` / insertText) → controlled (Prototype-Setter, React-sicher) → Verify lokal. Assist (Markieren statt Auto-Write) ist P1b.
+**Safe Fill:** native → controlled → Verify lokal. Assist ist P1b.
 
 **Verify-Response:** `{ ok, fields, mode, reason? }` — niemals Username oder Passwort zurück oder loggen.
 
@@ -169,7 +171,7 @@ Kein Core-Rewrite. Kein zweites Tauri. Keine 500 Provider. Kein Browser-Zurücks
 
 ```text
 P0  Install + Import + Provider  (weitgehend im Baum; Fremden-Test offen)
-    → P1  Reliable Autofill (nächster Code)
+    → P1  Reliable Autofill (nächster Code) — Spec: autofill-v1.md
         → P1b Diagnostics / Assisted
             → P2  Agent UX (Why, Simulator) — Code existiert, First Screen nicht
                 → P3  Passkeys / OTP
@@ -241,7 +243,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Code:** Autofill-V1 in der bestehenden Extension — Field Intelligence + Safe Fill + lokale Verify. Dieselbe Provider-Auflösung wie der Import. Kein neues Paket-Universum, kein Core-Rewrite.
+**Code:** Autofill-V1 nach [`autofill-v1.md`](autofill-v1.md) — Field Intelligence + Safe Fill + lokale Verify. Dieselbe Provider-Auflösung wie der Import. Kein neues Paket-Universum, kein Core-Rewrite.
 
 **Nicht jetzt:** Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

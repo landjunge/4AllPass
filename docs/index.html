@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>4AllPass — Zero-Knowledge-Tresor für Menschen und Agents | Netzwerkpunkt</title>
-  <meta name="description" content="Self-hosted Zero-Knowledge-Tresor. Der Server sieht keinen Klartext. Agents bekommen Zugang nach Allow/Deny, nicht deine Secrets. Produkt ist die Desktop-App." />
+  <title>4AllPass — Lokaler Passwort-Tresor / Local password vault | Netzwerkpunkt</title>
+  <meta name="description" content="Lokaler Zero-Knowledge-Passwort-Tresor. Browser-Import, Autofill, kontrollierter Agent-Zugang. Der Server sieht keinen Klartext. / Local zero-knowledge password vault. Browser import, autofill, agents only after Allow/Deny." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="landjunge" />
   <link rel="canonical" href="https://netzwerkpunkt.de/4allpass" />
@@ -12,15 +12,15 @@
   <meta property="og:locale" content="de_DE" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Netzwerkpunkt" />
-  <meta property="og:title" content="4AllPass — Zero-Knowledge-Tresor für Menschen und Agents" />
-  <meta property="og:description" content="Self-hosted Zero-Knowledge-Tresor. Der Server sieht keinen Klartext. Agents bekommen Zugang nach Allow/Deny, nicht deine Secrets. Produkt ist die Desktop-App." />
+  <meta property="og:title" content="4AllPass — Lokaler Passwort-Tresor / Local password vault" />
+  <meta property="og:description" content="Lokaler Zero-Knowledge-Tresor. Browser → Tresor → Autofill. Agenten nur nach Allow/Deny. / Local zero-knowledge vault. Browsers → vault → autofill. Agents only after Allow/Deny." />
   <meta property="og:url" content="https://netzwerkpunkt.de/4allpass" />
-  <meta name="twitter:title" content="4AllPass — Zero-Knowledge-Tresor für Menschen und Agents" />
-  <meta name="twitter:description" content="Self-hosted Zero-Knowledge-Tresor. Der Server sieht keinen Klartext. Agents bekommen Zugang nach Allow/Deny, nicht deine Secrets. Produkt ist die Desktop-App." />
+  <meta name="twitter:title" content="4AllPass — Lokaler Passwort-Tresor / Local password vault" />
+  <meta name="twitter:description" content="Lokaler Passwort-Tresor. Autofill. Zero-Knowledge. / Local password vault. Autofill. Zero-knowledge." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "4AllPass", "description": "Self-hosted Zero-Knowledge-Tresor. Der Server sieht keinen Klartext. Agents bekommen Zugang nach Allow/Deny, nicht deine Secrets. Produkt ist die Desktop-App.", "url": "https://netzwerkpunkt.de/4allpass", "downloadUrl": "https://github.com/landjunge/4AllPass", "applicationCategory": "DeveloperApplication", "operatingSystem": "Linux, macOS, Windows", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "author": {"@type": "Person", "name": "landjunge"}, "isPartOf": {"@type": "WebSite", "name": "Netzwerkpunkt", "url": "https://netzwerkpunkt.de"}, "sameAs": ["https://landjunge.github.io/4AllPass/", "https://github.com/landjunge/4AllPass"]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "4AllPass", "description": "Local zero-knowledge password vault. Browser import, autofill, controlled agent access. The server never sees plaintext. Desktop app is the product.", "url": "https://netzwerkpunkt.de/4allpass", "downloadUrl": "https://github.com/landjunge/4AllPass", "applicationCategory": "SecurityApplication", "operatingSystem": "Linux, macOS, Windows", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "author": {"@type": "Person", "name": "landjunge"}, "isPartOf": {"@type": "WebSite", "name": "Netzwerkpunkt", "url": "https://netzwerkpunkt.de"}, "sameAs": ["https://landjunge.github.io/4AllPass/", "https://github.com/landjunge/4AllPass"]}</script>
   <style>
 :root{--bg:#0a0b0a;--fg:#eceae4;--muted:#9a9d96;--subtle:#6d716c;--line:rgba(236,234,228,.12);--accent:#d7dbd4;--accent-fg:#0a0b0a}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:"IBM Plex Sans",system-ui,sans-serif}
@@ -57,17 +57,17 @@ footer{border-top:1px solid var(--line);padding:1.6rem 20px 2.4rem;color:var(--m
   </header>
   <main>
     <section class="hero">
-      <p class="k">Credentials · Zero-Knowledge</p>
-      <h1>Agents brauchen Zugang. Nicht deine Secrets.</h1>
-      <p class="claim">Lokaler Passwort-Tresor. Import, Autofill, Zero-Knowledge. Der Server sieht keinen Klartext. FastAPI gibt keine Tokens aus.</p>
-      <p class="claim">Autonome Agents brauchen Credentials, ohne den Tresor zu besitzen. Richtlinie entscheidet, Zugang ist zeitlich begrenzt, Geräte halten die Schlüssel.</p>
+      <p class="k">Passwort-Tresor · Zero-Knowledge</p>
+      <h1>Dein Tresor. Deine Geräte. Dein Autofill.</h1>
+      <p class="claim">Lokaler Passwort-Tresor. Import, Autofill, Zero-Knowledge. Der Server sieht keinen Klartext. FastAPI gibt keine Tokens aus. / Local password vault. Import, autofill, zero-knowledge.</p>
+      <p class="claim">Agenten bekommen Zugang nur nach Allow/Deny — nicht als ersten Bildschirm. / Agents get access only after Allow/Deny — not the first screen.</p>
       <div class="cta">
         <a class="p" href="https://netzwerkpunkt.de/4allpass">Produktseite</a>
         <a class="g" href="https://github.com/landjunge/4AllPass">GitHub</a>
         <a class="g" href="https://4allpass.netzwerkpunkt.de">4allpass.netzwerkpunkt.de</a>
       </div>
     </section>
-    <section class="grid" aria-label="Säulen"><article><h2>Zero-Knowledge</h2><p>Argon2id, AES-256-GCM, WebAuthn-PRF. Vault Key ist random, nie aus dem Master-Passwort abgeleitet.</p></article><article><h2>Agent Access</h2><p>Anfrage → Richtlinie → erlauben oder ablehnen → zeitlich begrenzter Zugang. SDK: @4allpass/access.</p></article><article><h2>Desktop first</h2><p>Tauri-App, SQLite lokal. Launch at login entsperrt den Tresor nicht.</p></article></section>
+    <section class="grid" aria-label="Säulen"><article><h2>Tresor</h2><p>Argon2id, AES-256-GCM. Vault Key ist random. Unlock = Tresor-Passwort. PRF in der Webview unbewiesen.</p></article><article><h2>Autofill</h2><p>Browser-Karten, Import, Field Intelligence. Extension entsperrt mit Tresor-Passwort. Agent Access ist der Access-Tab.</p></article><article><h2>Desktop first</h2><p>Tauri-App, SQLite lokal. Launch at login entsperrt den Tresor nicht. Apple-Notarisierung pausiert.</p></article></section>
     <section class="split">
       <div>
         <p class="k">Kanonisch</p>

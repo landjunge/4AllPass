@@ -68,6 +68,17 @@ export function entriesFromBrowserLogins(rows: BrowserLoginRow[]): VaultEntry[] 
     .filter(usable);
 }
 
+export function importReviewRows(
+  entries: VaultEntry[],
+): Array<{ id: string; title: string; username: string; url: string }> {
+  return entries.map((entry) => ({
+    id: entry.id,
+    title: entry.title || entry.url,
+    username: entry.username,
+    url: entry.url,
+  }));
+}
+
 export function mergeImportedLogins(existing: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] {
   const keyOf = (entry: VaultEntry): string =>
     `${entry.url.replace(/^https?:\/\//, "").split("/")[0] ?? ""}|${entry.username}`.toLowerCase();

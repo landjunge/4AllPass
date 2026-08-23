@@ -13,6 +13,7 @@ import {
 } from "../lib/entries.ts";
 import {
   entriesFromBrowserLogins,
+  importReviewRows,
   mergeImportedLogins,
   parsePlaintextExport,
   plaintextImportWarning,
@@ -42,6 +43,7 @@ export function VaultPage(): ReactNode {
     count: number;
     entries: VaultEntry[];
     source: "plaintext" | "share" | "browser";
+    picked: string[];
   } | null>(null);
   const [revealPassword, setRevealPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -126,7 +128,12 @@ export function VaultPage(): ReactNode {
       }
       const parsed = parsePlaintextExport(text);
       if (parsed.entries.length === 0) throw new Error("no login entries in this file");
-      setImportPending({ count: parsed.entries.length, entries: parsed.entries, source: "plaintext" });
+      setImportPending({
+        count: parsed.entries.length,
+        entries: parsed.entries,
+        source: "plaintext",
+        picked: parsed.entries.map((entry) => entry.id),
+      });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -147,7 +154,12 @@ export function VaultPage(): ReactNode {
       const opened = openSharePackage(shareImport.text, shareImport.key);
       if (opened.length === 0) throw new Error("share file had no logins");
       setShareImport(null);
-      setImportPending({ count: opened.length, entries: opened, source: "share" });
+      setImportPending({
+        count: opened.length,
+        entries: opened,
+        source: "share",
+        picked: opened.map((entry) => entry.id),
+      });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -157,8 +169,12 @@ export function VaultPage(): ReactNode {
     if (!importPending || !vault) return;
     setBusy(true);
     try {
+      const chosen = importPending.entries.filter((entry) => importPending.picked.includes(entry.id));
+      if (chosen.length === 0) return;
       const next =
-        importPending.source === "browser" ? importPending.entries : [...entries, ...importPending.entries];
+        importPending.source === "browser"
+          ? mergeImportedLogins(entries, chosen)
+          : [...entries, ...chosen];
       await saveEntries(next);
       setImportPending(null);
     } catch {
@@ -260,8 +276,9 @@ export function VaultPage(): ReactNode {
             }
             setImportPending({
               count: incoming.length,
-              entries: mergeImportedLogins(entries, incoming),
+              entries: incoming,
               source: "browser",
+              picked: incoming.map((entry) => entry.id),
             });
           }}
         />
@@ -600,10 +617,11 @@ export function VaultPage(): ReactNode {
               </>
             ) : (
               <div className="placeholder">
-                <h3>Zero-knowledge vault</h3>
+                <h3>Dein Tresor / Your vault</h3>
                 <p className="muted">
-                  Web, API, or SSH/SFTP. Saving re-seals every entry on this device. The server only
-                  stores ciphertext. Agent access is the Access tab — unknown apps are denied.
+                  Oben die Browser-Karten: Profile anhaken, Passwörter holen, dann hier in der Liste.
+                  Agent Access ist der Access-Tab, nicht dieser Bildschirm. Der Server sieht nur
+                  Ciphertext.
                 </p>
               </div>
             )}
@@ -628,15 +646,68 @@ export function VaultPage(): ReactNode {
                   ? "Keychain hat freigegeben. Bestätigen verschlüsselt die Logins in deinen Tresor. Der Server sieht sie nicht. / Keychain granted. Confirm encrypts into your vault. The server never sees them."
                   : plaintextImportWarning()}
             </p>
-            <p className="muted">
-              {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
-              this device, then committed as the next revision.
-            </p>
+            {importPending.source === "browser" ? (
+              <div className="import-review" data-testid="import-review">
+                <p className="muted">
+                  {importPending.picked.length} / {importPending.entries.length} gewählt. Keine Passwörter
+                  in dieser Liste. / selected. No passwords in this list.
+                </p>
+                <div className="actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImportPending({
+                        ...importPending,
+                        picked: importPending.entries.map((entry) => entry.id),
+                      })
+                    }
+                  >
+                    Alle / All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportPending({ ...importPending, picked: [] })}
+                  >
+                    Keine / None
+                  </button>
+                </div>
+                <ul>
+                  {importReviewRows(importPending.entries).map((row) => (
+                    <li key={row.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={importPending.picked.includes(row.id)}
+                          onChange={() => {
+                            const on = importPending.picked.includes(row.id);
+                            setImportPending({
+                              ...importPending,
+                              picked: on
+                                ? importPending.picked.filter((id) => id !== row.id)
+                                : [...importPending.picked, row.id],
+                            });
+                          }}
+                        />
+                        <span>
+                          <strong>{row.title || row.url}</strong>
+                          <span className="muted"> {row.username}</span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="muted">
+                {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
+                this device, then committed as the next revision.
+              </p>
+            )}
             <div className="actions">
               <button
                 type="button"
                 className="primary"
-                disabled={busy}
+                disabled={busy || importPending.picked.length === 0}
                 data-testid="confirm-import"
                 onClick={() => void confirmImport()}
               >

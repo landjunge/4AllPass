@@ -2,15 +2,14 @@
 
 <p align="center"><img src="frontend/public/logo.png" alt="4AllPass" width="420" /></p>
 
-**Sicherer Credential-Zugang für Menschen, Anwendungen und KI-Agenten.**
-
-Deine Agenten brauchen Zugang. Nicht deine Secrets.
+**Lokaler Passwort-Tresor.** Begrenzt Zugang für KI-Agenten, wenn du das willst.
 
 ```text
-Mensch / App / Agent → Anfrage → Richtlinie → erlauben / ablehnen → zeitlich begrenzter Zugang → Anbieter
+Browser → Tresor → Autofill
+Agent → Access (Allow/Deny) — nicht der erste Bildschirm
 ```
 
-Kein „besserer Bitwarden“. Die Geräte besitzen den Tresor kryptografisch. Der Einstieg ist Agent-Zugang — Plan: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md). **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)), nicht `localhost:5173`. Im Access-Tab: [Zwei-Minuten-Demo](docs/two-minute-demo.md) und n8n-HTTP-Rezept (kein Marketplace-Node). Loopback-Broker startet mit der App. Node-SDK: `@4allpass/access`. FastAPI gibt **keine** Tokens aus.
+Kein Cloud-Sync. Die Geräte besitzen den Tresor kryptografisch. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Browser-Karten und Import: [`docs/browser-sync.md`](docs/browser-sync.md). Agent-Zugang bleibt im Access-Tab. FastAPI gibt **keine** Tokens aus.
 
 Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentsperrung, PWA, Autofill in Chromium/Firefox/macOS Safari. Item-Share ist eine verschlüsselte Datei plus Share-Key; der Server sieht beides nicht. Umschlagen auf den Device Key einer anderen Person ist nicht in v1. Siehe [`docs/positioning.md`](docs/positioning.md).
 
@@ -18,9 +17,9 @@ Heute: selbst gehosteter Zero-Knowledge-Tresor, Argon2id, WebAuthn-Geräteentspe
 
 ## English
 
-**Secure credential access for humans, applications and AI agents.**
+**A local-first password vault that lets you securely share limited access with AI agents.**
 
-Your agents need access. They don't need your secrets. Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)). Download: [Releases](https://github.com/landjunge/4AllPass/releases). Current builds are ad-hoc (macOS: right-click → Open). For strangers to double-click: Apple notarization + Windows Authenticode — [`docs/distribution.md`](docs/distribution.md). Or `npm run app` for one process on [http://127.0.0.1:8788](http://127.0.0.1:8788) (SQLite, no Postgres). Launch at login does not unlock the vault. Agent SDK: `@4allpass/access`. n8n: import [`examples/n8n-github-read.workflow.json`](examples/n8n-github-read.workflow.json) (not a marketplace node). WebAuthn PRF in the webview is unproven; master-password unlock is the supported path. Postgres/Redis is the **server** path, not the default.
+Self-hosted zero-knowledge vault. FastAPI never mints tokens. **Product is the desktop app** ([`docs/desktop.md`](docs/desktop.md)). Basics: browsers → vault → autofill ([`docs/browser-sync.md`](docs/browser-sync.md)). Agent Allow/Deny stays on the Access tab, not the first screen. Download: [Releases](https://github.com/landjunge/4AllPass/releases). Current builds are ad-hoc (macOS: right-click → Open). For strangers to double-click: Apple notarization — [`docs/distribution.md`](docs/distribution.md). Or `npm run app` on [http://127.0.0.1:8788](http://127.0.0.1:8788). Launch at login does not unlock the vault. WebAuthn PRF in the webview is unproven; master-password unlock is the supported path.
 
 ---
 

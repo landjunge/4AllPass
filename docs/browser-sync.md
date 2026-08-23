@@ -63,6 +63,17 @@ Zerstören = Crypto, Vault-Format oder Desktop-Shell ersetzen. Das tun wir nicht
 
 ---
 
+## Harte Regel: Import darf den Vault nicht beschädigen
+
+```text
+Browser → Kopie der DB → parse → validate → Review (Haken, keine Passwörter)
+       → Nutzer bestätigt → VaultEntry[] mergen → saveEntries (verschlüsselt)
+```
+
+Nicht: Browser → direkt Vault. Abbrechen lässt den Tresor unverändert. Karten zeigen **keine** Klartext-Passwörter.
+
+---
+
 ## Was „Sync“ in v1 ehrlich heißt
 
 **Hub = 4AllPass-Tresor.**
@@ -116,9 +127,9 @@ Nach Unlock, **bevor** die leere Liste:
 2. Karte pro gefundenem Browser (Icon, Name, Anzahl Profile)
 3. Klick auf Karte → Profile mit Haken (Default, Arbeit, …)
 4. Pro Karte zwei Haken: **Extension** / **Passwörter holen**
-5. Button **Übernehmen** — nur für angehakte Aktionen; Keychain-Dialog nur wenn Passwörter geholt werden
-6. Bestätigung: „N Logins kommen in deinen Tresor. Der Server sieht sie nicht.“
-7. Liste mit Passwörtern (die VaultPage, die schon existiert)
+5. Button **Passwörter holen** — Keychain nur dann
+6. **Import-Review:** Host + Username mit Haken, **keine** Passwörter. Alle/Keine.
+7. Bestätigen schreibt erst dann in den Tresor.
 
 Kein Wizard mit fünf Screens. Access-Tab bleibt hinten.
 
@@ -156,7 +167,7 @@ Schritt 1+2 sind der Nutzen. Ohne die siehst du wieder nichts.
 ## Definition of Done (Basics)
 
 - [ ] Dieser Intel-Mac: App auf, Tresor auf, **Karten** der installierten Browser.
-- [ ] Zwei Chrome- oder Firefox-Profile anhaken → Passwörter in der Liste, **ohne** CSV.
+- [ ] Zwei Chrome- oder Firefox-Profile anhaken → Review ohne Passwort → Bestätigen → Liste.
 - [ ] Server-SQLite bleibt undurchsichtig (kein Klartext in der DB).
 - [ ] Crypto-Tests (`npm test`) unverändert grün.
 - [ ] Access/n8n unverändert im Repo, nicht auf dem Startbildschirm.

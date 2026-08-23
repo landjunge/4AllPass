@@ -2,12 +2,13 @@
 
 **Zielgruppe:** Technisch versierte Einzelpersonen und kleine Teams, die volle Datenkontrolle wollen — Self-Hoster, die Bitwarden/Vaultwarden nutzen aber UI oder Autofill leid sind, oder die 1Password/Proton Pass mögen, aber nicht von einem Cloud-Anbieter und dessen Preispolitik abhängen wollen.
 
-**Wedge (8 Wochen, [`eight-week-agent-access.md`](eight-week-agent-access.md)):**
+**Öffentlich (2026-08-23):**
 
-> 4AllPass — Secure credential access for humans, applications and AI agents.  
-> Your agents need access. They don't need your secrets.
+> A local-first password vault that lets you securely share limited access with AI agents.
 
-Nicht „besserer Bitwarden“, nicht „Secret Manager“. Einstieg: **AI-Agent Credential Access**. Expansion: humans → applications → agents.
+DE: Lokaler Passwort-Tresor. Begrenzt Zugang für KI-Agenten, wenn du das willst.
+
+Einstieg: Browser → Tresor → Autofill ([`browser-sync.md`](browser-sync.md)). Agent Access bleibt **Advanced** (Access-Tab), nicht der erste Bildschirm. Nicht „besserer Bitwarden“.
 
 **Heute (Vault, ehrlich):**
 

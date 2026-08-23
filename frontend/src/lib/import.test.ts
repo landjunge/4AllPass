@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   entriesFromBrowserLogins,
+  importReviewRows,
   mergeImportedLogins,
   parsePlaintextExport,
   plaintextImportWarning,
@@ -150,6 +151,17 @@ test("browser logins become vault entries", () => {
   assert.equal(entries[0]?.kind, "web");
   assert.equal(entries[0]?.username, "ada");
   assert.match(entries[0]?.notes ?? "", /chrome:Default/);
+});
+
+test("import review never includes the password field", () => {
+  const entries = entriesFromBrowserLogins([
+    { url: "https://mail.example/", username: "ada", password: "hunter2", title: "mail.example" },
+  ]);
+  const rows = importReviewRows(entries);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.username, "ada");
+  assert.equal(JSON.stringify(rows).includes("hunter2"), false);
+  assert.equal("password" in (rows[0] ?? {}), false);
 });
 
 test("merge replaces same host and username", () => {

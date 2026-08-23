@@ -1,7 +1,7 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
-import { type FillReason, type FillResult } from "./fill.ts";
+import { formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { entriesForPage, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
@@ -98,26 +98,7 @@ function emptyFill(reason: FillReason): FillResult {
   return { ok: false, fields: [], mode: "skipped", reason };
 }
 
-function fillErrorMessage(reason: FillReason | undefined): string {
-  switch (reason) {
-    case "locked":
-      return "vault is locked";
-    case "no-match":
-      return "no entry matches this page";
-    case "low-confidence":
-      return "login fields not confident enough";
-    case "signup":
-      return "this looks like a sign-up form";
-    case "verify-mismatch":
-      return "page did not accept the fill";
-    case "no-fields":
-    default:
-      return "no login fields on this page";
-  }
-}
-
-async function fillInTab(tabId: number, username: string, password: string): Promise<FillResult> {
-  const payload = { type: "fill-form", username, password };
+async function sendToTab(tabId: number, payload: Record<string, unknown>): Promise<FillResult> {
   try {
     const response = (await ext.tabs.sendMessage(tabId, payload)) as FillResult | undefined;
     if (response) return response;
@@ -180,14 +161,14 @@ async function openPopupSafe(): Promise<void> {
 async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   if (!session) {
     await openPopupSafe();
-    return { ok: false, error: fillErrorMessage("locked"), reason: "locked" };
+    return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
   }
   noteActivity();
   const tab = await activeHttpTab();
   if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
   const matches = entriesForPage(session.entries, tab.url);
   if (matches.length === 0) {
-    return { ok: false, error: fillErrorMessage("no-match"), reason: "no-match" };
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
   }
   const chosen = entryId
     ? matches.find((entry) => entry.id === entryId)
@@ -198,11 +179,26 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
     await openPopupSafe();
     return { ok: true, needsPick: true, entries: matches };
   }
-  const filled = await fillInTab(tab.id, chosen.username, chosen.password);
+  const probe = await sendToTab(tab.id, { type: "probe-form" });
+  if (!probe.ok) {
+    return {
+      ok: false,
+      error: formatFillFailure(probe),
+      reason: probe.reason,
+      fields: probe.fields,
+      mode: probe.mode,
+      confidence: probe.confidence,
+    };
+  }
+  const filled = await sendToTab(tab.id, {
+    type: "fill-form",
+    username: chosen.username,
+    password: chosen.password,
+  });
   if (!filled.ok) {
     return {
       ok: false,
-      error: fillErrorMessage(filled.reason),
+      error: formatFillFailure(filled),
       reason: filled.reason,
       fields: filled.fields,
       mode: filled.mode,

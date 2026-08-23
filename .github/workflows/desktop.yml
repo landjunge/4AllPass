@@ -4,6 +4,7 @@ name: Desktop installers
 # Tags v* build installers and attach them to a GitHub prerelease.
 # Notarization / Authenticode run only when repo secrets are present.
 # Without secrets the build stays ad-hoc (right-click Open / SmartScreen).
+# Never use `secrets.*` in `if:` — GitHub invalidates the whole file (Unrecognized named-value: secrets).
 
 on:
   workflow_dispatch:
@@ -67,12 +68,16 @@ jobs:
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
       - name: Import Apple certificate
-        if: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE != '' }}
+        if: runner.os == 'macOS'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "No APPLE_CERTIFICATE secret; skip import (ad-hoc)."
+            exit 0
+          fi
           CERT="$RUNNER_TEMP/apple.p12"
           KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
           echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT"
@@ -84,12 +89,16 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security list-keychain -d user -s "$KEYCHAIN"
       - name: Import Windows certificate
-        if: ${{ runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != '' }}
+        if: runner.os == 'Windows'
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         shell: pwsh
         run: |
+          if ([string]::IsNullOrEmpty($env:WINDOWS_CERTIFICATE)) {
+            Write-Host "No WINDOWS_CERTIFICATE secret; skip import (unsigned)."
+            exit 0
+          }
           $pfx = Join-Path $env:RUNNER_TEMP "windows.pfx"
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
           Import-PfxCertificate -FilePath $pfx -Password (ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
@@ -109,12 +118,16 @@ jobs:
         if: runner.os == 'macOS'
         run: bash scripts/make-dmg.sh
       - name: Notarize macOS DMG
-        if: ${{ runner.os == 'macOS' && secrets.APPLE_ID != '' }}
+        if: runner.os == 'macOS'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          if [ -z "$APPLE_ID" ]; then
+            echo "No APPLE_ID secret; skip notarization (Phase A paused)."
+            exit 0
+          fi
           DMG="$(ls src-tauri/target/release/bundle/dmg/*.dmg | head -1)"
           test -n "$DMG"
           xcrun notarytool submit "$DMG" \

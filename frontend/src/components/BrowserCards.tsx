@@ -100,7 +100,7 @@ export function BrowserCards({
         if (split < 0) continue;
         const browserId = key.slice(0, split);
         const profileId = key.slice(split + 1);
-        if (browserId.startsWith("firefox") || browserId === "safari") {
+        if (browserId === "safari") {
           continue;
         }
         const part = await importBrowserLogins(browserId, profileId);

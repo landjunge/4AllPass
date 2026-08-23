@@ -16,6 +16,7 @@ use tauri_plugin_notification::NotificationExt;
 
 mod browser_passwords;
 mod browsers;
+mod firefox_logins;
 mod sleep_stall;
 use sleep_stall::slept_through;
 

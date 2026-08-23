@@ -16,7 +16,7 @@ use rusqlite::Connection;
 use serde::Serialize;
 use sha1::Sha1;
 
-use crate::browsers::chromium_profile_dir;
+use crate::browsers::{chromium_profile_dir, firefox_profile_dir};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -155,6 +155,14 @@ pub fn read_chromium_logins(db_path: &Path, key: &[u8; 16], source: &str) -> Res
 
 #[tauri::command]
 pub fn import_browser_logins(browser_id: String, profile_id: String) -> Result<Vec<BrowserLogin>, String> {
+    if browser_id.starts_with("firefox") {
+        let home = crate::browsers::default_home();
+        let profile_dir = firefox_profile_dir(&home, &browser_id, &profile_id)?;
+        return crate::firefox_logins::read_firefox_logins(
+            &profile_dir,
+            &format!("{browser_id}:{profile_id}"),
+        );
+    }
     let (service, account) = safe_storage(&browser_id).ok_or_else(|| {
         "Passwörter aus diesem Browser kommen als Nächstes. / Password import for this browser is next."
             .to_string()

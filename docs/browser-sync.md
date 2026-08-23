@@ -132,7 +132,7 @@ Dedup: gleicher Host + Username → ein Eintrag, neueres Passwort gewinnt. Quell
 |---|---|---|
 | 1 | Native: Browser + Profile **nur listen** (keine Passwörter) | Auf **diesem Intel-Mac**: Karten stimmen mit installierten Browsern |
 | 2 | Native: gewähltes Chrome-Profil lesen → `VaultEntry[]` → `saveEntries` | **im Code:** `import_browser_logins`, Keychain, Bestätigen in der Vault-UI |
-| 3 | Firefox dasselbe | Zwei Karten, ein Tresor |
+| 3 | Firefox dasselbe | **im Code:** `key4.db` + `logins.json`, leeres Master-Passwort |
 | 4 | Brave/Edge/Arc (Chromium-Pfade, gleicher Decrypt) | Weitere Karten ohne neuen Crypto-Pfad |
 | 5 | Welcome/Vault: Karten **zuerst**, Access nicht als Einstieg; zwei Haken (Extension / Passwörter) | Erster Test ohne Erklärung |
 | 6 | Extension nur für **angehakte** Browser (Browser-Dialog, kein stilles Install) | Ausfüllen auf einer Testseite |

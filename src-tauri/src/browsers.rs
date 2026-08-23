@@ -197,6 +197,22 @@ fn card_for(spec: &Spec, home: &Path, applications: &[&Path]) -> Option<BrowserC
     })
 }
 
+pub(crate) fn firefox_profile_dir(home: &Path, browser_id: &str, profile_path: &str) -> Result<PathBuf, String> {
+    let spec = SPECS
+        .iter()
+        .find(|spec| spec.id == browser_id)
+        .ok_or_else(|| format!("unknown browser {browser_id}"))?;
+    if spec.kind != "firefox" {
+        return Err("not a Firefox profile".into());
+    }
+    let root = user_data_dir(spec, home);
+    let given = Path::new(profile_path);
+    if given.is_absolute() {
+        return Ok(given.to_path_buf());
+    }
+    Ok(root.join(given))
+}
+
 pub(crate) fn chromium_profile_dir(home: &Path, browser_id: &str, profile_dir: &str) -> Result<PathBuf, String> {
     let spec = SPECS
         .iter()

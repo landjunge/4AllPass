@@ -35,3 +35,9 @@ test("entriesForPage allows subdomains of the saved host", () => {
   const entries = [{ id: "1", title: "Ex", username: "ada", password: "x", url: "https://example.com" }];
   assert.equal(entriesForPage(entries, "https://app.example.com/login").length, 1);
 });
+
+test("entriesForPage rejects evilgithub.com and allows login.github.com", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.deepEqual(entriesForPage(entries, "https://evilgithub.com/login"), []);
+  assert.equal(entriesForPage(entries, "https://login.github.com/session").length, 1);
+});

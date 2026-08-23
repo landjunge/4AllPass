@@ -1,5 +1,5 @@
 import { ext } from "./browser.ts";
-import { formatFillFailure, type FillReason, type FillMode } from "./fill.ts";
+import { formatFillFailure, formatFillSuccess, type FillReason, type FillMode } from "./fill.ts";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
@@ -42,7 +42,12 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
     button.addEventListener("click", () => {
       void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
         if (!filled.ok) showFillMiss(filled);
-        else statusEl.textContent = `Filled ${String(filled.filled)}`;
+        else
+          statusEl.textContent = formatFillSuccess({
+            fields: Array.isArray(filled.fields) ? (filled.fields as Array<"username" | "password">) : undefined,
+            mode: filled.mode as FillMode | undefined,
+            confidence: typeof filled.confidence === "number" ? filled.confidence : undefined,
+          });
       });
     });
     item.append(button);
@@ -98,10 +103,11 @@ document.getElementById("fill")?.addEventListener("click", () => {
       renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
       return;
     }
-    const bits = [`Filled ${String(result.filled)}`];
-    if (Array.isArray(result.fields) && result.fields.length) bits.push(String(result.fields.join("+")));
-    if (typeof result.mode === "string" && result.mode !== "skipped") bits.push(String(result.mode));
-    statusEl.textContent = bits.join(" · ");
+    statusEl.textContent = formatFillSuccess({
+      fields: Array.isArray(result.fields) ? (result.fields as Array<"username" | "password">) : undefined,
+      mode: result.mode as FillMode | undefined,
+      confidence: typeof result.confidence === "number" ? result.confidence : undefined,
+    });
   });
 });
 

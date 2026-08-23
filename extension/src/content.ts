@@ -34,6 +34,15 @@ function tryNative(input: HTMLInputElement, value: string): boolean {
   try {
     input.focus();
     input.select();
+    input.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        cancelable: true,
+        inputType: "insertText",
+        data: value,
+      }),
+    );
+    if (input.value === value) return true;
     const inserted = document.execCommand("insertText", false, value);
     return Boolean(inserted) && input.value === value;
   } catch {

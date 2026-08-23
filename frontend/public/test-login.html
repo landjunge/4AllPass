@@ -6,10 +6,23 @@
   </head>
   <body>
     <h1>Demo login</h1>
+    <p>Classic: username + current-password. Signup below must <strong>not</strong> fill.</p>
     <form id="login" action="#" method="post">
       <label>Username <input id="username" name="username" autocomplete="username" /></label>
       <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
       <button type="submit">Sign in</button>
+    </form>
+    <h2>Email login</h2>
+    <form id="email-login" action="#" method="post">
+      <label>Email <input id="email" name="email" type="email" autocomplete="email" /></label>
+      <label>Password <input id="email-password" name="password" type="password" autocomplete="current-password" /></label>
+      <button type="submit">Continue</button>
+    </form>
+    <h2>Signup (must not fill password)</h2>
+    <form id="signup" action="#" method="post">
+      <label>Name <input id="given" name="user" autocomplete="given-name" /></label>
+      <label>New password <input id="new-pass" name="new" type="password" autocomplete="new-password" /></label>
+      <button type="submit">Create account</button>
     </form>
     <p id="result"></p>
     <script>

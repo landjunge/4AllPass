@@ -207,7 +207,6 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   }
   return {
     ok: true,
-    filled: chosen.title || chosen.username,
     fields: filled.fields,
     mode: filled.mode,
     confidence: filled.confidence,

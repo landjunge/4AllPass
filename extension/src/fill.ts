@@ -92,6 +92,20 @@ export function formatFillFailure(result: {
   return bits.join(" · ");
 }
 
+export function formatFillSuccess(result: {
+  fields?: Array<"username" | "password">;
+  mode?: FillMode;
+  confidence?: number;
+}): string {
+  const bits = ["Filled"];
+  if (result.fields?.length) bits.push(result.fields.join("+"));
+  if (result.mode && result.mode !== "skipped") bits.push(result.mode);
+  if (typeof result.confidence === "number" && result.confidence > 0) {
+    bits.push(`${Math.round(result.confidence * 100)}%`);
+  }
+  return bits.join(" · ");
+}
+
 export function probeFromModel(inputs: InputLike[], model: LoginModel): FillResult {
   const fields: Array<"username" | "password"> = [];
   if (model.username) fields.push("username");

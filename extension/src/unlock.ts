@@ -14,10 +14,13 @@ export interface VaultItem {
   password: string;
   url: string;
   notes: string;
+  providerId: string;
 }
 
 function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
-  const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as Partial<VaultItem>;
+  const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as Partial<VaultItem> & {
+    providerId?: unknown;
+  };
   return {
     id,
     title: parsed.title ?? "",
@@ -25,6 +28,7 @@ function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
     password: parsed.password ?? "",
     url: parsed.url ?? "",
     notes: parsed.notes ?? "",
+    providerId: typeof parsed.providerId === "string" ? parsed.providerId : "",
   };
 }
 

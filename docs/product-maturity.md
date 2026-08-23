@@ -90,7 +90,7 @@ Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent
 | Desktop (Tauri) | auf `main` |
 | Browser-Karten + Chrome/Firefox-Import + Review | auf `main` — [`browser-sync.md`](browser-sync.md) |
 | Provider-Resolver (Domain ≠ Provider, Confidence) | `@4allpass/providers` — [`provider-resolution.md`](provider-resolution.md) |
-| Extension Chromium + Firefox + Safari-Wrapper | auf `main` — Fill ist **noch** `input[type=password]`-Niveau |
+| Extension Chromium + Firefox + Safari-Wrapper | auf `main` — Field Intelligence + Safe Fill + Provider-Match (`autofill-v1.md`) |
 | Access-Policy, Broker, Allow/Deny | auf `main`, **nicht** erster Bildschirm |
 | Apple-Notarisierung | CI `#111`, **pausiert** (~99 USD/Jahr, [#112](https://github.com/landjunge/4AllPass/issues/112)) |
 

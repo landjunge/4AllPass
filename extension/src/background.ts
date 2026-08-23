@@ -2,7 +2,7 @@ import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
-import { entriesForPage, type FillEntry } from "./match.ts";
+import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
 interface SessionState {
@@ -177,7 +177,7 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
       : undefined;
   if (!chosen) {
     await openPopupSafe();
-    return { ok: true, needsPick: true, entries: matches };
+    return { ok: true, needsPick: true, entries: publicPicks(matches) };
   }
   const probe = await sendToTab(tab.id, { type: "probe-form" });
   if (!probe.ok) {
@@ -292,7 +292,10 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       if (!session) return { ok: false, error: "vault is locked" };
       noteActivity();
       const tab = await activeHttpTab();
-      return { ok: true, entries: tab?.url ? entriesForPage(session.entries, tab.url) : [] };
+      return {
+        ok: true,
+        entries: tab?.url ? publicPicks(entriesForPage(session.entries, tab.url)) : [],
+      };
     }
     case "fill-tab":
       return fillActive(typeof message.entryId === "string" ? message.entryId : undefined);

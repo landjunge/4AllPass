@@ -1,6 +1,6 @@
 # Autofill V1 — Credential Interaction Engine
 
-**Status:** verbindlich für P1. Noch nicht vollständig im Code.  
+**Status:** verbindlich für P1. Field Intelligence, Safe Fill, Probe, Provider-Match auf `main`. Assist/Shadow-DOM/Multi-Step nicht in V1.  
 **Stand:** 2026-08-23  
 **Plan:** [`product-maturity.md`](product-maturity.md)  
 **Install/Build der Extension:** [`autofill-extension.md`](autofill-extension.md)  
@@ -221,7 +221,7 @@ Session-Lock (`idle-lock.ts`) bleibt: bei Lock Secrets im Background zeroizen. F
 |---|---|
 | `extension/src/fill.ts` | `InputLike` erweitern, `score*` / `buildLoginModel`, Wrapper `pick*` |
 | `extension/src/content.ts` | `describe()` mit label/placeholder/aria; `safeFill`; `FillResult` |
-| `extension/src/match.ts` | Suffix-Regel halten; später Provider-Id optional drauflegen, nicht ersetzen durch `endsWith("github.com")` |
+| `extension/src/match.ts` | Suffix-Regel + gleiche Provider-Id nur bei Confidence ≥ 0.95. Popup-Liste ohne Passwort (`publicPicks`). |
 | `extension/src/background.ts` | FillResult entgegennehmen; bei `!eligible` nicht fill-form senden |
 | `extension/test/fill.test.ts` | Spec-Tokens, Threshold, Signup-Skip, given-name ≠ username |
 

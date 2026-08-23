@@ -58,6 +58,56 @@ export function ineligibleReason(inputs: InputLike[], model: LoginModel): FillRe
   return "no-fields";
 }
 
+export function fillErrorMessage(reason: FillReason | undefined): string {
+  switch (reason) {
+    case "locked":
+      return "vault is locked";
+    case "no-match":
+      return "no entry matches this page";
+    case "low-confidence":
+      return "login fields not confident enough";
+    case "signup":
+      return "this looks like a sign-up form";
+    case "verify-mismatch":
+      return "page did not accept the fill";
+    case "no-fields":
+    default:
+      return "no login fields on this page";
+  }
+}
+
+/** Human line for a miss — fields/mode/confidence, never secrets. */
+export function formatFillFailure(result: {
+  reason?: FillReason;
+  fields?: Array<"username" | "password">;
+  mode?: FillMode;
+  confidence?: number;
+}): string {
+  const bits = [fillErrorMessage(result.reason)];
+  if (result.fields?.length) bits.push(`fields ${result.fields.join("+")}`);
+  if (result.mode && result.mode !== "skipped") bits.push(result.mode);
+  if (typeof result.confidence === "number" && result.confidence > 0) {
+    bits.push(`${Math.round(result.confidence * 100)}%`);
+  }
+  return bits.join(" · ");
+}
+
+export function probeFromModel(inputs: InputLike[], model: LoginModel): FillResult {
+  const fields: Array<"username" | "password"> = [];
+  if (model.username) fields.push("username");
+  if (model.password) fields.push("password");
+  if (!model.eligible) {
+    return {
+      ok: false,
+      fields,
+      mode: "skipped",
+      reason: ineligibleReason(inputs, model),
+      confidence: model.confidence,
+    };
+  }
+  return { ok: true, fields, mode: "skipped", confidence: model.confidence };
+}
+
 const CONTEXT_TOKENS = new Set([
   "shipping",
   "billing",

@@ -181,6 +181,13 @@ export function BrowserCards({
                       Extension laden / Load add-on
                     </button>
                   ) : null}
+                  <button
+                    type="button"
+                    data-testid={`open-autofill-demo-${card.id}`}
+                    onClick={() => void openDemo(card.id)}
+                  >
+                    Demo-Login öffnen / Open demo login
+                  </button>
                   <ul className="browser-profiles">
                     {card.profiles.length === 0 ? (
                       <li className="muted">Kein Profil gefunden. / No profile found.</li>

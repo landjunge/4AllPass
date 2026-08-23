@@ -44,7 +44,7 @@ iOS Safari Web Extension and system Password AutoFill are not this wrapper.
 
 Popup: API (desktop `http://127.0.0.1:8788`) + **Tresor-Passwort / vault password** → **Entsperren / Unlock**. That is `POST /auth/local` — the desktop app has no e-mail account. Server deployments still open **Server-Konto** and sign in as before (`POST /auth/login`). Then **Diese Seite füllen / Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, or right-click → **Fill with 4AllPass**.
 
-From the desktop Browser cards, after **Load add-on**: **Demo-Login öffnen** saves a loopback test entry and opens `http://127.0.0.1:8788/test-login.html` in that browser. Not a general URL opener.
+From the desktop Browser cards (open a card): **Demo-Login öffnen** saves a loopback test entry and opens `http://127.0.0.1:8788/test-login.html` in that browser. Not a general URL opener. The popup remembers API origin and optional e-mail; never the vault password.
 
 ## Not in this slice
 

@@ -1,5 +1,6 @@
 import { ext } from "./browser.ts";
 import { formatFillFailure, formatFillSuccess, type FillReason, type FillMode } from "./fill.ts";
+import { POPUP_SETTINGS_KEY, parsePopupSettings, popupSettingsForStore } from "./popup-settings.ts";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
@@ -55,6 +56,21 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
   }
 }
 
+async function restoreSettings(): Promise<void> {
+  const stored = await ext.storage.local.get(POPUP_SETTINGS_KEY);
+  const settings = parsePopupSettings(stored[POPUP_SETTINGS_KEY]);
+  (document.getElementById("api") as HTMLInputElement).value = settings.apiOrigin;
+  (document.getElementById("email") as HTMLInputElement).value = settings.email;
+  const details = document.getElementById("server-account") as HTMLDetailsElement | null;
+  if (details && settings.email) details.open = true;
+}
+
+async function rememberSettings(): Promise<void> {
+  const apiOrigin = (document.getElementById("api") as HTMLInputElement).value;
+  const email = (document.getElementById("email") as HTMLInputElement).value;
+  await ext.storage.local.set({ [POPUP_SETTINGS_KEY]: popupSettingsForStore(apiOrigin, email) });
+}
+
 async function render(): Promise<void> {
   const status = await send({ type: "status" });
   const unlocked = status.unlocked === true;
@@ -79,12 +95,12 @@ unlockForm.addEventListener("submit", (event) => {
   const email = (document.getElementById("email") as HTMLInputElement).value;
   const accountPassword = (document.getElementById("account") as HTMLInputElement).value;
   const vaultPassword = (document.getElementById("vault") as HTMLInputElement).value;
-  void send({ type: "unlock", apiOrigin, email, accountPassword, vaultPassword }).then(
-    (result) => {
+  void rememberSettings()
+    .then(() => send({ type: "unlock", apiOrigin, email, accountPassword, vaultPassword }))
+    .then((result) => {
       if (!result.ok) showError(String(result.error ?? "unlock failed"));
       else void render();
-    },
-  );
+    });
 });
 
 document.getElementById("lock")?.addEventListener("click", () => {
@@ -111,4 +127,4 @@ document.getElementById("fill")?.addEventListener("click", () => {
   });
 });
 
-void render();
+void restoreSettings().then(() => render());

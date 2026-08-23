@@ -247,8 +247,8 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Code:** Autofill-V1 nach [`autofill-v1.md`](autofill-v1.md) — Field Intelligence + Safe Fill + lokale Verify. Dieselbe Provider-Auflösung wie der Import. Kein neues Paket-Universum, kein Core-Rewrite.
+**Nachweis, kein neuer Engine:** Demo-Login aus den Browser-Karten → Extension mit Tresor-Passwort entsperren → Fill auf `test-login.html`. Danach dieselbe Taste auf GitHub. Field Intelligence / Safe Fill / `/auth/local` sind auf `main`.
 
-**Nicht jetzt:** Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
+**Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 
 **Geld:** Apple weiter pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)).

@@ -22,6 +22,7 @@ import {
 } from "../lib/share.ts";
 import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
+import { BrowserCards } from "../components/BrowserCards.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 import { SettingsPanel } from "../components/SettingsPanel.tsx";
 
@@ -242,6 +243,8 @@ export function VaultPage(): ReactNode {
           }}
         />
       ) : (
+        <>
+        <BrowserCards />
         <div className="columns">
           <section className="card list">
             <div className="list-header">
@@ -586,6 +589,7 @@ export function VaultPage(): ReactNode {
             )}
           </section>
         </div>
+        </>
       )}
       {importPending ? (
         <div className="overlay" role="dialog" aria-modal="true">

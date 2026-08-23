@@ -14,6 +14,7 @@ use tauri::{
 };
 use tauri_plugin_notification::NotificationExt;
 
+mod browsers;
 mod sleep_stall;
 use sleep_stall::slept_through;
 
@@ -464,7 +465,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             access_prompt,
             access_decide,
-            access_dismiss
+            access_dismiss,
+            browsers::list_browser_profiles
         ])
         .setup(|app| {
             if start_hidden() {

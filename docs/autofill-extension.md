@@ -10,6 +10,8 @@ One source (`extension/src`). **Three installable packs** so every browser you t
 
 Decrypts vault entries **in the extension**, with `@4allpass/crypto`. The server still only stores envelopes. This is **not** iOS Password AutoFill.
 
+**Fill behaviour (P1):** [`autofill-v1.md`](autofill-v1.md) — Field Intelligence, Safe Fill, local verify. This file is install and pack layout only.
+
 The desktop app cards can open the browser and show the folder. The browser still asks — we do not silently inject add-ons. No Mac login password for that.
 
 ## Build
@@ -44,4 +46,4 @@ Popup: API (desktop `http://127.0.0.1:8788`), e-mail, sign-in password, vault pa
 
 ## Not in this slice
 
-Chrome Web Store / AMO / App Store listing. iOS AutoFill. Writing passwords back into Chrome’s own `Login Data`.
+Chrome Web Store / AMO / App Store listing. iOS AutoFill. Writing passwords back into Chrome’s own `Login Data`. Stille On-Load-Fills. See [`autofill-v1.md`](autofill-v1.md) §10.

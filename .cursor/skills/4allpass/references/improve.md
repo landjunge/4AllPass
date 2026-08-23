@@ -1,6 +1,6 @@
 # What to improve (priority)
 
-Product north star: devices own the vault **cryptographically**. **v2 focus** (`docs/product-maturity.md`): authentication effortless for humans, controlled for machines. Autofill is a milestone, not a side feature. Agent access is advanced. Not “a nicer Bitwarden.” FastAPI still never sees secrets.
+Product north star: devices own the vault **cryptographically**. **v3 focus** (`docs/product-maturity.md`): authentication effortless for humans, controlled for machines. Autofill is the product, not a side feature. Agent access is advanced. One credential engine for both. Not “a nicer Bitwarden.” FastAPI still never sees secrets.
 
 `docs/roadmap.md` phases 2–3 are largely done (backend + PWA exist). Do not restart scaffolding.
 
@@ -12,10 +12,10 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Reliability before expansion. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
 
-1. **Autofill V1** in `extension/` — classify username/email/password with confidence; native + controlled-input fill; local verify (no secrets in logs). Reuse `@4allpass/providers`. Existing fill.ts is the starting point, not a second engine.
+1. **Autofill V1** in `extension/` — classify username/email/password with confidence (WHATWG autocomplete tokens first); native + controlled-input fill; local verify (no secrets in logs). Reuse `@4allpass/providers`. Existing fill.ts is the starting point, not a second engine.
 2. Browser cards, Chrome/Firefox import + review, provider resolver: **on main**. Do not reimplement.
 3. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install: `docs/install-terminal.md`.
-4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, or n8n marketplace.
+4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, n8n marketplace, or a passkey store.
 
 Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-share files are on main (`docs/sharing.md`).
 

@@ -1,6 +1,7 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
+import { type FillReason, type FillResult } from "./fill.ts";
 import { entriesForPage, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
@@ -93,24 +94,39 @@ async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
   return tabs.find((candidate) => candidate.id && candidate.url && /^https?:/.test(candidate.url));
 }
 
-async function fillInTab(tabId: number, username: string, password: string): Promise<boolean> {
+function emptyFill(reason: FillReason): FillResult {
+  return { ok: false, fields: [], mode: "skipped", reason };
+}
+
+function fillErrorMessage(reason: FillReason | undefined): string {
+  switch (reason) {
+    case "locked":
+      return "vault is locked";
+    case "no-match":
+      return "no entry matches this page";
+    case "low-confidence":
+      return "login fields not confident enough";
+    case "signup":
+      return "this looks like a sign-up form";
+    case "verify-mismatch":
+      return "page did not accept the fill";
+    case "no-fields":
+    default:
+      return "no login fields on this page";
+  }
+}
+
+async function fillInTab(tabId: number, username: string, password: string): Promise<FillResult> {
+  const payload = { type: "fill-form", username, password };
   try {
-    const response = (await ext.tabs.sendMessage(tabId, {
-      type: "fill-form",
-      username,
-      password,
-    })) as { ok?: boolean } | undefined;
-    if (response?.ok) return true;
+    const response = (await ext.tabs.sendMessage(tabId, payload)) as FillResult | undefined;
+    if (response) return response;
   } catch {
     // no content script yet
   }
   await ext.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-  const retry = (await ext.tabs.sendMessage(tabId, {
-    type: "fill-form",
-    username,
-    password,
-  })) as { ok?: boolean } | undefined;
-  return Boolean(retry?.ok);
+  const retry = (await ext.tabs.sendMessage(tabId, payload)) as FillResult | undefined;
+  return retry ?? emptyFill("no-fields");
 }
 
 async function refreshBadge(tabId?: number): Promise<void> {
@@ -164,13 +180,15 @@ async function openPopupSafe(): Promise<void> {
 async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   if (!session) {
     await openPopupSafe();
-    return { ok: false, error: "vault is locked" };
+    return { ok: false, error: fillErrorMessage("locked"), reason: "locked" };
   }
   noteActivity();
   const tab = await activeHttpTab();
-  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill" };
+  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
   const matches = entriesForPage(session.entries, tab.url);
-  if (matches.length === 0) return { ok: false, error: "no entry matches this page" };
+  if (matches.length === 0) {
+    return { ok: false, error: fillErrorMessage("no-match"), reason: "no-match" };
+  }
   const chosen = entryId
     ? matches.find((entry) => entry.id === entryId)
     : matches.length === 1
@@ -181,8 +199,23 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
     return { ok: true, needsPick: true, entries: matches };
   }
   const filled = await fillInTab(tab.id, chosen.username, chosen.password);
-  if (!filled) return { ok: false, error: "no login fields on this page" };
-  return { ok: true, filled: chosen.title || chosen.username };
+  if (!filled.ok) {
+    return {
+      ok: false,
+      error: fillErrorMessage(filled.reason),
+      reason: filled.reason,
+      fields: filled.fields,
+      mode: filled.mode,
+      confidence: filled.confidence,
+    };
+  }
+  return {
+    ok: true,
+    filled: chosen.title || chosen.username,
+    fields: filled.fields,
+    mode: filled.mode,
+    confidence: filled.confidence,
+  };
 }
 
 ext.runtime.onInstalled.addListener(() => {

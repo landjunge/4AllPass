@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildLoginModel,
+  ineligibleReason,
   pickPassword,
   pickUsername,
   scorePassword,
@@ -105,4 +106,15 @@ test("autocomplete=off still uses name heuristics", () => {
 test("readonly and disabled fields are skipped", () => {
   assert.equal(scoreUsername(input({ type: "text", autocomplete: "username", readonly: true })), null);
   assert.equal(scorePassword(input({ type: "password", disabled: true })), null);
+});
+
+test("ineligibleReason distinguishes signup from low confidence", () => {
+  const signup = [
+    input({ type: "password", autocomplete: "new-password", name: "next" }),
+    input({ type: "password", autocomplete: "new-password", name: "confirm" }),
+  ];
+  assert.equal(ineligibleReason(signup, buildLoginModel(signup)), "signup");
+  const weak = [input({ type: "text", name: "q" })];
+  assert.equal(ineligibleReason(weak, buildLoginModel(weak)), "low-confidence");
+  assert.equal(ineligibleReason([], buildLoginModel([])), "no-fields");
 });

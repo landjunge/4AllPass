@@ -30,6 +30,34 @@ export interface LoginModel {
   eligible: boolean;
 }
 
+export type FillMode = "native" | "controlled" | "failed" | "skipped";
+
+export type FillReason =
+  | "locked"
+  | "low-confidence"
+  | "no-match"
+  | "no-fields"
+  | "verify-mismatch"
+  | "signup";
+
+export interface FillResult {
+  ok: boolean;
+  fields: Array<"username" | "password">;
+  mode: FillMode;
+  reason?: FillReason;
+  confidence?: number;
+}
+
+export function ineligibleReason(inputs: InputLike[], model: LoginModel): FillReason {
+  if (inputs.length === 0) return "no-fields";
+  const autos = (input: InputLike) => input.autocomplete.toLowerCase();
+  const hasNew = inputs.some((input) => input.type === "password" && autos(input).includes("new-password"));
+  const hasCurrent = inputs.some((input) => input.type === "password" && autos(input).includes("current-password"));
+  if (hasNew && !hasCurrent && !model.password) return "signup";
+  if (!model.eligible) return "low-confidence";
+  return "no-fields";
+}
+
 const CONTEXT_TOKENS = new Set([
   "shipping",
   "billing",

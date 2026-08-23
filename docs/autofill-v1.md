@@ -1,6 +1,6 @@
 # Autofill V1 — Credential Interaction Engine
 
-**Status:** verbindlich für P1. Field Intelligence, Safe Fill, Probe, Provider-Match auf `main`. Assist/Shadow-DOM/Multi-Step nicht in V1.  
+**Status:** verbindlich für P1. Field Intelligence, Safe Fill, Probe, Provider-Match, Assist auf `main`. Shadow-DOM/Multi-Step/iframe nicht in V1.  
 **Stand:** 2026-08-23  
 **Plan:** [`product-maturity.md`](product-maturity.md)  
 **Install/Build der Extension:** [`autofill-extension.md`](autofill-extension.md)  
@@ -16,7 +16,7 @@ Kein zweites Engine. Kein neues Paket.
 1. Die Website bekommt **nie** den Vault — nur Werte in konkrete Felder.
 2. FastAPI sieht **nie** Klartext, Fill-Ergebnisse oder Field-Maps.
 3. Verify und Logs enthalten **keine** Secrets (kein Username, kein Passwort, kein OTP).
-4. Unter Confidence **0,70** kein Auto-Fill (Assist ist P1b).
+4. Unter Confidence **0,70** kein Auto-Fill. Assist füllt diese Felder nur nach Klick „Trotzdem füllen / Fill anyway“. Nie ein nacktes Suchfeld allein.
 5. `new-password` / Signup wird nicht als Login gefüllt.
 6. Origin der Seite ist die Trust-Grenze. `evilgithub.com` ≠ GitHub.
 7. Passkeys nicht simulieren. `autocomplete`‑Suffix `webauthn` ignorieren (P3).

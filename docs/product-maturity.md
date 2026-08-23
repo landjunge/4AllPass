@@ -146,10 +146,9 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 
 ### P1b — Diagnostics / Assisted
 
-Nur nach einem echten Login ohne Copy-Paste.
-
-- Misserfolg erklärt Felder (erkannt / gefüllt / Ergebnis), lokal, keine Secrets.
-- Assisted Fill bei Confidence < 0.70.
+- [x] Misserfolg erklärt Felder (erkannt / gefüllt / Ergebnis), lokal, keine Secrets.
+- [x] Assisted Fill bei Confidence < 0.70 (expliziter Klick, kein Auto-Write, kein Suchfeld allein).
+- [ ] Shadow DOM / iframe / Multi-Step — nicht in diesem Slice.
 
 ### P2 — Agent Access (vorhanden, polish später)
 
@@ -248,7 +247,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Nachweis am echten Gerät:** dieselbe Fill-Taste auf GitHub (oder gleichwertiger Live-Seite). Demo-Login ist in CI/Playwright grün. P1b (Assist, Shadow DOM) erst danach.
+**Nachweis am echten Gerät:** Fill auf GitHub. P1b Assist ist im Code (Klick unter 0,70). Shadow DOM / iframe später. P2 Why/Simulator danach, Access-Tab nicht erster Bildschirm.
 
 **Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

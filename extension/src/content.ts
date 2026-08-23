@@ -1,6 +1,10 @@
 import { ext } from "./browser.ts";
 import {
+  FILL_CONFIDENCE_THRESHOLD,
   buildLoginModel,
+  leftoverAssistFields,
+  modelHints,
+  shouldOfferAssist,
   type FillMode,
   type FillResult,
   type InputLike,
@@ -78,10 +82,10 @@ function probeForm(): FillResult {
   return probeFromModel(likes, buildLoginModel(likes));
 }
 
-function fillForm(username: string, password: string): FillResult {
+function fillForm(username: string, password: string, assist = false): FillResult {
   const inputs = visibleInputs();
   const likes = inputs.map(describe);
-  const model = buildLoginModel(likes);
+  const model = buildLoginModel(likes, assist ? 0 : FILL_CONFIDENCE_THRESHOLD);
 
   if (!model.eligible) {
     return probeFromModel(likes, model);
@@ -118,18 +122,23 @@ function fillForm(username: string, password: string): FillResult {
   if (fields.includes("password") && passEl && passEl.value === password) filled.push("password");
 
   const mode = mergeMode(modes);
+  const weak = buildLoginModel(likes, 0);
+  const assistFields = !assist && shouldOfferAssist(likes) ? leftoverAssistFields(model, weak) : [];
+  const hints = modelHints(assist ? weak : model);
   if (mode === "failed" || filled.length !== fields.length) {
     return {
       ok: false,
       fields,
       filled,
+      assistFields,
+      hints,
       mode: mode === "failed" ? "failed" : mode,
       reason: "verify-mismatch",
       confidence: model.confidence,
     };
   }
 
-  return { ok: true, fields, filled, mode, confidence: model.confidence };
+  return { ok: true, fields, filled, assistFields, hints, mode, confidence: model.confidence };
 }
 
 ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -138,5 +147,7 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return;
   }
   if (message?.type !== "fill-form") return;
-  sendResponse(fillForm(String(message.username ?? ""), String(message.password ?? "")));
+  sendResponse(
+    fillForm(String(message.username ?? ""), String(message.password ?? ""), message.assist === true),
+  );
 });

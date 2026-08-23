@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildLoginModel,
+  formatAssistPrompt,
   formatFillFailure,
   formatFillSuccess,
   ineligibleReason,
+  leftoverAssistFields,
   pickPassword,
   pickUsername,
   probeFromModel,
+  shouldOfferAssist,
   scorePassword,
   scoreUsername,
   type InputLike,
@@ -178,4 +181,31 @@ test("probeFromModel skips secrets and flags signup", () => {
   assert.equal(probed.ok, false);
   assert.equal(probed.reason, "signup");
   assert.deepEqual(probed.fields, []);
+});
+
+test("assist is offered for a weak username next to a password, not a lone search box", () => {
+  const search = input({ type: "text", name: "q" });
+  const pass = input({ type: "password" });
+  assert.equal(shouldOfferAssist([search]), false);
+  assert.equal(shouldOfferAssist([search, pass]), true);
+  const strict = buildLoginModel([search, pass]);
+  const weak = buildLoginModel([search, pass], 0);
+  assert.deepEqual(leftoverAssistFields(strict, weak), ["username"]);
+  assert.equal(strict.password?.input, pass);
+  assert.equal(strict.username, null);
+});
+
+test("assist is not offered on signup", () => {
+  const signup = [
+    input({ type: "text", autocomplete: "username" }),
+    input({ type: "password", autocomplete: "new-password", name: "next" }),
+  ];
+  assert.equal(shouldOfferAssist(signup), false);
+});
+
+test("formatAssistPrompt names roles without secrets", () => {
+  const line = formatAssistPrompt(["username"]);
+  assert.ok(line.includes("username"));
+  assert.equal(line.includes("secret"), false);
+  assert.equal(line.includes("ada@"), false);
 });

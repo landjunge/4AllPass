@@ -46,6 +46,10 @@ export interface FillResult {
   fields: Array<"username" | "password">;
   /** Fields whose DOM value matched after Safe Fill. */
   filled?: Array<"username" | "password">;
+  /** Sub-threshold fields the user may fill after an explicit Assist click. */
+  assistFields?: Array<"username" | "password">;
+  /** Machine-readable score reasons. Never page values or secrets. */
+  hints?: string[];
   mode: FillMode;
   reason?: FillReason;
   confidence?: number;
@@ -112,21 +116,58 @@ export function formatFillSuccess(result: {
   return bits.join(" · ");
 }
 
+export function leftoverAssistFields(strict: LoginModel, weak: LoginModel): Array<"username" | "password"> {
+  const extra: Array<"username" | "password"> = [];
+  if (weak.username && !strict.username) extra.push("username");
+  if (weak.password && !strict.password) extra.push("password");
+  return extra;
+}
+
+/** Assist only when a password field exists — never a lone search box. */
+export function shouldOfferAssist(inputs: InputLike[]): boolean {
+  const strict = buildLoginModel(inputs);
+  if (ineligibleReason(inputs, strict) === "signup") return false;
+  const weak = buildLoginModel(inputs, 0);
+  if (!strict.password && !weak.password) return false;
+  return leftoverAssistFields(strict, weak).length > 0;
+}
+
+export function formatAssistPrompt(fields: Array<"username" | "password">): string {
+  const names = fields.join("+") || "—";
+  return `Unsicher / low confidence (${names}) — trotzdem füllen? / fill anyway?`;
+}
+
+export function modelHints(model: LoginModel): string[] {
+  return [...(model.username?.reasons ?? []), ...(model.password?.reasons ?? [])];
+}
+
 export function probeFromModel(inputs: InputLike[], model: LoginModel): FillResult {
   const fields: Array<"username" | "password"> = [];
   if (model.username) fields.push("username");
   if (model.password) fields.push("password");
+  const weak = buildLoginModel(inputs, 0);
+  const assistFields = shouldOfferAssist(inputs) ? leftoverAssistFields(model, weak) : [];
   if (!model.eligible) {
     return {
       ok: false,
       fields,
       filled: [],
+      assistFields,
+      hints: modelHints(weak),
       mode: "skipped",
       reason: ineligibleReason(inputs, model),
       confidence: model.confidence,
     };
   }
-  return { ok: true, fields, filled: [], mode: "skipped", confidence: model.confidence };
+  return {
+    ok: true,
+    fields,
+    filled: [],
+    assistFields,
+    hints: modelHints(model),
+    mode: "skipped",
+    confidence: model.confidence,
+  };
 }
 
 const CONTEXT_TOKENS = new Set([

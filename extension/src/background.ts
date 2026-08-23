@@ -1,7 +1,7 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
-import { formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
+import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
@@ -160,7 +160,7 @@ async function openPopupSafe(): Promise<void> {
   }
 }
 
-async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
+async function fillActive(entryId?: string, assist = false): Promise<Record<string, unknown>> {
   if (!session) {
     await openPopupSafe();
     return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
@@ -183,20 +183,26 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   }
   const probe = await sendToTab(tab.id, { type: "probe-form" });
   if (!probe.ok) {
+    const assistFields = probe.assistFields ?? [];
     return {
       ok: false,
       error: formatFillFailure(probe),
       reason: probe.reason,
       fields: probe.fields,
       filled: probe.filled ?? [],
+      assistFields,
+      hints: probe.hints ?? [],
       mode: probe.mode,
       confidence: probe.confidence,
+      entryId: chosen.id,
+      assistPrompt: assistFields.length ? formatAssistPrompt(assistFields) : undefined,
     };
   }
   const filled = await sendToTab(tab.id, {
     type: "fill-form",
     username: chosen.username,
     password: chosen.password,
+    assist,
   });
   if (!filled.ok) {
     return {
@@ -205,16 +211,24 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
       reason: filled.reason,
       fields: filled.fields,
       filled: filled.filled ?? [],
+      assistFields: filled.assistFields ?? [],
+      hints: filled.hints ?? [],
       mode: filled.mode,
       confidence: filled.confidence,
+      entryId: chosen.id,
     };
   }
+  const assistFields = filled.assistFields ?? [];
   return {
     ok: true,
     fields: filled.fields,
     filled: filled.filled ?? filled.fields,
+    assistFields,
+    hints: filled.hints ?? [],
     mode: filled.mode,
     confidence: filled.confidence,
+    entryId: chosen.id,
+    assistPrompt: assistFields.length ? formatAssistPrompt(assistFields) : undefined,
   };
 }
 
@@ -302,7 +316,10 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       };
     }
     case "fill-tab":
-      return fillActive(typeof message.entryId === "string" ? message.entryId : undefined);
+      return fillActive(
+        typeof message.entryId === "string" ? message.entryId : undefined,
+        message.assist === true,
+      );
     default:
       return { ok: false, error: "unknown message" };
   }

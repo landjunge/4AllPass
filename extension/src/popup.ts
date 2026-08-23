@@ -2,6 +2,9 @@ import { ext } from "./browser.ts";
 import { formatFillFailure, formatFillSuccess, type FillReason, type FillMode } from "./fill.ts";
 import { POPUP_SETTINGS_KEY, parsePopupSettings, popupSettingsForStore } from "./popup-settings.ts";
 
+const assistBtn = document.getElementById("assist") as HTMLButtonElement;
+let lastEntryId: string | undefined;
+
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
 const unlockForm = document.getElementById("unlock") as HTMLFormElement;
@@ -23,6 +26,17 @@ function showFillMiss(result: Record<string, unknown>): void {
       confidence: typeof result.confidence === "number" ? result.confidence : undefined,
     }),
   );
+  showAssist(result);
+}
+
+function showAssist(result: Record<string, unknown>): void {
+  const fields = Array.isArray(result.assistFields)
+    ? (result.assistFields as Array<"username" | "password">)
+    : [];
+  lastEntryId = typeof result.entryId === "string" ? result.entryId : lastEntryId;
+  const prompt = typeof result.assistPrompt === "string" ? result.assistPrompt : "";
+  assistBtn.hidden = fields.length === 0;
+  if (fields.length && prompt) statusEl.textContent = prompt;
 }
 
 function clearError(): void {
@@ -44,12 +58,14 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
     button.addEventListener("click", () => {
       void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
         if (!filled.ok) showFillMiss(filled);
-        else
+        else {
           statusEl.textContent = formatFillSuccess({
             fields: Array.isArray(filled.fields) ? (filled.fields as Array<"username" | "password">) : undefined,
             mode: filled.mode as FillMode | undefined,
             confidence: typeof filled.confidence === "number" ? filled.confidence : undefined,
           });
+          showAssist(filled);
+        }
       });
     });
     item.append(button);
@@ -73,6 +89,7 @@ async function rememberSettings(): Promise<void> {
 }
 
 async function render(): Promise<void> {
+  assistBtn.hidden = true;
   const status = await send({ type: "status" });
   const unlocked = status.unlocked === true;
   unlockForm.hidden = unlocked;
@@ -110,6 +127,7 @@ document.getElementById("lock")?.addEventListener("click", () => {
 
 document.getElementById("fill")?.addEventListener("click", () => {
   clearError();
+  assistBtn.hidden = true;
   picksEl.replaceChildren();
   void send({ type: "fill-tab" }).then((result) => {
     if (!result.ok) {
@@ -118,6 +136,23 @@ document.getElementById("fill")?.addEventListener("click", () => {
     }
     if (result.needsPick && Array.isArray(result.entries)) {
       renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
+      return;
+    }
+    statusEl.textContent = formatFillSuccess({
+      fields: Array.isArray(result.fields) ? (result.fields as Array<"username" | "password">) : undefined,
+      mode: result.mode as FillMode | undefined,
+      confidence: typeof result.confidence === "number" ? result.confidence : undefined,
+    });
+    showAssist(result);
+  });
+});
+
+assistBtn.addEventListener("click", () => {
+  clearError();
+  assistBtn.hidden = true;
+  void send({ type: "fill-tab", entryId: lastEntryId, assist: true }).then((result) => {
+    if (!result.ok) {
+      showFillMiss(result);
       return;
     }
     statusEl.textContent = formatFillSuccess({

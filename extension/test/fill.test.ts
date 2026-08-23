@@ -99,6 +99,24 @@ test("section prefix and webauthn suffix still match current-password", () => {
   assert.equal(scored?.confidence, 0.98);
 });
 
+test("GitHub-shaped login_field is a username even without autocomplete", () => {
+  const login = input({ type: "text", name: "login", id: "login_field" });
+  const scored = scoreUsername(login);
+  assert.equal(scored?.role, "username");
+  assert.ok(scored && scored.confidence >= 0.82);
+  const model = buildLoginModel([
+    login,
+    input({ type: "password", name: "password", id: "password" }),
+  ]);
+  assert.equal(model.eligible, true);
+  assert.equal(model.username?.input, login);
+});
+
+test("new_password id is signup skip, not a login password", () => {
+  assert.equal(scorePassword(input({ type: "password", name: "new_password" })), null);
+  assert.equal(scorePassword(input({ type: "password", id: "new-pass" })), null);
+});
+
 test("autocomplete=off still uses name heuristics", () => {
   const user = input({ type: "text", name: "email", autocomplete: "off" });
   const scored = scoreUsername(user);

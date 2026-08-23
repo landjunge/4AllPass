@@ -94,7 +94,7 @@ Reihenfolge, nicht addieren über 1.0. Höchstes passendes Signal zählt.
 | Signal | Score |
 |---|---:|
 | `type=email` | 0.90 |
-| `name`/`id`/`label`/`placeholder` ≈ `username`/`login`/`acct`/`account` | 0.82 |
+| `name`/`id`/`label`/`placeholder` ≈ `username`/`login`/`acct`/`account` ( `_` / `-` zählen als Wortgrenze: `login_field`) | 0.82 |
 | dasselbe ≈ `email`/`e-mail`/`mail` | 0.80 |
 | nacktes `type=text`/`tel`/`""` ohne Signal | 0.45 |
 

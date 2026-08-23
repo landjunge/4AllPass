@@ -206,7 +206,8 @@ function fieldTokens(input: InputLike): string[] {
 function textSignals(input: InputLike): string {
   return [input.name, input.id, input.placeholder ?? "", input.ariaLabel ?? "", input.labelText ?? ""]
     .join(" ")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[_-]+/g, " ");
 }
 
 function isUsable(input: InputLike): boolean {

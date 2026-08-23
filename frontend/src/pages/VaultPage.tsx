@@ -27,6 +27,8 @@ import {
   shareWarning,
   type BuiltShare,
 } from "../lib/share.ts";
+import { parseOtpauth } from "../lib/totp.ts";
+import { TotpCode } from "../components/TotpCode.tsx";
 import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
 import { BrowserCards } from "../components/BrowserCards.tsx";
@@ -99,6 +101,7 @@ export function VaultPage(): ReactNode {
       capabilities: entry.capabilities,
       credentialType: entry.credentialType,
       notes: entry.notes,
+      totpSecret: entry.totpSecret,
       domain: entry.domain,
       providerId: entry.providerId,
       providerConfidence: entry.providerConfidence,
@@ -580,6 +583,35 @@ export function VaultPage(): ReactNode {
                     {copied} copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000}{" "}
                     seconds if it still holds this value.
                   </p>
+                ) : null}
+                <label>
+                  TOTP secret (Base32 / otpauth)
+                  <input
+                    type="password"
+                    value={draft.totpSecret}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      const parsed = parseOtpauth(value);
+                      if (parsed) {
+                        setDraft({
+                          ...draft,
+                          totpSecret: parsed.secret,
+                          title: draft.title || parsed.issuer || parsed.account,
+                          username: draft.username || parsed.account,
+                        });
+                        return;
+                      }
+                      setDraft({ ...draft, totpSecret: value });
+                    }}
+                    data-testid="entry-totp"
+                    autoComplete="off"
+                    placeholder="JBSWY… or otpauth://totp/…"
+                  />
+                </label>
+                {draft.totpSecret.startsWith("otpauth:") ? (
+                  <p className="hint">Paste into the box on the left of the vault, then save.</p>
+                ) : draft.totpSecret ? (
+                  <TotpCode secret={draft.totpSecret} />
                 ) : null}
                 <label>
                   URL

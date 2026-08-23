@@ -12,7 +12,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Reliability before expansion. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
 
-1. **Autofill V1 + P1b Assist + P2 Why** are on `main`. Next feel-able proof: Fill on a live site (GitHub). Shadow DOM / iframe later. P3 Passkeys/OTP not now. Do not reimplement the engine.
+1. **Autofill V1 + P1b Assist + P2 Why + P3 TOTP** are on `main`. Passkey store still later (real platform APIs only). Next feel-able proof: Fill on a live site (GitHub). Do not reimplement the engine.
 2. Browser cards, Chrome/Firefox import + review, provider resolver: **on main**. Do not reimplement.
 3. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install: `docs/install-terminal.md`.
 4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, n8n marketplace, or a passkey store.
@@ -25,7 +25,7 @@ Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-shar
 - Social login as a crypto factor
 - Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android)
 - Passkey store as a separate vault product
-- Shamir, TOTP
+- Shamir. TOTP on vault entries is on `main` (RFC 6238). Passkey store still later.
 - Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)
 - Post-quantum hybrid-KEM: concept is `docs/post-quantum-roadmap.md`. Do not implement ML-KEM until public-key wrapping exists.
 

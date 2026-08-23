@@ -21,6 +21,8 @@ export interface VaultEntry {
   capabilities: string;
   credentialType: string;
   notes: string;
+  /** Base32 TOTP secret. Empty if unused. Encrypted with the entry. */
+  totpSecret: string;
   updatedAt: string;
   /** Normalized host from the login URL. Never inferred as trust. */
   domain: string;
@@ -50,6 +52,7 @@ export function emptyDraft(kind: EntryKind = "web"): EntryDraft {
     capabilities: kind === "api" ? "repository.read" : "",
     credentialType: kind === "api" ? "api_key" : "password",
     notes: "",
+    totpSecret: "",
     domain: "",
     providerId: "",
     providerConfidence: 0,
@@ -76,6 +79,7 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     capabilities: entry.capabilities,
     credentialType: entry.credentialType,
     notes: entry.notes,
+    totpSecret: entry.totpSecret,
     updatedAt: entry.updatedAt,
     domain: entry.domain,
     providerId: entry.providerId,
@@ -104,6 +108,7 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     capabilities: parsed.capabilities ?? "",
     credentialType: parsed.credentialType ?? "",
     notes: parsed.notes ?? "",
+    totpSecret: typeof parsed.totpSecret === "string" ? parsed.totpSecret : "",
     updatedAt: parsed.updatedAt ?? new Date().toISOString(),
     domain: parsed.domain ?? "",
     providerId: parsed.providerId ?? "",

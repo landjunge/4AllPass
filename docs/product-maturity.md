@@ -159,7 +159,8 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 
 ### P3 — Passkeys / OTP (bewusst spät)
 
-Vault-Item-Typ, echte Platform-APIs. Kein Fake-Authenticator. TOTP nach stabilem Password-Fill. Siehe improve.md „Later“.
+- [x] TOTP am Vault-Eintrag (RFC 6238 HMAC-SHA-1, otpauth-Paste). Secret nur im verschlüsselten Entry. FastAPI sieht es nicht. Kein Fake-Authenticator.
+- [ ] Passkey-Store / Conditional UI — später, echte Platform-APIs, nicht simulieren.
 
 ---
 
@@ -250,7 +251,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Nachweis am echten Gerät:** Fill auf GitHub. P1b Assist und P2 Why/Security-Status sind im Code. Shadow DOM / iframe später. P3 Passkeys/OTP bewusst spät. Team Mode nicht in dieser Reihenfolge.
+**Nachweis am echten Gerät:** Fill auf GitHub. P1–P3 TOTP sind im Code. Passkey-Store und Team Mode nicht in dieser Reihenfolge. Apple pausiert.
 
 **Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

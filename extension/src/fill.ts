@@ -14,7 +14,7 @@ export interface InputLike {
   disabled?: boolean;
 }
 
-export type FieldRole = "username" | "email" | "password";
+export type FieldRole = "username" | "email" | "password" | "otp";
 
 export interface ScoredField {
   input: InputLike;
@@ -26,6 +26,7 @@ export interface ScoredField {
 export interface LoginModel {
   username: ScoredField | null;
   password: ScoredField | null;
+  otp: ScoredField | null;
   confidence: number;
   eligible: boolean;
 }
@@ -43,9 +44,9 @@ export type FillReason =
 export interface FillResult {
   ok: boolean;
   /** Fields the model recognized (never values). */
-  fields: Array<"username" | "password">;
+  fields: Array<"username" | "password" | "otp">;
   /** Fields whose DOM value matched after Safe Fill. */
-  filled?: Array<"username" | "password">;
+  filled?: Array<"username" | "password" | "otp">;
   /** Sub-threshold fields the user may fill after an explicit Assist click. */
   assistFields?: Array<"username" | "password">;
   /** Machine-readable score reasons. Never page values or secrets. */
@@ -86,8 +87,8 @@ export function fillErrorMessage(reason: FillReason | undefined): string {
 /** Human line for a miss — erkannt / gefüllt / Ergebnis, never secrets. */
 export function formatFillFailure(result: {
   reason?: FillReason;
-  fields?: Array<"username" | "password">;
-  filled?: Array<"username" | "password">;
+  fields?: Array<"username" | "password" | "otp">;
+  filled?: Array<"username" | "password" | "otp">;
   mode?: FillMode;
   confidence?: number;
 }): string {
@@ -103,7 +104,7 @@ export function formatFillFailure(result: {
 }
 
 export function formatFillSuccess(result: {
-  fields?: Array<"username" | "password">;
+  fields?: Array<"username" | "password" | "otp">;
   mode?: FillMode;
   confidence?: number;
 }): string {
@@ -116,7 +117,10 @@ export function formatFillSuccess(result: {
   return bits.join(" · ");
 }
 
-export function leftoverAssistFields(strict: LoginModel, weak: LoginModel): Array<"username" | "password"> {
+export function leftoverAssistFields(
+  strict: LoginModel,
+  weak: LoginModel,
+): Array<"username" | "password"> {
   const extra: Array<"username" | "password"> = [];
   if (weak.username && !strict.username) extra.push("username");
   if (weak.password && !strict.password) extra.push("password");
@@ -138,13 +142,18 @@ export function formatAssistPrompt(fields: Array<"username" | "password">): stri
 }
 
 export function modelHints(model: LoginModel): string[] {
-  return [...(model.username?.reasons ?? []), ...(model.password?.reasons ?? [])];
+  return [
+    ...(model.username?.reasons ?? []),
+    ...(model.password?.reasons ?? []),
+    ...(model.otp?.reasons ?? []),
+  ];
 }
 
 export function probeFromModel(inputs: InputLike[], model: LoginModel): FillResult {
-  const fields: Array<"username" | "password"> = [];
+  const fields: Array<"username" | "password" | "otp"> = [];
   if (model.username) fields.push("username");
   if (model.password) fields.push("password");
+  if (model.otp) fields.push("otp");
   const weak = buildLoginModel(inputs, 0);
   const assistFields = shouldOfferAssist(inputs) ? leftoverAssistFields(model, weak) : [];
   if (!model.eligible) {
@@ -351,26 +360,43 @@ export function scorePassword(input: InputLike): ScoredField | null {
   return { input, role: "password", confidence: 0.72, reasons: ["type=password"] };
 }
 
+export function scoreOtp(input: InputLike): ScoredField | null {
+  if (!isUsable(input) || input.type === "password" || input.type === "hidden") return null;
+  const autos = autoTokens(input);
+  if (autos.includes("one-time-code")) {
+    return { input, role: "otp", confidence: 0.98, reasons: ["autocomplete=one-time-code"] };
+  }
+  const text = textSignals(input);
+  if (/\b(otp|totp|2fa|one time code|one-time)\b/.test(text)) {
+    return { input, role: "otp", confidence: 0.85, reasons: ["name/id/label≈otp"] };
+  }
+  return null;
+}
+
 export function buildLoginModel(
   inputs: InputLike[],
   threshold = FILL_CONFIDENCE_THRESHOLD,
 ): LoginModel {
   const usernameRaw = bestOf(inputs.map(scoreUsername).filter((s): s is ScoredField => s !== null));
   const passwordRaw = bestOf(inputs.map(scorePassword).filter((s): s is ScoredField => s !== null));
+  const otpRaw = bestOf(inputs.map(scoreOtp).filter((s): s is ScoredField => s !== null));
 
   const username = usernameRaw && usernameRaw.confidence >= threshold ? usernameRaw : null;
   const password = passwordRaw && passwordRaw.confidence >= threshold ? passwordRaw : null;
+  const otp = otpRaw && otpRaw.confidence >= threshold ? otpRaw : null;
 
   let confidence = 0;
   if (username && password) confidence = Math.min(username.confidence, password.confidence);
   else if (username) confidence = username.confidence;
   else if (password) confidence = password.confidence;
+  else if (otp) confidence = otp.confidence;
 
   return {
     username,
     password,
+    otp,
     confidence,
-    eligible: confidence >= threshold && Boolean(username || password),
+    eligible: confidence >= threshold && Boolean(username || password || otp),
   };
 }
 

@@ -82,7 +82,7 @@ function probeForm(): FillResult {
   return probeFromModel(likes, buildLoginModel(likes));
 }
 
-function fillForm(username: string, password: string, assist = false): FillResult {
+function fillForm(username: string, password: string, otp = "", assist = false): FillResult {
   const inputs = visibleInputs();
   const likes = inputs.map(describe);
   const model = buildLoginModel(likes, assist ? 0 : FILL_CONFIDENCE_THRESHOLD);
@@ -93,8 +93,9 @@ function fillForm(username: string, password: string, assist = false): FillResul
 
   const userEl = model.username ? inputs[likes.indexOf(model.username.input)] : undefined;
   const passEl = model.password ? inputs[likes.indexOf(model.password.input)] : undefined;
+  const otpEl = model.otp ? inputs[likes.indexOf(model.otp.input)] : undefined;
 
-  const fields: Array<"username" | "password"> = [];
+  const fields: Array<"username" | "password" | "otp"> = [];
   const modes: FillMode[] = [];
 
   if (userEl && username) {
@@ -104,6 +105,10 @@ function fillForm(username: string, password: string, assist = false): FillResul
   if (passEl && password) {
     modes.push(safeFill(passEl, password));
     fields.push("password");
+  }
+  if (otpEl && otp) {
+    modes.push(safeFill(otpEl, otp));
+    fields.push("otp");
   }
 
   if (fields.length === 0) {
@@ -117,9 +122,10 @@ function fillForm(username: string, password: string, assist = false): FillResul
     };
   }
 
-  const filled: Array<"username" | "password"> = [];
+  const filled: Array<"username" | "password" | "otp"> = [];
   if (fields.includes("username") && userEl && userEl.value === username) filled.push("username");
   if (fields.includes("password") && passEl && passEl.value === password) filled.push("password");
+  if (fields.includes("otp") && otpEl && otpEl.value === otp) filled.push("otp");
 
   const mode = mergeMode(modes);
   const weak = buildLoginModel(likes, 0);
@@ -148,6 +154,11 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message?.type !== "fill-form") return;
   sendResponse(
-    fillForm(String(message.username ?? ""), String(message.password ?? ""), message.assist === true),
+    fillForm(
+      String(message.username ?? ""),
+      String(message.password ?? ""),
+      String(message.otp ?? ""),
+      message.assist === true,
+    ),
   );
 });

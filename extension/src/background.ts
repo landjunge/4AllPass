@@ -2,6 +2,7 @@ import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
+import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
@@ -198,10 +199,19 @@ async function fillActive(entryId?: string, assist = false): Promise<Record<stri
       assistPrompt: assistFields.length ? formatAssistPrompt(assistFields) : undefined,
     };
   }
+  let otp = "";
+  if (chosen.totpSecret) {
+    try {
+      otp = await totpFromBase32(chosen.totpSecret);
+    } catch {
+      otp = "";
+    }
+  }
   const filled = await sendToTab(tab.id, {
     type: "fill-form",
     username: chosen.username,
     password: chosen.password,
+    otp,
     assist,
   });
   if (!filled.ok) {

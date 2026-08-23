@@ -15,6 +15,7 @@ export interface VaultItem {
   url: string;
   notes: string;
   providerId: string;
+  totpSecret: string;
 }
 
 function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
@@ -29,6 +30,7 @@ function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
     url: parsed.url ?? "",
     notes: parsed.notes ?? "",
     providerId: typeof parsed.providerId === "string" ? parsed.providerId : "",
+    totpSecret: typeof parsed.totpSecret === "string" ? parsed.totpSecret : "",
   };
 }
 

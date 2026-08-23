@@ -11,9 +11,9 @@ function kitText(vaultId: string, recoveryKey: string): string {
     "Recovery key:",
     recoveryKey,
     "",
-    "This is the only other way into the vault. There is no e-mail reset and the",
-    "server cannot recover it for you. Store this offline. Do not screenshot it",
-    "into a cloud album.",
+    "Ohne diesen Schlüssel oder ein zweites Gerät gibt es kein Zurück.",
+    "There is no e-mail reset. The server cannot recover the vault.",
+    "Store this offline. Do not screenshot it into a cloud album.",
     "",
   ].join("\n");
 }

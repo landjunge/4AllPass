@@ -75,7 +75,7 @@ Quelle: [WHATWG autofill](https://html.spec.whatwg.org/multipage/form-control-in
 | `current-password` | password | 0.98 | Fill |
 | `password` | password | 0.92 | kein Spec-Token, aber häufig — Fill |
 | `new-password` | — | 0 | **skip** (Signup / Change) |
-| `one-time-code` | otp | 0 | skip V1 |
+| `one-time-code` | otp | 0.98 | P3: Fill wenn der Eintrag ein TOTP-Secret hat |
 | `webauthn` | — | 0 | skip (kein Feld, nur Suffix) |
 | `off` | — | — | Token ignorieren, andere Signale nutzen |
 | `on` | — | — | ignorieren |

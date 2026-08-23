@@ -11,6 +11,7 @@ import {
   pickUsername,
   probeFromModel,
   shouldOfferAssist,
+  scoreOtp,
   scorePassword,
   scoreUsername,
   type InputLike,
@@ -100,6 +101,17 @@ test("section prefix and webauthn suffix still match current-password", () => {
   const pass = input({ type: "password", autocomplete: "section-login current-password webauthn" });
   const scored = scorePassword(pass);
   assert.equal(scored?.confidence, 0.98);
+});
+
+test("one-time-code is an otp field, not a username", () => {
+  const otp = input({ type: "text", autocomplete: "one-time-code", name: "code" });
+  assert.equal(scoreUsername(otp), null);
+  const scored = scoreOtp(otp);
+  assert.equal(scored?.role, "otp");
+  assert.ok(scored && scored.confidence >= 0.95);
+  const model = buildLoginModel([otp]);
+  assert.equal(model.eligible, true);
+  assert.equal(model.otp?.input, otp);
 });
 
 test("GitHub-shaped login_field is a username even without autocomplete", () => {

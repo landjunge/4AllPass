@@ -7,6 +7,7 @@ export interface FillEntry {
   password: string;
   url: string;
   providerId?: string;
+  totpSecret?: string;
 }
 
 const PROVIDER_FILL_MIN = 0.95;

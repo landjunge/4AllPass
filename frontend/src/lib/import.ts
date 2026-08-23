@@ -40,6 +40,7 @@ function asEntry(partial: {
     capabilities: "",
     credentialType: "password",
     notes: partial.notes?.trim() ?? "",
+    totpSecret: "",
     updatedAt: new Date().toISOString(),
     domain: resolved.normalizedDomain,
     providerId: resolved.providerId ?? "",

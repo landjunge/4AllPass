@@ -1,11 +1,13 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-23. **v2 Produktfokus.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate.
+Stand: 2026-08-23. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate.
 
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
 
 FastAPI gibt **keine** Tokens aus. Launch-Posts nicht auto-publishen.
+
+v3 ersetzt v2 nicht in der Reihenfolge. v3 macht die Reihenfolge **zukunftssicher**: eine Credential-Engine für Mensch und Maschine, gebaut gegen die Stellen, an denen die Konkurrenz 2026 die meiste Kritik bekommt.
 
 ```text
 HUMANS                         MACHINES
@@ -14,7 +16,7 @@ Reliable auth                  Controlled access
    │                              │
 Autofill / Import              Agent / Capability
    │                              │
-   └──────────────┬───────────────┘
+   └──────────────┬──────────────┘
                   ▼
           Credential Engine  →  Vault
 ```
@@ -32,6 +34,51 @@ Nicht: nächster Bitwarden/1Password. Differenzierung ist **Vault + zuverlässig
 5. Agents never need the underlying password.
 
 **Reliability before expansion.** Keine 20 neuen Features, solange Install, Import, Provider, Autofill, Vault nicht zuverlässig sind.
+
+---
+
+## Warum v3 (Konkurrenz 2026)
+
+Die meiste Kritik sitzt nicht an der Krypto. Sie sitzt am Alltag, am Preis, an Recovery-Lügen und daran, dass niemand Agenten sauber bedient. Quellen: öffentliche Reviews, Foren, Store-Feedback, Stand August 2026 — keine eigenen Messungen fremder Binaries.
+
+| Produkt | Wo es blutet | 4AllPass-Antwort |
+|---|---|---|
+| **Bitwarden** | Autofill hit-or-miss, iOS extra Klicks, UI nach Redesign, Premium ~2× in 2026 | Autofill ist das Produkt (P1). Keine Lizenz. |
+| **1Password** | Teuer + steigend, Feature-Bloat, Electron/RAM, kein Self-Host | Eine Engine, Freeze, Desktop lokal |
+| **Proton Pass** | Autofill unzuverlässig (Android, Multi-Step, viele Seiten) | Field Intelligence + Safe Fill + Verify |
+| **KeePassXC** | Sync/Backup selbst, Mobile-Splitter, Passkeys holprig | App ist das Produkt, nicht eine `.kdbx`-Datei |
+| **LastPass** | Recovery vs. Zero-Knowledge, Vertrauensbruch | Kit erzwungen, kein Server-Reset |
+| **Vaultwarden** | Du bist Ops (Backup, Uptime), unaudited | Desktop-App, nicht Postgres-Pflicht |
+| **Alle (2026)** | Agenten brauchen Keys, bekommen Dauer-Secrets | Allow/Deny + TTL, kein Roh-Passwort |
+
+Drei Muster, die der Plan abdeckt:
+
+1. **Autofill ist das Produkt.** Ohne zuverlässiges Fill ist alles andere Marketing.
+2. **Preis + Komplexität** treiben Wechsel. Wer bloatet, verliert.
+3. **Maschinen-Zugang** ist das nächste Schlachtfeld — persönlich, lokal, ehrlich. Nicht Enterprise-SaaS.
+
+Ist-Claims bleiben in [`positioning.md`](positioning.md) und [`comparison.md`](comparison.md). Diese Tabelle ist **Planbegründung**, keine Scorecard.
+
+---
+
+## Zukunftssichere Architektur
+
+Eine Schicht, drei Konsumenten. Agent-Zugang wird später kein zweites Produkt.
+
+```text
+                 ┌─────────────────────────┐
+                 │  Credential Engine      │
+                 │  Field Intelligence     │
+                 │  Provider (Domain≠Name) │
+                 │  Vault (ZK, Device)     │
+                 └────────────┬─────────────┘
+           ┌───────────────┼───────────────┐
+           ▼                 ▼                 ▼
+        Mensch              App              Agent
+     Autofill/Import     (später)        Allow/Deny + TTL
+```
+
+Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent = DENY.
 
 ---
 
@@ -53,14 +100,14 @@ Nicht: nächster Bitwarden/1Password. Differenzierung ist **Vault + zuverlässig
 
 ### P0 — Reliability (jetzt)
 
-Was ein Fremder merkt: App auf, Tresor, Browser erkannt, Import bestätigt, Login auf einer Seite.
+Was ein Fremder merkt: App auf, Tresor, Browser erkannt, Import bestätigt.
 
 - Desktop startet (ad-hoc: Rechtsklick / Terminal-Install [`install-terminal.md`](install-terminal.md)).
 - First Run: Tresor + Recovery-Kit, keine Lügen.
 - Import: Kopie der Browser-DB → Review **ohne Passwort** → Confirm → `saveEntries`. Nie still, nie Live-DB schreiben.
 - Provider: exact / subdomain / login-domain / unknown. `evilgithub.com` ist nicht GitHub. Origin bleibt Trust-Grenze.
 
-### P1 — Autofill als Milestone
+### P1 — Autofill als Produkt (nächster Code)
 
 Die Extension ist der **Ausführungsarm**, nicht das Produkt. Ziel: **Credential Interaction Engine** — eine Schicht für Import, Autofill und später Agenten.
 
@@ -68,24 +115,53 @@ V1 (bauen, nicht alles auf einmal):
 
 ```text
 Seite → Field Intelligence → Login-Modell → Provider → Vault-Match
-     → Safe Fill (native / controlled / assist) → Verify (lokal, keine Secrets)
+     → Safe Fill (native → controlled) → Verify (lokal, keine Secrets)
 ```
 
-Nicht raten unter Confidence 0,70. Nicht `value = password` als einzige Strategie. Website bekommt **nie** den Vault.
+Bestehendes [`extension/src/fill.ts`](../extension/src/fill.ts) ist der Startpunkt, kein zweites Engine.
 
-Danach, nicht vorher: Multi-Step, Shadow DOM, iframe, Diagnostics (lokal: erkannt/gefüllt/Ergebnis), Assisted Fill.
+**Field Intelligence (Spec-Tokens zuerst):**
+
+| Autocomplete-Token | Aktion | Confidence |
+|---|---|---|
+| `username` | Fill als Username | 0.98 |
+| `email` | Fill als Username | 0.96 |
+| `current-password` | Fill als Passwort | 0.98 |
+| `new-password` | skip (Signup) | 0 |
+| `one-time-code` / `webauthn` | skip in V1 | 0 |
+| `off` | Token ignorieren, Heuristik | — |
+| `name` / `given-name` / `cc-*` / Adresse | kein Username | 0 |
+
+Nicht raten unter Confidence **0,70**. Nicht `value = password` als einzige Strategie. `webauthn` als Suffix ignorieren (Passkeys später).
+
+**Safe Fill:** native (`InputEvent` / insertText) → controlled (Prototype-Setter, React-sicher) → Verify lokal. Assist (Markieren statt Auto-Write) ist P1b.
+
+**Verify-Response:** `{ ok, fields, mode, reason? }` — niemals Username oder Passwort zurück oder loggen.
+
+Danach, nicht vorher: Multi-Step, Shadow DOM, iframe, Diagnostics, Assisted Fill.
 
 Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simulieren.
 
+### P1b — Diagnostics / Assisted
+
+Nur nach einem echten Login ohne Copy-Paste.
+
+- Misserfolg erklärt Felder (erkannt / gefüllt / Ergebnis), lokal, keine Secrets.
+- Assisted Fill bei Confidence < 0.70.
+
 ### P2 — Agent Access (vorhanden, polish später)
 
-Allow/Deny bleibt. Jede Entscheidung soll irgendwann ein **Why** haben. Simulator und Security-Status: nach Autofill-V1. Der Agent bekommt möglichst **kein** Passwort.
+Allow/Deny bleibt. Jede Entscheidung soll irgendwann ein **Why** haben. Simulator und Security-Status: nach Autofill-V1. Der Agent bekommt möglichst **kein** Passwort — Capability + TTL. Unknown = DENY. First Screen nicht.
+
+### P3 — Passkeys / OTP (bewusst spät)
+
+Vault-Item-Typ, echte Platform-APIs. Kein Fake-Authenticator. TOTP nach stabilem Password-Fill. Siehe improve.md „Later“.
 
 ---
 
 ## Was wir nicht tun
 
-Kein Core-Rewrite. Kein zweites Tauri. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein Cloud-Sync, kein Enterprise, keine KI im Resolver.
+Kein Core-Rewrite. Kein zweites Tauri. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein Cloud-Sync, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1.
 
 ---
 
@@ -96,7 +172,7 @@ P0  Install + Import + Provider  (weitgehend im Baum; Fremden-Test offen)
     → P1  Reliable Autofill (nächster Code)
         → P1b Diagnostics / Assisted
             → P2  Agent UX (Why, Simulator) — Code existiert, First Screen nicht
-                → Passkeys / OTP
+                → P3  Passkeys / OTP
                     → Sichtbarkeit nur nach P0+P1
 ```
 
@@ -167,6 +243,6 @@ Recovery:
 
 **Code:** Autofill-V1 in der bestehenden Extension — Field Intelligence + Safe Fill + lokale Verify. Dieselbe Provider-Auflösung wie der Import. Kein neues Paket-Universum, kein Core-Rewrite.
 
-**Nicht jetzt:** Access-Simulator, 50 Provider, Safari-Import, Launch-Post.
+**Nicht jetzt:** Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 
 **Geld:** Apple weiter pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)).

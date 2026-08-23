@@ -169,5 +169,5 @@ Uninstall / Reset:
 ## Nächster Schritt (genau einer)
 
 **Geld:** nichts kaufen. Phase A bleibt offen, bis Apple leistbar ist.  
-**Code (solange A pausiert):** Terminal-Install, ein Befehl, 0 Extra-Klicks — [`install-terminal.md`](install-terminal.md).  
+**Code:** Browser-Sync ist die Basics — [`browser-sync.md`](browser-sync.md). Terminal-Install bleibt [`install-terminal.md`](install-terminal.md). Agent ist nicht der Einstieg.  
 **Später Apple:** Secrets laut [`distribution.md`](distribution.md) → Tag `v0.1.2` → Test auf einem **fremden** Mac.

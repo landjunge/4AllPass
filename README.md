@@ -145,6 +145,7 @@ Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-sc
 - Positionierung (Ist-Behauptungen): [`docs/positioning.md`](docs/positioning.md)
 - 8-Wochen-Plan Agent-Zugang: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
 - Produktreife (Fremde, Notarisierung): [`docs/product-maturity.md`](docs/product-maturity.md)
+- Browser-Sync (Karten, Profile, Basics): [`docs/browser-sync.md`](docs/browser-sync.md)
 - Terminal-Install (ein Befehl, Pause ohne Apple): [`docs/install-terminal.md`](docs/install-terminal.md)
 - Zwei-Minuten-Access-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
 - Lokaler Loopback-Broker (optional, nicht FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)

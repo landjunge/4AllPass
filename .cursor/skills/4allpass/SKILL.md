@@ -102,7 +102,7 @@ cd backend && pytest
 
 Follow [references/improve.md](references/improve.md). Prefer the next **honest** milestone over new features.
 
-Current recommended order: [`docs/product-maturity.md`](../../../docs/product-maturity.md). **Phase A is in progress / paused** (Apple ~99 USD/year, not affordable now; no free notarization). Do not fill the gap with a core rewrite, a second Tauri, a provider list, a launch post, or tag `v0.1.2`. Resume Phase A when the membership is paid. Optional loopback broker is pairing-token + `127.0.0.1`, not FastAPI. FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked. Do not auto-publish `docs/launch-posts.md`.
+Current recommended order: [`docs/browser-sync.md`](../../../docs/browser-sync.md) (browser cards + profile import into the existing vault). **Do not rewrite crypto.** Agent/n8n is not the first screen. Apple notarization stays paused (`docs/product-maturity.md`). Do not fill the gap with a second Tauri, a provider list, a launch post, or tag `v0.1.2`. Optional loopback broker is pairing-token + `127.0.0.1`, not FastAPI. FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked. Do not auto-publish `docs/launch-posts.md`.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 

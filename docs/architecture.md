@@ -5,6 +5,8 @@
 **Ziel**  
 Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers steht, echte Zero-Knowledge-Sicherheit bietet und gleichzeitig modern, komfortabel und zukunftssicher ist.
 
+**Basics (2026-08-23):** Sync aller Browser und Profile — Karten, anhaken, Passwörter im Tresor. Plan: [`browser-sync.md`](browser-sync.md). Agent-Zugang ist nicht der Einstieg. Crypto-Protokoll bleibt.
+
 ---
 
 ## 1. Grundprinzipien

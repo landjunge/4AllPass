@@ -10,11 +10,11 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 ## Now
 
-Product-readiness sequence is locked in `docs/product-maturity.md`. That plan **replaces** Core-refactor → Broker-refactor → a second desktop shell.
+Basics are **browser-profile sync**, not agent access. Plan: `docs/browser-sync.md`. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
 
-1. **Phase A — double-click, paused.** Signing CI is on main (`#111`). Blocker is money, not code: Apple Developer ~99 USD/year, currently not affordable. No free notarization. Do not tag `v0.1.2`. While paused, the install path is one terminal command (`docs/install-terminal.md`) — not a core rewrite. Do not start a second Tauri. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Do not auto-publish. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
-2. **Phase B** only after a stranger can double-click (after Apple is paid): honest first-run copy, uninstall must not silently delete the encrypted vault, user can export/reset/delete it on purpose.
-3. Safari.app fill / real Touch ID still unproven. Do not block Phase A on it. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
+1. **Browser cards + import into `VaultEntry`.** Tauri lists browsers/profiles on this Intel Mac, then reads Chrome/Firefox logins into the existing vault (`saveEntries`). Reuse `import.ts`. FastAPI still never sees plaintext.
+2. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install: `docs/install-terminal.md`.
+3. Do not start a second Tauri, FastAPI token API, Tollgate merge, or n8n marketplace node. Safari Keychain and write-back into Chrome’s `Login Data` are after cards+read work.
 
 Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-share files are on main (`docs/sharing.md`).
 

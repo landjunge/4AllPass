@@ -46,6 +46,8 @@ Popup: API (desktop `http://127.0.0.1:8788`) + **Tresor-Passwort / vault passwor
 
 From the desktop Browser cards (open a card): **Demo-Login öffnen** saves a loopback test entry and opens `http://127.0.0.1:8788/test-login.html` in that browser. Not a general URL opener. The popup remembers API origin and optional e-mail; never the vault password.
 
+A miss prints erkannt / recognized, gefüllt / filled, Ergebnis / result — never the secret. Local Playwright: `npm run test:e2e:autofill-local -w @4allpass/frontend` (needs `frontend/dist` + `extension/dist/chromium`).
+
 ## Not in this slice
 
 Chrome Web Store / AMO / App Store listing. iOS AutoFill. Writing passwords back into Chrome’s own `Login Data`. Stille On-Load-Fills. See [`autofill-v1.md`](autofill-v1.md) §10.

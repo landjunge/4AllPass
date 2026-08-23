@@ -223,17 +223,18 @@ Sichtbarkeit (Phase C) erst nach P0+P1. Nicht auto-publishen.
 Sicherheit:
 
 - [x] FastAPI mintet keine Tokens. (halten)
-- [ ] README/Release sagen die Wahrheit zu Notarisierung, PRF, Autofill-Zuverlässigkeit.
+- [x] README sagt die Wahrheit zu Notarisierung, PRF, Autofill (Demo ja, GitHub-Live noch nicht).
 
 P0:
 
 - [ ] Fremder: App auf, Tresor, Browser-Karten, Import-Review ohne Passwort in der Liste.
-- [ ] `evilgithub.com` wird nicht zu GitHub.
+- [x] `evilgithub.com` wird nicht zu GitHub. (`packages/providers` + Extension-Match-Tests)
 
 P1:
 
-- [ ] Ein Login auf einer echten Seite ohne Copy-Paste (GitHub oder gleichwertig).
-- [ ] Misserfolg erklärt Felder, nicht nur „Autofill failed“.
+- [x] Login ohne Copy-Paste auf der Demo-Seite (`test-login.html`, Playwright `autofill-local`).
+- [ ] GitHub (oder gleichwertige Live-Seite) ohne Copy-Paste — manuell.
+- [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
 
 Installation (Apple, wenn leistbar):
 
@@ -247,7 +248,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Nachweis, kein neuer Engine:** Demo-Login aus den Browser-Karten → Extension mit Tresor-Passwort entsperren → Fill auf `test-login.html`. Danach dieselbe Taste auf GitHub. Field Intelligence / Safe Fill / `/auth/local` sind auf `main`.
+**Nachweis am echten Gerät:** dieselbe Fill-Taste auf GitHub (oder gleichwertiger Live-Seite). Demo-Login ist in CI/Playwright grün. P1b (Assist, Shadow DOM) erst danach.
 
 **Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

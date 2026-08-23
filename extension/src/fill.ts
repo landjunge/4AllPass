@@ -42,7 +42,10 @@ export type FillReason =
 
 export interface FillResult {
   ok: boolean;
+  /** Fields the model recognized (never values). */
   fields: Array<"username" | "password">;
+  /** Fields whose DOM value matched after Safe Fill. */
+  filled?: Array<"username" | "password">;
   mode: FillMode;
   reason?: FillReason;
   confidence?: number;
@@ -76,15 +79,18 @@ export function fillErrorMessage(reason: FillReason | undefined): string {
   }
 }
 
-/** Human line for a miss — fields/mode/confidence, never secrets. */
+/** Human line for a miss — erkannt / gefüllt / Ergebnis, never secrets. */
 export function formatFillFailure(result: {
   reason?: FillReason;
   fields?: Array<"username" | "password">;
+  filled?: Array<"username" | "password">;
   mode?: FillMode;
   confidence?: number;
 }): string {
   const bits = [fillErrorMessage(result.reason)];
-  if (result.fields?.length) bits.push(`fields ${result.fields.join("+")}`);
+  bits.push(`Erkannt / recognized ${result.fields?.length ? result.fields.join("+") : "—"}`);
+  bits.push(`Gefüllt / filled ${result.filled?.length ? result.filled.join("+") : "—"}`);
+  bits.push(`Ergebnis / result ${result.reason ?? "unknown"}`);
   if (result.mode && result.mode !== "skipped") bits.push(result.mode);
   if (typeof result.confidence === "number" && result.confidence > 0) {
     bits.push(`${Math.round(result.confidence * 100)}%`);
@@ -114,12 +120,13 @@ export function probeFromModel(inputs: InputLike[], model: LoginModel): FillResu
     return {
       ok: false,
       fields,
+      filled: [],
       mode: "skipped",
       reason: ineligibleReason(inputs, model),
       confidence: model.confidence,
     };
   }
-  return { ok: true, fields, mode: "skipped", confidence: model.confidence };
+  return { ok: true, fields, filled: [], mode: "skipped", confidence: model.confidence };
 }
 
 const CONTEXT_TOKENS = new Set([

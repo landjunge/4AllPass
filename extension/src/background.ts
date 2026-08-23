@@ -88,10 +88,12 @@ async function deviceId(): Promise<string> {
 }
 
 async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
-  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id && tab.url && /^https?:/.test(tab.url)) return tab;
+  const [focused] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+  if (focused?.id && focused.url && /^https?:/.test(focused.url)) return focused;
   const tabs = await ext.tabs.query({});
-  return tabs.find((candidate) => candidate.id && candidate.url && /^https?:/.test(candidate.url));
+  const http = tabs.filter((tab) => tab.id && tab.url && /^https?:/.test(tab.url));
+  http.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  return http[0];
 }
 
 function emptyFill(reason: FillReason): FillResult {
@@ -186,6 +188,7 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
       error: formatFillFailure(probe),
       reason: probe.reason,
       fields: probe.fields,
+      filled: probe.filled ?? [],
       mode: probe.mode,
       confidence: probe.confidence,
     };
@@ -201,6 +204,7 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
       error: formatFillFailure(filled),
       reason: filled.reason,
       fields: filled.fields,
+      filled: filled.filled ?? [],
       mode: filled.mode,
       confidence: filled.confidence,
     };
@@ -208,6 +212,7 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
   return {
     ok: true,
     fields: filled.fields,
+    filled: filled.filled ?? filled.fields,
     mode: filled.mode,
     confidence: filled.confidence,
   };

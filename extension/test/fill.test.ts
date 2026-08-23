@@ -140,15 +140,19 @@ test("ineligibleReason distinguishes signup from low confidence", () => {
   assert.equal(ineligibleReason([], buildLoginModel([])), "no-fields");
 });
 
-test("formatFillFailure names fields and mode without secrets", () => {
+test("formatFillFailure names erkannt/gefüllt/Ergebnis without secrets", () => {
   const line = formatFillFailure({
     reason: "verify-mismatch",
     fields: ["username", "password"],
+    filled: ["username"],
     mode: "controlled",
     confidence: 0.96,
   });
   assert.equal(line.includes("secret"), false);
-  assert.ok(line.includes("fields username+password"));
+  assert.equal(line.includes("ghp_"), false);
+  assert.ok(line.includes("Erkannt / recognized username+password"));
+  assert.ok(line.includes("Gefüllt / filled username"));
+  assert.ok(line.includes("Ergebnis / result verify-mismatch"));
   assert.ok(line.includes("controlled"));
   assert.ok(line.includes("96%"));
   assert.ok(line.includes("page did not accept the fill"));

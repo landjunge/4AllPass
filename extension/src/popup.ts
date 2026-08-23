@@ -18,6 +18,7 @@ function showFillMiss(result: Record<string, unknown>): void {
     formatFillFailure({
       reason: result.reason as FillReason | undefined,
       fields: Array.isArray(result.fields) ? (result.fields as Array<"username" | "password">) : undefined,
+      filled: Array.isArray(result.filled) ? (result.filled as Array<"username" | "password">) : undefined,
       mode: result.mode as FillMode | undefined,
       confidence: typeof result.confidence === "number" ? result.confidence : undefined,
     }),

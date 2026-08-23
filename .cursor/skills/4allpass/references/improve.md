@@ -12,7 +12,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Reliability before expansion. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
 
-1. **Autofill V1** in `extension/` — classify username/email/password with confidence (WHATWG autocomplete tokens first); native + controlled-input fill; local verify (no secrets in logs). Reuse `@4allpass/providers`. Existing fill.ts is the starting point, not a second engine.
+1. **Autofill V1** is on `main` (Field Intelligence, Safe Fill, local unlock, demo e2e). Next feel-able proof: Fill on a live site (GitHub). Then P1b diagnostics/assist. Do not reimplement the engine.
 2. Browser cards, Chrome/Firefox import + review, provider resolver: **on main**. Do not reimplement.
 3. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install: `docs/install-terminal.md`.
 4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, n8n marketplace, or a passkey store.

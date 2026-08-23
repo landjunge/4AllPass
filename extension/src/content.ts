@@ -103,21 +103,33 @@ function fillForm(username: string, password: string): FillResult {
   }
 
   if (fields.length === 0) {
-    return { ok: false, fields: [], mode: "skipped", reason: "no-fields", confidence: model.confidence };
+    return {
+      ok: false,
+      fields,
+      filled: [],
+      mode: "skipped",
+      reason: "no-fields",
+      confidence: model.confidence,
+    };
   }
+
+  const filled: Array<"username" | "password"> = [];
+  if (fields.includes("username") && userEl && userEl.value === username) filled.push("username");
+  if (fields.includes("password") && passEl && passEl.value === password) filled.push("password");
 
   const mode = mergeMode(modes);
-  if (mode === "failed") {
-    return { ok: false, fields, mode, reason: "verify-mismatch", confidence: model.confidence };
+  if (mode === "failed" || filled.length !== fields.length) {
+    return {
+      ok: false,
+      fields,
+      filled,
+      mode: mode === "failed" ? "failed" : mode,
+      reason: "verify-mismatch",
+      confidence: model.confidence,
+    };
   }
 
-  const userOk = !fields.includes("username") || Boolean(userEl && userEl.value === username);
-  const passOk = !fields.includes("password") || Boolean(passEl && passEl.value === password);
-  if (!userOk || !passOk) {
-    return { ok: false, fields, mode: "failed", reason: "verify-mismatch", confidence: model.confidence };
-  }
-
-  return { ok: true, fields, mode, confidence: model.confidence };
+  return { ok: true, fields, filled, mode, confidence: model.confidence };
 }
 
 ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {

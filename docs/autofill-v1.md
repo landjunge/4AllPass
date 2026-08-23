@@ -260,7 +260,7 @@ P3: Passkeys / OTP — echte Platform-APIs, nicht simulieren.
 
 Aus [`product-maturity.md`](product-maturity.md):
 
-- [ ] Ein Login auf einer echten Seite ohne Copy-Paste (GitHub oder gleichwertig).
-- [ ] Misserfolg erklärt Felder, nicht nur „Autofill failed“.
-- [ ] Unit-Tests für §9 grün.
-- [ ] Keine Secrets in `FillResult` / Logs.
+- [x] Ein Login auf der Demo-Seite ohne Copy-Paste (`test-login.html`, gleichwertig für V1). GitHub live bleibt manuell.
+- [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
+- [x] Unit-Tests für §9 grün.
+- [x] Keine Secrets in `FillResult` / Logs.

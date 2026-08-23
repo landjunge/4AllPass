@@ -4,7 +4,7 @@ import {
   type FillMode,
   type FillResult,
   type InputLike,
-  ineligibleReason,
+  probeFromModel,
 } from "./fill.ts";
 
 function visibleInputs(): HTMLInputElement[] {
@@ -64,19 +64,18 @@ function mergeMode(modes: FillMode[]): FillMode {
   return "skipped";
 }
 
+function probeForm(): FillResult {
+  const likes = visibleInputs().map(describe);
+  return probeFromModel(likes, buildLoginModel(likes));
+}
+
 function fillForm(username: string, password: string): FillResult {
   const inputs = visibleInputs();
   const likes = inputs.map(describe);
   const model = buildLoginModel(likes);
 
   if (!model.eligible) {
-    return {
-      ok: false,
-      fields: [],
-      mode: "skipped",
-      reason: ineligibleReason(likes, model),
-      confidence: model.confidence,
-    };
+    return probeFromModel(likes, model);
   }
 
   const userEl = model.username ? inputs[likes.indexOf(model.username.input)] : undefined;
@@ -113,6 +112,10 @@ function fillForm(username: string, password: string): FillResult {
 }
 
 ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === "probe-form") {
+    sendResponse(probeForm());
+    return;
+  }
   if (message?.type !== "fill-form") return;
   sendResponse(fillForm(String(message.username ?? ""), String(message.password ?? "")));
 });

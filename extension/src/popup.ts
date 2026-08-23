@@ -1,4 +1,5 @@
 import { ext } from "./browser.ts";
+import { formatFillFailure, type FillReason, type FillMode } from "./fill.ts";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
@@ -9,6 +10,17 @@ const picksEl = document.getElementById("picks") as HTMLUListElement;
 function showError(text: string): void {
   errorEl.hidden = false;
   errorEl.textContent = text;
+}
+
+function showFillMiss(result: Record<string, unknown>): void {
+  showError(
+    formatFillFailure({
+      reason: result.reason as FillReason | undefined,
+      fields: Array.isArray(result.fields) ? (result.fields as Array<"username" | "password">) : undefined,
+      mode: result.mode as FillMode | undefined,
+      confidence: typeof result.confidence === "number" ? result.confidence : undefined,
+    }),
+  );
 }
 
 function clearError(): void {
@@ -29,7 +41,7 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
     button.textContent = `${entry.title || entry.username}`;
     button.addEventListener("click", () => {
       void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
-        if (!filled.ok) showError(String(filled.error ?? "fill failed"));
+        if (!filled.ok) showFillMiss(filled);
         else statusEl.textContent = `Filled ${String(filled.filled)}`;
       });
     });
@@ -79,14 +91,17 @@ document.getElementById("fill")?.addEventListener("click", () => {
   picksEl.replaceChildren();
   void send({ type: "fill-tab" }).then((result) => {
     if (!result.ok) {
-      showError(String(result.error ?? "fill failed"));
+      showFillMiss(result);
       return;
     }
     if (result.needsPick && Array.isArray(result.entries)) {
       renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
       return;
     }
-    statusEl.textContent = `Filled ${String(result.filled)}`;
+    const bits = [`Filled ${String(result.filled)}`];
+    if (Array.isArray(result.fields) && result.fields.length) bits.push(String(result.fields.join("+")));
+    if (typeof result.mode === "string" && result.mode !== "skipped") bits.push(String(result.mode));
+    statusEl.textContent = bits.join(" · ");
   });
 });
 

@@ -21,7 +21,7 @@ Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-shar
 
 ## Later (do not start)
 
-- Organizations / teams
+- Organizations / teams — specified in `docs/team-mode.md` + `docs/team-roadmap.md`. **Do not implement** until the maintainer accepts the review. Must not become PAM.
 - Social login as a crypto factor
 - Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android)
 - Passkey store as a separate vault product

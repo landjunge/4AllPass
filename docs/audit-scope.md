@@ -22,7 +22,7 @@ This is a map of what to review, what the running system actually enforces, and 
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 | Client artifacts | `frontend/dist`, `extension/dist` | Tree hash via `scripts/hash-dist.mjs`. Two-build check: `npm run verify:reproducible`. Same-toolchain only (`docs/reproducible-builds.md`) |
 
-Out of scope until they exist in tree: native apps, org/team features, public-key wrapping to a foreign device. Item-share files are in tree (`docs/sharing.md`).
+Out of scope until they exist in tree: native apps, org/team **implementation** (spec only: `docs/team-mode.md`), public-key wrapping to a foreign device. Item-share files are in tree (`docs/sharing.md`).
 
 ---
 

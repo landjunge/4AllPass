@@ -122,6 +122,7 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 - Audit-Logs
 - Passwort-Generator
 - Shamir Secret Sharing als erweiterte Recovery-Option
+- **Team Mode** — spezifiziert, nicht gebaut: [`team-mode.md`](team-mode.md), [`team-roadmap.md`](team-roadmap.md). Organisation ist eine Grenze, kein PAM. Nicht implementieren, bis das Review angenommen ist.
 
 ---
 

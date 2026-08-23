@@ -106,7 +106,7 @@ Current recommended order: [`docs/product-maturity.md`](../../../docs/product-ma
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
-Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard auto-save, a **Tollgate merge**, or FastAPI token minting. Provider templates / local broker / n8n demo follow the 8-week plan only — see `docs/eight-week-agent-access.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
+Do not start orgs (review only: `docs/team-mode.md` — wait for an explicit implement decision; must not become PAM), social-login-as-crypto, native apps, “passkey store as vault”, clipboard auto-save, a **Tollgate merge**, or FastAPI token minting. Provider templates / local broker / n8n demo follow the 8-week plan only — see `docs/eight-week-agent-access.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
 
 ## Open work already in flight
 

@@ -44,6 +44,8 @@ test("parses Bitwarden JSON logins and skips notes", () => {
   assert.equal(result.entries[0]?.username, "ada");
   assert.equal(result.entries[0]?.password, "secret");
   assert.equal(result.entries[0]?.url, "https://github.com");
+  assert.equal(result.entries[0]?.providerId, "github");
+  assert.equal(result.entries[0]?.domain, "github.com");
 });
 
 test("parses KeePass-style CSV", () => {

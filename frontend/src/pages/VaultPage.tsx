@@ -98,6 +98,10 @@ export function VaultPage(): ReactNode {
       capabilities: entry.capabilities,
       credentialType: entry.credentialType,
       notes: entry.notes,
+      domain: entry.domain,
+      providerId: entry.providerId,
+      providerConfidence: entry.providerConfidence,
+      providerMatchType: entry.providerMatchType,
     });
   }
 
@@ -690,7 +694,13 @@ export function VaultPage(): ReactNode {
                         />
                         <span>
                           <strong>{row.title || row.url}</strong>
-                          <span className="muted"> {row.username}</span>
+                          <span className="muted">
+                            {" "}
+                            {row.username}
+                            {row.provider
+                              ? ` · ${row.provider}${row.confidence >= 0.95 ? "" : " ?"}`
+                              : ""}
+                          </span>
                         </span>
                       </label>
                     </li>

@@ -112,6 +112,7 @@ Nicht nötig. Wer Container will: `docker compose up --build` → PWA `:8080`, A
 | [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1. Kein UI, kein Netz, kein Authenticator-I/O |
 | [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — Geräteentsperrung: PRF > largeBlob > UV-gespeicherter Store |
 | [`packages/core`](packages/core) | `@4allpass/core` — Access-Policy, Grant-Metadaten, Audit. Kein Secret, kein React. `allow` = menschlicher Allow, nicht Auto-Handoff / policy allow means a human Allow, not auto-handoff |
+| [`packages/providers`](packages/providers) | `@4allpass/providers` — Domain → Provider + Confidence. Lokal, kein Netz. |
 | [`packages/access`](packages/access) | `@4allpass/access` — Loopback-Client für Agenten (`fourAllPass.request`). Nicht FastAPI |
 | [`packages/broker`](packages/broker) | `@4allpass/broker` — Dev-Relay `:8787`. Produkt-Broker ist der Sidecar (`broker.py` auf `:8788`) / product relay is the sidecar |
 | [`backend`](backend) | FastAPI. Lokal: SQLite + Memory-Sessions (`python -m app.local`). Server: PostgreSQL + Redis. Nur undurchsichtige Envelopes |
@@ -145,6 +146,7 @@ Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-sc
 - 8-Wochen-Plan Agent-Zugang: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
 - Produktreife (Fremde, Notarisierung): [`docs/product-maturity.md`](docs/product-maturity.md)
 - Browser-Sync (Karten, Profile, Basics): [`docs/browser-sync.md`](docs/browser-sync.md)
+- Provider-Auflösung (Domain ≠ Provider): [`docs/provider-resolution.md`](docs/provider-resolution.md)
 - Terminal-Install (ein Befehl, Pause ohne Apple): [`docs/install-terminal.md`](docs/install-terminal.md)
 - Zwei-Minuten-Access-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
 - Lokaler Loopback-Broker (optional, nicht FastAPI): [`docs/local-access-broker.md`](docs/local-access-broker.md)

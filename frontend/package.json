@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@4allpass/core": "*",
+    "@4allpass/providers": "*",
     "@4allpass/crypto": "*",
     "@4allpass/webauthn": "*",
     "@tauri-apps/api": "^2.9.0",

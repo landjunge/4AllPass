@@ -22,6 +22,11 @@ export interface VaultEntry {
   credentialType: string;
   notes: string;
   updatedAt: string;
+  /** Normalized host from the login URL. Never inferred as trust. */
+  domain: string;
+  providerId: string;
+  providerConfidence: number;
+  providerMatchType: string;
 }
 
 export type EntryDraft = Omit<VaultEntry, "id" | "updatedAt">;
@@ -45,6 +50,10 @@ export function emptyDraft(kind: EntryKind = "web"): EntryDraft {
     capabilities: kind === "api" ? "repository.read" : "",
     credentialType: kind === "api" ? "api_key" : "password",
     notes: "",
+    domain: "",
+    providerId: "",
+    providerConfidence: 0,
+    providerMatchType: "",
   };
 }
 
@@ -68,6 +77,10 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     credentialType: entry.credentialType,
     notes: entry.notes,
     updatedAt: entry.updatedAt,
+    domain: entry.domain,
+    providerId: entry.providerId,
+    providerConfidence: entry.providerConfidence,
+    providerMatchType: entry.providerMatchType,
   };
   return new TextEncoder().encode(JSON.stringify(payload));
 }
@@ -92,6 +105,10 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     credentialType: parsed.credentialType ?? "",
     notes: parsed.notes ?? "",
     updatedAt: parsed.updatedAt ?? new Date().toISOString(),
+    domain: parsed.domain ?? "",
+    providerId: parsed.providerId ?? "",
+    providerConfidence: parsed.providerConfidence ?? 0,
+    providerMatchType: parsed.providerMatchType ?? "",
   };
 }
 

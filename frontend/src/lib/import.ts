@@ -1,3 +1,4 @@
+import { resolveProvider } from "@4allpass/providers";
 import { newEntryId, type VaultEntry } from "./entries.ts";
 import { looksLikeSharePackage } from "./share.ts";
 
@@ -23,11 +24,12 @@ function asEntry(partial: {
   url?: string;
   notes?: string;
 }): VaultEntry {
+  const resolved = resolveProvider(partial.url ?? "");
   return {
     id: newEntryId(),
     kind: "web",
     title: partial.title?.trim() ?? "",
-    provider: "",
+    provider: resolved.providerName ?? "",
     account: "",
     username: partial.username?.trim() ?? "",
     password: partial.password ?? "",
@@ -36,9 +38,13 @@ function asEntry(partial: {
     port: "",
     protocol: "",
     capabilities: "",
-    credentialType: "",
+    credentialType: "password",
     notes: partial.notes?.trim() ?? "",
     updatedAt: new Date().toISOString(),
+    domain: resolved.normalizedDomain,
+    providerId: resolved.providerId ?? "",
+    providerConfidence: resolved.confidence,
+    providerMatchType: resolved.matchType,
   };
 }
 
@@ -70,12 +76,21 @@ export function entriesFromBrowserLogins(rows: BrowserLoginRow[]): VaultEntry[] 
 
 export function importReviewRows(
   entries: VaultEntry[],
-): Array<{ id: string; title: string; username: string; url: string }> {
+): Array<{
+  id: string;
+  title: string;
+  username: string;
+  url: string;
+  provider: string;
+  confidence: number;
+}> {
   return entries.map((entry) => ({
     id: entry.id,
     title: entry.title || entry.url,
     username: entry.username,
     url: entry.url,
+    provider: entry.provider || "Unknown",
+    confidence: entry.providerConfidence,
   }));
 }
 

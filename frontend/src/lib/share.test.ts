@@ -3,23 +3,15 @@ import { test } from "node:test";
 
 import { AuthFailureError, IntegrityError, ProtocolError } from "@4allpass/crypto";
 
-import type { VaultEntry } from "./entries.ts";
+import { emptyDraft, type VaultEntry } from "./entries.ts";
 import { buildSharePackage, looksLikeSharePackage, openSharePackage, SHARE_KIND } from "./share.ts";
 
 function entry(partial: Partial<VaultEntry> & Pick<VaultEntry, "id" | "password">): VaultEntry {
   return {
-    kind: "web",
+    ...emptyDraft("web"),
     title: "GitHub",
-    provider: "",
-    account: "",
     username: "ada",
     url: "https://github.com",
-    host: "",
-    port: "",
-    protocol: "",
-    capabilities: "",
-    credentialType: "",
-    notes: "",
     updatedAt: "2026-08-20T00:00:00.000Z",
     ...partial,
   };

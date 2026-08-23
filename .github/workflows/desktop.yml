@@ -106,6 +106,7 @@ jobs:
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
           Import-PfxCertificate -FilePath $pfx -Password (ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
       - name: Tauri bundle
+        shell: bash
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -116,7 +117,18 @@ jobs:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           TAURI_WINDOWS_SIGNING_CERT: ${{ secrets.WINDOWS_CERTIFICATE_THUMBPRINT }}
-        run: npx tauri build --bundles ${{ matrix.bundle }}
+        run: |
+          # GitHub sets missing secrets to empty. Tauri then runs `security import` and fails.
+          # Unset empty vars so the build stays ad-hoc (signingIdentity "-").
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                   APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_ISSUER \
+                   TAURI_WINDOWS_SIGNING_CERT; do
+            eval "val=\${$v-}"
+            if [ -z "$val" ]; then
+              unset "$v"
+            fi
+          done
+          npx tauri build --bundles ${{ matrix.bundle }}
       - name: macOS DMG
         if: runner.os == 'macOS'
         run: bash scripts/make-dmg.sh

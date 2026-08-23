@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildLoginModel,
+  formatFillFailure,
   ineligibleReason,
   pickPassword,
   pickUsername,
+  probeFromModel,
   scorePassword,
   scoreUsername,
   type InputLike,
@@ -117,4 +119,27 @@ test("ineligibleReason distinguishes signup from low confidence", () => {
   const weak = [input({ type: "text", name: "q" })];
   assert.equal(ineligibleReason(weak, buildLoginModel(weak)), "low-confidence");
   assert.equal(ineligibleReason([], buildLoginModel([])), "no-fields");
+});
+
+test("formatFillFailure names fields and mode without secrets", () => {
+  const line = formatFillFailure({
+    reason: "verify-mismatch",
+    fields: ["username", "password"],
+    mode: "controlled",
+    confidence: 0.96,
+  });
+  assert.equal(line.includes("secret"), false);
+  assert.ok(line.includes("fields username+password"));
+  assert.ok(line.includes("controlled"));
+  assert.ok(line.includes("96%"));
+});
+
+test("probeFromModel skips secrets and flags signup", () => {
+  const signup = [
+    input({ type: "password", autocomplete: "new-password", name: "next" }),
+  ];
+  const probed = probeFromModel(signup, buildLoginModel(signup));
+  assert.equal(probed.ok, false);
+  assert.equal(probed.reason, "signup");
+  assert.deepEqual(probed.fields, []);
 });

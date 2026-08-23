@@ -14,7 +14,9 @@ Einstieg: Browser → Tresor → Autofill ([`browser-sync.md`](browser-sync.md))
 
 > Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Self-hosted, Zero-Knowledge, offenes Protokoll.
 
-Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** später scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
+Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
+
+**Nicht gegen 1Password Unified Access / EAM antreten.** Die haben Cloud, verifizierte Machine-Identities, JIT, Attribution, Mobile, Audit. Unser Feld: **lokal, ZK, kein Account bei uns, FastAPI mintet keine Tokens.** Agent-Zugang ist die Haltung „ohne uns zu vertrauen“, nicht Feature-Parität. Identität ist heute ein String + Pairing-Token — ehrlich, nicht OS-Binding.
 
 ---
 

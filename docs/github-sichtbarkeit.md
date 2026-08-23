@@ -31,7 +31,7 @@ Nicht: Star kaufen, zehn Communities denselben Spam, „please star“.
 
 GitHub search and Google both read **name, description, topics, README headings, and public activity**. Stars correlate with popularity but are not the goal. Fill About + topics, keep the README’s first screen as the pitch (logo + one-line wedge + how to try), ship Releases when there is a real milestone, turn on Discussions if you want indexed Q&A. External links (site, article, n8n thread) are how Google discovers the repo.
 
-Profile README and repo README must agree: 4AllPass is credential access, not “a nicer Bitwarden.”
+Profile README and repo README must agree: 4AllPass is a local password vault (import + autofill), not “a nicer Bitwarden.” Agent access is advanced, not the first screen.
 
 ---
 

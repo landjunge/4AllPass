@@ -12,7 +12,7 @@ description: >
 
 # 4AllPass
 
-Device-centric ZK vault. Wedge: **agent credential access** (`docs/eight-week-agent-access.md`). Not “a nicer Bitwarden.” Not a Tollgate feature.
+Device-centric ZK vault. **Humans: effortless auth (import + reliable autofill). Machines: controlled access (Allow/Deny, no raw password).** Not “a nicer Bitwarden.” Not a Tollgate feature. Plan: [`docs/product-maturity.md`](../../../docs/product-maturity.md).
 
 Specs in `docs/` win over comments and PR descriptions. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -102,7 +102,7 @@ cd backend && pytest
 
 Follow [references/improve.md](references/improve.md). Prefer the next **honest** milestone over new features.
 
-Current recommended order: [`docs/browser-sync.md`](../../../docs/browser-sync.md) (browser cards + review import into the existing vault). **Do not rewrite crypto.** Public line: local-first password vault; agent access is advanced. Agent/n8n is not the first screen. Do not start Safari/Windows/Linux write-back until Chrome+Firefox import is tested by a stranger. Apple notarization stays paused (`docs/product-maturity.md`). Do not fill the gap with a second Tauri, a provider list, a launch post, or tag `v0.1.2`. Optional loopback broker is pairing-token + `127.0.0.1`, not FastAPI. FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked. Do not auto-publish `docs/launch-posts.md`.
+Current recommended order: [`docs/product-maturity.md`](../../../docs/product-maturity.md) **v2**. Reliability before expansion. Next code: **autofill V1** (field intelligence + safe fill + local verify) in the existing extension, using `@4allpass/providers`. Import/cards/resolver are on main — do not reimplement. **Do not rewrite crypto.** Agent/n8n is not the first screen. Apple notarization stays paused. No Safari/Windows import, no 500 providers, no launch post, no tag `v0.1.2` until asked. FastAPI never returns secrets. Do not merge Tollgate. Do not auto-publish `docs/launch-posts.md`.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 

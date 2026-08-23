@@ -144,7 +144,7 @@ Es gibt **noch kein** unabhängiges Drittaudit. Geplanter Umfang: `docs/audit-sc
 - Produktplan: [`docs/development-plan.md`](docs/development-plan.md)
 - Positionierung (Ist-Behauptungen): [`docs/positioning.md`](docs/positioning.md)
 - 8-Wochen-Plan Agent-Zugang: [`docs/eight-week-agent-access.md`](docs/eight-week-agent-access.md)
-- Produktreife (Fremde, Notarisierung): [`docs/product-maturity.md`](docs/product-maturity.md)
+- Produktreife v2 (Autofill + kontrollierter Agent-Zugang): [`docs/product-maturity.md`](docs/product-maturity.md)
 - Browser-Sync (Karten, Profile, Basics): [`docs/browser-sync.md`](docs/browser-sync.md)
 - Provider-Auflösung (Domain ≠ Provider): [`docs/provider-resolution.md`](docs/provider-resolution.md)
 - Terminal-Install (ein Befehl, Pause ohne Apple): [`docs/install-terminal.md`](docs/install-terminal.md)

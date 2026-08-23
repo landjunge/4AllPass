@@ -6,7 +6,8 @@ FastAPI gibt **keine** Tokens aus. Launch-Posts nicht auto-publishen.
 
 > **Status Phase A — in Arbeit / pausiert.**  
 > Signing-CI liegt auf `main` (`#111`). Blocker ist **kein Code**, sondern Geld: Apple Developer Program ~99 USD/Jahr, aktuell **nicht leistbar**. Notarisierung gibt es **nicht kostenlos**. Releases bleiben **ad-hoc** (Mac: Rechtsklick → Öffnen).  
-> In der Pause: **kein** Core-Rewrite, **kein** zweites Tauri, **kein** Launch-Post, **kein** Tag `v0.1.2`. Tracking: [#112](https://github.com/landjunge/4AllPass/issues/112).
+> In der Pause: **kein** Core-Rewrite, **kein** zweites Tauri, **kein** Launch-Post, **kein** Tag `v0.1.2`. Tracking: [#112](https://github.com/landjunge/4AllPass/issues/112).  
+> Code-Weg ohne Apple: ein Terminal-Befehl statt Rechtsklick — [`install-terminal.md`](install-terminal.md).
 
 Dieser Plan **ersetzt** die alte Reihenfolge Core-Refactor → Broker-Refactor → Tauri → Notifications → Installer → Provider → n8n. Die Teile davon, die gebraucht wurden, liegen auf `main`. Was fehlt, ist nicht mehr Architektur.
 
@@ -167,5 +168,6 @@ Uninstall / Reset:
 
 ## Nächster Schritt (genau einer)
 
-**Jetzt:** nichts kaufen. Phase A bleibt offen, bis Apple leistbar ist.  
-**Dann:** Apple Developer Active → Secrets laut [`distribution.md`](distribution.md) → Tag `v0.1.2` → Test auf einem **fremden** Mac.
+**Geld:** nichts kaufen. Phase A bleibt offen, bis Apple leistbar ist.  
+**Code (solange A pausiert):** Terminal-Install, ein Befehl, 0 Extra-Klicks — [`install-terminal.md`](install-terminal.md).  
+**Später Apple:** Secrets laut [`distribution.md`](distribution.md) → Tag `v0.1.2` → Test auf einem **fremden** Mac.

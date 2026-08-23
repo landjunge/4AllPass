@@ -46,7 +46,7 @@ export function UnlockPage(): ReactNode {
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <h2>Vault locked</h2>
+        <h2>Tresor gesperrt / Vault locked</h2>
         {deviceUnlockAvailable ? (
           <>
             <button
@@ -95,12 +95,12 @@ export function UnlockPage(): ReactNode {
           {busy === "password" ? "Deriving key…" : "Unlock"}
         </button>
         <button type="button" className="link" onClick={() => setUseRecovery(!useRecovery)}>
-          {useRecovery ? "Use the vault password" : "Use the recovery key"}
+          {useRecovery ? "Tresor-Passwort / Use the vault password" : "Recovery-Schlüssel / Use the recovery key"}
         </button>
-        <p className="hint">
+        <p className="hint" data-testid="unlock-hint">
           {deviceUnlockAvailable
-            ? "This device can unlock in one step. The vault password still works on any device."
-            : "After you unlock once, you can turn on one-step unlock for this device."}
+            ? "Dieses Gerät kann in einem Schritt entsperren. Das Tresor-Passwort gilt weiter. Ohne Passwort oder Recovery-Kit kein Zurück. / This device can unlock in one step. The vault password still works. No password or recovery kit means no way back."
+            : "Unlock = Tresor-Passwort. Passkey/PRF in diesem Fenster unbewiesen. Ohne Passwort oder Recovery-Kit kein Zurück — niemand setzt es zurück. / Unlock = vault password. Passkey/PRF unproven here. No password or recovery kit means no way back."}
         </p>
       </form>
     </div>

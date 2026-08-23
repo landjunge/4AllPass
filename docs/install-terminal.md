@@ -1,6 +1,6 @@
 # Plan — Terminal-Install (so wenig Klicks wie möglich)
 
-Stand: 2026-08-23. **Plan, noch nicht gebaut.** Maintainer-Mac: **Intel (`x86_64`)**, macOS 15.  
+Stand: 2026-08-24. **Script liegt in** [`scripts/install.sh`](../scripts/install.sh). Maintainer-Mac: **Intel (`x86_64`)**, macOS 15.  
 Phase A (Apple-Notarisierung) bleibt pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)). Dieser Weg **ersetzt Apple nicht**. Er umgeht die Klicks, nicht Gatekeeper als Sicherheitsmodell.
 
 `v0.1.1` hat nur `4AllPass_0.1.0_aarch64.dmg`. Das startet auf Intel **nicht** (Rosetta geht nur andersrum). Ohne `*_x64.dmg` ist der One-Liner auf diesem Mac wertlos.
@@ -126,12 +126,12 @@ Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac
 
 ## Definition of Done (dieser Plan)
 
-- [ ] **Dieser Intel-Mac** (Terminal, kein Extra-Klick): **ein** Befehl, App-Fenster, kein Rechtsklick.
-- [ ] Apple-Silicon-Mac: derselbe Befehl, holt `aarch64`.
-- [ ] README DE+EN: One-Liner zuerst; Satz „nicht notariert / du vertraust GitHub“.
-- [ ] Update überschreibt die App, lässt den Vault liegen.
-- [ ] Intel-Mac / unpassendes OS: klare Fehlermeldung, kein halbes Install.
-- [ ] FastAPI mintet weiterhin keine Tokens.
+- [x] `scripts/install.sh` — Mac Intel/arm64, Linux AppImage; Vault-Ordner unangetastet; `--suffix-only` / `--dry-run`.
+- [x] README DE+EN: One-Liner zuerst; Satz „nicht notariert / du vertraust GitHub“.
+- [x] Update überschreibt die App, lässt den Vault liegen (Script löscht Application Support nicht).
+- [x] Unpassendes OS/CPU: klare Fehlermeldung.
+- [x] FastAPI mintet weiterhin keine Tokens.
+- [ ] **Dieser Intel-Mac:** ein Befehl → Fenster (braucht ein `*_x64.dmg` im GitHub-Release).
 - [ ] Phase A (#112) bleibt offen — Terminal-Install ist die Pause, nicht das Ende.
 
 ---

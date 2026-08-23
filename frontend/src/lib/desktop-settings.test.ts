@@ -6,6 +6,7 @@ import {
   LAUNCH_AT_LOGIN_HINT,
   LAUNCH_AT_LOGIN_LABEL,
   SLEEP_LOCK_HINT,
+  UNINSTALL_HINT,
 } from "./desktop-settings.ts";
 
 test("launch-at-login copy is DE+EN and does not claim auto-unlock", () => {
@@ -21,4 +22,11 @@ test("sleep/screen-lock copy does not claim FileVault or auto-unlock", () => {
   assert.match(SLEEP_LOCK_HINT, /Bildschirm-Sperre/);
   assert.match(SLEEP_LOCK_HINT, /Screen lock/);
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(SLEEP_LOCK_HINT), false);
+});
+
+test("uninstall copy says the vault folder stays", () => {
+  assert.match(UNINSTALL_HINT, /löscht den Tresor nicht|does not silently delete/i);
+  assert.match(UNINSTALL_HINT, /Application Support/);
+  assert.match(UNINSTALL_HINT, /APPDATA/);
+  assert.equal(/wipe|format|ghp_/i.test(UNINSTALL_HINT), false);
 });

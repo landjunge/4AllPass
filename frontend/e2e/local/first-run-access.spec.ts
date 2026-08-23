@@ -24,6 +24,7 @@ test("Welcome → vault → Access allow without showing the secret", async ({ p
   await expect(page.getByTestId("launch-at-login")).toBeDisabled();
   await expect(page.getByTestId("launch-at-login-hint")).toContainText("Desktop app only");
   await expect(page.getByTestId("sleep-lock-hint")).toContainText("FileVault");
+  await expect(page.getByTestId("uninstall-hint")).toContainText("löscht den Tresor nicht");
 
   await page.getByTestId("tab-access").click();
   await expect(page.getByTestId("n8n-http-body")).toContainText("repository.read");

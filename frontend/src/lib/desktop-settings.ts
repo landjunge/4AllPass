@@ -12,3 +12,6 @@ export const LAUNCH_AT_LOGIN_BROWSER =
 
 export const SLEEP_LOCK_HINT =
   "Bildschirm-Sperre und Schlaf sperren den Tresor in dieser App. Das ist kein FileVault. / Screen lock and sleep lock the vault in this app. That is not FileVault.";
+
+export const UNINSTALL_HINT =
+  "Deinstallieren löscht den Tresor nicht still. Ordner: ~/Library/Application Support/4AllPass/ · %APPDATA%\\4AllPass\\ · ~/.local/share/4allpass/. / Uninstall does not silently delete the vault. Same folders.";

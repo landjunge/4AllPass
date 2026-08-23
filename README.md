@@ -50,7 +50,17 @@ Agent-Zugang: Access-Tab, nicht der Einstieg. n8n: [`docs/local-access-broker.md
 
 **App zuerst.** Kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort (Server-Profil) ≠ Tresor-Passwort. Logo inkl. Schriftzug.
 
-### Desktop (normal)
+### Ein Befehl / One command
+
+Nicht notariert. Du vertraust diesem GitHub-Repo. `xattr` auf dem Mac ist dasselbe Vertrauenslevel wie Rechtsklick → Öffnen. Der Tresor-Ordner wird **nicht** gelöscht. Unlock bleibt das Tresor-Passwort.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
+```
+
+Ohne Pipe: Script speichern, lesen, `sh install.sh`. Windows: `irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex`.
+
+### Desktop (DMG / Installer)
 
 Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`).
 

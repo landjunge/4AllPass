@@ -211,7 +211,7 @@ Under the hood: Crypto, Provider Intelligence, Policy. Der Mensch muss die Archi
 3. Tag `v0.1.2` → notariertes DMG.
 4. Test auf **fremdem** Mac: Doppelklick.
 
-Bis dahin: Terminal-Install [`install-terminal.md`](install-terminal.md), Rechtsklick → Öffnen.
+Bis dahin: Terminal-Install [`install-terminal.md`](install-terminal.md) / `scripts/install.sh`, Rechtsklick → Öffnen.
 
 ### First Run / Uninstall (Phase B, Texte)
 
@@ -245,13 +245,13 @@ Installation (Apple, wenn leistbar):
 
 Recovery:
 
-- [ ] Nutzer versteht: ohne Kit / zweites Gerät kein Zurück. Kein Server-Reset.
+- [x] Copy: ohne Kit / zweites Gerät kein Zurück (Welcome, Create, Unlock, Emergency Kit, Settings). Kein Server-Reset.
 
 ---
 
 ## Nächster Schritt (genau einer)
 
-**Nachweis am echten Gerät:** Fill auf GitHub. P1–P3 TOTP sind im Code. Passkey-Store und Team Mode nicht in dieser Reihenfolge. Apple pausiert.
+**Pause / Apple:** `scripts/install.sh` (nicht notariert). Fill auf GitHub bleibt der Nachweis am Gerät. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
 **Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

@@ -163,6 +163,8 @@ Vault-Item-Typ, echte Platform-APIs. Kein Fake-Authenticator. TOTP nach stabilem
 
 ## Was wir nicht tun
 
+Haltung: [`product-philosophy.md`](product-philosophy.md) — Produkt zuerst, Kern frei, Sicherheit und Eigentum nicht verkaufen. Kein Monetarisierungsplan in dieser Datei.
+
 Kein Core-Rewrite. Kein zweites Tauri. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein Cloud-Sync, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1.
 
 **Team Mode** ist als Review spezifiziert ([`team-mode.md`](team-mode.md), [`team-roadmap.md`](team-roadmap.md)) und **steht nicht in dieser Code-Reihenfolge**. Kein PAM, kein Admin-Zugriff auf Employee-Vaults, kein Implementieren, bis das Review angenommen ist.

@@ -11,6 +11,8 @@ Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers s
 
 ## 1. Grundprinzipien
 
+Haltung (kein Businessplan): [`product-philosophy.md`](product-philosophy.md). Sicherheit und Eigentum werden nicht verkauft.
+
 - **Zero-Knowledge**: Der Server sieht niemals Klartext-Passwörter oder das Master-Passwort.
 - Das **Master-Passwort** ist die einzige Quelle für die Entschlüsselung (neben dem Recovery Key).
 - **Biometrie** und **Social-Login** sind reine Komfort-Funktionen und ersetzen das Master-Passwort nicht.

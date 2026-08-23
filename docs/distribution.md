@@ -1,8 +1,8 @@
 # Distribution — strangers can open the app
 
-**DE:** Ohne Apple- und Windows-Signatur warnt das Betriebssystem. Der Code in CI ist bereit; **du** musst Konten und Zertifikate kaufen und als GitHub-Secrets eintragen. Danach ein Tag `v*` pushen.
+**DE:** Ohne Apple- und Windows-Signatur warnt das Betriebssystem. Der Code in CI ist bereit (`#111`). **Status 2026-08-23:** Apple Developer (~99 USD/Jahr) ist **pausiert — aktuell nicht leistbar**. Es gibt **keinen** kostenlosen Notarisierungs-Weg. Bis dahin: ad-hoc, Rechtsklick → Öffnen. Kein Tag `v0.1.2`.
 
-**EN:** Gatekeeper / SmartScreen warn until you sign. CI is ready; **you** buy the certificates, add GitHub secrets, then push a `v*` tag.
+**EN:** Gatekeeper / SmartScreen warn until you sign. CI is ready (`#111`). **Paused 2026-08-23:** Apple Developer (~99 USD/year) is not affordable right now. There is **no** free notarization path. Until then: ad-hoc, right-click → Open. No `v0.1.2` tag.
 
 This is not App Store / Microsoft Store. FastAPI still never mints tokens.
 

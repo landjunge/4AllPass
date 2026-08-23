@@ -12,8 +12,8 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Product-readiness sequence is locked in `docs/product-maturity.md`. That plan **replaces** Core-refactor → Broker-refactor → a second desktop shell.
 
-1. **Phase A — double-click.** Apple Developer + GitHub secrets (`docs/distribution.md`) + tag `v0.1.2` + test on a **foreign** Mac. Signing CI is on main (`#111`). Secrets are not. Do not core-rewrite. Do not start a second Tauri. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Do not auto-publish. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
-2. **Phase B** only after a stranger can double-click: honest first-run copy, uninstall must not silently delete the encrypted vault, user can export/reset/delete it on purpose.
+1. **Phase A — double-click, paused.** Signing CI is on main (`#111`). Blocker is money, not code: Apple Developer ~99 USD/year, currently not affordable. No free notarization. Do not tag `v0.1.2`. Do not core-rewrite. Do not start a second Tauri. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Do not auto-publish. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
+2. **Phase B** only after a stranger can double-click (after Apple is paid): honest first-run copy, uninstall must not silently delete the encrypted vault, user can export/reset/delete it on purpose.
 3. Safari.app fill / real Touch ID still unproven. Do not block Phase A on it. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
 
 Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-share files are on main (`docs/sharing.md`).

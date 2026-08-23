@@ -1,8 +1,12 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-22. Kein zweites Tauri, kein Tollgate, keine 20 Provider.
+Stand: 2026-08-23. Kein zweites Tauri, kein Tollgate, keine 20 Provider.
 **Produkt:** Desktop-App. Agent fragt → Mensch Allow/Deny → zeitlich begrenzter Zugang.
 FastAPI gibt **keine** Tokens aus. Launch-Posts nicht auto-publishen.
+
+> **Status Phase A — in Arbeit / pausiert.**  
+> Signing-CI liegt auf `main` (`#111`). Blocker ist **kein Code**, sondern Geld: Apple Developer Program ~99 USD/Jahr, aktuell **nicht leistbar**. Notarisierung gibt es **nicht kostenlos**. Releases bleiben **ad-hoc** (Mac: Rechtsklick → Öffnen).  
+> In der Pause: **kein** Core-Rewrite, **kein** zweites Tauri, **kein** Launch-Post, **kein** Tag `v0.1.2`. Tracking: [#112](https://github.com/landjunge/4AllPass/issues/112).
 
 Dieser Plan **ersetzt** die alte Reihenfolge Core-Refactor → Broker-Refactor → Tauri → Notifications → Installer → Provider → n8n. Die Teile davon, die gebraucht wurden, liegen auf `main`. Was fehlt, ist nicht mehr Architektur.
 
@@ -38,7 +42,7 @@ Was **nicht** dazugehört: App Store, Microsoft Store, Touch ID in der Webview, 
 | Desktop (Tauri), Tray, Sleep-Lock, Notifications | auf `main` |
 | Access-Policy `@4allpass/core`, Sidecar-Broker | auf `main` |
 | Installer Mac/Win/Linux an GitHub Releases | `v0.1.1`, **ad-hoc** |
-| Apple-Notarisierung / Windows-Signatur | CI auf `main` (`#111`), **Secrets fehlen** |
+| Apple-Notarisierung / Windows-Signatur | CI auf `main` (`#111`). **Pausiert:** Apple ~99 USD/Jahr aktuell nicht leistbar. Secrets fehlen |
 | GitHub-Sterne / Reichweite | ~0 |
 | Unabhängiges Audit | nicht beauftragt |
 
@@ -59,8 +63,10 @@ D = später           (nur wenn echte Nutzer an Grenzen stoßen)
 
 ### Phase A — Doppelklick (Pflicht für „Fremde“)
 
+**Status:** in Arbeit / **pausiert** (2026-08-23).  
 **Dauer:** 3–10 Tage, sobald Apple durch ist.  
-**Wer:** du kaufst; CI macht den Rest.
+**Wer:** du kaufst; CI macht den Rest.  
+**Info:** Mitgliedschaft ist der einzige Weg zu Gatekeeper-frei. Kein Workaround. Wieder aufnehmen, sobald das Jahresabo geht.
 
 1. Apple Developer Program (~99 USD/Jahr) + Developer ID Application.
 2. GitHub-Secrets laut [`distribution.md`](distribution.md).
@@ -161,5 +167,5 @@ Uninstall / Reset:
 
 ## Nächster Schritt (genau einer)
 
-**Du:** Apple Developer anmelden.  
-**Dann:** Secrets laut [`distribution.md`](distribution.md), Tag `v0.1.2`, Test auf einem **fremden** Mac.
+**Jetzt:** nichts kaufen. Phase A bleibt offen, bis Apple leistbar ist.  
+**Dann:** Apple Developer Active → Secrets laut [`distribution.md`](distribution.md) → Tag `v0.1.2` → Test auf einem **fremden** Mac.

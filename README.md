@@ -30,7 +30,7 @@ Your agents need access. They don't need your secrets. Self-hosted zero-knowledg
 
 ### 1. Desktop (normal)
 
-Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`). macOS-DMG nach Programme. **Aktuell ad-hoc:** Erstes Öffnen Rechtsklick → Öffnen. Damit **Fremde doppelklicken können:** Apple Developer ID + Notarisierung und Windows-Signatur — Anleitung [`docs/distribution.md`](docs/distribution.md). Tresor anlegen. Access-Broker läuft mit.
+Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`). macOS-DMG nach Programme. **Aktuell ad-hoc:** Erstes Öffnen Rechtsklick → Öffnen. **Notarisierung pausiert** (Apple Developer ~99 USD/Jahr, Stand 2026-08-23 nicht leistbar) — [`docs/product-maturity.md`](docs/product-maturity.md), Anleitung [`docs/distribution.md`](docs/distribution.md). Tresor anlegen. Access-Broker läuft mit.
 
 Selbst bauen:
 

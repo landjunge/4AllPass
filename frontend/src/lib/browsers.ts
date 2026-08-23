@@ -24,3 +24,21 @@ export async function listBrowserProfiles(): Promise<BrowserCard[] | null> {
     return null;
   }
 }
+
+export interface ExtensionInstall {
+  browserId: string;
+  flavor: string;
+  bundlePath: string;
+  appName: string;
+  page: string;
+}
+
+export async function extensionInstall(browserId: string): Promise<ExtensionInstall> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  return await invoke<ExtensionInstall>("extension_install", { browserId });
+}
+
+export async function openBrowserForExtension(browserId: string): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("open_browser_for_extension", { browserId });
+}

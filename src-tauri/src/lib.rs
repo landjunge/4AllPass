@@ -466,7 +466,9 @@ pub fn run() {
             access_prompt,
             access_decide,
             access_dismiss,
-            browsers::list_browser_profiles
+            browsers::list_browser_profiles,
+            browsers::extension_install,
+            browsers::open_browser_for_extension
         ])
         .setup(|app| {
             if start_hidden() {

@@ -3,6 +3,7 @@
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use serde::Serialize;
@@ -91,6 +92,33 @@ const SPECS: &[Spec] = &[
         linux_data: "vivaldi",
     },
     Spec {
+        id: "opera",
+        name: "Opera",
+        kind: "chromium",
+        mac_app: "Opera.app",
+        mac_data: "com.operasoftware.Opera",
+        win_data: "Opera Software/Opera Stable",
+        linux_data: "opera",
+    },
+    Spec {
+        id: "opera-gx",
+        name: "Opera GX",
+        kind: "chromium",
+        mac_app: "Opera GX.app",
+        mac_data: "com.operasoftware.OperaGX",
+        win_data: "Opera Software/Opera GX Stable",
+        linux_data: "opera-gx",
+    },
+    Spec {
+        id: "chrome-canary",
+        name: "Chrome Canary",
+        kind: "chromium",
+        mac_app: "Google Chrome Canary.app",
+        mac_data: "Google/Chrome Canary",
+        win_data: "Google/Chrome SxS/User Data",
+        linux_data: "google-chrome-unstable",
+    },
+    Spec {
         id: "firefox",
         name: "Firefox",
         kind: "firefox",
@@ -98,6 +126,24 @@ const SPECS: &[Spec] = &[
         mac_data: "Firefox",
         win_data: "Mozilla/Firefox",
         linux_data: "firefox",
+    },
+    Spec {
+        id: "firefox-developer",
+        name: "Firefox Developer",
+        kind: "firefox",
+        mac_app: "Firefox Developer Edition.app",
+        mac_data: "FirefoxDeveloperEdition",
+        win_data: "Mozilla/Firefox Developer Edition",
+        linux_data: "firefox-dev",
+    },
+    Spec {
+        id: "firefox-nightly",
+        name: "Firefox Nightly",
+        kind: "firefox",
+        mac_app: "Firefox Nightly.app",
+        mac_data: "Firefox Nightly",
+        win_data: "Mozilla/Firefox Nightly",
+        linux_data: "firefox-nightly",
     },
     Spec {
         id: "safari",
@@ -316,6 +362,122 @@ pub fn list_browser_profiles() -> Vec<BrowserCard> {
     let apps: Vec<PathBuf> = default_application_dirs();
     let refs: Vec<&Path> = apps.iter().map(PathBuf::as_path).collect();
     list_browser_cards(&home, &refs)
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionInstall {
+    pub browser_id: String,
+    pub flavor: String,
+    pub bundle_path: String,
+    pub app_name: String,
+    pub page: String,
+}
+
+fn flavor_for(browser_id: &str) -> &'static str {
+    match browser_id {
+        "firefox" | "firefox-developer" | "firefox-nightly" => "firefox",
+        "safari" => "safari",
+        _ => "chromium",
+    }
+}
+
+fn app_name_for(browser_id: &str) -> &'static str {
+    match browser_id {
+        "chrome" => "Google Chrome",
+        "chrome-canary" => "Google Chrome Canary",
+        "brave" => "Brave Browser",
+        "edge" => "Microsoft Edge",
+        "arc" => "Arc",
+        "chromium" => "Chromium",
+        "vivaldi" => "Vivaldi",
+        "opera" => "Opera",
+        "opera-gx" => "Opera GX",
+        "firefox" => "Firefox",
+        "firefox-developer" => "Firefox Developer Edition",
+        "firefox-nightly" => "Firefox Nightly",
+        "safari" => "Safari",
+        _ => "Google Chrome",
+    }
+}
+
+fn extensions_page(browser_id: &str) -> &'static str {
+    match flavor_for(browser_id) {
+        "firefox" => "about:debugging#/runtime/this-firefox",
+        "safari" => "Safari → Settings → Extensions",
+        _ => "chrome://extensions",
+    }
+}
+
+fn repo_bundle(flavor: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repo")
+        .join("extension")
+        .join("dist")
+        .join(flavor)
+}
+
+#[tauri::command]
+pub fn extension_install(browser_id: String) -> Result<ExtensionInstall, String> {
+    let flavor = flavor_for(&browser_id).to_string();
+    let bundle = if flavor == "safari" {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("repo")
+            .join("extension/safari/FourAllPass/FourAllPass.xcodeproj")
+    } else {
+        repo_bundle(&flavor)
+    };
+    if !bundle.exists() {
+        return Err(format!(
+            "extension bundle missing: {} — run npm run build:extension",
+            bundle.display()
+        ));
+    }
+    Ok(ExtensionInstall {
+        browser_id: browser_id.clone(),
+        flavor,
+        bundle_path: bundle.to_string_lossy().into_owned(),
+        app_name: app_name_for(&browser_id).into(),
+        page: extensions_page(&browser_id).into(),
+    })
+}
+
+#[tauri::command]
+pub fn open_browser_for_extension(browser_id: String) -> Result<(), String> {
+    let app = app_name_for(&browser_id);
+    #[cfg(target_os = "macos")]
+    {
+        let status = Command::new("open")
+            .args(["-a", app])
+            .status()
+            .map_err(|err| err.to_string())?;
+        if !status.success() {
+            return Err(format!("could not open {app}"));
+        }
+        return Ok(());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let _ = browser_id;
+        Command::new("cmd")
+            .args(["/C", "start", "", app])
+            .status()
+            .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = (browser_id, app);
+        Command::new("xdg-open")
+            .arg(".")
+            .status()
+            .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    #[allow(unreachable_code)]
+    Err("open browser is not supported on this OS".into())
 }
 
 #[cfg(test)]

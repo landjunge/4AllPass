@@ -314,10 +314,37 @@ pre.mono {
   cursor: pointer;
 }
 
+.browser-card-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.browser-ext {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.browser-install-hint {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+}
+
+.browser-install-hint code {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  word-break: break-all;
+}
+
 .browser-profiles {
   list-style: none;
   margin: 0;
-  padding: 0 12px 12px;
+  padding: 0;
 }
 
 .browser-profiles li {

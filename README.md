@@ -118,7 +118,7 @@ Nicht nötig. Wer Container will: `docker compose up --build` → PWA `:8080`, A
 | [`backend`](backend) | FastAPI. Lokal: SQLite + Memory-Sessions (`python -m app.local`). Server: PostgreSQL + Redis. Nur undurchsichtige Envelopes |
 | [`frontend`](frontend) | React + TypeScript. Die gesamte Kryptographie läuft hier |
 | [`src-tauri`](src-tauri) | Desktop-Fenster (Tauri). UI kommt vom lokalen Origin `:8788`, nicht aus einem Browser-Tab |
-| [`extension`](extension) | Chromium + Firefox MV3 + macOS-Safari-Autofill. Entschlüsselt auf dem Gerät über `@4allpass/crypto` |
+| [`extension`](extension) | Chromium-Familie + Firefox + macOS-Safari. Ein Source, drei Packs (`dist/chromium`, `dist/firefox`, `safari/`). Entschlüsselt auf dem Gerät über `@4allpass/crypto` |
 | [`docs`](docs) | Die verbindlichen Spezifikationen |
 
 Mitmachen: [`CONTRIBUTING.md`](CONTRIBUTING.md). Sicherheitsmeldungen: [`SECURITY.md`](SECURITY.md). Board: [4AllPass-Projekt](https://github.com/users/landjunge/projects/2).

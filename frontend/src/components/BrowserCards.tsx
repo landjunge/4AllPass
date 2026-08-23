@@ -1,26 +1,35 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  extensionInstall,
   listBrowserProfiles,
+  openBrowserForExtension,
   profileKey,
   type BrowserCard,
+  type ExtensionInstall,
 } from "../lib/browsers.ts";
 
 export function BrowserCards(): ReactNode {
   const [cards, setCards] = useState<BrowserCard[] | null | "loading">("loading");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [wantExt, setWantExt] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
+  const [hint, setHint] = useState<ExtensionInstall | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void listBrowserProfiles().then((found) => {
       setCards(found);
       if (!found) return;
-      const next = new Set<string>();
+      const profiles = new Set<string>();
+      const ext = new Set<string>();
       for (const card of found) {
+        ext.add(card.id);
         for (const profile of card.profiles) {
-          next.add(profileKey(card.id, profile.id));
+          profiles.add(profileKey(card.id, profile.id));
         }
       }
-      setSelected(next);
+      setSelected(profiles);
+      setWantExt(ext);
       if (found.length === 1) setOpenId(found[0]!.id);
     });
   }, []);
@@ -56,7 +65,7 @@ export function BrowserCards(): ReactNode {
     );
   }
 
-  function toggle(key: string): void {
+  function toggleProfile(key: string): void {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -65,12 +74,33 @@ export function BrowserCards(): ReactNode {
     });
   }
 
+  function toggleExt(id: string): void {
+    setWantExt((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function installExt(browserId: string): Promise<void> {
+    setError(null);
+    try {
+      const info = await extensionInstall(browserId);
+      setHint(info);
+      await openBrowserForExtension(browserId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   return (
     <section className="card browser-cards" data-testid="browser-cards">
       <h3>Browser auf diesem Gerät / Browsers on this device</h3>
       <p className="hint">
-        Karte aufklappen, Profile anhaken. Passwörter holen kommt als Nächstes. / Open a card, tick
-        profiles. Fetching passwords is next.
+        Pro Browser: Extension und Passwörter sind getrennte Haken. Extension lädt der Browser
+        selbst — kein Mac-Passwort. / Extension vs passwords are separate. The browser installs the
+        add-on; no Mac login password for that.
       </p>
       <div className="browser-card-grid">
         {cards.map((card) => {
@@ -93,35 +123,75 @@ export function BrowserCards(): ReactNode {
                 </span>
               </button>
               {open ? (
-                <ul className="browser-profiles">
-                  {card.profiles.length === 0 ? (
-                    <li className="muted">Kein Profil gefunden. / No profile found.</li>
-                  ) : (
-                    card.profiles.map((profile) => {
-                      const key = profileKey(card.id, profile.id);
-                      return (
-                        <li key={key}>
-                          <label>
-                            <input
-                              type="checkbox"
-                              checked={selected.has(key)}
-                              onChange={() => toggle(key)}
-                            />
-                            {profile.name}
-                          </label>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
+                <div className="browser-card-body">
+                  <label className="browser-ext">
+                    <input
+                      type="checkbox"
+                      checked={wantExt.has(card.id)}
+                      onChange={() => toggleExt(card.id)}
+                    />
+                    Extension
+                  </label>
+                  {wantExt.has(card.id) ? (
+                    <button type="button" onClick={() => void installExt(card.id)}>
+                      Extension laden / Load add-on
+                    </button>
+                  ) : null}
+                  <ul className="browser-profiles">
+                    {card.profiles.length === 0 ? (
+                      <li className="muted">Kein Profil gefunden. / No profile found.</li>
+                    ) : (
+                      card.profiles.map((profile) => {
+                        const key = profileKey(card.id, profile.id);
+                        return (
+                          <li key={key}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={selected.has(key)}
+                                onChange={() => toggleProfile(key)}
+                              />
+                              {profile.name} — Passwörter holen später / fetch later
+                            </label>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                </div>
               ) : null}
             </article>
           );
         })}
       </div>
       <p className="muted">
-        {selectedCount} gewählt / selected — Übernehmen liest noch keine Passwörter.
+        {selectedCount} Profile gewählt / selected · {wantExt.size} Extensions.
       </p>
+      {error ? <p className="error">{error}</p> : null}
+      {hint ? (
+        <div className="browser-install-hint" data-testid="extension-install-hint">
+          <p>
+            <strong>{hint.appName}</strong> — {hint.page}
+          </p>
+          {hint.flavor === "firefox" ? (
+            <p>
+              about:debugging → Load Temporary Add-on → diese Datei / this file:
+              <code>{hint.bundlePath}/manifest.json</code>
+            </p>
+          ) : hint.flavor === "safari" ? (
+            <p>
+              Xcode-Projekt öffnen, Run, dann Safari → Einstellungen → Erweiterungen. /
+              Open the Xcode project, Run, then Safari → Settings → Extensions.
+              <code>{hint.bundlePath}</code>
+            </p>
+          ) : (
+            <p>
+              Developer mode → Load unpacked → diesen Ordner / this folder:
+              <code>{hint.bundlePath}</code>
+            </p>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

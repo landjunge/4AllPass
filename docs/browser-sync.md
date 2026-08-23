@@ -21,6 +21,32 @@ Nicht: leerer Tresor. Nicht: Allow/Deny als Start.
 
 ---
 
+## Installation / erster Start — der User entscheidet
+
+Kein stilles Mitinstallieren. Nach dem Tresor (oder beim ersten Unlock) **eine** Seite mit Haken:
+
+```text
+[ ] Chrome — Extension + Passwörter aus Profilen
+[ ] Firefox — Extension + Passwörter aus Profilen
+[ ] Safari  — Extension + Passwörter (später)
+[ ] Brave / Edge / … dieselben Karten
+```
+
+Zwei getrennte Haken pro Browser, weil es zwei verschiedene Dinge sind:
+
+| Haken | Was passiert | Mac-Passwort? |
+|---|---|---|
+| **Extension** | 4AllPass öffnet den Browser und bittet, die Extension zu erlauben | **Nein.** Nur die Freigabe im Browser (Chrome/Firefox/Safari-Dialog). Wir können Extensions nicht heimlich in fremde Browser schieben. |
+| **Passwörter holen (Sync rein)** | 4AllPass liest die Login-Datenbank dieses Profils | **Ja, oft.** macOS-Keychain fragt nach dem **Anmeldepasswort dieses Macs** (nicht das 4AllPass-Tresor-Passwort, nicht Apple-Developer). Chrome legt den Speicher-Schlüssel unter „Chrome Safe Storage“ ab. Safari noch strenger. Firefox nur, wenn ein Master-Passwort gesetzt ist. |
+
+Du siehst das **nicht falsch.** Ohne diese Keychain-Freigabe kommen die Browser-Passwörter nicht raus — das ist Absicht von Apple/Google, nicht von uns.
+
+Was **kein** Systempasswort braucht: App nach `/Applications` legen (wenn du in den Ordner schreiben darfst), Extension-Haken, Tresor anlegen.
+
+Admin-Passwort (`sudo`) nur, wenn `/Applications` gesperrt ist → dann `~/Applications`, kein sudo erzwingen.
+
+---
+
 ## Was wir nicht anfassen
 
 | Bleibt | Warum |
@@ -89,9 +115,10 @@ Nach Unlock, **bevor** die leere Liste:
 1. Zeile: „Browser auf diesem Mac“
 2. Karte pro gefundenem Browser (Icon, Name, Anzahl Profile)
 3. Klick auf Karte → Profile mit Haken (Default, Arbeit, …)
-4. Ein Button: **Übernehmen**
-5. Bestätigung: „N Logins kommen in deinen Tresor. Der Server sieht sie nicht.“
-6. Liste mit Passwörtern (die VaultPage, die schon existiert)
+4. Pro Karte zwei Haken: **Extension** / **Passwörter holen**
+5. Button **Übernehmen** — nur für angehakte Aktionen; Keychain-Dialog nur wenn Passwörter geholt werden
+6. Bestätigung: „N Logins kommen in deinen Tresor. Der Server sieht sie nicht.“
+7. Liste mit Passwörtern (die VaultPage, die schon existiert)
 
 Kein Wizard mit fünf Screens. Access-Tab bleibt hinten.
 
@@ -107,8 +134,8 @@ Dedup: gleicher Host + Username → ein Eintrag, neueres Passwort gewinnt. Quell
 | 2 | Native: gewähltes Chrome-Profil lesen → `VaultEntry[]` → `saveEntries` | Du siehst Chrome-Passwörter in der Liste |
 | 3 | Firefox dasselbe | Zwei Karten, ein Tresor |
 | 4 | Brave/Edge/Arc (Chromium-Pfade, gleicher Decrypt) | Weitere Karten ohne neuen Crypto-Pfad |
-| 5 | Welcome/Vault: Karten **zuerst**, Access nicht als Einstieg | Erster Test ohne Erklärung |
-| 6 | Extension: eine Anleitung in Settings „in Chrome laden“ | Ausfüllen auf einer Testseite |
+| 5 | Welcome/Vault: Karten **zuerst**, Access nicht als Einstieg; zwei Haken (Extension / Passwörter) | Erster Test ohne Erklärung |
+| 6 | Extension nur für **angehakte** Browser (Browser-Dialog, kein stilles Install) | Ausfüllen auf einer Testseite |
 | 7 | Safari lesen | extra, nach 2–6 |
 | 8 | Zurückschreiben in Browser-DBs | nur wenn 2–6 sitzen; darf scheitern und dann ehrlich „geht nicht, Extension nutzen“ |
 
@@ -134,6 +161,7 @@ Schritt 1+2 sind der Nutzen. Ohne die siehst du wieder nichts.
 - [ ] Crypto-Tests (`npm test`) unverändert grün.
 - [ ] Access/n8n unverändert im Repo, nicht auf dem Startbildschirm.
 - [ ] README DE+EN: „Browser-Profile in den Tresor“, nicht „Agent-Zugang“ als erste Zeile.
+- [ ] Extension und Passwort-Import sind getrennte Haken. Keychain-Passwort nur beim Import, nie still.
 
 ---
 

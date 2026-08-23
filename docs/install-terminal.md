@@ -17,7 +17,7 @@ Ein Mensch mit Terminal, der uns nicht kennt:
 einen Befehl einfügen  →  Enter  →  4AllPass-Fenster
 ```
 
-**0 Klicks** nach dem Befehl. Kein GitHub-Releases-Tab, kein DMG ziehen, kein Rechtsklick → Öffnen.
+**0 Extra-Klicks** bis das **Fenster** da ist. Danach entscheidet der User in der App (nicht still im Script): welche Browser-Extensions, ob Passwörter aus Profilen geholt werden. Keychain-Passwort nur beim Holen — [`browser-sync.md`](browser-sync.md).
 
 Das ist die Installation für die Pause. Wenn Apple später da ist, bleibt derselbe Befehl — dann ohne Quarantäne-Trick, weil die App notariert ist.
 

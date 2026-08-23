@@ -36,6 +36,24 @@ test("entriesForPage allows subdomains of the saved host", () => {
   assert.equal(entriesForPage(entries, "https://app.example.com/login").length, 1);
 });
 
+test("hostnameOf ignores userinfo (github.com@evil.com is evil.com)", () => {
+  assert.equal(hostnameOf("https://github.com@evil.com/login"), "evil.com");
+  assert.equal(hostnameOf("https://user@github.com/login"), "github.com");
+  assert.notEqual(hostnameOf("https://github.com@evil.com/login"), "github.com");
+});
+
+test("hostnameOf punycodes IDN homographs, not the latin lookalike", () => {
+  assert.equal(hostnameOf("https://g\u0456thub.com/login"), "xn--gthub-n2e.com");
+  assert.notEqual(hostnameOf("https://g\u0456thub.com/login"), "github.com");
+});
+
+test("entriesForPage does not fill a GitHub entry on github.com@evil.com", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.deepEqual(entriesForPage(entries, "https://github.com@evil.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://g\u0456thub.com/login"), []);
+  assert.equal(entriesForPage(entries, "https://user@github.com/session").length, 1);
+});
+
 test("entriesForPage rejects evilgithub.com and allows login.github.com", () => {
   const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
   assert.deepEqual(entriesForPage(entries, "https://evilgithub.com/login"), []);

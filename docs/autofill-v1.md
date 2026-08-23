@@ -140,6 +140,7 @@ export interface LoginModel {
 ## 4. Provider + Vault-Match
 
 Gleiche Regeln wie Import. Nicht `hostname.endsWith("github.com")`.
+Host aus `URL.hostname`: `github.com@evil.com` ist `evil.com`; IDN-Homographen sind Punycode, nicht GitHub.
 
 Erlaubt:
 

@@ -13,6 +13,8 @@ const PROVIDER_FILL_MIN = 0.95;
 
 export function hostnameOf(value: string): string | null {
   try {
+    // URL.hostname, not string splits: github.com@evil.com → evil.com;
+    // IDN homographs → punycode. Tests in match.test.ts.
     const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
     return host || null;
   } catch {

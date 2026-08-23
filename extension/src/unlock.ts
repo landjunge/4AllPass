@@ -60,6 +60,19 @@ export async function apiRequest<T>(
   return parsed as T;
 }
 
+/**
+ * Desktop / `npm run app` has no account. Empty email + empty sign-in
+ * password → POST /auth/local. Anything else → POST /auth/login.
+ */
+export function storageAuthRequest(
+  email: string,
+  accountPassword: string,
+): { path: "/auth/local" | "/auth/login"; body?: { email: string; password: string } } {
+  const mail = email.trim();
+  if (!mail && !accountPassword) return { path: "/auth/local" };
+  return { path: "/auth/login", body: { email: mail, password: accountPassword } };
+}
+
 export async function unlockVault(options: {
   apiOrigin: string;
   deviceId: string;
@@ -67,13 +80,14 @@ export async function unlockVault(options: {
   accountPassword: string;
   vaultPassword: string;
 }): Promise<{ token: string; vaultId: string; entries: VaultItem[] }> {
+  const auth = storageAuthRequest(options.email, options.accountPassword);
   const session = await apiRequest<{ token: string }>(
     options.apiOrigin,
     null,
     options.deviceId,
     "POST",
-    "/auth/login",
-    { email: options.email, password: options.accountPassword },
+    auth.path,
+    auth.body,
   );
   const vaults = await apiRequest<Array<{ vaultId: string }>>(
     options.apiOrigin,

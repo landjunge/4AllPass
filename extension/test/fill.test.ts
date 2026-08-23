@@ -133,6 +133,7 @@ test("formatFillFailure names fields and mode without secrets", () => {
   assert.ok(line.includes("fields username+password"));
   assert.ok(line.includes("controlled"));
   assert.ok(line.includes("96%"));
+  assert.ok(line.includes("page did not accept the fill"));
 });
 
 test("formatFillSuccess names fields without secrets", () => {
@@ -141,7 +142,7 @@ test("formatFillSuccess names fields without secrets", () => {
     mode: "native",
     confidence: 0.98,
   });
-  assert.equal(line.startsWith("Filled"), true);
+  assert.equal(line.startsWith("Gefüllt / Filled"), true);
   assert.ok(line.includes("username+password"));
   assert.ok(line.includes("native"));
   assert.equal(line.includes("secret"), false);

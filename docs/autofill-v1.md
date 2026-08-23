@@ -34,7 +34,9 @@ Page (origin)
   → Verify                 lokal, keine Secrets
 ```
 
-Trigger (unverändert): Popup **Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, Kontextmenü.  
+Trigger (unverändert): Popup **Diese Seite füllen / Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, Kontextmenü.
+
+Desktop-Unlock: nur Tresor-Passwort gegen `http://127.0.0.1:8788` (`POST /auth/local`). E-mail + Konto-Passwort bleiben für das Server-Profil.  
 Kein stilles Fill beim Laden der Seite in V1 (das ist der Bitwarden-Default-Streit). Explizite Nutzeraktion.
 
 ---

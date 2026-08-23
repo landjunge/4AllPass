@@ -267,7 +267,7 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       await lockVault();
       return { ok: true };
     case "unlock": {
-      const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8010").replace(/\/$/, "");
+      const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8788").replace(/\/$/, "");
       await ensureApiOrigin(apiOrigin);
       const unlocked = await unlockVault({
         apiOrigin,

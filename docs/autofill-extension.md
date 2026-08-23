@@ -42,7 +42,7 @@ Xcode: scheme **FourAllPass** → Run. Safari → Settings → Extensions. Unsig
 
 iOS Safari Web Extension and system Password AutoFill are not this wrapper.
 
-Popup: API (desktop `http://127.0.0.1:8788`), e-mail, sign-in password, vault password → **Unlock**. Then **Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, or right-click → **Fill with 4AllPass**.
+Popup: API (desktop `http://127.0.0.1:8788`) + **Tresor-Passwort / vault password** → **Entsperren / Unlock**. That is `POST /auth/local` — the desktop app has no e-mail account. Server deployments still open **Server-Konto** and sign in as before (`POST /auth/login`). Then **Diese Seite füllen / Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, or right-click → **Fill with 4AllPass**.
 
 ## Not in this slice
 

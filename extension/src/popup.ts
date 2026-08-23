@@ -61,8 +61,8 @@ async function render(): Promise<void> {
   unlockForm.hidden = unlocked;
   unlockedEl.hidden = !unlocked;
   statusEl.textContent = unlocked
-    ? `Unlocked · ${String(status.entryCount)} entries on this device`
-    : "Locked. Decryption stays on this device.";
+    ? `Entsperrt / Unlocked · ${String(status.entryCount)} Einträge / entries`
+    : "Gesperrt. Entschlüsselung bleibt auf diesem Gerät. / Locked. Decryption stays on this device.";
   picksEl.replaceChildren();
   if (!unlocked) return;
   const candidates = await send({ type: "candidates-active" });

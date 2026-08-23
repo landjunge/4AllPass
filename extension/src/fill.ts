@@ -61,18 +61,18 @@ export function ineligibleReason(inputs: InputLike[], model: LoginModel): FillRe
 export function fillErrorMessage(reason: FillReason | undefined): string {
   switch (reason) {
     case "locked":
-      return "vault is locked";
+      return "Tresor gesperrt / vault is locked";
     case "no-match":
-      return "no entry matches this page";
+      return "Kein Eintrag zu dieser Seite / no entry matches this page";
     case "low-confidence":
-      return "login fields not confident enough";
+      return "Login-Felder unsicher / login fields not confident enough";
     case "signup":
-      return "this looks like a sign-up form";
+      return "Sieht nach Registrierung aus / this looks like a sign-up form";
     case "verify-mismatch":
-      return "page did not accept the fill";
+      return "Seite hat Fill nicht übernommen / page did not accept the fill";
     case "no-fields":
     default:
-      return "no login fields on this page";
+      return "Keine Login-Felder / no login fields on this page";
   }
 }
 
@@ -97,7 +97,7 @@ export function formatFillSuccess(result: {
   mode?: FillMode;
   confidence?: number;
 }): string {
-  const bits = ["Filled"];
+  const bits = ["Gefüllt / Filled"];
   if (result.fields?.length) bits.push(result.fields.join("+"));
   if (result.mode && result.mode !== "skipped") bits.push(result.mode);
   if (typeof result.confidence === "number" && result.confidence > 0) {

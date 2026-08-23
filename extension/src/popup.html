@@ -10,16 +10,28 @@
     <p id="status" class="muted">Gesperrt. Entschlüsselung bleibt auf diesem Gerät. / Locked. Decryption stays on this device.</p>
     <form id="unlock">
       <label>API <input id="api" value="http://127.0.0.1:8788" /></label>
-      <label>E-mail <input id="email" type="email" autocomplete="username" required /></label>
-      <label>Sign-in password <input id="account" type="password" autocomplete="current-password" required /></label>
-      <label>Vault password <input id="vault" type="password" required /></label>
-      <button type="submit" id="unlock-btn">Unlock</button>
+      <label
+        >Tresor-Passwort / Vault password
+        <input id="vault" type="password" required autocomplete="current-password"
+      /></label>
+      <p class="hint">
+        Desktop-App: nur dieses Passwort. / Desktop app: this password only.
+      </p>
+      <details id="server-account">
+        <summary>Server-Konto (optional) / Server account</summary>
+        <label>E-mail <input id="email" type="email" autocomplete="username" /></label>
+        <label
+          >Konto-Passwort / Sign-in password
+          <input id="account" type="password" autocomplete="current-password"
+        /></label>
+      </details>
+      <button type="submit" id="unlock-btn">Entsperren / Unlock</button>
     </form>
     <div id="unlocked" hidden>
-      <button type="button" id="fill">Fill this page</button>
-      <p class="muted" id="shortcut">Ctrl+Shift+L · right-click the page · locks after 5 min idle</p>
+      <button type="button" id="fill">Diese Seite füllen / Fill this page</button>
+      <p class="muted" id="shortcut">Ctrl+Shift+L · ⌘⇧L · Rechtsklick / right-click · 5 min idle</p>
       <ul id="picks"></ul>
-      <button type="button" id="lock" class="link">Lock</button>
+      <button type="button" id="lock" class="link">Sperren / Lock</button>
     </div>
     <p id="error" class="error" hidden></p>
     <script src="popup.js"></script>

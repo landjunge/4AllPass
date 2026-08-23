@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   auditLine,
   decideAccess,
+  explainAccess,
+  explainDenyReason,
   formatAuditClock,
   issueGrant,
   readGrant,
@@ -40,6 +42,7 @@ export function AccessPanel({
   const [grant, setGrant] = useState<AccessGrant | null>(null);
   const [audit, setAudit] = useState<AccessAudit[]>([]);
   const [flash, setFlash] = useState("");
+  const [why, setWhy] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [seeding, setSeeding] = useState(false);
 
@@ -63,11 +66,13 @@ export function AccessPanel({
     if (verdict.status === "denied") {
       setPending(null);
       setFlash(`DENIED — ${verdict.reason.replaceAll("_", " ")}`);
+      setWhy(explainAccess(verdict).why);
       setAudit((rows) => [auditLine(request, "DENIED", verdict.reason), ...rows]);
       return;
     }
     setPending(request);
     setFlash("");
+    setWhy(explainAccess(verdict).why);
   }
 
   function allow(): void {
@@ -80,6 +85,9 @@ export function AccessPanel({
     setAudit((rows) => [auditLine(pending, "APPROVED"), ...rows]);
     setPending(null);
     setFlash("ACCESS GRANTED");
+    setWhy(
+      "Allow erteilt einen zeitlich begrenzten Grant. Das Passwort bleibt im Tresor. / Allow issues a time-boxed grant. The password stays in the vault.",
+    );
     setNowTick(Date.now());
     window.setTimeout(() => setNowTick(Date.now()), (DEMO_TTL_SECONDS + 1) * 1000);
   }
@@ -103,6 +111,7 @@ export function AccessPanel({
       ...rows,
     ]);
     setFlash("Credential expired.");
+    setWhy(explainDenyReason("expired"));
   }
 
   function reset(): void {
@@ -110,16 +119,17 @@ export function AccessPanel({
     setPending(null);
     setAudit([]);
     setFlash("");
+    setWhy("");
     setScene(startingScene(entries));
   }
 
   return (
     <div className="columns">
       <section className="card">
-        <h3>Two-minute demo</h3>
+        <h3>Access simulator</h3>
         <p className="muted">
-          Your agents need access. They don&apos;t need your secrets. Local policy only — FastAPI
-          never sees this request or the secret.
+          Same policy as the loopback broker. FastAPI never sees this request or the secret. Access
+          is not the first screen.
         </p>
         <ol className="demo-steps" data-testid="demo-steps">
           {(["read", "delete", "expire", "unknown"] as const).map((id) => (
@@ -211,6 +221,11 @@ export function AccessPanel({
             {expired && scene !== "expire" ? " Credential expired." : ""}
           </p>
         ) : null}
+        {why ? (
+          <p className="hint" data-testid="access-why">
+            Why: {why}
+          </p>
+        ) : null}
         {grant && live && "material" in live ? (
           <p className="hint" data-testid="demo-grant-status">
             {grantHandoffCopy(grant.application, left)}
@@ -239,6 +254,16 @@ export function AccessPanel({
           speaks POST /v1/access/request over BroadcastChannel. Walkthrough:{" "}
           <code>docs/two-minute-demo.md</code>.
         </p>
+      </section>
+      <section className="card" data-testid="access-security-status">
+        <h3>Security status</h3>
+        <ul className="hint">
+          <li>Unknown application = DENY</li>
+          <li>Loopback broker only (127.0.0.1). Browser Origin on the grant path = 403</li>
+          <li>FastAPI mints no tokens and never sees plaintext</li>
+          <li>Policy allow means human Allow, not auto-handoff</li>
+          <li>TTL stops future handoffs. A copy already given is not un-known</li>
+        </ul>
       </section>
       <N8nHttpRecipe />
       <LocalBrokerConnect />
@@ -270,6 +295,9 @@ export function AccessPanel({
               <strong>{pending.application}</strong> requests <strong>{pending.provider}</strong>{" "}
               <code>{pending.scope.join(", ")}</code> for {pending.ttlSeconds} seconds.
             </p>
+            <p className="hint" data-testid="access-why-pending">
+              Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
+            </p>
             {pending.scope.some((scope) => /write|delete|admin/i.test(scope)) ? (
               <p className="error-text">High-risk capability</p>
             ) : null}
@@ -285,6 +313,7 @@ export function AccessPanel({
                   setAudit((rows) => [auditLine(pending, "DENIED", "denied_by_user"), ...rows]);
                   setPending(null);
                   setFlash("DENIED — denied by user");
+                  setWhy(explainDenyReason("denied_by_user"));
                 }}
               >
                 Deny

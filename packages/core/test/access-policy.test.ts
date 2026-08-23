@@ -6,9 +6,11 @@ import {
   auditLine,
   decideAccess,
   evaluatePolicy,
+  explainAccess,
   grantIsValid,
   issueGrant,
   parseAccessBody,
+  whyContainsSecret,
   type AccessRequest,
   type Credential,
 } from "../src/index.ts";
@@ -81,6 +83,23 @@ test("6 expired grant is invalid", () => {
   assert.equal(grantIsValid(grant, 5_000 + 1_000), false);
   assert.ok(!("material" in grant));
   assert.ok(!("access_token" in grant));
+});
+
+test("explainAccess pending is human Allow, not auto-handoff, and omits secrets", () => {
+  const verdict = decideAccess(req(), [github()]);
+  const why = explainAccess(verdict);
+  assert.equal(why.code, "pending_human_allow");
+  assert.ok(why.why.includes("Allow"));
+  assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
+});
+
+test("explainAccess unknown app DENY names the rule without secrets", () => {
+  const verdict = decideAccess(req({ application: "malicious-agent" }), [github()]);
+  assert.equal(verdict.status, "denied");
+  const why = explainAccess(verdict);
+  assert.equal(why.code, "application_not_allowed");
+  assert.ok(why.why.includes("Unknown application"));
+  assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
 });
 
 test("7 core works without browser APIs", () => {

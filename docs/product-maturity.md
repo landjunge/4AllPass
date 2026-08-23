@@ -152,7 +152,10 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 
 ### P2 — Agent Access (vorhanden, polish später)
 
-Allow/Deny bleibt. Jede Entscheidung soll irgendwann ein **Why** haben. Simulator und Security-Status: nach Autofill-V1. Der Agent bekommt möglichst **kein** Passwort — Capability + TTL. Unknown = DENY. First Screen nicht.
+- [x] Why an jeder Entscheidung (`explainAccess`, DE+EN, keine Secrets).
+- [x] Simulator = Access-Tab-Demo (dieselbe Policy wie der Broker, nicht FastAPI).
+- [x] Security-Status auf dem Access-Tab (Loopback, Origin 403, unknown DENY, kein Auto-Handoff).
+- Access ist nicht der erste Bildschirm. Unknown = DENY. Grant = Credential+TTL, kein Roh-Passwort an den Agenten dauerhaft.
 
 ### P3 — Passkeys / OTP (bewusst spät)
 
@@ -247,7 +250,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Nachweis am echten Gerät:** Fill auf GitHub. P1b Assist ist im Code (Klick unter 0,70). Shadow DOM / iframe später. P2 Why/Simulator danach, Access-Tab nicht erster Bildschirm.
+**Nachweis am echten Gerät:** Fill auf GitHub. P1b Assist und P2 Why/Security-Status sind im Code. Shadow DOM / iframe später. P3 Passkeys/OTP bewusst spät. Team Mode nicht in dieser Reihenfolge.
 
 **Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
 

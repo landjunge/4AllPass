@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   extensionInstall,
+  importBrowserLogins,
   listBrowserProfiles,
   openBrowserForExtension,
   profileKey,
   type BrowserCard,
+  type BrowserLoginRow,
   type ExtensionInstall,
 } from "../lib/browsers.ts";
 
-export function BrowserCards(): ReactNode {
+export function BrowserCards({
+  onLogins,
+}: {
+  onLogins: (rows: BrowserLoginRow[]) => void;
+}): ReactNode {
   const [cards, setCards] = useState<BrowserCard[] | null | "loading">("loading");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [wantExt, setWantExt] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
   const [hint, setHint] = useState<ExtensionInstall | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void listBrowserProfiles().then((found) => {
@@ -81,6 +88,30 @@ export function BrowserCards(): ReactNode {
       else next.add(id);
       return next;
     });
+  }
+
+  async function fetchPasswords(): Promise<void> {
+    setError(null);
+    setBusy(true);
+    const rows: BrowserLoginRow[] = [];
+    try {
+      for (const key of selected) {
+        const split = key.indexOf(":");
+        if (split < 0) continue;
+        const browserId = key.slice(0, split);
+        const profileId = key.slice(split + 1);
+        if (browserId.startsWith("firefox") || browserId === "safari") {
+          continue;
+        }
+        const part = await importBrowserLogins(browserId, profileId);
+        rows.push(...part);
+      }
+      onLogins(rows);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function installExt(browserId: string): Promise<void> {
@@ -164,8 +195,22 @@ export function BrowserCards(): ReactNode {
           );
         })}
       </div>
+      <div className="actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={busy || selectedCount === 0}
+          data-testid="fetch-browser-passwords"
+          onClick={() => void fetchPasswords()}
+        >
+          {busy
+            ? "Keychain / lese Profile…"
+            : `Passwörter holen (${selectedCount}) / Fetch passwords`}
+        </button>
+      </div>
       <p className="muted">
-        {selectedCount} Profile gewählt / selected · {wantExt.size} Extensions.
+        {selectedCount} Profile gewählt / selected · {wantExt.size} Extensions. macOS kann nach dem
+        Anmeldepasswort fragen.
       </p>
       {error ? <p className="error">{error}</p> : null}
       {hint ? (

@@ -197,6 +197,17 @@ fn card_for(spec: &Spec, home: &Path, applications: &[&Path]) -> Option<BrowserC
     })
 }
 
+pub(crate) fn chromium_profile_dir(home: &Path, browser_id: &str, profile_dir: &str) -> Result<PathBuf, String> {
+    let spec = SPECS
+        .iter()
+        .find(|spec| spec.id == browser_id)
+        .ok_or_else(|| format!("unknown browser {browser_id}"))?;
+    if spec.kind != "chromium" {
+        return Err("Passwörter aus diesem Browser kommen als Nächstes. / Password import for this browser is next.".into());
+    }
+    Ok(user_data_dir(spec, home).join(profile_dir))
+}
+
 fn user_data_dir(spec: &Spec, home: &Path) -> PathBuf {
     if cfg!(target_os = "windows") {
         let local = std::env::var_os("LOCALAPPDATA")

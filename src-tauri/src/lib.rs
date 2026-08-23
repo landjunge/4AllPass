@@ -14,6 +14,7 @@ use tauri::{
 };
 use tauri_plugin_notification::NotificationExt;
 
+mod browser_passwords;
 mod browsers;
 mod sleep_stall;
 use sleep_stall::slept_through;
@@ -468,7 +469,8 @@ pub fn run() {
             access_dismiss,
             browsers::list_browser_profiles,
             browsers::extension_install,
-            browsers::open_browser_for_extension
+            browsers::open_browser_for_extension,
+            browser_passwords::import_browser_logins
         ])
         .setup(|app| {
             if start_hidden() {

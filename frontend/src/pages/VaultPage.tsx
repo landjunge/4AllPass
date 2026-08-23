@@ -11,7 +11,12 @@ import {
   type EntryDraft,
   type VaultEntry,
 } from "../lib/entries.ts";
-import { parsePlaintextExport, plaintextImportWarning } from "../lib/import.ts";
+import {
+  entriesFromBrowserLogins,
+  mergeImportedLogins,
+  parsePlaintextExport,
+  plaintextImportWarning,
+} from "../lib/import.ts";
 import {
   buildSharePackage,
   downloadShareFile,
@@ -36,7 +41,7 @@ export function VaultPage(): ReactNode {
   const [importPending, setImportPending] = useState<{
     count: number;
     entries: VaultEntry[];
-    source: "plaintext" | "share";
+    source: "plaintext" | "share" | "browser";
   } | null>(null);
   const [revealPassword, setRevealPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -152,7 +157,9 @@ export function VaultPage(): ReactNode {
     if (!importPending || !vault) return;
     setBusy(true);
     try {
-      await saveEntries([...entries, ...importPending.entries]);
+      const next =
+        importPending.source === "browser" ? importPending.entries : [...entries, ...importPending.entries];
+      await saveEntries(next);
       setImportPending(null);
     } catch {
       // banner
@@ -244,7 +251,20 @@ export function VaultPage(): ReactNode {
         />
       ) : (
         <>
-        <BrowserCards />
+        <BrowserCards
+          onLogins={(rows) => {
+            const incoming = entriesFromBrowserLogins(rows);
+            if (incoming.length === 0) {
+              window.alert("Keine Passwörter gelesen. / No passwords read.");
+              return;
+            }
+            setImportPending({
+              count: incoming.length,
+              entries: mergeImportedLogins(entries, incoming),
+              source: "browser",
+            });
+          }}
+        />
         <div className="columns">
           <section className="card list">
             <div className="list-header">
@@ -594,11 +614,19 @@ export function VaultPage(): ReactNode {
       {importPending ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>{importPending.source === "share" ? "Import shared logins" : "Import plaintext file"}</h2>
+            <h2>
+              {importPending.source === "share"
+                ? "Import shared logins"
+                : importPending.source === "browser"
+                  ? "Browser-Passwörter in den Tresor / Browser passwords into the vault"
+                  : "Import plaintext file"}
+            </h2>
             <p>
               {importPending.source === "share"
                 ? "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext."
-                : plaintextImportWarning()}
+                : importPending.source === "browser"
+                  ? "Keychain hat freigegeben. Bestätigen verschlüsselt die Logins in deinen Tresor. Der Server sieht sie nicht. / Keychain granted. Confirm encrypts into your vault. The server never sees them."
+                  : plaintextImportWarning()}
             </p>
             <p className="muted">
               {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on

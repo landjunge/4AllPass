@@ -42,3 +42,19 @@ export async function openBrowserForExtension(browserId: string): Promise<void> 
   const { invoke } = await import("@tauri-apps/api/core");
   await invoke("open_browser_for_extension", { browserId });
 }
+
+export interface BrowserLoginRow {
+  url: string;
+  username: string;
+  password: string;
+  title: string;
+  source: string;
+}
+
+export async function importBrowserLogins(
+  browserId: string,
+  profileId: string,
+): Promise<BrowserLoginRow[]> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  return await invoke<BrowserLoginRow[]>("import_browser_logins", { browserId, profileId });
+}

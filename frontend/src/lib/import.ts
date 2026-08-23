@@ -46,6 +46,42 @@ function usable(entry: VaultEntry): boolean {
   return Boolean(entry.title || entry.username || entry.password);
 }
 
+export interface BrowserLoginRow {
+  url: string;
+  username: string;
+  password: string;
+  title?: string;
+  source?: string;
+}
+
+export function entriesFromBrowserLogins(rows: BrowserLoginRow[]): VaultEntry[] {
+  return rows
+    .map((row) =>
+      asEntry({
+        title: row.title || row.url,
+        username: row.username,
+        password: row.password,
+        url: row.url,
+        notes: row.source ? `browser:${row.source}` : "",
+      }),
+    )
+    .filter(usable);
+}
+
+export function mergeImportedLogins(existing: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] {
+  const keyOf = (entry: VaultEntry): string =>
+    `${entry.url.replace(/^https?:\/\//, "").split("/")[0] ?? ""}|${entry.username}`.toLowerCase();
+  const byKey = new Map(existing.map((entry) => [keyOf(entry), entry]));
+  for (const entry of incoming) {
+    const key = keyOf(entry);
+    const prev = byKey.get(key);
+    if (!prev || (entry.password && entry.password !== prev.password)) {
+      byKey.set(key, prev ? { ...prev, password: entry.password, updatedAt: entry.updatedAt } : entry);
+    }
+  }
+  return [...byKey.values()];
+}
+
 function parseCsv(text: string): ImportResult {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.length > 0);
   if (lines.length < 2) return { format: "csv", entries: [], skipped: 0 };

@@ -75,7 +75,10 @@ That secret still cannot unwrap a Vault Key.
 `~/Library/Application Support/4AllPass/` (macOS), `%APPDATA%\4AllPass\`
 (Windows), `~/.local/share/4allpass/` (Linux). Bind is loopback only.
 The process still never sees master password, VK, DK, DWK, PRF, or plaintext
-entries. FastAPI still has no `/v1/access` token route.
+entries. FastAPI still has no `/v1/access` token route. Local responses send
+`Content-Security-Policy` with `connect-src` equal to this process's loopback
+origin (not `http://127.0.0.1:*`). Tauri's `tauri.conf.json` CSP does not
+apply to the live sidecar origin.
 
 Local first-run skips email and account password. `POST /api/v1/auth/local`
 mints a storage session for a singleton row (`local@127.0.0.1`, no account

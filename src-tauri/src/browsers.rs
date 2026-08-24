@@ -197,6 +197,43 @@ fn card_for(spec: &Spec, home: &Path, applications: &[&Path]) -> Option<BrowserC
     })
 }
 
+/// Profile dirs must stay under the browser's data folder. Absolute Firefox
+/// paths are allowed only if they still resolve inside that folder.
+pub(crate) fn contained_profile_dir(root: &Path, given: &str) -> Result<PathBuf, String> {
+    if given.is_empty() {
+        return Err("empty profile path".into());
+    }
+    let raw = Path::new(given);
+    if raw.components().any(|part| matches!(part, std::path::Component::ParentDir)) {
+        return Err("profile path must not contain ..".into());
+    }
+    let joined = if raw.is_absolute() {
+        raw.to_path_buf()
+    } else {
+        root.join(raw)
+    };
+    let root_norm = normalize_path(root);
+    let joined_norm = normalize_path(&joined);
+    if !joined_norm.starts_with(&root_norm) {
+        return Err("profile is outside the browser data folder".into());
+    }
+    Ok(joined)
+}
+
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for part in path.components() {
+        match part {
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            std::path::Component::CurDir => {}
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
 pub(crate) fn firefox_profile_dir(home: &Path, browser_id: &str, profile_path: &str) -> Result<PathBuf, String> {
     let spec = SPECS
         .iter()
@@ -205,12 +242,7 @@ pub(crate) fn firefox_profile_dir(home: &Path, browser_id: &str, profile_path: &
     if spec.kind != "firefox" {
         return Err("not a Firefox profile".into());
     }
-    let root = user_data_dir(spec, home);
-    let given = Path::new(profile_path);
-    if given.is_absolute() {
-        return Ok(given.to_path_buf());
-    }
-    Ok(root.join(given))
+    contained_profile_dir(&user_data_dir(spec, home), profile_path)
 }
 
 pub(crate) fn chromium_profile_dir(home: &Path, browser_id: &str, profile_dir: &str) -> Result<PathBuf, String> {
@@ -221,7 +253,7 @@ pub(crate) fn chromium_profile_dir(home: &Path, browser_id: &str, profile_dir: &
     if spec.kind != "chromium" {
         return Err("Passwörter aus diesem Browser kommen als Nächstes. / Password import for this browser is next.".into());
     }
-    Ok(user_data_dir(spec, home).join(profile_dir))
+    contained_profile_dir(&user_data_dir(spec, home), profile_dir)
 }
 
 fn user_data_dir(spec: &Spec, home: &Path) -> PathBuf {
@@ -606,5 +638,23 @@ mod tests {
         let cards = list_browser_cards(&root, &[]);
         assert!(cards.iter().all(|c| c.id != "chrome"));
         fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn chromium_profile_rejects_parent_dir() {
+        let home = scratch();
+        let err = chromium_profile_dir(&home, "chrome", "../evil").unwrap_err();
+        assert!(err.contains(".."), "{err}");
+        fs::remove_dir_all(&home).ok();
+    }
+
+    #[test]
+    fn firefox_profile_rejects_absolute_path_outside_data_dir() {
+        let home = scratch();
+        let err = firefox_profile_dir(&home, "firefox", "/tmp/not-firefox").unwrap_err();
+        assert!(err.contains("outside"), "{err}");
+        let ok = firefox_profile_dir(&home, "firefox", "Profiles/abcd.default").unwrap();
+        assert!(ok.ends_with("Profiles/abcd.default"));
+        fs::remove_dir_all(&home).ok();
     }
 }

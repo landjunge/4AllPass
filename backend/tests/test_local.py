@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_engine, reset_engine
 from app.local import port_held, prepare_local_runtime
-from app.main import create_app
+from app.main import create_app, loopback_connect_origin
 
 
 async def _create_schema() -> None:
@@ -78,6 +78,13 @@ def test_prepare_local_runtime_persists_secret_and_sqlite(tmp_path):
     assert second.broker_token == first.broker_token
 
 
+def test_loopback_connect_origin_is_this_process_not_star():
+    assert loopback_connect_origin("http://127.0.0.1:8794") == "http://127.0.0.1:8794"
+    assert loopback_connect_origin("http://localhost:8788") == "http://127.0.0.1:8788"
+    assert loopback_connect_origin("https://evil.example") == "http://127.0.0.1:8788"
+    assert loopback_connect_origin("http://127.0.0.1:*") == "http://127.0.0.1:8788"
+
+
 def test_local_rejects_non_loopback(tmp_path):
     with pytest.raises(ValueError, match="loopback"):
         prepare_local_runtime(data_dir=tmp_path, host="0.0.0.0")
@@ -99,6 +106,11 @@ async def test_local_app_serves_ui_and_api_same_origin(local_runtime):
         assert page.headers["x-frame-options"] == "DENY"
         assert page.headers["x-content-type-options"] == "nosniff"
         assert page.headers["referrer-policy"] == "no-referrer"
+        csp = page.headers["content-security-policy"]
+        assert "default-src 'self'" in csp
+        assert "connect-src 'self' http://127.0.0.1:8788" in csp
+        assert "http://127.0.0.1:*" not in csp
+        assert "https:" not in csp.split("connect-src")[1].split(";")[0]
 
         sw = await client.get("/sw.js")
         assert sw.status_code == 200

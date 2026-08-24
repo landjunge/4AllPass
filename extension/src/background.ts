@@ -157,10 +157,7 @@ async function deviceId(): Promise<string> {
 async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
   const [focused] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
   if (focused?.id && focused.url && /^https?:/.test(focused.url)) return focused;
-  const tabs = await ext.tabs.query({});
-  const http = tabs.filter((tab) => tab.id && tab.url && /^https?:/.test(tab.url));
-  http.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
-  return http[0];
+  return undefined;
 }
 
 function emptyFill(reason: FillReason): FillResult {

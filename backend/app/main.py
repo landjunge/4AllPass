@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,11 +13,41 @@ from app.broker import BrokerHub, router as broker_router
 from app.core.config import get_settings
 
 
+def loopback_connect_origin(url: str) -> str:
+    """CSP connect-src: this process's loopback origin, never * and never a remote host."""
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    if parsed.scheme != "http" or host not in {"127.0.0.1", "localhost"}:
+        return "http://127.0.0.1:8788"
+    try:
+        port = parsed.port
+    except ValueError:
+        return "http://127.0.0.1:8788"
+    if port is None:
+        port = 80
+    return f"http://127.0.0.1:{port}"
+
+
+def local_csp(origin: str) -> bytes:
+    connect = loopback_connect_origin(origin)
+    return (
+        "default-src 'self'; "
+        f"connect-src 'self' {connect}; "
+        "img-src 'self' data:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'wasm-unsafe-eval'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    ).encode()
+
+
 class SecurityHeadersMiddleware:
     """Same headers as frontend/nginx.conf. Local profile only."""
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, origin: str = "http://127.0.0.1:8788") -> None:
         self.app = app
+        self.csp = local_csp(origin)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -32,6 +63,7 @@ class SecurityHeadersMiddleware:
                     b"x-content-type-options": b"nosniff",
                     b"referrer-policy": b"no-referrer",
                     b"cross-origin-opener-policy": b"same-origin",
+                    b"content-security-policy": self.csp,
                 }
                 if path == "/sw.js" or path.endswith("/sw.js"):
                     extra[b"cache-control"] = b"no-cache, no-store, must-revalidate"
@@ -126,7 +158,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     if settings.is_local():
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(
+            SecurityHeadersMiddleware,
+            origin=settings.broker_url or "http://127.0.0.1:8788",
+        )
 
     app.include_router(health.router)
     app.include_router(auth.router, prefix="/api/v1")

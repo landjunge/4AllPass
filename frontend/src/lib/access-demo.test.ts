@@ -99,3 +99,14 @@ test("scene copy does not include the dummy token", () => {
     assert.equal(JSON.stringify(copy).includes(DEMO_DUMMY_TOKEN), false);
   }
 });
+
+test("scene copy is German first and keeps the English e2e phrases", () => {
+  const setup = demoSceneCopy("setup");
+  assert.match(setup.title, /Need a GitHub credential/);
+  assert.match(setup.body, /Tresor|Gerät/);
+  const read = demoSceneCopy("read");
+  assert.match(read.title, /n8n asks GitHub repository.read/);
+  assert.match(read.body, /Tresor/);
+  const grant = grantHandoffCopy("n8n", 12);
+  assert.match(grant, /darf noch/);
+});

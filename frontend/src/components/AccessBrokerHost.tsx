@@ -167,25 +167,25 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
     <>
       {audit.length > 0 ? (
         <p className="hint" data-testid="broker-last">
-          Last broker call: {audit[0]?.decision} {audit[0]?.application}
+          Letzte Anfrage / Last: {audit[0]?.decision} {audit[0]?.application}
         </p>
       ) : null}
       {pending && !desktopPrompt ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Access request</h2>
+            <h2>Ein Programm fragt / Access request</h2>
             <p>
-              <strong>{pending.request.application}</strong> requests{" "}
+              <strong>{pending.request.application}</strong> möchte{" "}
               <strong>{pending.request.provider}</strong>{" "}
-              <code>{pending.request.scope.join(", ")}</code> for {pending.request.ttlSeconds}{" "}
-              seconds.
+              <code>{pending.request.scope.join(", ")}</code> für {pending.request.ttlSeconds}{" "}
+              Sekunden. Das Passwort bleibt im Tresor.
             </p>
             <p className="hint">
-              POST /v1/access/request — {pending.via === "loopback" ? "127.0.0.1 broker" : "local channel"},
-              not FastAPI.
+              Anfrage auf diesem Rechner, nicht über den Server. / Request on this computer, not
+              FastAPI ({pending.via === "loopback" ? "127.0.0.1" : "local channel"}).
             </p>
             <p className="hint" data-testid="broker-why">
-              Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
+              Warum / Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
             </p>
             <div className="actions">
               <button
@@ -208,7 +208,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
                   finish(approvedResponse(grant));
                 }}
               >
-                Allow
+                Erlauben / Allow
               </button>
               <button
                 type="button"
@@ -219,7 +219,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
                   finish(deniedResponse("denied_by_user"));
                 }}
               >
-                Deny
+                Ablehnen / Deny
               </button>
             </div>
           </div>

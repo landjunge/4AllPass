@@ -42,7 +42,7 @@ test("Welcome → vault → Access allow without showing the secret", async ({ p
 
   await page.getByTestId("demo-n8n-read").click();
   await page.getByTestId("access-allow").click();
-  await expect(page.getByTestId("access-flash")).toHaveText("ACCESS GRANTED");
+  await expect(page.getByTestId("access-flash")).toContainText("ACCESS GRANTED");
   const grant = page.getByTestId("demo-grant-status");
   await expect(grant).toContainText("n8n");
   await expect(grant).toContainText("s left");

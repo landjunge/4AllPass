@@ -84,7 +84,7 @@ export function AccessPanel({
     setGrant(issueGrant(pending, entry));
     setAudit((rows) => [auditLine(pending, "APPROVED"), ...rows]);
     setPending(null);
-    setFlash("ACCESS GRANTED");
+    setFlash("Erlaubt / ACCESS GRANTED");
     setWhy(
       "Allow erteilt einen zeitlich begrenzten Grant. Das Passwort bleibt im Tresor. / Allow issues a time-boxed grant. The password stays in the vault.",
     );
@@ -110,7 +110,7 @@ export function AccessPanel({
       ),
       ...rows,
     ]);
-    setFlash("Credential expired.");
+    setFlash("Zeit um / Credential expired.");
     setWhy(explainDenyReason("expired"));
   }
 
@@ -125,11 +125,27 @@ export function AccessPanel({
 
   return (
     <div className="columns">
+      <section className="card" data-testid="programs-intro">
+        <h3>Programme / Apps</h3>
+        <p>
+          Dein Tresor speichert Passwörter. Ein Programm — etwa n8n oder ein Agent — darf sie nicht
+          einfach mitnehmen. Es fragt hier. Du sagst Erlauben oder Ablehnen.
+        </p>
+        <p>
+          Erlauben gilt nur kurz. Danach ist Schluss. Unbekannte Programme werden abgelehnt. Das
+          Passwort bleibt im Tresor.
+        </p>
+        <p className="hint">
+          Alltag bleibt Einträge und Autofill. Diese Seite brauchst du nur, wenn ein Programm Zugang
+          will. / Day-to-day is entries and autofill. This page is only when a program wants access.
+          Allow is short-lived. Unknown programs are denied. The password stays in the vault.
+        </p>
+      </section>
       <section className="card">
-        <h3>Access simulator</h3>
+        <h3>Üben / Practice</h3>
         <p className="muted">
-          Same policy as the loopback broker. FastAPI never sees this request or the secret. Access
-          is not the first screen.
+          Vier Schritte, ohne echtes GitHub. Dieselbe Regel wie bei einer echten Anfrage. / Four
+          steps, no live GitHub. Same policy as a real request.
         </p>
         <ol className="demo-steps" data-testid="demo-steps">
           {(["read", "delete", "expire", "unknown"] as const).map((id) => (
@@ -155,7 +171,7 @@ export function AccessPanel({
                 void onSeedDemo().finally(() => setSeeding(false));
               }}
             >
-              {seeding ? "Encrypting…" : copy.action}
+              {seeding ? "Wird gespeichert… / Encrypting…" : copy.action}
             </button>
           </div>
         ) : null}
@@ -218,12 +234,12 @@ export function AccessPanel({
         {flash ? (
           <p className={flash.startsWith("DENIED") ? "error-text" : "ok"} data-testid="access-flash">
             {flash}
-            {expired && scene !== "expire" ? " Credential expired." : ""}
+            {expired && scene !== "expire" ? " Zeit um / Credential expired." : ""}
           </p>
         ) : null}
         {why ? (
           <p className="hint" data-testid="access-why">
-            Why: {why}
+            Warum / Why: {why}
           </p>
         ) : null}
         {grant && live && "material" in live ? (
@@ -233,7 +249,8 @@ export function AccessPanel({
         ) : null}
         {expired && grant ? (
           <p className="hint" data-testid="demo-expired">
-            Future handoffs stop. Rotate the upstream secret to revoke a leak.
+            Kein neuer Zugang. Ein schon rausgegebenes Passwort holst du nicht zurück — dann beim
+            Anbieter wechseln. / Future handoffs stop. Rotate the upstream secret to revoke a leak.
           </p>
         ) : null}
         {scene !== "setup" && scene !== "done" ? (
@@ -243,35 +260,31 @@ export function AccessPanel({
             data-testid="demo-next"
             onClick={() => setScene(nextDemoScene(scene))}
           >
-            Next scene
+            Nächster Schritt / Next scene
           </button>
         ) : null}
         <p className="hint">
-          Same-origin agent page:{" "}
-          <a href="/agent-request.html" target="_blank" rel="noreferrer">
-            /agent-request.html
-          </a>{" "}
-          speaks POST /v1/access/request over BroadcastChannel. Walkthrough:{" "}
-          <code>docs/two-minute-demo.md</code>.
+          Nur zum Üben. Alltag: ein Programm fragt, du klickst Erlauben oder Ablehnen. / Practice
+          only. Day-to-day: a program asks, you Allow or Deny.
         </p>
       </section>
       <section className="card" data-testid="access-security-status">
-        <h3>Security status</h3>
+        <h3>Was gilt / Rules</h3>
         <ul className="hint">
-          <li>Unknown application = DENY</li>
-          <li>Loopback broker only (127.0.0.1). Browser Origin on the grant path = 403</li>
-          <li>FastAPI mints no tokens and never sees plaintext</li>
-          <li>Policy allow means human Allow, not auto-handoff</li>
-          <li>TTL stops future handoffs. A copy already given is not un-known</li>
+          <li>Unbekanntes Programm = Ablehnen / Unknown application = DENY</li>
+          <li>Nur auf diesem Rechner (127.0.0.1). Eine Webseite kommt nicht durch. / Loopback only. Browser Origin on the grant path = 403</li>
+          <li>Der Server sieht kein Passwort und gibt keine Tokens aus. / FastAPI mints no tokens and never sees plaintext</li>
+          <li>Erlauben klickst du selbst. Nichts läuft automatisch. / Policy allow means human Allow, not auto-handoff</li>
+          <li>Nach Ablauf kein neuer Zugang. Schon rausgegebenes Material holst du nicht zurück. / TTL stops future handoffs. A copy already given is not un-known</li>
         </ul>
       </section>
       <N8nHttpRecipe />
       <LocalBrokerConnect />
       <section className="card">
-        <h3>Audit</h3>
-        <p className="hint">No secret is stored in these rows.</p>
+        <h3>Protokoll / Audit</h3>
+        <p className="hint">Kein Passwort in diesen Zeilen. / No secret is stored in these rows.</p>
         {audit.length === 0 ? (
-          <p className="muted">No access events yet.</p>
+          <p className="muted">Noch keine Anfragen. / No access events yet.</p>
         ) : (
           <ul className="devices" data-testid="access-audit">
             {audit.map((row) => (
@@ -290,20 +303,22 @@ export function AccessPanel({
       {pending ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Access request</h2>
+            <h2>Ein Programm fragt / Access request</h2>
             <p>
-              <strong>{pending.application}</strong> requests <strong>{pending.provider}</strong>{" "}
-              <code>{pending.scope.join(", ")}</code> for {pending.ttlSeconds} seconds.
+              <strong>{pending.application}</strong> möchte <strong>{pending.provider}</strong>{" "}
+              <code>{pending.scope.join(", ")}</code> für {pending.ttlSeconds} Sekunden. Das
+              Passwort bleibt im Tresor. / requests {pending.provider} for {pending.ttlSeconds}{" "}
+              seconds. The password stays in the vault.
             </p>
             <p className="hint" data-testid="access-why-pending">
-              Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
+              Warum / Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
             </p>
             {pending.scope.some((scope) => /write|delete|admin/i.test(scope)) ? (
-              <p className="error-text">High-risk capability</p>
+              <p className="error-text">Hohes Risiko / High-risk capability</p>
             ) : null}
             <div className="actions">
               <button type="button" className="primary" data-testid="access-allow" onClick={allow}>
-                Allow
+                Erlauben / Allow
               </button>
               <button
                 type="button"
@@ -316,7 +331,7 @@ export function AccessPanel({
                   setWhy(explainDenyReason("denied_by_user"));
                 }}
               >
-                Deny
+                Ablehnen / Deny
               </button>
             </div>
           </div>

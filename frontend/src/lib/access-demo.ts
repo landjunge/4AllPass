@@ -71,7 +71,7 @@ export function demoGithubDraft(): EntryDraft {
     password: DEMO_DUMMY_TOKEN,
     capabilities: "repository.read",
     credentialType: "personal_access_token",
-    notes: "Dummy token for the two-minute Access demo. Not a live GitHub PAT.",
+    notes: "Übungs-Token, kein echtes GitHub-PAT. / Dummy token for the demo. Not a live GitHub PAT.",
   };
 }
 
@@ -84,8 +84,8 @@ export function redactToken(token: string): string {
 
 /** UI copy for a live grant. Must never include the secret or a prefix of it. */
 export function grantHandoffCopy(application: string, secondsLeft: number): string {
-  const app = application.trim() || "app";
-  return `Scoped handoff to ${app} · ${secondsLeft}s left`;
+  const app = application.trim() || "Programm / app";
+  return `${app} darf noch ${secondsLeft}s / ${secondsLeft}s left`;
 }
 
 export function remainingSeconds(expiresAt: number, now = Date.now()): number {
@@ -103,45 +103,45 @@ export function demoSceneCopy(id: DemoSceneId): DemoSceneCopy {
   switch (id) {
     case "setup":
       return {
-        step: "Setup",
-        title: "Need a GitHub credential",
-        body: "The walkthrough uses a GitHub API entry with repository.read only. Seed a dummy token (encrypted on this device) or add your own on Entries. Detect is not Allow.",
-        action: "Add demo GitHub credential",
+        step: "Vorbereitung / Setup",
+        title: "GitHub-Eintrag fehlt / Need a GitHub credential",
+        body: "Die Übung braucht einen GitHub-Eintrag, der nur Lesen darf. Du kannst ein Übungs-Token hier anlegen (bleibt verschlüsselt auf diesem Gerät) oder selbst einen Eintrag speichern. Erkennen ist nicht Erlauben. / The walkthrough uses a GitHub API entry with repository.read only. Seed a dummy token (encrypted on this device) or add your own on Entries. Detect is not Allow.",
+        action: "Übungs-Eintrag anlegen / Add demo GitHub credential",
       };
     case "read":
       return {
         step: "1 / 4",
-        title: "n8n asks GitHub repository.read",
-        body: "Allow hands n8n a time-boxed credential. The long-lived secret stays in the unlocked vault. FastAPI never sees this request.",
+        title: "n8n will GitHub lesen / n8n asks GitHub repository.read",
+        body: "Erlauben gibt n8n für wenige Sekunden Zugang. Das eigentliche Passwort bleibt im Tresor. / Allow hands n8n a time-boxed credential. The long-lived secret stays in the unlocked vault.",
         action: `n8n asks GitHub repository.read (${DEMO_TTL_SECONDS}s)`,
       };
     case "delete":
       return {
         step: "2 / 4",
-        title: "n8n asks repository.delete",
-        body: "Delete is not on the entry. Policy denies it before any grant. High-risk scopes never become an accidental Allow.",
+        title: "n8n will löschen / n8n asks repository.delete",
+        body: "Löschen steht nicht auf dem Eintrag. Deshalb Ablehnen, bevor irgendetwas rausgeht. / Delete is not on the entry. Policy denies it before any grant.",
         action: "n8n asks repository.delete",
       };
     case "expire":
       return {
         step: "3 / 4",
-        title: "TTL expires",
-        body: "Expiry stops future handoffs. A copy already given is not un-known — rotate the upstream secret to revoke a leak.",
-        action: "Expire now",
+        title: "Zeit ist um / TTL expires",
+        body: "Nach Ablauf gibt es keinen neuen Zugang. Was schon rausgegeben wurde, holst du nicht zurück — dann das Passwort beim Anbieter wechseln. / Expiry stops future handoffs. A copy already given is not un-known — rotate the upstream secret to revoke a leak.",
+        action: "Jetzt ablaufen lassen / Expire now",
       };
     case "unknown":
       return {
         step: "4 / 4",
-        title: "Unknown app asks GitHub",
-        body: "Process name is not identity. Unknown application = DENY. There is no auto-approve.",
+        title: "Unbekanntes Programm fragt / Unknown app asks GitHub",
+        body: "Ein Name in der Anfrage ist keine Ausweis. Unbekannt = Ablehnen. Nichts wird automatisch erlaubt. / Process name is not identity. Unknown application = DENY. There is no auto-approve.",
         action: "unknown app asks GitHub",
       };
     case "done":
       return {
-        step: "Done",
-        title: "Two minutes",
-        body: "Allow → works → delete DENY → expire → unknown DENY. Audit has no secret. This is not an n8n node and not a FastAPI token API.",
-        action: "Replay demo",
+        step: "Fertig / Done",
+        title: "So merkst du es / Two minutes",
+        body: "Erlauben → kurz Zugang → Löschen abgelehnt → Zeit um → Unbekannt abgelehnt. Im Protokoll steht kein Passwort. / Allow → works → delete DENY → expire → unknown DENY. Audit has no secret.",
+        action: "Noch einmal / Replay demo",
       };
   }
 }

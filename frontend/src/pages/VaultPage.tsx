@@ -225,7 +225,7 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("access")}
           data-testid="tab-access"
         >
-          Access
+          Programme
         </button>
         <button
           type="button"
@@ -668,8 +668,8 @@ export function VaultPage(): ReactNode {
                 <h3>Dein Tresor / Your vault</h3>
                 <p className="muted">
                   Oben die Browser-Karten: Profile anhaken, Passwörter holen, Extension laden, dann
-                  Demo-Login öffnen. Popup: nur Tresor-Passwort. Agent Access ist der Access-Tab,
-                  nicht dieser Bildschirm.
+                  Demo-Login öffnen. Popup: nur Tresor-Passwort. Wenn ein Programm wie n8n Zugang
+                  will: Tab Programme. Nicht dieser Bildschirm.
                 </p>
               </div>
             )}

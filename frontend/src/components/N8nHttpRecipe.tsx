@@ -29,11 +29,12 @@ export function N8nHttpRecipe(): ReactNode {
 
   return (
     <section className="card" data-testid="n8n-http">
-      <h3>n8n HTTP Request</h3>
+      <h3>Wenn du n8n nutzt / n8n HTTP Request</h3>
       <p className="muted">
-        Kein Marketplace-Node. In n8n: HTTP Request, POST, JSON-Body. Kein Origin-Header. FastAPI
-        minted keine Tokens. / No marketplace node. n8n HTTP Request, POST, JSON body. Do not send
-        Origin. FastAPI never mints tokens.
+        Die meisten Nutzer brauchen das nicht. Nur wenn n8n auf diesem Rechner nach einem Login
+        fragen soll: HTTP Request, POST, JSON-Body, kein Origin-Header. Kein Marketplace-Node. /
+        Most people can skip this. Only if n8n on this computer should ask: HTTP Request, POST,
+        JSON body, no Origin header. Not a marketplace node.
       </p>
       <p className="hint">
         Method <code>POST</code> · URL <code data-testid="n8n-http-url">{recipe.url}</code>

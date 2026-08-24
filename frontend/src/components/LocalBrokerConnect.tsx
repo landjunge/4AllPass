@@ -16,14 +16,15 @@ export function LocalBrokerConnect(): ReactNode {
 
   return (
     <section className="card" data-testid="local-broker">
-      <h3>Loopback broker</h3>
+      <h3>Verbindung für Programme / Loopback broker</h3>
       <p className="muted">
-        Local app pairs the access relay on this origin automatically while the vault is unlocked.
-        FastAPI does not mint provider tokens. Browser Origin on the grant path is rejected. App
-        name is still a string.
+        Nur wenn ein Programm auf diesem Rechner fragen soll. Solange der Tresor offen ist, nimmt
+        4AllPass die Frage entgegen. Der Server sieht kein Passwort. / Only if a program on this
+        computer should ask. While the vault is unlocked, 4AllPass takes the question. The server
+        never sees the password.
       </p>
       <label>
-        Broker URL
+        Adresse / Broker URL
         <input
           value={url}
           onChange={(event) => setUrl(event.target.value)}
@@ -32,7 +33,7 @@ export function LocalBrokerConnect(): ReactNode {
         />
       </label>
       <label>
-        Pairing token
+        Koppel-Code / Pairing token
         <input
           value={token}
           onChange={(event) => setToken(event.target.value)}
@@ -43,7 +44,7 @@ export function LocalBrokerConnect(): ReactNode {
       <div className="actions">
         {snap.status === "live" || snap.status === "connecting" ? (
           <button type="button" data-testid="broker-disconnect" onClick={() => disconnectLocalBroker()}>
-            Disconnect
+            Trennen / Disconnect
           </button>
         ) : (
           <button
@@ -52,18 +53,18 @@ export function LocalBrokerConnect(): ReactNode {
             data-testid="broker-connect"
             onClick={() => connectLocalBroker(url, token)}
           >
-            Connect
+            Verbinden / Connect
           </button>
         )}
       </div>
       <p className="hint" data-testid="broker-status">
         {snap.status === "off"
-          ? "off"
+          ? "aus / off"
           : snap.status === "live"
-            ? "live — vault is polling 127.0.0.1"
+            ? "verbunden — Tresor hört auf diesem Rechner / live — vault is polling 127.0.0.1"
             : snap.status === "connecting"
-              ? "connecting…"
-              : snap.error || "error"}
+              ? "verbindet… / connecting…"
+              : snap.error || "Fehler / error"}
       </p>
     </section>
   );

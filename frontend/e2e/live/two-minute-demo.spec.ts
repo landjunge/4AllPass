@@ -36,7 +36,7 @@ test("Access tab: Allow read → works → delete DENY → expire → unknown DE
 
     await page.getByTestId("demo-n8n-read").click();
     await page.getByTestId("access-allow").click();
-    await expect(page.getByTestId("access-flash")).toHaveText("ACCESS GRANTED");
+    await expect(page.getByTestId("access-flash")).toContainText("ACCESS GRANTED");
     await expect(page.getByTestId("demo-grant-status")).toContainText("n8n");
     await expect(page.getByTestId("demo-grant-status")).toContainText("s left");
     await expect(page.getByTestId("demo-grant-status")).not.toContainText("ghp_");
@@ -51,7 +51,7 @@ test("Access tab: Allow read → works → delete DENY → expire → unknown DE
     await page.getByTestId("demo-next").click();
     await expect(page.getByTestId("demo-scene")).toContainText("TTL expires");
     await page.getByTestId("demo-expire-now").click();
-    await expect(page.getByTestId("access-flash")).toHaveText("Credential expired.");
+    await expect(page.getByTestId("access-flash")).toContainText("Credential expired.");
     await expect(page.getByTestId("demo-expired")).toBeVisible();
 
     await page.getByTestId("demo-next").click();

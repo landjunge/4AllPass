@@ -1,10 +1,11 @@
 """Persist and load opaque vault snapshots.
 
 The server never decrypts envelopes, entries, or the sealed manifest. It only
-checks structure, CAS (docs/vault-revision.md §4), vault-key-version
-monotonicity, that a master envelope is present so the vault cannot be
-committed into an unrecoverable state, that revoked device envelopes are not
-re-attached, and that sealedManifest is present after the initial revision.
+checks structure, CAS (docs/vault-revision.md §4), vault-key-version and
+per-device device-key-version monotonicity, that a master envelope is present
+so the vault cannot be committed into an unrecoverable state, that revoked
+device envelopes are not re-attached, and that sealedManifest is present after
+the initial revision.
 """
 
 from __future__ import annotations
@@ -204,6 +205,28 @@ async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommi
                 raise HTTPException(
                     status_code=422,
                     detail="snapshot includes envelope for a revoked device",
+                )
+
+    # `device_key_version` is monotonic per device for the same reason
+    # `vault_key_version` is: a re-enrolment retires the previous Device Key, and
+    # publishing an envelope at the older generation re-arms it. The server
+    # cannot open the envelope, but it can see the generation the client claims.
+    if current is not None:
+        live_generation = {
+            env.device_id: env.device_key_version
+            for env in current.envelopes
+            if env.type == EnvelopeType.DEVICE
+            and env.device_id is not None
+            and env.device_key_version is not None
+        }
+        for env in payload.envelopes:
+            if env.type != "device" or env.device_key_version is None:
+                continue
+            floor = live_generation.get(env.device_id)
+            if floor is not None and env.device_key_version < floor:
+                raise HTTPException(
+                    status_code=422,
+                    detail="deviceKeyVersion must not decrease",
                 )
 
     snapshot = VaultSnapshot(

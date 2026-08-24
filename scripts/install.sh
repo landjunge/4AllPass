@@ -68,6 +68,17 @@ tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 curl -fL --progress-bar -o "$tmp" "$url" || die "Download failed: $url"
 
+sum_url="${url}.sha256"
+expect=$(curl -fsSL "$sum_url" | awk '{print $1}') || die "No SHA-256 sidecar for this asset (${sum_url})."
+[ -n "$expect" ] || die "Empty SHA-256 sidecar."
+if command -v sha256sum >/dev/null 2>&1; then
+  got=$(sha256sum "$tmp" | awk '{print $1}')
+else
+  got=$(shasum -a 256 "$tmp" | awk '{print $1}')
+fi
+[ "$got" = "$expect" ] || die "SHA-256 mismatch. Abort. Expected ${expect}, got ${got}."
+printf '%s\n' "SHA-256 ok."
+
 if [ "$os" = Darwin ]; then
   dest="/Applications"
   if [ ! -w "$dest" ]; then

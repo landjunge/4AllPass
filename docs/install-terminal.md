@@ -118,7 +118,7 @@ Optional später, nicht im ersten Schnitt: SHA-256 der Release-Assets prüfen.
 | 2 | README „Einrichten“: One-Liner **oben**, DMG darunter, From-source ganz nach unten | 3 Zeilen lesen genügen |
 | 3 | Linux AppImage-Zweig im selben Script | Ein Befehl, App startet |
 | 4 | `scripts/install.ps1` Windows | Ein Befehl; SmartScreen kann noch warnen (kein Zertifikat) |
-| 5 | CI schreibt SHA-256 neben die Artefakte; Script prüft | Tamper an der Datei → Abbruch |
+| 5 | CI schreibt `*.sha256` neben die Artefakte; `install.sh` / `install.ps1` prüfen | Tamper an der Datei → Abbruch |
 
 Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac. Kein Tag `v0.1.2` nur dafür — `workflow_dispatch` auf `desktop.yml` reicht für ein Test-Artefakt.
 
@@ -131,6 +131,7 @@ Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac
 - [x] Update überschreibt die App, lässt den Vault liegen (Script löscht Application Support nicht).
 - [x] Unpassendes OS/CPU: klare Fehlermeldung.
 - [x] FastAPI mintet weiterhin keine Tokens.
+- [x] SHA-256-Sidecar in `desktop.yml`; Install-Script bricht bei Mismatch ab.
 - [ ] **Dieser Intel-Mac:** ein Befehl → Fenster (braucht ein `*_x64.dmg` im GitHub-Release).
 - [ ] Phase A (#112) bleibt offen — Terminal-Install ist die Pause, nicht das Ende.
 

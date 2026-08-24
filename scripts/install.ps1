@@ -23,5 +23,16 @@ if (-not $url) { throw "No *_x64-setup.exe in GitHub releases." }
 
 $tmp = Join-Path $env:TEMP "4AllPass-setup.exe"
 Invoke-WebRequest -Uri $url -OutFile $tmp
+$sumUrl = "$url.sha256"
+try {
+  $expect = ((Invoke-WebRequest -Uri $sumUrl).Content -split "\s+")[0].Trim()
+} catch {
+  throw "No SHA-256 sidecar for this asset ($sumUrl)."
+}
+$got = (Get-FileHash -Algorithm SHA256 -Path $tmp).Hash.ToLowerInvariant()
+if ($got -ne $expect.ToLowerInvariant()) {
+  throw "SHA-256 mismatch. Abort."
+}
+Write-Host "SHA-256 ok."
 Start-Process -FilePath $tmp -Wait
 Write-Host "Vault stays in: $env:APPDATA\4AllPass"

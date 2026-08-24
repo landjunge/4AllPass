@@ -256,6 +256,8 @@ Recovery:
 
 **Fremder Mac:** Browser-Karten + Import-Review (Passwort nie in der Liste). Review-UI ist in CI für Datei-Import. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
+Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
+
 **Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 
 **Geld:** Apple weiter pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)).

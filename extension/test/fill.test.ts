@@ -58,7 +58,7 @@ test("buildLoginModel skips new-password-only signup", () => {
   const model = buildLoginModel([user, pass]);
   assert.equal(model.password, null);
   assert.equal(model.username?.input, user);
-  assert.equal(model.eligible, true);
+  assert.equal(model.eligible, false);
 });
 
 test("buildLoginModel new-password only is not eligible", () => {
@@ -218,6 +218,18 @@ test("probeFromModel skips secrets and flags signup", () => {
   assert.equal(probed.ok, false);
   assert.equal(probed.reason, "signup");
   assert.deepEqual(probed.fields, []);
+});
+
+test("username + new-password is signup, not a login fill", () => {
+  const signup = [
+    input({ type: "text", autocomplete: "username" }),
+    input({ type: "password", autocomplete: "new-password", name: "next" }),
+  ];
+  const model = buildLoginModel(signup);
+  const probed = probeFromModel(signup, model);
+  assert.equal(model.eligible, false);
+  assert.equal(probed.ok, false);
+  assert.equal(probed.reason, "signup");
 });
 
 test("assist is offered for a weak username next to a password, not a lone search box", () => {

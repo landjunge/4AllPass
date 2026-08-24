@@ -56,12 +56,21 @@ export interface FillResult {
   confidence?: number;
 }
 
+/** Signup: new-password present, no current-password. Do not fill as login. */
+export function isSignupForm(inputs: InputLike[]): boolean {
+  const autos = (input: InputLike) => input.autocomplete.toLowerCase();
+  const hasNew = inputs.some(
+    (input) => input.type === "password" && autos(input).includes("new-password"),
+  );
+  const hasCurrent = inputs.some(
+    (input) => input.type === "password" && autos(input).includes("current-password"),
+  );
+  return hasNew && !hasCurrent;
+}
+
 export function ineligibleReason(inputs: InputLike[], model: LoginModel): FillReason {
   if (inputs.length === 0) return "no-fields";
-  const autos = (input: InputLike) => input.autocomplete.toLowerCase();
-  const hasNew = inputs.some((input) => input.type === "password" && autos(input).includes("new-password"));
-  const hasCurrent = inputs.some((input) => input.type === "password" && autos(input).includes("current-password"));
-  if (hasNew && !hasCurrent && !model.password) return "signup";
+  if (isSignupForm(inputs)) return "signup";
   if (!model.eligible) return "low-confidence";
   return "no-fields";
 }
@@ -391,12 +400,13 @@ export function buildLoginModel(
   else if (password) confidence = password.confidence;
   else if (otp) confidence = otp.confidence;
 
+  const signup = isSignupForm(inputs);
   return {
     username,
     password,
     otp,
     confidence,
-    eligible: confidence >= threshold && Boolean(username || password || otp),
+    eligible: !signup && confidence >= threshold && Boolean(username || password || otp),
   };
 }
 

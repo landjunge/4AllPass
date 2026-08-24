@@ -3,6 +3,11 @@ import { test } from "node:test";
 import { hostMatches } from "../src/match.ts";
 import { resolveProvider } from "../src/resolve.ts";
 
+test("TLD-only host does not suffix-match every .com site", () => {
+  assert.equal(hostMatches("evilgithub.com", "com", "subdomain"), false);
+  assert.equal(hostMatches("com", "com", "subdomain"), true);
+});
+
 test("evilgithub.com is not GitHub", () => {
   assert.equal(hostMatches("evilgithub.com", "github.com", "subdomain"), false);
   const got = resolveProvider("https://evilgithub.com/login");

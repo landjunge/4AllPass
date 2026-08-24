@@ -26,7 +26,10 @@ export function hostnameOf(value: string): string | null {
 function hostMatch(pageHost: string, entryUrl: string): boolean {
   const entryHost = hostnameOf(entryUrl);
   if (!entryHost) return false;
-  return entryHost === pageHost || pageHost.endsWith(`.${entryHost}`);
+  if (entryHost === pageHost) return true;
+  // Single-label / TLD hosts must not suffix-match (https://com → *.com).
+  if (!entryHost.includes(".")) return false;
+  return pageHost.endsWith(`.${entryHost}`);
 }
 
 /** Same provider only at high confidence. Origin suffix still wins first. */

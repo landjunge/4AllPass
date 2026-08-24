@@ -32,14 +32,19 @@ function hostMatch(pageHost: string, entryUrl: string): boolean {
   return pageHost.endsWith(`.${entryHost}`);
 }
 
-/** Same provider only at high confidence. Origin suffix still wins first. */
+/**
+ * Same provider only at high confidence. Origin suffix still wins first.
+ * A stored URL is the source of truth: a `providerId` tag must not override
+ * a conflicting host (evilgithub.com tagged github ≠ github.com).
+ */
 function providerMatch(pageUrl: string, entry: FillEntry): boolean {
   const page = resolveProvider(pageUrl);
   if (!page.providerId || page.confidence < PROVIDER_FILL_MIN) return false;
-  if (entry.providerId && entry.providerId === page.providerId) return true;
-  if (!entry.url) return false;
-  const stored = resolveProvider(entry.url);
-  return stored.providerId === page.providerId && stored.confidence >= PROVIDER_FILL_MIN;
+  if (entry.url) {
+    const stored = resolveProvider(entry.url);
+    return stored.providerId === page.providerId && stored.confidence >= PROVIDER_FILL_MIN;
+  }
+  return Boolean(entry.providerId && entry.providerId === page.providerId);
 }
 
 export function entriesForPage(entries: FillEntry[], pageUrl: string): FillEntry[] {

@@ -281,14 +281,16 @@ not a successful PRF ceremony. Master-password and recovery-key unlock are
 the supported paths in `4AllPass.app`. Do not claim Touch ID / passkey unlock
 until a ceremony returns PRF. No new wrap protocol (no “Tauri biometrics
 envelope”). Hiding the window to the tray does **not** lock the vault (the
-access broker still needs the unlocked process). Inactivity auto-lock still
-runs. **Launch at login** (Settings, default off) starts the process hidden in
-the tray. It does not unwrap the Vault Key, does not skip the password, and
-does not auto-allow. A cold start after login is LOCKED until the user unlocks.
-**Screen lock** and **system sleep** emit `desktop-lock` (macOS notify, Windows
-input-desktop, Linux logind `LockedHint`, and a >5s **wall-clock** gap between
-polls). `Instant` / CLOCK_MONOTONIC stops during suspend with the process, so a
-lid-close looks like one 400ms tick and must not be the stall clock.
+access broker still needs the unlocked process). Inactivity auto-lock does
+**not** run in the desktop app. **Launch at login** (Settings, default off)
+starts the process hidden in the tray. It does not unwrap the Vault Key, does
+not skip the password, and does not auto-allow. A cold start after login is
+LOCKED until the user unlocks. The desktop vault locks on **manual Lock** or
+**system sleep** (`desktop-lock`: macOS sleep notify and a >5s **wall-clock**
+gap between polls). Screen lock (Ctrl-Cmd-Q, Win+L, logind `LockedHint`) does
+**not** lock. `Instant` / CLOCK_MONOTONIC stops during suspend with the
+process, so a lid-close looks like one 400ms tick and must not be the stall
+clock.
 The UI calls the same lock path and zeroizes the in-process Vault Key as well as
 JS allows. A pending access prompt is denied. That is not FileVault and not
 hibernation-safe. The race vs actual sleep is real: a dump of RAM after a

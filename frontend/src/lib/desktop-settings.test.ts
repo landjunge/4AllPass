@@ -17,10 +17,13 @@ test("launch-at-login copy is DE+EN and does not claim auto-unlock", () => {
   assert.equal(/auto-unlock|entsperrt automatisch|passkey|ghp_/i.test(blob), false);
 });
 
-test("sleep/screen-lock copy does not claim FileVault or auto-unlock", () => {
+test("sleep copy is manual or Ruhemodus, not screen lock", () => {
   assert.match(SLEEP_LOCK_HINT, /FileVault/);
-  assert.match(SLEEP_LOCK_HINT, /Bildschirm-Sperre/);
+  assert.match(SLEEP_LOCK_HINT, /Ruhemodus/);
+  assert.match(SLEEP_LOCK_HINT, /sleeps/);
+  assert.match(SLEEP_LOCK_HINT, /Bildschirmsperre/);
   assert.match(SLEEP_LOCK_HINT, /Screen lock/);
+  assert.match(SLEEP_LOCK_HINT, /sperrst|you lock/);
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(SLEEP_LOCK_HINT), false);
 });
 

@@ -18,7 +18,7 @@ mod browser_passwords;
 mod browsers;
 mod firefox_logins;
 mod sleep_stall;
-use sleep_stall::slept_through;
+use sleep_stall::{should_emit_desktop_lock, slept_through};
 
 const CORE_HOST: &str = "127.0.0.1";
 const CORE_PORT: u16 = 8788;
@@ -169,41 +169,33 @@ fn emit_desktop_lock(app: &tauri::AppHandle) {
     let _ = app.emit(DESKTOP_LOCK_EVENT, ());
 }
 
+/// Sleep / Ruhemodus only. Screen lock (Win+L, Ctrl-Cmd-Q, logind LockedHint)
+/// must not zeroize the vault — the user asked for manual lock or sleep.
 #[cfg(target_os = "macos")]
-struct OsLockProbe {
-    screen: Option<i32>,
+struct OsSleepProbe {
     sleep: Option<i32>,
 }
 
 #[cfg(target_os = "macos")]
-impl OsLockProbe {
+impl OsSleepProbe {
     fn new() -> Self {
         #[link(name = "System", kind = "dylib")]
         extern "C" {
             fn notify_register_check(name: *const i8, out_token: *mut i32) -> u32;
         }
-        fn register(name: &[u8]) -> Option<i32> {
-            let mut token = 0i32;
-            let status = unsafe { notify_register_check(name.as_ptr() as *const i8, &mut token) };
-            (status == 0).then_some(token)
-        }
+        let mut token = 0i32;
+        let status = unsafe {
+            notify_register_check(b"com.apple.system.sleep\0".as_ptr() as *const i8, &mut token)
+        };
         Self {
-            screen: register(b"com.apple.screenIsLocked\0"),
-            sleep: register(b"com.apple.system.sleep\0"),
+            sleep: (status == 0).then_some(token),
         }
     }
 
-    fn is_locked(&self) -> bool {
+    fn went_to_sleep(&self) -> bool {
         #[link(name = "System", kind = "dylib")]
         extern "C" {
             fn notify_check(token: i32, out_flag: *mut i32) -> u32;
-            fn notify_get_state(token: i32, out_state: *mut u64) -> u32;
-        }
-        if let Some(token) = self.screen {
-            let mut state = 0u64;
-            if unsafe { notify_get_state(token, &mut state) } == 0 && state != 0 {
-                return true;
-            }
         }
         if let Some(token) = self.sleep {
             let mut flag = 0i32;
@@ -215,104 +207,23 @@ impl OsLockProbe {
     }
 }
 
-#[cfg(target_os = "windows")]
-struct OsLockProbe;
+#[cfg(not(target_os = "macos"))]
+struct OsSleepProbe;
 
-#[cfg(target_os = "windows")]
-impl OsLockProbe {
+#[cfg(not(target_os = "macos"))]
+impl OsSleepProbe {
     fn new() -> Self {
         Self
     }
 
-    fn is_locked(&self) -> bool {
-        const DESKTOP_SWITCHDESKTOP: u32 = 0x0100;
-        #[link(name = "user32")]
-        extern "system" {
-            fn OpenInputDesktop(
-                flags: u32,
-                inherit: i32,
-                desired_access: u32,
-            ) -> *mut core::ffi::c_void;
-            fn CloseDesktop(desktop: *mut core::ffi::c_void) -> i32;
-        }
-        unsafe {
-            let desk = OpenInputDesktop(0, 0, DESKTOP_SWITCHDESKTOP);
-            if desk.is_null() {
-                true
-            } else {
-                CloseDesktop(desk);
-                false
-            }
-        }
-    }
-}
-
-#[cfg(target_os = "linux")]
-struct OsLockProbe {
-    session: Option<String>,
-    last: std::cell::Cell<Option<Instant>>,
-    cached: std::cell::Cell<bool>,
-}
-
-#[cfg(target_os = "linux")]
-impl OsLockProbe {
-    fn new() -> Self {
-        Self {
-            session: std::env::var("XDG_SESSION_ID").ok().filter(|s| !s.is_empty()),
-            last: std::cell::Cell::new(None),
-            cached: std::cell::Cell::new(false),
-        }
-    }
-
-    fn is_locked(&self) -> bool {
-        if let Some(prev) = self.last.get() {
-            if prev.elapsed() < Duration::from_secs(1) {
-                return self.cached.get();
-            }
-        }
-        self.last.set(Some(Instant::now()));
-        let mut cmd = Command::new("loginctl");
-        cmd.arg("show-session");
-        if let Some(id) = self.session.as_deref() {
-            cmd.arg(id);
-        } else {
-            cmd.arg("self");
-        }
-        cmd.args(["-p", "LockedHint", "--value"])
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null());
-        let locked = cmd
-            .output()
-            .ok()
-            .map(|out| {
-                String::from_utf8_lossy(&out.stdout)
-                    .trim()
-                    .eq_ignore_ascii_case("yes")
-            })
-            .unwrap_or(false);
-        self.cached.set(locked);
-        locked
-    }
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-struct OsLockProbe;
-
-#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-impl OsLockProbe {
-    fn new() -> Self {
-        Self
-    }
-
-    fn is_locked(&self) -> bool {
+    fn went_to_sleep(&self) -> bool {
         false
     }
 }
 
 fn watch_desktop_lock(app: tauri::AppHandle) {
     thread::spawn(move || {
-        let probe = OsLockProbe::new();
+        let probe = OsSleepProbe::new();
         let mut announced = false;
         let mut last_tick = SystemTime::now();
         loop {
@@ -320,7 +231,7 @@ fn watch_desktop_lock(app: tauri::AppHandle) {
             let now = SystemTime::now();
             let stalled = slept_through(last_tick, now, SLEEP_STALL);
             last_tick = now;
-            if stalled || probe.is_locked() {
+            if should_emit_desktop_lock(stalled, probe.went_to_sleep(), false) {
                 if !announced {
                     emit_desktop_lock(&app);
                     announced = true;

@@ -2,8 +2,8 @@
  * App state and the lock lifecycle of crypto-protocol.md §10.
  *
  * LOCKED → UNLOCKING → UNLOCKED → LOCKING → LOCKED. Leaving UNLOCKED zeroizes
- * the Vault Key and clears plaintext, on manual lock, on inactivity, and when
- * the tab is hidden.
+ * the Vault Key and clears plaintext. Desktop app: manual lock or sleep.
+ * PWA: inactivity and a hidden tab. Tray hide does not lock.
  */
 import {
   createContext,
@@ -173,22 +173,27 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     })();
   }, [loadVaults]);
 
-  // Auto-lock: inactivity and tab visibility (crypto-protocol.md §10).
+  // Desktop: only the Lock button and OS sleep (`desktop-lock`). No idle timer,
+  // no screen-lock, no tray-hide. PWA: inactivity + hidden tab (crypto-protocol.md §10).
   useEffect(() => {
     if (lockState !== "UNLOCKED") return;
-    let timer = window.setTimeout(lock, AUTO_LOCK_MS);
+    const desktop = localMode && isTauriShell();
+    let timer: number | undefined;
+    const events = ["pointerdown", "keydown", "focus"] as const;
     const reset = (): void => {
+      if (timer === undefined) return;
       window.clearTimeout(timer);
       timer = window.setTimeout(lock, AUTO_LOCK_MS);
     };
     const onVisibility = (): void => {
-      // Tray hide must not lock — the desktop product keeps the vault in process
-      // memory so the access broker can still prompt. Browser tabs still lock.
-      if (document.visibilityState === "hidden" && !(localMode && isTauriShell())) lock();
+      if (desktop) return;
+      if (document.visibilityState === "hidden") lock();
     };
-    const events = ["pointerdown", "keydown", "focus"] as const;
-    for (const event of events) window.addEventListener(event, reset);
-    document.addEventListener("visibilitychange", onVisibility);
+    if (!desktop) {
+      timer = window.setTimeout(lock, AUTO_LOCK_MS);
+      for (const event of events) window.addEventListener(event, reset);
+      document.addEventListener("visibilitychange", onVisibility);
+    }
     let cancelled = false;
     let unlistenLock: (() => void) | undefined;
     void listenDesktopLock(lock).then((fn) => {
@@ -197,9 +202,11 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     });
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
-      for (const event of events) window.removeEventListener(event, reset);
-      document.removeEventListener("visibilitychange", onVisibility);
+      if (timer !== undefined) window.clearTimeout(timer);
+      if (!desktop) {
+        for (const event of events) window.removeEventListener(event, reset);
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
       unlistenLock?.();
     };
   }, [lockState, lock, localMode]);

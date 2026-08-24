@@ -9,6 +9,12 @@ pub fn slept_through(prev: SystemTime, now: SystemTime, threshold: Duration) -> 
     now.duration_since(prev).map(|d| d > threshold).unwrap_or(false)
 }
 
+/// Desktop vault lock: sleep / Ruhemodus only. Screen lock is not sleep.
+pub fn should_emit_desktop_lock(slept: bool, os_sleep: bool, screen_locked: bool) -> bool {
+    let _ = screen_locked;
+    slept || os_sleep
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -47,5 +53,13 @@ mod tests {
         let later = SystemTime::UNIX_EPOCH + Duration::from_secs(10);
         let earlier = SystemTime::UNIX_EPOCH;
         assert!(!slept_through(later, earlier, Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn desktop_lock_is_sleep_not_screen_lock() {
+        assert!(should_emit_desktop_lock(true, false, false));
+        assert!(should_emit_desktop_lock(false, true, false));
+        assert!(!should_emit_desktop_lock(false, false, true));
+        assert!(!should_emit_desktop_lock(false, false, false));
     }
 }

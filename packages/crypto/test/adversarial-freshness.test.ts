@@ -154,6 +154,47 @@ describe("attack: revision rollback", () => {
     if (!decision.ok) assert.equal(decision.action, "mismatch");
   });
 
+  it("refuses to drop the manifest check by advancing the revision", () => {
+    // Restricting the previous check to the *same* revision made it optional:
+    // a server only had to answer with revision N+1 and no manifest, and the
+    // client was back to trusting numbers. That also re-opened rollback,
+    // revoked-device replay and pin poisoning, which the manifest is what
+    // detects.
+    const pinned = revisionFromManifest(snapshotAt(42).verified);
+    for (const revision of [43, 9000, REVISION_MAX]) {
+      const decision = evaluateRevision(pinned, {
+        vaultId: pinned.vaultId,
+        revision,
+        vaultKeyVersion: pinned.vaultKeyVersion,
+        cryptoProtocolVersion: pinned.cryptoProtocolVersion,
+      });
+      assert.equal(decision.ok, false, `revision ${revision} without a manifest was accepted`);
+      if (!decision.ok) assert.equal(decision.action, "mismatch");
+    }
+    // Rotation is not a way around it either.
+    const rotated = evaluateRevision(pinned, {
+      vaultId: pinned.vaultId,
+      revision: 43,
+      vaultKeyVersion: pinned.vaultKeyVersion + 1,
+      cryptoProtocolVersion: pinned.cryptoProtocolVersion,
+    });
+    assert.equal(rotated.ok, false);
+    // An honest sealed successor is still accepted.
+    assert.equal(evaluateRevision(pinned, revisionFromManifest(snapshotAt(43).verified)).ok, true);
+  });
+
+  it("still accepts a manifest-free advance when nothing was ever pinned with one", () => {
+    // vault-revision.md §6: the content pass alone is all a pre-manifest
+    // snapshot has. A pin without a digest must not be turned into a lockout.
+    const legacy: VaultRevision = {
+      vaultId: C.vault_id,
+      revision: 7,
+      vaultKeyVersion: VKV,
+      cryptoProtocolVersion: 1,
+    };
+    assert.equal(evaluateRevision(legacy, { ...legacy, revision: 8 }).ok, true);
+  });
+
   it("refuses a pin poisoned beyond the uint32 revision range", () => {
     assert.throws(
       () => assertFreshSnapshot(null, { ...pin, revision: REVISION_MAX + 1 }),

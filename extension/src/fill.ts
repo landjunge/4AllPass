@@ -272,6 +272,7 @@ function fieldTokens(input: InputLike): string[] {
 function textSignals(input: InputLike): string {
   return [input.name, input.id, input.placeholder ?? "", input.ariaLabel ?? "", input.labelText ?? ""]
     .join(" ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .replace(/[_-]+/g, " ");
 }
@@ -349,7 +350,10 @@ export function scorePassword(input: InputLike): ScoredField | null {
   const fields = fieldTokens(input);
   const text = textSignals(input);
 
-  if (fields.includes("new-password") || /\b(new|confirm|repeat|retype)\b/.test(text)) {
+  if (
+    fields.includes("new-password") ||
+    /\b(new|confirm|repeat|retype|newpassword)\b/.test(text)
+  ) {
     return null;
   }
   if (fields.includes("one-time-code")) {

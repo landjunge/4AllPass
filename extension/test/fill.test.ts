@@ -127,7 +127,20 @@ test("GitHub-shaped login_field is a username even without autocomplete", () => 
   assert.equal(model.username?.input, login);
 });
 
-test("GitHub live is two pages: username page then password page, not one form", () => {
+test("GitHub live /login is one form: username + password (webauthn suffix ok)", () => {
+  // Live HTML 2026-08: both fields on /login. Conditional UI may append "webauthn".
+  const loginPage = [
+    input({ type: "text", name: "login", id: "login_field", autocomplete: "username webauthn" }),
+    input({ type: "password", name: "password", id: "password", autocomplete: "current-password" }),
+  ];
+  const model = buildLoginModel(loginPage);
+  assert.equal(model.eligible, true);
+  assert.equal(model.username?.input, loginPage[0]);
+  assert.equal(model.password?.input, loginPage[1]);
+  assert.ok(model.confidence >= 0.98);
+});
+
+test("GitHub still supports split pages: username-only, password-only, then OTP", () => {
   const userPage = [
     input({ type: "text", name: "login", id: "login_field", autocomplete: "username" }),
   ];
@@ -155,6 +168,8 @@ test("GitHub live is two pages: username page then password page, not one form",
 test("new_password id is signup skip, not a login password", () => {
   assert.equal(scorePassword(input({ type: "password", name: "new_password" })), null);
   assert.equal(scorePassword(input({ type: "password", id: "new-pass" })), null);
+  assert.equal(scorePassword(input({ type: "password", name: "newPassword" })), null);
+  assert.equal(scorePassword(input({ type: "password", id: "newpassword" })), null);
 });
 
 test("autocomplete=off still uses name heuristics", () => {

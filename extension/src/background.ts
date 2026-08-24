@@ -3,7 +3,7 @@ import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
-import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
+import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
 interface SessionState {
@@ -22,8 +22,7 @@ function dropSession(): void {
   if (session) {
     session.token = "";
     for (const entry of session.entries) {
-      entry.password = "";
-      entry.username = "";
+      wipeFillEntry(entry);
     }
   }
   session = null;

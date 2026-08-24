@@ -58,6 +58,14 @@ test("3 unknown application is denied", () => {
   if (decision.decision === "deny") assert.equal(decision.reason, "application_not_allowed");
 });
 
+test("provider substring git does not match GitHub", () => {
+  const decision = evaluatePolicy(req({ provider: "git" }), [github()]);
+  assert.equal(decision.decision, "deny");
+  if (decision.decision === "deny") assert.equal(decision.reason, "no_credential");
+  assert.equal(evaluatePolicy(req({ provider: "hub" }), [github()]).decision, "deny");
+  assert.equal(evaluatePolicy(req({ provider: "GitHub" }), [github()]).decision, "allow");
+});
+
 test("4 ttl <= 0 is malformed; expired grant is invalid", () => {
   const bad = parseAccessBody({
     application: "n8n",

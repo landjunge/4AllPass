@@ -1,0 +1,12 @@
+[
+  {
+    "tag_name": "desktop",
+    "body": "Previous Intel build: https://github.com/landjunge/4AllPass/releases/download/v0.0.1/4AllPass_0.0.1_x64.dmg",
+    "assets": [
+      {
+        "name": "4AllPass_0.1.1_x64.dmg",
+        "browser_download_url": "https://github.com/landjunge/4AllPass/releases/download/desktop/4AllPass_0.1.1_x64.dmg"
+      }
+    ]
+  }
+]

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { entriesForPage, hostnameOf, maskUsername, publicPicks } from "../src/match.ts";
+import { entriesForPage, hostnameOf, maskUsername, publicPicks, wipeFillEntry } from "../src/match.ts";
 
 test("hostnameOf strips www", () => {
   assert.equal(hostnameOf("https://www.github.com/login"), "github.com");
@@ -105,6 +105,27 @@ test("URL-less providerId still matches a high-confidence page", () => {
     { id: "1", title: "MS", username: "ada", password: "secret", url: "", providerId: "microsoft" },
   ];
   assert.equal(entriesForPage(tagged, "https://login.microsoftonline.com/").length, 1);
+});
+
+test("entriesForPage does not treat a one-label host as a suffix of github.com", () => {
+  const entries = [{ id: "1", title: "com", username: "ada", password: "x", url: "https://com/" }];
+  assert.deepEqual(entriesForPage(entries, "https://github.com/login"), []);
+  assert.equal(entriesForPage(entries, "https://com/").length, 1);
+});
+
+test("wipeFillEntry clears username, password, and totpSecret", () => {
+  const entry = {
+    id: "1",
+    title: "GitHub",
+    username: "ada",
+    password: "secret-must-not-linger",
+    url: "https://github.com",
+    totpSecret: "JBSWY3DPEHPK3PXP",
+  };
+  wipeFillEntry(entry);
+  assert.equal(entry.username, "");
+  assert.equal(entry.password, "");
+  assert.equal(entry.totpSecret, "");
 });
 
 test("maskUsername never returns the raw address; publicPicks drop the password", () => {

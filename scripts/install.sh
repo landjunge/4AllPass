@@ -43,8 +43,25 @@ asset_suffix() {
   fi
 }
 
+# Only assets[].browser_download_url — never the release body, which GitHub
+# serializes first and may contain an older DMG link.
+pick_asset_url() {
+  printf '%s\n' "$1" | grep -o '"browser_download_url":[[:space:]]*"[^"]*"' | sed 's/.*"\(https:\/\/[^"]*\)".*/\1/' | grep "${2}$" | head -n 1
+}
+
 if [ "${1:-}" = "--suffix-only" ]; then
   asset_suffix
+  exit 0
+fi
+
+if [ "${1:-}" = "--pick-from-json" ]; then
+  suffix=${2:-}
+  file=${3:-}
+  [ -n "$suffix" ] && [ -n "$file" ] || die "usage: install.sh --pick-from-json SUFFIX FILE"
+  json=$(cat "$file") || die "Could not read ${file}"
+  url=$(pick_asset_url "$json" "$suffix")
+  [ -n "$url" ] || die "No release asset matching *${suffix}."
+  printf '%s\n' "$url"
   exit 0
 fi
 
@@ -57,7 +74,7 @@ printf '%s\n' "Vault folders are never deleted."
 json=$(curl -fsSL "$API") || die "Could not list GitHub releases."
 
 # Must end with the suffix so *.dmg.sha256 is not picked as the installer.
-url=$(printf '%s\n' "$json" | grep -o "https://github.com/${REPO}/releases/download/[^\"]*" | grep "${suffix}$" | head -n 1)
+url=$(pick_asset_url "$json" "$suffix")
 [ -n "$url" ] || die "No release asset matching *${suffix}. See https://github.com/${REPO}/releases"
 
 if [ "${1:-}" = "--dry-run" ]; then

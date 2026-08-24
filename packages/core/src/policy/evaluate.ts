@@ -31,7 +31,7 @@ export function evaluatePolicy(
   const provider = request.provider.trim().toLowerCase();
   const account = request.credential.trim().toLowerCase();
   const match = credentials.find((item) => {
-    if (providerKey(item) !== provider && !providerKey(item).includes(provider)) return false;
+    if (providerKey(item) !== provider) return false;
     const a = item.account.trim().toLowerCase();
     if (!account || account === "personal") return a === "" || a === "personal" || a === account;
     return a === account;

@@ -27,9 +27,18 @@ function hostMatch(pageHost: string, entryUrl: string): boolean {
   const entryHost = hostnameOf(entryUrl);
   if (!entryHost) return false;
   if (entryHost === pageHost) return true;
-  // Single-label / TLD hosts must not suffix-match (https://com → *.com).
-  if (!entryHost.includes(".")) return false;
+  // Suffix only when the stored host has at least two labels. Otherwise a
+  // CSV row `https://com/` would match github.com (and every other .com).
+  const labels = entryHost.split(".").filter(Boolean);
+  if (labels.length < 2) return false;
   return pageHost.endsWith(`.${entryHost}`);
+}
+
+/** Overwrite unlocked strings. JS cannot securely zeroize; still clear all of them. */
+export function wipeFillEntry(entry: FillEntry): void {
+  entry.username = "";
+  entry.password = "";
+  entry.totpSecret = "";
 }
 
 /**

@@ -36,10 +36,10 @@ Page (origin)
 
 Trigger (unverändert): Popup **Diese Seite füllen / Fill this page**, `Ctrl+Shift+L` / `⌘⇧L`, Kontextmenü.
 
-Desktop-Unlock: nur Tresor-Passwort gegen `http://127.0.0.1:8788` (`POST /auth/local`). E-mail + Konto-Passwort bleiben für das Server-Profil.  
+Desktop-Unlock: `POST /auth/local` mintet nur eine **Storage-Session**. Unwrap des Tresors bleibt lokal unter dem Tresor-Passwort. FastAPI sieht den Vault-Key nicht. E-mail + Konto-Passwort bleiben für das Server-Profil.  
 Kein stilles Fill beim Laden der Seite in V1 (das ist der Bitwarden-Default-Streit). Explizite Nutzeraktion.
 
-**GitHub live** (`github.com/login`) ist zwei Seiten, kein einseitiges Formular. V1 füllt jede Seite nach Klick: Username auf `/login`, Passwort auf der nächsten Seite, TOTP wenn `totpSecret` am Eintrag. Das ist **kein** Multi-Step-Engine. Fixture: `extension/test/fill.test.ts` „GitHub live is two pages“.
+**GitHub live** (`github.com/login`): Fixture in `fill.test.ts` ist ein Formular (Username + `current-password`; Suffix `webauthn` ignoriert). Username-only / Passwort-only / OTP-Seiten bleiben supported. Das ist **kein** Multi-Step-Engine. Live-Seite bleibt in diesem Slice ein manueller Check.
 
 ---
 

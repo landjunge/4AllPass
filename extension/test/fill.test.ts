@@ -127,6 +127,31 @@ test("GitHub-shaped login_field is a username even without autocomplete", () => 
   assert.equal(model.username?.input, login);
 });
 
+test("GitHub live is two pages: username page then password page, not one form", () => {
+  const userPage = [
+    input({ type: "text", name: "login", id: "login_field", autocomplete: "username" }),
+  ];
+  const passPage = [
+    input({ type: "password", name: "password", id: "password", autocomplete: "current-password" }),
+  ];
+  const otpPage = [
+    input({ type: "text", name: "app_otp", id: "app_totp", autocomplete: "one-time-code" }),
+  ];
+  const userModel = buildLoginModel(userPage);
+  const passModel = buildLoginModel(passPage);
+  const otpModel = buildLoginModel(otpPage);
+  assert.equal(userModel.eligible, true);
+  assert.equal(userModel.username?.input, userPage[0]);
+  assert.equal(userModel.password, null);
+  assert.equal(passModel.eligible, true);
+  assert.equal(passModel.password?.input, passPage[0]);
+  assert.equal(passModel.username, null);
+  assert.equal(otpModel.eligible, true);
+  assert.equal(otpModel.otp?.input, otpPage[0]);
+  assert.equal(shouldOfferAssist(userPage), false);
+  assert.equal(shouldOfferAssist(passPage), false);
+});
+
 test("new_password id is signup skip, not a login password", () => {
   assert.equal(scorePassword(input({ type: "password", name: "new_password" })), null);
   assert.equal(scorePassword(input({ type: "password", id: "new-pass" })), null);

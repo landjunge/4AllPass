@@ -62,10 +62,10 @@ Ohne Pipe: Script speichern, lesen, `sh install.sh`. Windows: `irm https://raw.g
 
 ### Desktop (DMG / Installer)
 
-Download: [Releases](https://github.com/landjunge/4AllPass/releases) (prerelease, Tag `v*`).
+Download: [Releases](https://github.com/landjunge/4AllPass/releases). Der One-Liner nutzt den rolling Prerelease-Tag **`desktop`** (Intel `*_x64.dmg` + SHA-256). Versionierte Tags bleiben `v*` — kein `v0.1.2` nur für Installer.
 
 - **Intel Mac:** `*_x64.dmg` (CI `macos-15-intel`). Apple-Silicon: `*_aarch64.dmg`.
-- **Aktuell ad-hoc:** Erstes Öffnen Rechtsklick → Öffnen.
+- **One-Liner:** Quarantäne per `xattr` weg, Fenster geht auf. Manuelles DMG: Rechtsklick → Öffnen.
 - **Notarisierung pausiert** (Apple Developer ~99 USD/Jahr) — [`docs/distribution.md`](docs/distribution.md), [#112](https://github.com/landjunge/4AllPass/issues/112).
 
 Ohne Installer: `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788). Beim Anmelden starten entsperrt den Tresor **nicht**.

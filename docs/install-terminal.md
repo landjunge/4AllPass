@@ -74,15 +74,16 @@ Datei: `scripts/install.sh` (POSIX `sh`).
 3. Passendes Asset laden:  
    `4AllPass_*_x64.dmg` (Intel-Mac) · `4AllPass_*_aarch64.dmg` · `4AllPass_*_amd64.AppImage` · später `*_x64-setup.exe`.  
    Falsche CPU → Abbruch, nicht das ARM-DMG unter Intel starten.
-4. **Mac:** DMG mounten → `4AllPass.app` nach `/Applications` → unmounten.  
+4. SHA-256-Sidecar `${url}.sha256` laden. Hash der Datei muss matchen, sonst Abbruch. Die Asset-URL muss auf das Suffix **enden** (`*_x64.dmg`, nicht `*.dmg.sha256`).
+5. **Mac:** DMG mounten → `4AllPass.app` nach `/Applications` → unmounten.  
    `xattr -cr /Applications/4AllPass.app` (Quarantäne weg = die 2 Rechtsklick-Klicks).  
    `open -a 4AllPass`.
-5. **Linux:** nach `~/.local/bin/4allpass`, `chmod +x`, Datei starten.
-6. Existiert die App schon: überschreiben. **Vault-Ordner nicht anfassen**  
+6. **Linux:** nach `~/.local/bin/4allpass`, `chmod +x`, Datei starten.
+7. Existiert die App schon: überschreiben. **Vault-Ordner nicht anfassen**  
    (`~/Library/Application Support/4AllPass/`, `%APPDATA%\4AllPass\`, `~/.local/share/4allpass/`).
-7. Kein sudo. Scheitert `/Applications` (kein Schreibrecht): nach `~/Applications` und das sagen.
+8. Kein sudo. Scheitert `/Applications` (kein Schreibrecht): nach `~/Applications` und das sagen.
 
-Optional später, nicht im ersten Schnitt: SHA-256 der Release-Assets prüfen.
+Rolling Prerelease-Tag **`desktop`** (nicht `v0.1.2`): `workflow_dispatch` auf `.github/workflows/desktop.yml` hängt Intel/ARM-DMG, AppImage, NSIS und `*.sha256` an diesen Tag. Der One-Liner nimmt das neueste Release-Asset mit passendem Suffix — aktuell `desktop`.
 
 ---
 
@@ -132,12 +133,11 @@ Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac
 - [x] Unpassendes OS/CPU: klare Fehlermeldung.
 - [x] FastAPI mintet weiterhin keine Tokens.
 - [x] SHA-256-Sidecar in `desktop.yml`; Install-Script bricht bei Mismatch ab.
-- [ ] **Dieser Intel-Mac:** ein Befehl → Fenster (braucht ein `*_x64.dmg` im GitHub-Release).
+- [x] **Dieser Intel-Mac (2026-08-24):** `sh scripts/install.sh` → SHA-256 ok → `/Applications/4AllPass.app` → Fenster. Vault-Ordner unverändert (`Application Support/4AllPass`, bestehende `vault.db`).
 - [ ] Phase A (#112) bleibt offen — Terminal-Install ist die Pause, nicht das Ende.
 
 ---
 
 ## Nächster Schritt (genau einer)
 
-CI Intel-Job (`macos-15-intel`) mergen, per `workflow_dispatch` ein `*_x64.dmg` erzeugen.  
-Dann `scripts/install.sh` auf **diesem Intel-Mac** prüfen. Erst danach Linux.
+Terminal-Install auf diesem Intel-Mac ist geprüft. Fremder-Install und Apple-Doppelklick bleiben offen. GitHub-Live-Fill ist zwei explizite Fills (Username-Seite, dann Passwort-Seite) — kein Multi-Step-Engine.

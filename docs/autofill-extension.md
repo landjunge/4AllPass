@@ -48,6 +48,8 @@ From the desktop Browser cards (open a card): **Demo-Login öffnen** saves a loo
 
 A miss prints erkannt / recognized, gefüllt / filled, Ergebnis / result — never the secret. If a password was filled but the username sat under 0.70, **Trotzdem füllen / Fill anyway** writes that field after an explicit click. Never a lone search box. Local Playwright: `npm run test:e2e:autofill-local -w @4allpass/frontend`.
 
+**GitHub.com:** two pages. Unlock the extension, open `https://github.com/login`, **Fill this page** (username), continue, **Fill this page** again (password). TOTP on the 2FA page if the entry has `totpSecret`. Not a multi-step engine.
+
 ## Not in this slice
 
 Chrome Web Store / AMO / App Store listing. iOS AutoFill. Writing passwords back into Chrome’s own `Login Data`. Stille On-Load-Fills. See [`autofill-v1.md`](autofill-v1.md) §10.

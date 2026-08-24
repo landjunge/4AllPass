@@ -1,6 +1,6 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-23. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate.
+Stand: 2026-08-24. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate.
 
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
@@ -93,6 +93,7 @@ Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent
 | Extension Chromium + Firefox + Safari-Wrapper | auf `main` — Field Intelligence + Safe Fill + Provider-Match (`autofill-v1.md`) |
 | Access-Policy, Broker, Allow/Deny | auf `main`, **nicht** erster Bildschirm |
 | Apple-Notarisierung | CI `#111`, **pausiert** (~99 USD/Jahr, [#112](https://github.com/landjunge/4AllPass/issues/112)) |
+| Terminal-Install | `scripts/install.sh` + rolling Tag `desktop` + SHA-256. Auf diesem Intel-Mac: Befehl → Fenster (2026-08-24). Vault unangetastet. |
 
 ---
 
@@ -230,13 +231,14 @@ Sicherheit:
 
 P0:
 
+- [x] Dieser Intel-Mac: `scripts/install.sh` → Fenster, Vault bleibt.
 - [ ] Fremder: App auf, Tresor, Browser-Karten, Import-Review ohne Passwort in der Liste.
 - [x] `evilgithub.com` wird nicht zu GitHub. (`packages/providers` + Extension-Match-Tests)
 
 P1:
 
 - [x] Login ohne Copy-Paste auf der Demo-Seite (`test-login.html`, Playwright `autofill-local`).
-- [ ] GitHub (oder gleichwertige Live-Seite) ohne Copy-Paste — manuell.
+- [ ] GitHub (oder gleichwertige Live-Seite) ohne Copy-Paste — manuell. GitHub ist zwei Seiten: Fill auf `/login`, dann Fill auf der Passwort-Seite. Kein Multi-Step-Engine (P1b, nicht dieser Slice). Fixture in `extension/test/fill.test.ts`.
 - [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
 
 Installation (Apple, wenn leistbar):
@@ -251,8 +253,8 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Pause / Apple:** `scripts/install.sh` (nicht notariert). Fill auf GitHub bleibt der Nachweis am Gerät. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
+**Am Gerät:** GitHub-Login ohne Copy-Paste (zwei Fills: Username, dann Passwort). Fremder-Import bleibt der P0-Nachweis. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
-**Nicht jetzt:** Team Mode, Access-Simulator, 50 Provider, Safari-Import, Launch-Post, Passkey-Store.
+**Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 
 **Geld:** Apple weiter pausiert ([#112](https://github.com/landjunge/4AllPass/issues/112)).

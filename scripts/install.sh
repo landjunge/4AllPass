@@ -56,7 +56,8 @@ printf '%s\n' "Vault folders are never deleted."
 
 json=$(curl -fsSL "$API") || die "Could not list GitHub releases."
 
-url=$(printf '%s\n' "$json" | grep -o "https://github.com/${REPO}/releases/download/[^\"]*${suffix}" | head -n 1)
+# Must end with the suffix so *.dmg.sha256 is not picked as the installer.
+url=$(printf '%s\n' "$json" | grep -o "https://github.com/${REPO}/releases/download/[^\"]*" | grep "${suffix}$" | head -n 1)
 [ -n "$url" ] || die "No release asset matching *${suffix}. See https://github.com/${REPO}/releases"
 
 if [ "${1:-}" = "--dry-run" ]; then

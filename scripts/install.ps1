@@ -12,7 +12,7 @@ $releases = Invoke-RestMethod -Uri $api
 $url = $null
 foreach ($rel in $releases) {
   foreach ($asset in $rel.assets) {
-    if ($asset.name -like "*_x64-setup.exe") {
+    if ($asset.name -like "*_x64-setup.exe" -and $asset.name -notlike "*.sha256") {
       $url = $asset.browser_download_url
       break
     }

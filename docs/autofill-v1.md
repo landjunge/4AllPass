@@ -1,7 +1,7 @@
 # Autofill V1 — Credential Interaction Engine
 
 **Status:** verbindlich für P1. Field Intelligence, Safe Fill, Probe, Provider-Match, Assist auf `main`. Shadow-DOM/Multi-Step/iframe nicht in V1.  
-**Stand:** 2026-08-23  
+**Stand:** 2026-08-24  
 **Plan:** [`product-maturity.md`](product-maturity.md)  
 **Install/Build der Extension:** [`autofill-extension.md`](autofill-extension.md)  
 **Provider:** [`provider-resolution.md`](provider-resolution.md)
@@ -38,6 +38,8 @@ Trigger (unverändert): Popup **Diese Seite füllen / Fill this page**, `Ctrl+Sh
 
 Desktop-Unlock: nur Tresor-Passwort gegen `http://127.0.0.1:8788` (`POST /auth/local`). E-mail + Konto-Passwort bleiben für das Server-Profil.  
 Kein stilles Fill beim Laden der Seite in V1 (das ist der Bitwarden-Default-Streit). Explizite Nutzeraktion.
+
+**GitHub live** (`github.com/login`) ist zwei Seiten, kein einseitiges Formular. V1 füllt jede Seite nach Klick: Username auf `/login`, Passwort auf der nächsten Seite, TOTP wenn `totpSecret` am Eintrag. Das ist **kein** Multi-Step-Engine. Fixture: `extension/test/fill.test.ts` „GitHub live is two pages“.
 
 ---
 

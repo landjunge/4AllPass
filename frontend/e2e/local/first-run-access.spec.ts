@@ -16,7 +16,9 @@ test("Welcome → vault → Access allow without showing the secret", async ({ p
 
   const recoveryKey = (await page.getByTestId("recovery-key").textContent()) ?? "";
   expect(recoveryKey.replace(/-/g, "")).toHaveLength(55);
-  await page.getByRole("checkbox").click();
+  await expect(page.getByTestId("dismiss-kit")).toBeDisabled();
+  await page.getByTestId("confirm-kit-stored").click();
+  await expect(page.getByTestId("dismiss-kit")).toBeEnabled();
   await page.getByTestId("dismiss-kit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
 

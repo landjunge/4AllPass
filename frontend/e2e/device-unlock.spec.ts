@@ -92,6 +92,11 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
 
       expect(await enableDeviceUnlock(page)).toContain(scenario.expected);
       await expect(page.getByTestId("device-unlock-state")).toBeVisible();
+      if (scenario.hasPrf) {
+        await expect(page.getByTestId("rank3-warning")).toHaveCount(0);
+      } else if (!scenario.hasLargeBlob) {
+        await expect(page.getByTestId("rank3-warning")).toBeVisible();
+      }
       await expect(page.getByTestId("revision")).toContainText("revision 3");
 
       // Lock: the Vault Key is zeroized and nothing is decrypted any more.

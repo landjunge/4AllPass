@@ -2,6 +2,9 @@
  * Best-effort feature detection. Actual PRF support can only be confirmed
  * per-credential at registration/assertion time (webauthn-prf.md §7:
  * "Treat absence as fallback, not as a hard error").
+ *
+ * `PublicKeyCredential` existing is not PRF. Desktop WKWebView reports the
+ * WebAuthn API and still returns `prf: null`.
  */
 
 export interface WebviewWebauthnCaps {
@@ -11,13 +14,25 @@ export interface WebviewWebauthnCaps {
   prf: boolean | null;
 }
 
-export function webauthnPrfAvailable(): boolean {
+export type PrfCapabilityState = "available" | "unavailable" | "unconfirmed";
+
+/** WebAuthn API objects exist. This is not a PRF proof. */
+export function webauthnApiPresent(): boolean {
   return (
     typeof window !== "undefined" &&
     typeof window.PublicKeyCredential !== "undefined" &&
     typeof navigator !== "undefined" &&
     typeof navigator.credentials !== "undefined"
   );
+}
+
+/** Classify a probe. `true` only when the client reported the PRF extension. */
+export function prfCapabilityState(caps: WebviewWebauthnCaps): PrfCapabilityState {
+  if (caps.prf === true) return "available";
+  if (caps.prf === false || !caps.publicKeyCredential || !caps.credentialsCreate) {
+    return "unavailable";
+  }
+  return "unconfirmed";
 }
 
 export function isTauriShell(): boolean {

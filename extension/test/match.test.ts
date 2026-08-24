@@ -74,11 +74,37 @@ test("known Microsoft login domain matches a microsoft.com vault entry", () => {
   assert.deepEqual(entriesForPage(entries, "https://evilmicrosoft.com/login"), []);
 });
 
-test("stored providerId matches a high-confidence page without suffix host", () => {
-  const entries = [
-    { id: "1", title: "MS", username: "ada", password: "secret", url: "https://contoso.example", providerId: "microsoft" },
+test("stored providerId does not override a conflicting URL", () => {
+  const taggedWrongHost = [
+    {
+      id: "1",
+      title: "MS",
+      username: "ada",
+      password: "secret",
+      url: "https://contoso.example",
+      providerId: "microsoft",
+    },
   ];
-  assert.equal(entriesForPage(entries, "https://login.microsoftonline.com/").length, 1);
+  assert.deepEqual(entriesForPage(taggedWrongHost, "https://login.microsoftonline.com/"), []);
+
+  const taggedPhish = [
+    {
+      id: "2",
+      title: "GitHub",
+      username: "ada",
+      password: "secret",
+      url: "https://evilgithub.com",
+      providerId: "github",
+    },
+  ];
+  assert.deepEqual(entriesForPage(taggedPhish, "https://github.com/login"), []);
+});
+
+test("URL-less providerId still matches a high-confidence page", () => {
+  const tagged = [
+    { id: "1", title: "MS", username: "ada", password: "secret", url: "", providerId: "microsoft" },
+  ];
+  assert.equal(entriesForPage(tagged, "https://login.microsoftonline.com/").length, 1);
 });
 
 test("maskUsername never returns the raw address; publicPicks drop the password", () => {

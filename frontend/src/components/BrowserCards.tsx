@@ -10,6 +10,7 @@ import {
   type BrowserLoginRow,
   type ExtensionInstall,
 } from "../lib/browsers.ts";
+import { BrowserIcon } from "./BrowserIcon.tsx";
 
 export function BrowserCards({
   onLogins,
@@ -160,10 +161,13 @@ export function BrowserCards({
                 className="browser-card-hit"
                 onClick={() => setOpenId(open ? null : card.id)}
               >
-                <strong>{card.name}</strong>
-                <span className="muted">
-                  {card.profiles.length}{" "}
-                  {card.profiles.length === 1 ? "Profil / profile" : "Profile / profiles"}
+                <BrowserIcon id={card.id} name={card.name} />
+                <span className="browser-card-label">
+                  <strong>{card.name}</strong>
+                  <span className="muted">
+                    {card.profiles.length}{" "}
+                    {card.profiles.length === 1 ? "Profil / profile" : "Profile / profiles"}
+                  </span>
                 </span>
               </button>
               {open ? (

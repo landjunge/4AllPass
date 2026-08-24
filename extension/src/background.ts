@@ -4,6 +4,7 @@ import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
+import { isHttpUrl, pickFillTab } from "./tab-target.ts";
 import {
   apiRequest,
   decryptUnlockedSnapshot,
@@ -27,6 +28,7 @@ interface SessionState {
 let session: SessionState | null = null;
 let lastPullAt = 0;
 let pullTimer: ReturnType<typeof setInterval> | null = null;
+let lastHttpTabId: number | undefined;
 
 const MENU_FILL = "fill-login";
 const AUTO_LOCK_ALARM = "autolock";
@@ -154,9 +156,20 @@ async function deviceId(): Promise<string> {
   return created;
 }
 
+function rememberHttpTab(tab: { id?: number; url?: string } | undefined): void {
+  if (tab?.id !== undefined && isHttpUrl(tab.url)) lastHttpTabId = tab.id;
+}
+
 async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
   const [focused] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
-  if (focused?.id && focused.url && /^https?:/.test(focused.url)) return focused;
+  rememberHttpTab(focused);
+  const remembered =
+    lastHttpTabId !== undefined ? await ext.tabs.get(lastHttpTabId).catch(() => undefined) : undefined;
+  const picked = pickFillTab(focused, remembered);
+  if (picked?.id !== undefined && isHttpUrl(picked.url)) {
+    lastHttpTabId = picked.id;
+    return picked;
+  }
   return undefined;
 }
 
@@ -224,15 +237,39 @@ async function openPopupSafe(): Promise<void> {
   }
 }
 
-async function fillActive(entryId?: string, assist = false): Promise<Record<string, unknown>> {
+async function ensurePageOrigin(url: string): Promise<void> {
+  if (!ext.permissions?.request || !isHttpUrl(url)) return;
+  let origin: string;
+  try {
+    origin = new URL(url).origin;
+  } catch {
+    return;
+  }
+  const origins = [`${origin}/*`];
+  try {
+    if (await ext.permissions.contains({ origins })) return;
+    await ext.permissions.request({ origins });
+  } catch {
+    // loopback is already in host_permissions; live sites may use activeTab
+  }
+}
+
+async function fillActive(
+  entryId?: string,
+  assist = false,
+  tabId?: number,
+): Promise<Record<string, unknown>> {
   await pullIfChanged(true);
   if (!session) {
     await openPopupSafe();
     return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
   }
   noteActivity();
-  const tab = await activeHttpTab();
+  const hinted = tabId !== undefined ? await ext.tabs.get(tabId).catch(() => undefined) : undefined;
+  const tab = hinted?.id !== undefined && isHttpUrl(hinted.url) ? hinted : await activeHttpTab();
   if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  rememberHttpTab(tab);
+  await ensurePageOrigin(tab.url);
   const matches = entriesForPage(session.entries, tab.url);
   if (matches.length === 0) {
     return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
@@ -328,11 +365,25 @@ ext.contextMenus.onClicked.addListener((info) => {
 });
 
 ext.tabs.onActivated.addListener((info) => {
-  void refreshBadge(info.tabId);
+  void ext.tabs
+    .get(info.tabId)
+    .then((tab) => {
+      rememberHttpTab(tab);
+      void refreshBadge(info.tabId);
+    })
+    .catch(() => undefined);
 });
 
 ext.tabs.onUpdated.addListener((tabId, change) => {
-  if (change.status === "complete" || change.url) void refreshBadge(tabId);
+  if (change.status === "complete" || change.url) {
+    void ext.tabs
+      .get(tabId)
+      .then((tab) => {
+        if (tab.active) rememberHttpTab(tab);
+        void refreshBadge(tabId);
+      })
+      .catch(() => undefined);
+  }
 });
 
 ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -406,6 +457,7 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       return fillActive(
         typeof message.entryId === "string" ? message.entryId : undefined,
         message.assist === true,
+        typeof message.tabId === "number" ? message.tabId : undefined,
       );
     default:
       return { ok: false, error: "unknown message" };
@@ -413,3 +465,8 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
 }
 
 void ensureMenu();
+void ext.tabs.query({}).then((tabs) => {
+  const http = tabs.filter((tab) => tab.id !== undefined && isHttpUrl(tab.url));
+  http.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  rememberHttpTab(http[0]);
+});

@@ -8,8 +8,9 @@
     <h1>Sign in to GitHub</h1>
     <p>
       Fixture shaped like <code>github.com/login</code> (2026-08): one form, username +
-      current-password. Conditional UI may set <code>autocomplete="username webauthn"</code>. Not a
-      multi-step engine. No submit off this origin.
+      current-password, plus a hidden honeypot. Conditional UI may set
+      <code>autocomplete="username webauthn"</code>. Not a multi-step engine. No submit off this
+      origin.
     </p>
     <form id="login" action="#" method="post">
       <label>
@@ -25,6 +26,7 @@
         Password
         <input id="password" name="password" type="password" autocomplete="current-password" />
       </label>
+      <input type="text" name="required_field_test" hidden="hidden" />
       <button type="submit">Sign in</button>
     </form>
     <p id="result"></p>

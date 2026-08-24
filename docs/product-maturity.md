@@ -239,7 +239,8 @@ P0:
 P1:
 
 - [x] Login ohne Copy-Paste auf der Demo-Seite (`test-login.html`, Playwright `autofill-local`).
-- [x] GitHub-förmiges Login ohne Copy-Paste — ein Formular (`test-login-github.html`, Playwright `autofill-local`). `webauthn`-Suffix ignoriert. Split-Seiten bleiben Unit-Tests. Live `github.com` bleibt ein manueller Check, kein Multi-Step-Engine.
+- [x] GitHub-förmiges Login ohne Copy-Paste — ein Formular (`test-login-github.html`, Playwright `autofill-local`). `webauthn`-Suffix ignoriert. Split-Seiten bleiben Unit-Tests.
+- [x] Live `github.com/login` ein Fill, kein Submit (opt-in `LIVE_GITHUB=1`, kein CI). Kein Multi-Step-Engine.
 - [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
 
 Installation (Apple, wenn leistbar):
@@ -254,7 +255,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Fremder Mac:** Browser-Karten + Import-Review (Passwort nie in der Liste). Review-UI ist in CI für Datei-Import. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
+**Fremder Mac:** Browser-Karten + Import-Review (Passwort nie in der Liste). Review-UI ist in CI für Datei-Import. Live `github.com/login` ist opt-in geprüft. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
 Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
 

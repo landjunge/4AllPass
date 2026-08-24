@@ -1,6 +1,6 @@
 # Restplan — 4AllPass
 
-Stand: 2026-08-24. `main` = `b2ab441`.
+Stand: 2026-08-24. Live `github.com/login` Fill ist opt-in geprüft.
 
 Quelle der Reihenfolge: [`product-maturity.md`](product-maturity.md) **v3**.  
 Diese Datei ist die **Kurzfassung des Rests** — nicht ein zweiter Plan.
@@ -26,9 +26,7 @@ Kein weiterer Code-Slice in dieser Reihenfolge.
    App auf → Tresor → Browser-Karten → Import-Review **ohne Passwort in der Liste** → Bestätigen.  
    Review-UI ist in CI für Datei-Import (`frontend/e2e/local/import-review`). Browser-Karten-Import auf einem fremden Rechner bleibt ein Mensch-Test.
 
-2. **Live `github.com/login` (P1, optional, manuell)**  
-   Ein Fill, Username-Seite dann Passwort-Seite — kein Multi-Step-Engine.  
-   Fixture + Playwright sind da (`test-login-github.html`, `autofill-local`). CI trifft github.com nicht.
+Live `github.com/login` (P1): **da** — ein Formular, ein Fill, kein Submit. Opt-in, kein CI: `LIVE_GITHUB=1 npm run test:e2e:autofill-github-live -w @4allpass/frontend`.
 
 ---
 
@@ -79,13 +77,13 @@ Einmal-Erkennung der Zwischenablage (kein Watcher) ist auf `main`.
 | P0 Install | `scripts/install.sh` + rolling Tag `desktop` + SHA-256. Dieser Intel-Mac: Befehl → Fenster. Vault unangetastet. |
 | P0 Import | Browser-Karten Chrome/Firefox, Review ohne Passwort, nie still, nie Live-DB schreiben. |
 | P0 Provider | Exact / subdomain / login-domain / unknown. `evilgithub.com` ist nicht GitHub. |
-| P1 Autofill | Field Intelligence + Safe Fill + Verify. Demo + GitHub-Fixture. Fill nur fokussierter Tab. |
+| P1 Autofill | Field Intelligence + Safe Fill + Verify. Demo + GitHub-Fixture. Live `github.com/login` opt-in. Fill = letzter http(s)-Tab, nicht das Popup. |
 | P1b Assist / Why | Misserfolg erklärt Felder lokal, keine Secrets. Assisted Fill bei Confidence < 0.70. |
 | P2 Access | Why, Simulator, Loopback 127.0.0.1, Origin 403, unknown DENY. Nicht erster Bildschirm. |
 | P3 TOTP | RFC 6238 am Vault-Eintrag. Secret nur im verschlüsselten Entry. |
 | Härten | Digest-Pin braucht `sealedManifest`. Import-Pfade enthalten. CSP auf Sidecar-Origin. Tresor zu: Button oder Ruhemodus. Leichte Sprache an. |
 
-**Offen bleiben nur:** ein fremder Mac, optional live GitHub, Apple wenn das Abo geht.
+**Offen bleiben nur:** ein fremder Mac, und Apple wenn das Abo geht.
 
 ---
 
@@ -93,7 +91,7 @@ Einmal-Erkennung der Zwischenablage (kein Watcher) ist auf `main`.
 
 ```text
 P0  Install + Import + Provider     (Code da; Fremden-Test offen)
- → P1  Reliable Autofill             (Code da; live GitHub manuell)
+ → P1  Reliable Autofill             (Code da; live GitHub opt-in)
     → P1b Diagnostics / Assisted     (Assist/Why da; Shadow DOM später)
        → P2  Agent UX                (Code da; First Screen nicht)
           → P3  Passkeys / OTP       (TOTP da; Passkey-Store später)
@@ -107,7 +105,7 @@ Apple (Phase A) bleibt Geld-Blocker, parallel nicht als Ausrede für Feature-Flu
 ## Definition of Done — was noch offen ist
 
 - [ ] Fremder Mac: App auf, Tresor, Browser-Karten, Import-Review ohne Passwort.
-- [ ] Live `github.com/login` (manuell, optional).
+- [x] Live `github.com/login` (opt-in e2e, kein Submit, kein CI).
 - [ ] Fremder Mac: Doppelklick, kein Terminal — **nur wenn Apple-Abo geht.**
 
 Alles andere in der DoD von [`product-maturity.md`](product-maturity.md) ist abgehakt.

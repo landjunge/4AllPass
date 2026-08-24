@@ -12,7 +12,7 @@ const dataDir = process.env.FOURALLPASS_DATA_DIR
 
 export default defineConfig({
   testDir: "./e2e/extension",
-  testMatch: /autofill-local/,
+  testMatch: /autofill-local|autofill-github-live/,
   timeout: 180_000,
   expect: { timeout: 60_000 },
   fullyParallel: false,

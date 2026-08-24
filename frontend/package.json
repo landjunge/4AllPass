@@ -13,6 +13,7 @@
     "test:e2e:live": "playwright test -c playwright.live.config.ts",
     "test:e2e:autofill": "playwright test -c playwright.extension.config.ts",
     "test:e2e:autofill-local": "playwright test -c playwright.autofill-local.config.ts",
+    "test:e2e:autofill-github-live": "LIVE_GITHUB=1 playwright test -c playwright.autofill-local.config.ts e2e/extension/autofill-github-live.spec.ts",
     "test:e2e:local": "playwright test -c playwright.local.config.ts",
     "preview": "vite preview"
   },

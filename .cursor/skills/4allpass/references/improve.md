@@ -12,7 +12,7 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 Reliability before expansion. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
 
-1. **Autofill V1 + P1b Assist + P2 Why + P3 TOTP + `install.sh`** are on `main`. Intel Mac one-liner → window proven 2026-08-24 (rolling tag `desktop`, SHA-256). Passkey store still later (real platform APIs only). Next feel-able proof: Fill on GitHub (two pages, two clicks). Do not reimplement the engine. Do not start a multi-step engine in this slice.
+1. **Autofill V1 + P1b Assist + P2 Why + P3 TOTP + `install.sh`** are on `main`. Intel Mac one-liner → window proven 2026-08-24 (rolling tag `desktop`, SHA-256). Live `github.com/login` is one form, opt-in e2e, no submit. Passkey store still later (real platform APIs only). Next feel-able proof: stranger Mac import. Do not reimplement the engine. Do not start a multi-step engine.
 2. Browser cards, Chrome/Firefox import + review, provider resolver: **on main**. Do not reimplement.
 3. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install is the pause: `docs/install-terminal.md`.
 4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, n8n marketplace, or a passkey store.

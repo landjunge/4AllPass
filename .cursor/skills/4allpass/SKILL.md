@@ -102,7 +102,7 @@ cd backend && pytest
 
 Follow [references/improve.md](references/improve.md). Prefer the next **honest** milestone over new features.
 
-Current recommended order: [`docs/product-maturity.md`](../../../docs/product-maturity.md) **v3**. Reliability before expansion. Autofill V1, Assist, Why, TOTP, `install.sh` (Intel Mac: Befehl → Fenster) are on `main`. Next feelable: **live GitHub fill** (two explicit fills, not a multi-step engine) and a stranger import test. **Do not rewrite crypto.** Agent/n8n is not the first screen. Apple notarization stays paused. No Safari/Windows import, no 500 providers, no launch post, no tag `v0.1.2` until asked. FastAPI never returns secrets. Do not merge Tollgate. Do not auto-publish `docs/launch-posts.md`.
+Current recommended order: [`docs/product-maturity.md`](../../../docs/product-maturity.md) **v3**. Reliability before expansion. Autofill V1, Assist, Why, TOTP, `install.sh` (Intel Mac: Befehl → Fenster) are on `main`. Live `github.com/login` fill is opt-in e2e (one form, no submit). Next feelable: a stranger import test. **Do not rewrite crypto.** Agent/n8n is not the first screen. Apple notarization stays paused. No Safari/Windows import, no 500 providers, no launch post, no tag `v0.1.2` until asked. FastAPI never returns secrets. Do not merge Tollgate. Do not auto-publish `docs/launch-posts.md`.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 

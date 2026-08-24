@@ -1,6 +1,7 @@
 import { ext } from "./browser.ts";
 import { formatFillFailure, formatFillSuccess, type FillReason, type FillMode } from "./fill.ts";
 import { POPUP_SETTINGS_KEY, parsePopupSettings, popupSettingsForStore } from "./popup-settings.ts";
+import { isHttpUrl, pickFillTab } from "./tab-target.ts";
 
 const assistBtn = document.getElementById("assist") as HTMLButtonElement;
 let lastEntryId: string | undefined;
@@ -125,11 +126,35 @@ document.getElementById("lock")?.addEventListener("click", () => {
   void send({ type: "lock" }).then(() => render());
 });
 
+async function fillTargetTab(): Promise<chrome.tabs.Tab | undefined> {
+  const [focused] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+  const tabs = await ext.tabs.query({});
+  const http = tabs.filter((tab) => tab.id !== undefined && isHttpUrl(tab.url));
+  http.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  return pickFillTab(focused, http[0]);
+}
+
+async function requestTabOrigin(tab: chrome.tabs.Tab | undefined): Promise<void> {
+  if (!tab?.url || !ext.permissions?.request || !isHttpUrl(tab.url)) return;
+  const origins = [`${new URL(tab.url).origin}/*`];
+  try {
+    if (await ext.permissions.contains({ origins })) return;
+    await ext.permissions.request({ origins });
+  } catch {
+    // user denied, or the site is already in host_permissions
+  }
+}
+
 document.getElementById("fill")?.addEventListener("click", () => {
   clearError();
   assistBtn.hidden = true;
   picksEl.replaceChildren();
-  void send({ type: "fill-tab" }).then((result) => {
+  void fillTargetTab()
+    .then(async (tab) => {
+      await requestTabOrigin(tab);
+      return send({ type: "fill-tab", tabId: tab?.id });
+    })
+    .then((result) => {
     if (!result.ok) {
       showFillMiss(result);
       return;

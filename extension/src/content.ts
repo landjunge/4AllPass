@@ -13,7 +13,7 @@ import {
 
 function visibleInputs(): HTMLInputElement[] {
   return [...document.querySelectorAll("input")].filter((input) => {
-    if (input.type === "hidden" || input.disabled || input.readOnly) return false;
+    if (input.hidden || input.type === "hidden" || input.disabled || input.readOnly) return false;
     const style = getComputedStyle(input);
     return style.display !== "none" && style.visibility !== "hidden";
   });

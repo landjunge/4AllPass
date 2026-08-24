@@ -48,7 +48,7 @@ From the desktop Browser cards (open a card): **Demo-Login öffnen** saves a loo
 
 A miss prints erkannt / recognized, gefüllt / filled, Ergebnis / result — never the secret. If a password was filled but the username sat under 0.70, **Trotzdem füllen / Fill anyway** writes that field after an explicit click. Never a lone search box. Local Playwright: `npm run test:e2e:autofill-local -w @4allpass/frontend`.
 
-**GitHub.com:** two pages. Unlock the extension, open `https://github.com/login`, **Fill this page** (username), continue, **Fill this page** again (password). TOTP on the 2FA page if the entry has `totpSecret`. Not a multi-step engine.
+**GitHub.com** (2026-08): one form on `/login`. Unlock the extension, open `https://github.com/login`, **Fill this page** once (username + password). Chrome asks for `github.com` the first time (optional host permission). Do not click Sign in from tests. Opt-in: `LIVE_GITHUB=1 npm run test:e2e:autofill-github-live -w @4allpass/frontend` (test pack adds `github.com` host permission, same as Allow). Username-only / password-only still work if GitHub splits later — a second explicit fill, not a multi-step engine. TOTP on the 2FA page if the entry has `totpSecret`.
 
 ## Not in this slice
 

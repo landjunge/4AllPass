@@ -1,7 +1,7 @@
 # Plan — Browser-Sync ist die Basics
 
-Stand: 2026-08-23. **Plan, noch nicht gebaut.**  
-Produkt laut dir: Karten aller installierten Browser → Profile anhaken → Passwörter sind in 4AllPass und damit **sync** (ein Tresor, alle gewählten Profile).
+Stand: 2026-08-24. **Auf `main` gebaut** (Karten, Chrome/Firefox-Lesen, Review ohne Passwort).  
+Offen: **fremder Mac** (Mensch). Nicht: Safari-Keychain, Zurückschreiben, zweites Tauri.
 
 Kein Core-Rewrite. Kein zweites Tauri. FastAPI sieht weiter **keine** Klartext-Passwörter. Agent/n8n bleibt im Code, ist **nicht** der erste Bildschirm.
 
@@ -13,8 +13,8 @@ Kein Core-Rewrite. Kein zweites Tauri. FastAPI sieht weiter **keine** Klartext-P
 App auf → Tresor auf
     → Karten: Chrome, Firefox, Safari, Brave, Edge, …
     → Profil anhaken
-    → Passwörter stehen in der Liste
-    → auf Webseiten ausfüllen (Extension, die schon existiert)
+    → Review: Host + Username, keine Passwörter → Bestätigen
+    → Einträge im Tresor → auf Webseiten ausfüllen (Extension)
 ```
 
 Nicht: leerer Tresor. Nicht: Allow/Deny als Start.
@@ -166,17 +166,18 @@ Schritt 1+2 sind der Nutzen. Ohne die siehst du wieder nichts.
 
 ## Definition of Done (Basics)
 
-- [ ] Dieser Intel-Mac: App auf, Tresor auf, **Karten** der installierten Browser.
-- [ ] Zwei Chrome- oder Firefox-Profile anhaken → Review ohne Passwort → Bestätigen → Liste.
-- [ ] Server-SQLite bleibt undurchsichtig (kein Klartext in der DB).
-- [ ] Crypto-Tests (`npm test`) unverändert grün.
-- [ ] Access/n8n unverändert im Repo, nicht auf dem Startbildschirm.
-- [ ] README DE+EN: „Browser-Profile in den Tresor“, nicht „Agent-Zugang“ als erste Zeile.
-- [ ] Extension und Passwort-Import sind getrennte Haken. Keychain-Passwort nur beim Import, nie still.
+- [x] Dieser Intel-Mac: App auf, Tresor auf, **Karten** der installierten Browser. (Code + Fixture-E2E `browser-cards-import`. Fremder Mac bleibt Mensch.)
+- [x] Zwei Chrome- oder Firefox-Profile anhaken → Review ohne Passwort → Bestätigen → Liste. (`browser-cards-import` + Datei-CSV `import-review`. Keychain auf fremdem Mac: Mensch.)
+- [x] Server-SQLite bleibt undurchsichtig (kein Klartext in der DB).
+- [x] Crypto-Tests (`npm test`) unverändert grün.
+- [x] Access/n8n unverändert im Repo, nicht auf dem Startbildschirm.
+- [x] README DE+EN: „Browser-Profile in den Tresor“, nicht „Agent-Zugang“ als erste Zeile.
+- [x] Extension und Passwort-Import sind getrennte Haken. Keychain-Passwort nur beim Import, nie still.
+- [ ] Fremder Mac: dieselben Karten + Review ohne Passwort.
 
 ---
 
 ## Nächster Schritt (genau einer)
 
-Schritt 1: Tauri `list_browser_profiles` + Karten-UI. Noch **keine** Passwörter lesen.  
-Wenn die Karten auf diesem Mac stimmen: Schritt 2 Chrome lesen.
+**Fremder Mac:** App auf, Tresor, Browser-Karten, zwei Profile, Review ohne Passwort, Bestätigen.  
+Code und Fixture-E2E sind auf `main`. Safari-Import und Zurückschreiben nicht in dieser Reihenfolge.

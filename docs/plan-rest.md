@@ -24,7 +24,7 @@ Kein weiterer Code-Slice in dieser Reihenfolge.
 
 1. **Fremder Mac (P0, menschlich)**  
    App auf → Tresor → Browser-Karten → Import-Review **ohne Passwort in der Liste** → Bestätigen.  
-   Review-UI ist in CI für Datei-Import (`frontend/e2e/local/import-review`). Browser-Karten-Import auf einem fremden Rechner bleibt ein Mensch-Test.
+   Review-UI ist in CI für Datei-Import (`import-review`) und für Karten + zwei Profile (`browser-cards-import`, Tauri gemockt). Keychain auf einem fremden Rechner bleibt ein Mensch-Test.
 
 Live `github.com/login` (P1): **da** — ein Formular, ein Fill, kein Submit. Opt-in, kein CI: `LIVE_GITHUB=1 npm run test:e2e:autofill-github-live -w @4allpass/frontend`.
 

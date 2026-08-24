@@ -232,6 +232,7 @@ export function BrowserCards({
                             <label>
                               <input
                                 type="checkbox"
+                                data-testid={`browser-profile-${key}`}
                                 checked={selected.has(key)}
                                 onChange={() => toggleProfile(key)}
                               />

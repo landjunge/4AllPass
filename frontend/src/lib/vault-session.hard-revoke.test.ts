@@ -18,6 +18,7 @@ import {
   generateSalt,
   generateVaultKey,
   kdfParamsFrom,
+  parseRecoveryKey,
   wrapDeviceKey,
   wrapVaultKey,
 } from "@4allpass/crypto";
@@ -29,6 +30,7 @@ import { clearTestStorage } from "./test-storage-shim.ts";
 import {
   CommitConflict,
   hardRevokeDevice,
+  nextDeviceKeyVersion,
   setDeviceUnlockStoreForTests,
   type UnlockedVault,
 } from "./vault-session.ts";
@@ -263,6 +265,51 @@ test("hardRevokeDevice includes local device envelope when uv_gated_local and en
   assert.deepEqual(deviceIds, [SELF]);
   assert.ok(!deviceIds.includes(TARGET));
   assert.equal(committedPayload.current.vaultKeyVersion, 2);
+});
+
+test("nextDeviceKeyVersion increments on re-enrol and starts at 1", () => {
+  const vaultId = "vault-dkv";
+  const vaultKey = generateVaultKey();
+  const device = wrapVaultKey({
+    vaultKey,
+    wrappingKey: generateDeviceKey(),
+    vaultId,
+    type: "device",
+    vaultKeyVersion: 1,
+    deviceId: SELF,
+    deviceKeyVersion: 2,
+  });
+  assert.equal(nextDeviceKeyVersion([], SELF), 1);
+  assert.equal(nextDeviceKeyVersion([device], SELF), 3);
+  assert.equal(nextDeviceKeyVersion([device], TARGET), 1);
+});
+
+test("hardRevokeDevice refuses a recovery envelope that unwraps a different VK", async () => {
+  const { vault, recoveryKeyText } = buildUnlocked();
+  const otherKey = generateVaultKey();
+  const otherRecovery = wrapVaultKey({
+    vaultKey: otherKey,
+    wrappingKey: deriveRecoveryWrappingKey({
+      recoveryKey: parseRecoveryKey(recoveryKeyText),
+      vaultId: vault.vaultId,
+    }),
+    vaultId: vault.vaultId,
+    type: "recovery",
+    vaultKeyVersion: 1,
+  });
+  vault.envelopes = vault.envelopes.map((envelope) =>
+    envelope.type === "recovery" ? otherRecovery : envelope,
+  );
+  mockApis();
+  await assert.rejects(
+    () =>
+      hardRevokeDevice(vault, {
+        targetDeviceId: TARGET,
+        masterPassword: PASSWORD,
+        recoveryKeyText,
+      }),
+    /recovery key does not match the unlocked vault key/,
+  );
 });
 
 test("hardRevokeDevice does not rewrap when self envelope absent despite local DK", async () => {

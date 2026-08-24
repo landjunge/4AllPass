@@ -16,13 +16,14 @@ export function profileKey(browserId: string, profileId: string): string {
   return `${browserId}:${profileId}`;
 }
 
+export function isDesktopShell(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
 export async function listBrowserProfiles(): Promise<BrowserCard[] | null> {
-  try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    return await invoke<BrowserCard[]>("list_browser_profiles");
-  } catch {
-    return null;
-  }
+  if (!isDesktopShell()) return null;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return await invoke<BrowserCard[]>("list_browser_profiles");
 }
 
 export interface ExtensionInstall {

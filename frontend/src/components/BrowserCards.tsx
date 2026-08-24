@@ -34,7 +34,9 @@ export function BrowserCards({
   const loadedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    void listBrowserProfiles().then((found) => {
+    void listBrowserProfiles()
+      .then((found) => {
+      setError(null);
       setCards(found);
       if (!found) return;
       const saved = loadBrowserActive(vaultId);
@@ -51,7 +53,11 @@ export function BrowserCards({
       }
       if (found.length === 1) setOpenId(found[0]!.id);
       loadedFor.current = vaultId;
-    });
+      })
+      .catch((err) => {
+        setCards(null);
+        setError(err instanceof Error ? err.message : String(err));
+      });
   }, [vaultId]);
 
   const selectedCount = useMemo(() => selected.size, [selected]);
@@ -79,8 +85,9 @@ export function BrowserCards({
       <section className="card browser-cards" data-testid="browser-cards">
         <h3>Browser auf diesem Gerät</h3>
         <p className="muted">
-          Karten gibt es in der Desktop-App, nicht im Browser-Tab. / Cards are in the desktop app,
-          not a browser tab.
+          {error
+            ? error
+            : "Karten gibt es in der Desktop-App, nicht im Browser-Tab. / Cards are in the desktop app, not a browser tab."}
         </p>
       </section>
     );

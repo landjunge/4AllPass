@@ -30,10 +30,12 @@ import {
   encodeSealedManifest,
   encodeVaultSnapshot,
   encryptEntry,
+  equalBytes,
   formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
   generateVaultKey,
+  IntegrityError,
   kdfParamsFrom,
   parseRecoveryKey,
   revisionFromManifest,
@@ -215,15 +217,7 @@ async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
   if (snapshot.vaultId !== vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
-  assertFreshSnapshot(loadPin(vaultId), {
-    vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
-    ...(snapshot.sealedManifest
-      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
-      : {}),
-  });
+  assertFreshSnapshot(loadPin(vaultId), revisionClaim(snapshot));
   return snapshot;
 }
 
@@ -247,16 +241,28 @@ function sealSnapshotManifest(
   });
 }
 
+/**
+ * Content integrity pass plus the pin write (vault-revision.md §6).
+ *
+ * The pin is only ever written from a manifest that opened under this VK. The
+ * server's own `revision` / `vaultKeyVersion` are claims; pinning them let a
+ * server poison the pin to uint32 max (permanent self-inflicted DoS) and let it
+ * drop the manifest to roll entries back or re-attach a revoked device envelope.
+ * A snapshot with no manifest is therefore opened read-only: it is applied, but
+ * it never advances the pin, and `assertFreshSnapshot` refuses it outright once
+ * this vault has ever been pinned with a manifest.
+ */
 function openSnapshot(
   snapshot: VaultSnapshot,
   vaultKey: Uint8Array,
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
 ): UnlockedVault {
-  // verifySnapshot returns the plaintext it already had to produce to prove the
-  // snapshot is not mixed; decrypting a second time would only widen the window
-  // in which entry plaintext exists.
+  let entries = snapshot.entries;
+  let envelopes = snapshot.envelopes;
   if (snapshot.sealedManifest) {
+    // Use the records the manifest digests were computed over, not the ones the
+    // server handed us (crypto-protocol.md §8.2).
     const verified = verifySnapshotManifest(
       snapshot.sealedManifest,
       { entries: snapshot.entries, envelopes: snapshot.envelopes },
@@ -267,20 +273,18 @@ function openSnapshot(
         vaultKeyVersion: snapshot.vaultKeyVersion,
       },
     );
+    entries = verified.entries;
+    envelopes = verified.envelopes;
     savePin(revisionFromManifest(verified));
-  } else {
-    savePin({
-      vaultId: snapshot.vaultId,
-      revision: snapshot.revision,
-      vaultKeyVersion: snapshot.vaultKeyVersion,
-      cryptoProtocolVersion: 1,
-    });
   }
-  const entries: VaultEntry[] = verifySnapshot({
+  // verifySnapshot returns the plaintext it already had to produce to prove the
+  // snapshot is not mixed; decrypting a second time would only widen the window
+  // in which entry plaintext exists.
+  const decoded: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
     vaultKeyVersion: snapshot.vaultKeyVersion,
-    entries: snapshot.entries,
+    entries,
     crossCheckEnvelopes: crossChecks,
   }).map((entry) => {
     try {
@@ -294,9 +298,22 @@ function openSnapshot(
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
     vaultKey,
-    envelopes: snapshot.envelopes,
-    entries: entries.sort((a, b) => a.title.localeCompare(b.title)),
+    envelopes,
+    entries: decoded.sort((a, b) => a.title.localeCompare(b.title)),
     unlockedWith,
+  };
+}
+
+/** The freshness claim a snapshot makes, with the digest only when sealed. */
+function revisionClaim(snapshot: VaultSnapshot) {
+  return {
+    vaultId: snapshot.vaultId,
+    revision: snapshot.revision,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    ...(snapshot.sealedManifest
+      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
+      : {}),
   };
 }
 
@@ -306,6 +323,11 @@ async function acceptSnapshot(
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
 ): Promise<UnlockedVault> {
+  // Every snapshot that reaches the UI passes the pin, not just the ones from
+  // GET. A commit response is server-controlled too: answering a write with an
+  // older authentic snapshot used to rewind the pin and silently discard the
+  // write.
+  assertFreshSnapshot(loadPin(snapshot.vaultId), revisionClaim(snapshot));
   const vault = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks);
   try {
     await snapshotCache().save(snapshot.vaultId, encodeVaultSnapshot(snapshot));
@@ -369,6 +391,7 @@ export async function createVault(
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
+    assertCommittedWhatWeSent(committed, vaultId, 1, sealedManifest);
     const vault = await acceptSnapshot(committed, vaultKey, "master_password", [
       { envelope: masterEnvelopeOf(committed), wrappingKey: masterKey },
     ]);
@@ -495,6 +518,39 @@ export async function commitEntries(
   return commitSnapshot(vault, entries, vault.envelopes);
 }
 
+/**
+ * A 2xx to a commit does not mean the server stored what we sent. The response
+ * body is server-controlled: it can be an older authentic snapshot, or the same
+ * revision with a different manifest. We know exactly which bytes we published,
+ * so compare against those rather than only re-verifying self-consistency.
+ */
+function assertCommittedWhatWeSent(
+  committed: VaultSnapshot,
+  vaultId: string,
+  revision: number,
+  sealedManifest: Parameters<typeof sealedManifestDigest>[0],
+): void {
+  if (committed.vaultId !== vaultId) {
+    throw new IntegrityError("commit response is for a different vault");
+  }
+  if (committed.revision !== revision) {
+    throw new IntegrityError(
+      `commit response is revision ${committed.revision}, we published ${revision}`,
+    );
+  }
+  if (!committed.sealedManifest) {
+    throw new IntegrityError("commit response dropped the sealed manifest we published");
+  }
+  if (
+    !equalBytes(
+      sealedManifestDigest(committed.sealedManifest),
+      sealedManifestDigest(sealedManifest),
+    )
+  ) {
+    throw new IntegrityError("commit response carries a manifest we did not publish");
+  }
+}
+
 async function commitSnapshot(
   vault: UnlockedVault,
   entries: VaultEntry[],
@@ -543,6 +599,7 @@ async function commitSnapshot(
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
+    assertCommittedWhatWeSent(committed, vault.vaultId, nextRevision, sealedManifest);
     return acceptSnapshot(committed, vaultKey, vault.unlockedWith);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {

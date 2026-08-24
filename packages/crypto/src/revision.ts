@@ -57,7 +57,14 @@ function reject(
  * merely asserted lets a hostile server poison the pin (claim revision
  * 4 294 967 295 once and every honest snapshot afterwards looks like a
  * rollback), which is why the bounds in `assertRevisionFields` are enforced and
- * why the pin should be written from a verified manifest.
+ * why the pin must be written from a verified manifest — never from the
+ * metadata the server sent alongside it.
+ *
+ * A pin that carries a `manifestDigest` is a statement that this vault
+ * publishes manifests. From then on every answer must carry one, at any
+ * revision. Accepting a manifest-free answer for a later revision would hand
+ * the server rollback, truncation and revoked-device replay back for the price
+ * of incrementing a number.
  */
 export function evaluateRevision(
   lastSeen: VaultRevision | null,
@@ -90,22 +97,27 @@ export function evaluateRevision(
       ),
     );
   }
+  // Once *any* revision of this vault has been pinned from a verified manifest,
+  // the vault publishes manifests. An answer without one is not a legacy
+  // snapshot, it is the manifest check being dropped — and dropping it takes
+  // rollback detection, set-membership (revoked-device replay, truncation) and
+  // pin integrity with it. Restricting this to `incoming.revision ===
+  // lastSeen.revision` left the whole check optional: bump the number and the
+  // server is trusted again.
+  if (lastSeen.manifestDigest !== undefined && incoming.manifestDigest === undefined) {
+    return reject(
+      "mismatch",
+      new IntegrityError(
+        `vault ${incoming.vaultId} was pinned with a verified manifest at revision ${lastSeen.revision}; incoming revision ${incoming.revision} has none`,
+      ),
+    );
+  }
   if (incoming.revision === lastSeen.revision) {
     if (incoming.vaultKeyVersion !== lastSeen.vaultKeyVersion) {
       return reject("mismatch", new IntegrityError("same revision but different vaultKeyVersion"));
     }
-    if (lastSeen.manifestDigest !== undefined) {
-      // Once a revision has been pinned with a verified manifest, an answer for
-      // that same revision must come with the same manifest — and must come with
-      // one at all, otherwise the check could simply be dropped.
-      if (incoming.manifestDigest === undefined) {
-        return reject(
-          "mismatch",
-          new IntegrityError(
-            `revision ${incoming.revision} was pinned with a verified manifest; incoming state has none`,
-          ),
-        );
-      }
+    if (lastSeen.manifestDigest !== undefined && incoming.manifestDigest !== undefined) {
+      // The same revision must come back with the same manifest.
       if (bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)) {
         return reject(
           "mismatch",

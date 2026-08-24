@@ -130,21 +130,33 @@ cannot restore access without it.
 1. User enters the key; the client normalizes and checksums it before doing any work.
 2. Derive RWK, unwrap the Recovery Envelope against `expectType: "recovery"` and the
    snapshot's `vaultKeyVersion`.
-3. The vault is unlocked, but the recovery secret is now "used": the client must
+3. The vault is unlocked, but the recovery secret is now "used": the client should
    immediately offer to set a new Master Password (new Master Envelope) and to
    re-enrol devices.
 
+   **Not implemented.** `unlockWithRecoveryKey` unlocks and stops there;
+   `app-state.tsx` shows no such prompt, and there is no master-password change
+   flow anywhere in the PWA.
+
 ### Rotation
 
-Issuing a new Recovery Key is a normal snapshot write: generate a new key, derive a
-new RWK, replace the Recovery Envelope, commit revision `N+1`. Because the old
-envelope is absent from the new snapshot, the old kit stops working as soon as the
+**Not implemented.** Nothing in the PWA issues a new Recovery Key after vault
+creation — `generateRecoveryKey` is called only by `createVault` and by
+`buildSharePackage` (which mints an unrelated share key). Everything in this
+subsection describes the intended design, not shipped behaviour.
+
+Issuing a new Recovery Key would be a normal snapshot write: generate a new key,
+derive a new RWK, replace the Recovery Envelope, commit revision `N+1`. Because the
+old envelope is absent from the new snapshot, the old kit stops working as soon as the
 new revision is pinned — subject to the same "a malicious server can withhold the
 new snapshot" caveat as any other revocation.
 
-If the Recovery Key may have been exposed, treat it as a compromised secret that
-knows VK: perform a **hard rotation** (`vault-revision.md` §5), not just an envelope
-replacement.
+If the Recovery Key may have been exposed, a **hard rotation**
+(`vault-revision.md` §5) is *not* the remedy, despite rotating VK.
+`hardRevokeDevice` requires the recovery key as input and re-wraps VK₂ under the
+same RWK, so the exposed kit opens the rotated vault too. Until Recovery Key
+rotation exists, the only way to retire an exposed kit is to create a new vault
+and move the entries across (a share file plus `restoreFromShare` does this).
 
 ---
 
@@ -152,7 +164,9 @@ replacement.
 
 - A stolen Emergency Kit is full vault access. Offline storage is the only control.
 - A printed kit cannot be revoked retroactively; only rotation plus a pinned newer
-  revision removes its usefulness.
+  revision would remove its usefulness, and rotation is not implemented.
+- A Vault-Key rotation does not retire the kit: the same Recovery Key opens the
+  new Recovery Envelope.
 - The checksum protects against typos, not against a maliciously modified printout.
 
 ## 6. Team split (not implemented)

@@ -512,3 +512,167 @@ F-19) layer on top.
 two things in this branch's code that the crypto package's own config accepted: unused
 imports left behind by the framing change, and a constructor parameter property in the
 manifest parser. Both fixed. Worth noting for its own sake: the merge was a review too.
+
+---
+
+## 6. Third pass — the callers (PWA, extension, backend)
+
+**Date:** 2026-08-24
+**Scope:** `frontend/src/lib`, `extension/src`, `backend/app/services/snapshots.py`.
+Same method and same stance: malicious server, hostile local store.
+
+`packages/crypto` held up. Every finding below is a **caller** that had the
+right primitive available and did not use it, which is the failure mode a
+library-only review cannot see. F-01, F-09, F-10, F-11 and F-17 were all
+genuinely fixed *in the library* and all five were reachable again through the
+PWA, because the PWA had a branch that skipped the manifest entirely.
+
+### F-24 — A missing `sealedManifest` disabled the whole freshness story · **high** · regression of F-01/F-09/F-10/F-11/F-17
+
+`openSnapshot` (`frontend/src/lib/vault-session.ts`) treated an absent
+`sealedManifest` as "legacy snapshot" and pinned the `revision` and
+`vaultKeyVersion` the *server* had asserted. `evaluateRevision` only demanded a
+manifest when `incoming.revision === lastSeen.revision` (the F-17 fix), so
+incrementing the number was enough to opt out. Three attacks, all reproduced
+against the real unlock path:
+
+- **Entry rollback.** Pin revision 5 from an honest sealed snapshot, then answer
+  revision 6 with the pre-rotation entry record and no manifest. The client
+  unlocked and showed the old password. F-01 and F-11 both defeated.
+- **Revoked-device re-attach.** Same trick, adding back the device envelope of a
+  revoked laptop. F-11 defeated. (The backend refuses this for devices with
+  `revoked_at`, but a *malicious server* is the attacker here.)
+- **Pin poisoning.** Answer with `revision = 4294967295` and no manifest. The
+  client pinned it, and every honest snapshot afterwards was a `RollbackError` —
+  the permanent self-inflicted DoS F-09 exists to prevent, reachable again
+  because the bound was enforced but the value was still unverified.
+
+**Fix:** `evaluateRevision` now refuses a manifest-free state at *any* revision
+once the pin carries a digest — a pin with a digest is the statement that this
+vault publishes manifests. `openSnapshot` never writes a pin from unverified
+metadata: a manifest-free snapshot is applied but does not advance the pin, so a
+genuinely pre-manifest vault still opens (`vault-revision.md` §6) without
+handing the server a pin it chose.
+
+Tests: `refuses to drop the manifest check by advancing the revision`,
+`still accepts a manifest-free advance when nothing was ever pinned with one`
+(`packages/crypto/test/adversarial-freshness.test.ts`); the three attacks above
+plus `never writes a pin from a manifest-free snapshot`
+(`frontend/src/lib/vault-session.freshness.test.ts`).
+
+### F-25 — Commit responses were applied and pinned without any freshness check · **high** · new
+
+`acceptSnapshot` ran the pin only on the GET path. `fetchFreshSnapshot` called
+`assertFreshSnapshot`; `commitSnapshot` did not. A commit response is just as
+server-controlled as a GET, so answering a write with an older *authentic*
+snapshot moved the pin **backwards**: at pin 12, a response of revision 3 was
+applied, the user's edit vanished, old entries reappeared in the UI, and
+revisions 4–11 became replayable afterwards. The response body being genuine and
+openable under VK is exactly why per-object AEAD does not help.
+
+**Fix:** `acceptSnapshot` runs `assertFreshSnapshot` for every snapshot that
+reaches the UI. On top of that the commit path knows the bytes it published, so
+`assertCommittedWhatWeSent` requires the response to carry the same vault, the
+revision we sent, and a manifest with the digest we sealed — a 2xx is not
+evidence that the server stored what it was given.
+
+Tests: `refuses a commit answered with an older authentic snapshot`, `refuses a
+commit answered with a manifest we did not publish`, `refuses a commit whose
+response has no sealed manifest`.
+
+### F-26 — The browser extension had no freshness protection at all · **high** · new
+
+`extension/src/unlock.ts` decoded the snapshot, unwrapped the master envelope
+and called `verifySnapshot`. That is the content pass only: no revision pin, no
+`verifySnapshotManifest`, no `sealedManifestDigest`. A server could serve any
+historical snapshot and the extension would autofill a password the user had
+already rotated — the worst place for a stale secret, because it is typed into a
+live login form without the user reading it.
+
+**Fix:** `unlockVault` refuses a replay against a stored pin before deriving the
+master key, requires the manifest to describe the exact record set, decrypts the
+records the manifest committed to, and pins only what the manifest proved. The
+pin store is injectable (`extension/src/revision-pin.ts`) with the
+`ext.storage.local` implementation in `extension/src/pin-store.ts`.
+
+Tests: `extension/test/unlock-freshness.test.ts`.
+
+### F-27 — `deviceKeyVersion` had no monotonic floor · **medium** · new
+
+`vaultKeyVersion` is monotonic on the server and checked on every open path.
+`deviceKeyVersion` was neither. Consequences:
+
+- `hardRevokeDevice` read the generation from the local IndexedDB record
+  (`tryLocalDeviceKey`). A hostile local store could offer a superseded
+  generation-1 record, and hard revoke would publish a Device Envelope at
+  generation 1 wrapping the **new** Vault Key — re-arming a Device Key that a
+  re-enrolment had retired, right in the operation whose purpose is to cut old
+  key material off.
+- Nothing on the server refused a device envelope whose `deviceKeyVersion` was
+  below the one in the active snapshot.
+
+Note the DWK does not depend on `deviceKeyVersion` (`dwkHkdfInfo` binds rpId,
+vaultId, deviceId, credentialId and the crypto version), which is correct — the
+Device Key is what rotates — but it does mean the same PRF output re-derives the
+DWK for a retired generation, so the floor has to be enforced explicitly.
+
+**Fix:** `tryLocalDeviceKey` takes the expected generation from the
+manifest-verified device envelope in the current snapshot and refuses a record
+that disagrees. `commit_snapshot` rejects a device envelope below the active
+snapshot's generation for that device, alongside the existing
+`vaultKeyVersion must not decrease`.
+
+Tests: `hardRevokeDevice refuses a local record whose deviceKeyVersion is behind
+the snapshot`, `hardRevokeDevice rewraps at the generation the snapshot
+declares`, `test_device_key_version_must_not_decrease`.
+
+### F-28 — `openSnapshot` decrypted the server's records, not the verified ones · **low** · regression of the §8.2 rule
+
+`crypto-protocol.md` §8.2 says to apply `verified.entries` / `verified.envelopes`
+from `verifySnapshotManifest` — the exact buffers the digests were computed
+over — and `share.ts` does. `openSnapshot` discarded them and passed
+`snapshot.entries` / `snapshot.envelopes` on, returning the unverified envelope
+array in `UnlockedVault`. Not exploitable today, because `wire.ts` produces plain
+objects with `Uint8Array` fields, so the two arrays hold the same buffers. It is
+still the TOCTOU shape F-18 and F-19 were about, and it stops being equivalent
+the moment anything upstream of it yields getters or a Proxy. Now fixed.
+
+### Checked and found sound (third pass)
+
+- **No Vault Key is ever derived from a password.** `generateVaultKey()` is the
+  only source; the Master Key wraps it and never becomes it.
+- **Raw PRF output is never a key.** `assertPrfOutput` hands 32 bytes straight to
+  `deriveDeviceWrappingKey`, which HKDFs them and rejects all-zero input.
+  `unwrapVaultKeyWithPrfOutput` zeroizes the PRF output, the DWK and the DK, and
+  builds the DWK from the *caller's* expectations, so a foreign Device-Key
+  Envelope cannot supply the fields that would open it.
+- **Hard revoke does rotate.** `hardRevokeDevice` verifies the master password
+  (and the recovery key when a recovery envelope exists) against the VK it holds,
+  generates VK₂, increments `vaultKeyVersion`, re-seals every entry, omits the
+  target, seals the manifest, and commits under CAS *before* the metadata
+  DELETE. On 409 the DELETE does not run.
+- **Soft revoke is not sold as erase.** `revokeDevice`'s comment, the API's
+  `revocation: "metadata_only"`, and `security-boundary.md` all say the same
+  thing.
+- **No server-side recovery.** No email reset, no OAuth path, no server-held
+  recovery material. `deriveRecoveryWrappingKey` is vault-bound, so a share key
+  cannot open a real vault's recovery envelope and vice versa.
+- **Share key vs recovery key.** `buildSharePackage` mints a *separate* random
+  key over a separate `share_*` vault id. `openSharePackage` requires a sealed
+  manifest — the check `openSnapshot` was missing, done correctly one file over.
+- **Desktop PRF is not over-claimed.** `docs/desktop.md` §"WebAuthn PRF" states
+  the Tauri webview reports no `prf` extension and says to unlock with the vault
+  password. No second wrap protocol pretends otherwise.
+- **The recovery kit is not skippable.** `RecoveryKitDialog` is a modal with no
+  backdrop or escape dismissal and a required confirmation checkbox before
+  Continue.
+
+### Residual risks (third pass)
+
+| Risk | Why it stays |
+|---|---|
+| Pin-on-first-use, still | Unchanged from the first pass, and F-24 made it worse while it lasted. A fresh client with no pin takes what it is given; the manifest proves consistency, not recency. |
+| Recovery Key rotation is not implemented | There is no UI or client function to issue a new Recovery Key, and `hardRevokeDevice` re-wraps VK₂ under the **same** RWK. `recovery.md` §4 told users a hard rotation was the remedy for an exposed kit; it is not. Corrected there, but the capability is still missing. |
+| No "set a new Master Password" after recovery unlock | `recovery.md` §4 requires the client to offer it. `app-state.tsx` does not, and no master-password change flow exists at all. |
+| Extension pin lives in `ext.storage.local` | Same hostile-local-store caveat as the PWA's `localStorage` pin. Clearing it reverts that client to pin-on-first-use. |
+| Backend `deviceKeyVersion` floor is the *active snapshot*, not a high-water mark | If a device envelope is absent for a revision (soft revoke, or hard revoke without a local DK) the floor is lost until it reappears. Re-attaching after a metadata revoke is refused separately, so the remaining window is narrow, but a per-device high-water column would close it properly. |

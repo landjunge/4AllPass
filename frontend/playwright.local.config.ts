@@ -44,7 +44,7 @@ export default defineConfig({
   projects: [
     {
       name: "first-run",
-      testMatch: /first-run-access/,
+      testMatch: /first-run-access|import-review/,
       use: { baseURL: `http://127.0.0.1:${firstPort}` },
     },
     {

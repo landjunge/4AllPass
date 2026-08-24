@@ -116,7 +116,7 @@ These numbers are a **target if and only if** the matching function is finished,
 |---|---:|---|
 | Cryptography | 9.5 | Strong v1 (AES-256-GCM, Argon2id, envelopes) — **no third-party audit** |
 | Zero-Knowledge architecture | 9.5 | Server is storage; claims live in `security-boundary.md` |
-| Device security | 9.5 | PRF unlock + hard revoke on main; two-Playwright-profile hard-revoke e2e on main |
+| Device security | 9.5 | Hard revoke on main (two Playwright profiles). Desktop PRF in WKWebView is **unproven** |
 | Vault integrity | 9.5 | Sealed manifest + CAS |
 | Recovery | 9 | Recovery key + kit; no server reset |
 | WebAuthn | 9 | PRF > largeBlob > UV-gated; COSE is ceremony only |

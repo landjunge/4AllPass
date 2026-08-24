@@ -232,7 +232,8 @@ Sicherheit:
 P0:
 
 - [x] Dieser Intel-Mac: `scripts/install.sh` → Fenster, Vault bleibt.
-- [ ] Fremder: App auf, Tresor, Browser-Karten, Import-Review ohne Passwort in der Liste.
+- [x] Import-Review: Host + Username, nie Passwort (Playwright `import-review`, Datei-CSV). Browser-Karten-Import auf einem **fremden** Mac bleibt ein menschlicher Check.
+- [ ] Fremder Mac: App auf, Tresor, Browser-Karten, derselbe Review.
 - [x] `evilgithub.com` wird nicht zu GitHub. (`packages/providers` + Extension-Match-Tests)
 
 P1:
@@ -253,7 +254,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Fremder-Import:** App auf fremdem Mac, Browser-Karten, Import-Review ohne Passwort in der Liste. GitHub-förmiges Fill ist in der Fixture. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
+**Fremder Mac:** Browser-Karten + Import-Review (Passwort nie in der Liste). Review-UI ist in CI für Datei-Import. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
 **Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 

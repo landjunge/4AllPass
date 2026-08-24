@@ -735,69 +735,66 @@ export function VaultPage(): ReactNode {
                   ? "Keychain hat freigegeben. Bestätigen verschlüsselt die Logins in deinen Tresor. Der Server sieht sie nicht. / Keychain granted. Confirm encrypts into your vault. The server never sees them."
                   : plaintextImportWarning()}
             </p>
-            {importPending.source === "browser" ? (
-              <div className="import-review" data-testid="import-review">
-                <p className="muted">
-                  {importPending.picked.length} / {importPending.entries.length} gewählt. Keine Passwörter
-                  in dieser Liste. / selected. No passwords in this list.
-                </p>
-                <div className="actions">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setImportPending({
-                        ...importPending,
-                        picked: importPending.entries.map((entry) => entry.id),
-                      })
-                    }
-                  >
-                    Alle / All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImportPending({ ...importPending, picked: [] })}
-                  >
-                    Keine / None
-                  </button>
-                </div>
-                <ul>
-                  {importReviewRows(importPending.entries).map((row) => (
-                    <li key={row.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={importPending.picked.includes(row.id)}
-                          onChange={() => {
-                            const on = importPending.picked.includes(row.id);
-                            setImportPending({
-                              ...importPending,
-                              picked: on
-                                ? importPending.picked.filter((id) => id !== row.id)
-                                : [...importPending.picked, row.id],
-                            });
-                          }}
-                        />
-                        <span>
-                          <strong>{row.title || row.url}</strong>
-                          <span className="muted">
-                            {" "}
-                            {row.username}
-                            {row.provider
-                              ? ` · ${row.provider}${row.confidence >= 0.95 ? "" : " ?"}`
-                              : ""}
-                          </span>
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
+            <div className="import-review" data-testid="import-review">
               <p className="muted">
-                {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
-                this device, then committed as the next revision.
+                {t(
+                  {
+                    de: `${importPending.picked.length} / ${importPending.entries.length} gewählt. Keine Passwörter in dieser Liste.`,
+                    en: `${importPending.picked.length} / ${importPending.entries.length} selected. No passwords in this list.`,
+                  },
+                )}
               </p>
-            )}
+              <div className="actions">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setImportPending({
+                      ...importPending,
+                      picked: importPending.entries.map((entry) => entry.id),
+                    })
+                  }
+                >
+                  {t({ de: "Alle", en: "All" })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportPending({ ...importPending, picked: [] })}
+                >
+                  {t({ de: "Keine", en: "None" })}
+                </button>
+              </div>
+              <ul>
+                {importReviewRows(importPending.entries).map((row) => (
+                  <li key={row.id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={importPending.picked.includes(row.id)}
+                        onChange={() => {
+                          const on = importPending.picked.includes(row.id);
+                          setImportPending({
+                            ...importPending,
+                            picked: on
+                              ? importPending.picked.filter((id) => id !== row.id)
+                              : [...importPending.picked, row.id],
+                          });
+                        }}
+                      />
+                      <span>
+                        <strong>{row.title || row.url}</strong>
+                        <span className="muted">
+                          {" "}
+                          {row.username}
+                          {row.provider
+                            ? ` · ${row.provider}${row.confidence >= 0.95 ? "" : " ?"}`
+                            : ""}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="actions">
               <button
                 type="button"

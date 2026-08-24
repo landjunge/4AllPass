@@ -4,6 +4,7 @@ import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
+import { extensionPinStore } from "./pin-store.ts";
 import { unlockVault } from "./unlock.ts";
 
 interface SessionState {
@@ -304,6 +305,7 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
         email: String(message.email ?? ""),
         accountPassword: String(message.accountPassword ?? ""),
         vaultPassword: String(message.vaultPassword ?? ""),
+        pins: extensionPinStore(),
       });
       session = {
         apiOrigin,

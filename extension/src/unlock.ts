@@ -1,11 +1,17 @@
 import {
+  assertFreshSnapshot,
   decodeVaultSnapshot,
   deriveMasterKeyFromEnvelope,
+  IntegrityError,
+  revisionFromManifest,
+  sealedManifestDigest,
   unwrapVaultKey,
   verifySnapshot,
+  verifySnapshotManifest,
   zeroize,
   type KeyEnvelope,
 } from "@4allpass/crypto";
+import { memoryPinStore, type PinStore } from "./revision-pin.ts";
 
 export interface VaultItem {
   id: string;
@@ -75,13 +81,26 @@ export function storageAuthRequest(
   return { path: "/auth/login", body: { email: mail, password: accountPassword } };
 }
 
+/**
+ * Master-password unlock for the extension.
+ *
+ * The extension gets its snapshot from the same server the PWA does, so it runs
+ * the same two checks before anything is filled into a page: the pin refuses a
+ * replayed older snapshot, and the sealed manifest proves *which* records belong
+ * to this revision. Skipping them meant a server could serve a pre-rotation
+ * snapshot and the extension would autofill a password the user had already
+ * changed.
+ */
 export async function unlockVault(options: {
   apiOrigin: string;
   deviceId: string;
   email: string;
   accountPassword: string;
   vaultPassword: string;
+  /** Defaults to a per-call memory store, which is no protection; pass a real one. */
+  pins?: PinStore;
 }): Promise<{ token: string; vaultId: string; entries: VaultItem[] }> {
+  const pins = options.pins ?? memoryPinStore();
   const auth = storageAuthRequest(options.email, options.accountPassword);
   const session = await apiRequest<{ token: string }>(
     options.apiOrigin,
@@ -108,6 +127,19 @@ export async function unlockVault(options: {
     `/vaults/${vaultId}/snapshot`,
   );
   const snapshot = decodeVaultSnapshot(wire);
+  if (snapshot.vaultId !== vaultId) {
+    throw new IntegrityError("server returned a snapshot for a different vault");
+  }
+  // Refuse a replay before any key material is derived.
+  assertFreshSnapshot(await pins.load(vaultId), {
+    vaultId: snapshot.vaultId,
+    revision: snapshot.revision,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    ...(snapshot.sealedManifest
+      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
+      : {}),
+  });
   const master = snapshot.envelopes.find((envelope: KeyEnvelope) => envelope.type === "master");
   if (!master) throw new Error("snapshot has no master envelope");
   const masterKey = deriveMasterKeyFromEnvelope(options.vaultPassword, master);
@@ -119,11 +151,28 @@ export async function unlockVault(options: {
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
     try {
+      let records = snapshot.entries;
+      if (snapshot.sealedManifest) {
+        const verified = verifySnapshotManifest(
+          snapshot.sealedManifest,
+          { entries: snapshot.entries, envelopes: snapshot.envelopes },
+          {
+            vaultKey,
+            vaultId,
+            revision: snapshot.revision,
+            vaultKeyVersion: snapshot.vaultKeyVersion,
+          },
+        );
+        records = verified.entries;
+        // Only a verified manifest is pinnable; the server's own numbers are a
+        // claim, and pinning those is how the pin gets poisoned.
+        await pins.save(revisionFromManifest(verified));
+      }
       const entries = verifySnapshot({
         vaultId,
         vaultKey,
         vaultKeyVersion: snapshot.vaultKeyVersion,
-        entries: snapshot.entries,
+        entries: records,
         crossCheckEnvelopes: [{ envelope: master, wrappingKey: masterKey }],
       }).map((entry) => {
         try {

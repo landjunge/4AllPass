@@ -92,6 +92,8 @@ function mockApis(): {
 function buildUnlocked(options?: {
   includeSelfDevice?: boolean;
   deviceKey?: Uint8Array;
+  /** Generation of this device's envelope in the snapshot. Manifest-verified. */
+  selfDeviceKeyVersion?: number;
 }): { vault: UnlockedVault; recoveryKeyText: string; deviceKey: Uint8Array } {
   localStorage.setItem("4allpass.deviceId", SELF);
   const vaultId = "vault-hard-revoke-test-1";
@@ -135,7 +137,7 @@ function buildUnlocked(options?: {
         type: "device",
         vaultKeyVersion: 1,
         deviceId: SELF,
-        deviceKeyVersion: 1,
+        deviceKeyVersion: options.selfDeviceKeyVersion ?? 1,
       }),
     );
   }
@@ -161,7 +163,11 @@ function buildUnlocked(options?: {
   return { vault, recoveryKeyText: formatRecoveryKey(recoveryKey), deviceKey };
 }
 
-async function seedLocalDeviceStore(vaultId: string, deviceKey: Uint8Array): Promise<void> {
+async function seedLocalDeviceStore(
+  vaultId: string,
+  deviceKey: Uint8Array,
+  deviceKeyVersion = 1,
+): Promise<void> {
   const wrappingKey = generateDeviceKey();
   const deviceKeyEnvelope = wrapDeviceKey({
     deviceKey,
@@ -169,7 +175,7 @@ async function seedLocalDeviceStore(vaultId: string, deviceKey: Uint8Array): Pro
     vaultId,
     deviceId: SELF,
     credentialId: CREDENTIAL_ID,
-    deviceKeyVersion: 1,
+    deviceKeyVersion,
   });
   const store = memoryDeviceUnlockStore([
     {
@@ -178,7 +184,7 @@ async function seedLocalDeviceStore(vaultId: string, deviceKey: Uint8Array): Pro
       rpId: "localhost",
       credentialId: bytesToBase64(CREDENTIAL_ID),
       mechanism: "uv_gated_local",
-      deviceKeyVersion: 1,
+      deviceKeyVersion,
       deviceKeyEnvelope: encodeDeviceKeyEnvelope(deviceKeyEnvelope),
       wrappingKey: bytesToBase64(wrappingKey),
       createdAt: new Date().toISOString(),
@@ -263,6 +269,57 @@ test("hardRevokeDevice includes local device envelope when uv_gated_local and en
   assert.deepEqual(deviceIds, [SELF]);
   assert.ok(!deviceIds.includes(TARGET));
   assert.equal(committedPayload.current.vaultKeyVersion, 2);
+});
+
+test("hardRevokeDevice refuses a local record whose deviceKeyVersion is behind the snapshot", async () => {
+  // This device re-enrolled: the snapshot's envelope is generation 2, and the
+  // Device Key behind generation 1 is retired. A hostile local store offering
+  // the stale generation-1 record used to be believed, and hard revoke would
+  // publish a Device Envelope at generation 1 under the *new* Vault Key —
+  // re-arming a Device Key the re-enrolment had already retired.
+  const { vault, recoveryKeyText, deviceKey } = buildUnlocked({
+    includeSelfDevice: true,
+    selfDeviceKeyVersion: 2,
+  });
+  await seedLocalDeviceStore(vault.vaultId, deviceKey, 1);
+  const { committedPayload } = mockApis();
+
+  await hardRevokeDevice(vault, {
+    targetDeviceId: TARGET,
+    masterPassword: PASSWORD,
+    recoveryKeyText,
+  });
+
+  assert.ok(committedPayload.current);
+  const devices = committedPayload.current.envelopes.filter((env) => env.type === "device");
+  assert.deepEqual(
+    devices.map((env) => env.deviceKeyVersion),
+    [],
+    "no device envelope may be published from a superseded local generation",
+  );
+  assert.equal(committedPayload.current.vaultKeyVersion, 2);
+});
+
+test("hardRevokeDevice rewraps at the generation the snapshot declares", async () => {
+  const { vault, recoveryKeyText, deviceKey } = buildUnlocked({
+    includeSelfDevice: true,
+    selfDeviceKeyVersion: 3,
+  });
+  await seedLocalDeviceStore(vault.vaultId, deviceKey, 3);
+  const { committedPayload } = mockApis();
+
+  await hardRevokeDevice(vault, {
+    targetDeviceId: TARGET,
+    masterPassword: PASSWORD,
+    recoveryKeyText,
+  });
+
+  assert.ok(committedPayload.current);
+  const devices = committedPayload.current.envelopes.filter((env) => env.type === "device");
+  assert.deepEqual(
+    devices.map((env) => [env.deviceId, env.deviceKeyVersion]),
+    [[SELF, 3]],
+  );
 });
 
 test("hardRevokeDevice does not rewrap when self envelope absent despite local DK", async () => {

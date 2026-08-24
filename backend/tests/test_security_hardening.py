@@ -53,13 +53,15 @@ def _master_envelope(vault_key_version: int = 1, ciphertext: str | None = None) 
     }
 
 
-def _device_envelope(device_id: str, vault_key_version: int = 1) -> dict:
+def _device_envelope(
+    device_id: str, vault_key_version: int = 1, device_key_version: int = 1
+) -> dict:
     return {
         "version": 1,
         "type": "device",
         "vaultKeyVersion": vault_key_version,
         "deviceId": device_id,
-        "deviceKeyVersion": 1,
+        "deviceKeyVersion": device_key_version,
         "encryption": "AES-256-GCM",
         "nonce": "AAAAAAAAAAAAAAAA",
         "ciphertext": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=",
@@ -1105,6 +1107,61 @@ async def test_snapshot_without_master_envelope_is_rejected(client):
     vault_id = await _vault(client, alice)
     response = await _commit(client, alice, vault_id, envelopes=[_device_envelope(DEVICE_A)])
     assert response.status_code == 422
+
+
+async def test_device_key_version_must_not_decrease(client):
+    """A re-enrolment retires the previous Device Key.
+
+    Publishing an envelope at the older generation re-arms it, so the server
+    refuses it for the same reason it refuses a vaultKeyVersion decrease. The
+    server still never opens the envelope; it only reads the claimed generation.
+    """
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+
+    first = await _commit(
+        client,
+        alice,
+        vault_id,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A, device_key_version=1)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert first.status_code == 200, first.text
+
+    reenrolled = await _commit(
+        client,
+        alice,
+        vault_id,
+        revision=2,
+        expectedRevision=1,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A, device_key_version=2)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert reenrolled.status_code == 200, reenrolled.text
+
+    rolled_back = await _commit(
+        client,
+        alice,
+        vault_id,
+        revision=3,
+        expectedRevision=2,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A, device_key_version=1)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert rolled_back.status_code == 422, rolled_back.text
+    assert "deviceKeyVersion" in rolled_back.text
+
+    # Holding the generation, and advancing it, both stay legal.
+    same = await _commit(
+        client,
+        alice,
+        vault_id,
+        revision=3,
+        expectedRevision=2,
+        envelopes=[_master_envelope(), _device_envelope(DEVICE_A, device_key_version=2)],
+        sealedManifest=_sealed_manifest(),
+    )
+    assert same.status_code == 200, same.text
 
 
 async def test_inactive_user_cannot_use_a_live_token(client, engine):

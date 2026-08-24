@@ -614,10 +614,18 @@ async function commitSnapshot(
  * WebAuthn ceremony. That means a local wrapping key plus a stored device-key
  * envelope (typically `uv_gated_local`). PRF / largeBlob need an authenticator
  * `get` and are skipped; the caller omits the device envelope and re-enrols.
+ *
+ * `expectDeviceKeyVersion` comes from the manifest-verified device envelope in
+ * the current snapshot, not from the local record. The local store is hostile in
+ * this threat model: left to name its own generation it could hand back a
+ * superseded Device Key, and hard revoke would then publish a Device Envelope at
+ * that older generation — re-arming a DK that a re-enrolment had already
+ * retired, under the new Vault Key.
  */
 async function tryLocalDeviceKey(
   vaultId: string,
   currentDeviceId: string,
+  expectDeviceKeyVersion: number,
 ): Promise<{ deviceKey: Uint8Array; deviceKeyVersion: number } | null> {
   let record;
   try {
@@ -626,6 +634,7 @@ async function tryLocalDeviceKey(
     return null;
   }
   if (!record?.wrappingKey || !record.deviceKeyEnvelope) return null;
+  if (record.deviceKeyVersion !== expectDeviceKeyVersion) return null;
   const wrappingKey = base64ToBytes(record.wrappingKey);
   try {
     const deviceKeyEnvelope = decodeDeviceKeyEnvelope(record.deviceKeyEnvelope);
@@ -634,9 +643,9 @@ async function tryLocalDeviceKey(
       vaultId,
       deviceId: currentDeviceId,
       credentialId: base64ToBytes(record.credentialId),
-      deviceKeyVersion: record.deviceKeyVersion,
+      deviceKeyVersion: expectDeviceKeyVersion,
     });
-    return { deviceKey, deviceKeyVersion: record.deviceKeyVersion };
+    return { deviceKey, deviceKeyVersion: expectDeviceKeyVersion };
   } catch {
     return null;
   } finally {
@@ -832,11 +841,15 @@ export async function hardRevokeDevice(
   let localDevice: { deviceKey: Uint8Array; deviceKeyVersion: number } | null = null;
   // Only continue an existing device enrolment. Leftover IndexedDB after a soft
   // revoke must not re-attach this device (would 422 if revoked_at is set).
-  const selfEntitled = vault.envelopes.some(
+  const selfEnvelope = vault.envelopes.find(
     (envelope) => envelope.type === "device" && envelope.deviceId === currentId,
   );
-  if (targetDeviceId !== currentId && selfEntitled) {
-    localDevice = await tryLocalDeviceKey(vault.vaultId, currentId);
+  if (targetDeviceId !== currentId && selfEnvelope?.deviceKeyVersion !== undefined) {
+    localDevice = await tryLocalDeviceKey(
+      vault.vaultId,
+      currentId,
+      selfEnvelope.deviceKeyVersion,
+    );
   }
 
   let transferredVaultKey = false;

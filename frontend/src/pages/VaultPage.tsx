@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 import { demoGithubDraft } from "../lib/access-demo.ts";
+import { autofillDemoDraft, isAutofillDemoEntry } from "../lib/autofill-demo.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { detectCredential, draftFromDetection } from "../lib/detect.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../lib/providers.ts";
@@ -11,7 +12,13 @@ import {
   type EntryDraft,
   type VaultEntry,
 } from "../lib/entries.ts";
-import { parsePlaintextExport, plaintextImportWarning } from "../lib/import.ts";
+import {
+  entriesFromBrowserLogins,
+  importReviewRows,
+  mergeImportedLogins,
+  parsePlaintextExport,
+  plaintextImportWarning,
+} from "../lib/import.ts";
 import {
   buildSharePackage,
   downloadShareFile,
@@ -20,8 +27,11 @@ import {
   shareWarning,
   type BuiltShare,
 } from "../lib/share.ts";
+import { parseOtpauth } from "../lib/totp.ts";
+import { TotpCode } from "../components/TotpCode.tsx";
 import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
+import { BrowserCards } from "../components/BrowserCards.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
 import { SettingsPanel } from "../components/SettingsPanel.tsx";
 
@@ -35,7 +45,8 @@ export function VaultPage(): ReactNode {
   const [importPending, setImportPending] = useState<{
     count: number;
     entries: VaultEntry[];
-    source: "plaintext" | "share";
+    source: "plaintext" | "share" | "browser";
+    picked: string[];
   } | null>(null);
   const [revealPassword, setRevealPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -90,6 +101,11 @@ export function VaultPage(): ReactNode {
       capabilities: entry.capabilities,
       credentialType: entry.credentialType,
       notes: entry.notes,
+      totpSecret: entry.totpSecret,
+      domain: entry.domain,
+      providerId: entry.providerId,
+      providerConfidence: entry.providerConfidence,
+      providerMatchType: entry.providerMatchType,
     });
   }
 
@@ -120,7 +136,12 @@ export function VaultPage(): ReactNode {
       }
       const parsed = parsePlaintextExport(text);
       if (parsed.entries.length === 0) throw new Error("no login entries in this file");
-      setImportPending({ count: parsed.entries.length, entries: parsed.entries, source: "plaintext" });
+      setImportPending({
+        count: parsed.entries.length,
+        entries: parsed.entries,
+        source: "plaintext",
+        picked: parsed.entries.map((entry) => entry.id),
+      });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -141,7 +162,12 @@ export function VaultPage(): ReactNode {
       const opened = openSharePackage(shareImport.text, shareImport.key);
       if (opened.length === 0) throw new Error("share file had no logins");
       setShareImport(null);
-      setImportPending({ count: opened.length, entries: opened, source: "share" });
+      setImportPending({
+        count: opened.length,
+        entries: opened,
+        source: "share",
+        picked: opened.map((entry) => entry.id),
+      });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -151,7 +177,13 @@ export function VaultPage(): ReactNode {
     if (!importPending || !vault) return;
     setBusy(true);
     try {
-      await saveEntries([...entries, ...importPending.entries]);
+      const chosen = importPending.entries.filter((entry) => importPending.picked.includes(entry.id));
+      if (chosen.length === 0) return;
+      const next =
+        importPending.source === "browser"
+          ? mergeImportedLogins(entries, chosen)
+          : [...entries, ...chosen];
+      await saveEntries(next);
       setImportPending(null);
     } catch {
       // banner
@@ -242,6 +274,33 @@ export function VaultPage(): ReactNode {
           }}
         />
       ) : (
+        <>
+        <BrowserCards
+          onLogins={(rows) => {
+            const incoming = entriesFromBrowserLogins(rows);
+            if (incoming.length === 0) {
+              window.alert("Keine Passwörter gelesen. / No passwords read.");
+              return;
+            }
+            setImportPending({
+              count: incoming.length,
+              entries: incoming,
+              source: "browser",
+              picked: incoming.map((entry) => entry.id),
+            });
+          }}
+          onEnsureDemoLogin={async () => {
+            if (entries.some(isAutofillDemoEntry)) return;
+            await saveEntries([
+              ...entries,
+              {
+                id: newEntryId(),
+                ...autofillDemoDraft(),
+                updatedAt: new Date().toISOString(),
+              },
+            ]);
+          }}
+        />
         <div className="columns">
           <section className="card list">
             <div className="list-header">
@@ -526,6 +585,35 @@ export function VaultPage(): ReactNode {
                   </p>
                 ) : null}
                 <label>
+                  TOTP secret (Base32 / otpauth)
+                  <input
+                    type="password"
+                    value={draft.totpSecret}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      const parsed = parseOtpauth(value);
+                      if (parsed) {
+                        setDraft({
+                          ...draft,
+                          totpSecret: parsed.secret,
+                          title: draft.title || parsed.issuer || parsed.account,
+                          username: draft.username || parsed.account,
+                        });
+                        return;
+                      }
+                      setDraft({ ...draft, totpSecret: value });
+                    }}
+                    data-testid="entry-totp"
+                    autoComplete="off"
+                    placeholder="JBSWY… or otpauth://totp/…"
+                  />
+                </label>
+                {draft.totpSecret.startsWith("otpauth:") ? (
+                  <p className="hint">Paste into the box on the left of the vault, then save.</p>
+                ) : draft.totpSecret ? (
+                  <TotpCode secret={draft.totpSecret} />
+                ) : null}
+                <label>
                   URL
                   <input
                     value={draft.url}
@@ -577,34 +665,103 @@ export function VaultPage(): ReactNode {
               </>
             ) : (
               <div className="placeholder">
-                <h3>Zero-knowledge vault</h3>
+                <h3>Dein Tresor / Your vault</h3>
                 <p className="muted">
-                  Web, API, or SSH/SFTP. Saving re-seals every entry on this device. The server only
-                  stores ciphertext. Agent access is the Access tab — unknown apps are denied.
+                  Oben die Browser-Karten: Profile anhaken, Passwörter holen, Extension laden, dann
+                  Demo-Login öffnen. Popup: nur Tresor-Passwort. Agent Access ist der Access-Tab,
+                  nicht dieser Bildschirm.
                 </p>
               </div>
             )}
           </section>
         </div>
+        </>
       )}
       {importPending ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>{importPending.source === "share" ? "Import shared logins" : "Import plaintext file"}</h2>
+            <h2>
+              {importPending.source === "share"
+                ? "Import shared logins"
+                : importPending.source === "browser"
+                  ? "Browser-Passwörter in den Tresor / Browser passwords into the vault"
+                  : "Import plaintext file"}
+            </h2>
             <p>
               {importPending.source === "share"
                 ? "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext."
-                : plaintextImportWarning()}
+                : importPending.source === "browser"
+                  ? "Keychain hat freigegeben. Bestätigen verschlüsselt die Logins in deinen Tresor. Der Server sieht sie nicht. / Keychain granted. Confirm encrypts into your vault. The server never sees them."
+                  : plaintextImportWarning()}
             </p>
-            <p className="muted">
-              {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
-              this device, then committed as the next revision.
-            </p>
+            {importPending.source === "browser" ? (
+              <div className="import-review" data-testid="import-review">
+                <p className="muted">
+                  {importPending.picked.length} / {importPending.entries.length} gewählt. Keine Passwörter
+                  in dieser Liste. / selected. No passwords in this list.
+                </p>
+                <div className="actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImportPending({
+                        ...importPending,
+                        picked: importPending.entries.map((entry) => entry.id),
+                      })
+                    }
+                  >
+                    Alle / All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportPending({ ...importPending, picked: [] })}
+                  >
+                    Keine / None
+                  </button>
+                </div>
+                <ul>
+                  {importReviewRows(importPending.entries).map((row) => (
+                    <li key={row.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={importPending.picked.includes(row.id)}
+                          onChange={() => {
+                            const on = importPending.picked.includes(row.id);
+                            setImportPending({
+                              ...importPending,
+                              picked: on
+                                ? importPending.picked.filter((id) => id !== row.id)
+                                : [...importPending.picked, row.id],
+                            });
+                          }}
+                        />
+                        <span>
+                          <strong>{row.title || row.url}</strong>
+                          <span className="muted">
+                            {" "}
+                            {row.username}
+                            {row.provider
+                              ? ` · ${row.provider}${row.confidence >= 0.95 ? "" : " ?"}`
+                              : ""}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="muted">
+                {importPending.count} login{importPending.count === 1 ? "" : "s"} will be encrypted on
+                this device, then committed as the next revision.
+              </p>
+            )}
             <div className="actions">
               <button
                 type="button"
                 className="primary"
-                disabled={busy}
+                disabled={busy || importPending.picked.length === 0}
                 data-testid="confirm-import"
                 onClick={() => void confirmImport()}
               >

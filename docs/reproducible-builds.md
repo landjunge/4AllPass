@@ -32,7 +32,7 @@ npm ci
 export SOURCE_DATE_EPOCH=0 TZ=UTC LC_ALL=C
 
 npm run build                 # frontend/dist
-npm run build:extension       # extension/dist
+npm run build:extension       # extension/dist/chromium + dist/firefox
 
 node scripts/hash-dist.mjs frontend/dist
 node scripts/hash-dist.mjs extension/dist

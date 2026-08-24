@@ -28,6 +28,15 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
+  desktop-stall:
+    name: Desktop sleep stall
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Wall-clock stall (not Instant)
+        run: rustc --edition 2021 --test src-tauri/src/sleep_stall.rs -o sleep-stall && ./sleep-stall
+
   python:
     name: Backend tests
     runs-on: ubuntu-latest

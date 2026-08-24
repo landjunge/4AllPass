@@ -2,6 +2,8 @@
 
 **Zweck:** Arbeitsauftrag in drei Achsen. Phasen sind nach Wirkung/Aufwand sortiert, nicht streng chronologisch.
 
+**Produktreife für Fremde (2026-08-23):** [`product-maturity.md`](product-maturity.md) ist der gültige Plan. Er **ersetzt** Core-Refactor → Broker-Refactor → Tauri. **Phase A pausiert:** Apple ~99 USD/Jahr aktuell nicht leistbar; CI liegt (`#111`). Kein Core-Rewrite in der Lücke. Projektregel: kein Core-Rewrite, kein zweites Tauri, keine Provider-Liste dazwischen.
+
 **Stand im Repo (2026-08-20):** Backend und PWA existieren. Crypto-Core, WebAuthn-PRF, Recovery-Kit, Snapshot-CAS, Hard-Revoke, DK-Mirror-CAS, COSE-Ceremony-Verify, Chromium-/Firefox-/macOS-Safari-Autofill, Bitwarden/1Password/KeePass/CSV-Import, Envelope-Property-Tests, Reproducible Builds, Offline-Snapshot-Cache, Clipboard-Overwrite und v1 Item-Share-Files (`docs/sharing.md`) sind im Baum. Kein Live-Share an fremde Device Keys, kein iOS/Android Autofill.
 
 Engineering-Reihenfolge für **Code** (nicht überspringen): siehe [`.cursor/skills/4allpass/references/improve.md`](../.cursor/skills/4allpass/references/improve.md). Item-Share-Files sind auf main (`docs/sharing.md`). Public-Key-Wrapping an fremde Geräte nicht starten, solange niemand danach fragt.

@@ -18,7 +18,7 @@ Sidecar: `npm run sidecar` → `scripts/package-sidecar.py` (PyInstaller **on th
 | Windows | `4AllPass-Setup.exe` (NSIS, current user) | `%APPDATA%\4AllPass\` |
 | Linux | `.AppImage` | `~/.local/share/4allpass/` |
 
-Downloads: [GitHub Releases](https://github.com/landjunge/4AllPass/releases) (tag `v*` → CI attaches DMG / NSIS / AppImage as a **prerelease**). Ad-hoc signed, not notarized — first open via right-click → Open. Not SmartScreen. Not a store listing. Local Intel DMG: `src-tauri/target/release/bundle/dmg/`.
+Downloads: [GitHub Releases](https://github.com/landjunge/4AllPass/releases) (tag `v*` → CI attaches DMG / NSIS / AppImage as a **prerelease**). Ad-hoc until GitHub secrets in [`distribution.md`](distribution.md) are set; then CI notarizes macOS and Authenticode-signs Windows. Not a store listing. Local Intel DMG: `src-tauri/target/release/bundle/dmg/`.
 
 `npm run app` builds `frontend/dist` if missing, then `python -m app.local`.
 The SQLite file holds opaque envelopes. `session.secret` is account-auth only.
@@ -69,8 +69,11 @@ with `--hidden` (menu bar). That does **not** unlock the vault and does **not**
 auto-allow access. Password still required. Browser / `npm run app` has no login
 item.
 
-macOS **screen lock** and **sleep** lock the vault (same Lock button). Not
-FileVault. Windows/Linux do not send that event yet.
+**Screen lock** and **sleep** lock the vault (same Lock button): macOS notify,
+Windows input-desktop, Linux `loginctl LockedHint`, plus a **wall-clock** stall
+if >5s passed between 400ms polls. Monotonic `Instant` stops during suspend, so
+it cannot see lid-close. Not FileVault. Not hibernation-safe (RAM can still
+hold VK across the race).
 
 An access request from n8n raises the main window, a desktop notification, and a
 small always-on-top prompt (application / provider / scope / TTL — **not** the

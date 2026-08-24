@@ -4,6 +4,7 @@ import {
   auditLine,
   decideAccess,
   deniedResponse,
+  explainAccess,
   issueGrant,
   parseAccessBody,
   approvedResponse,
@@ -182,6 +183,9 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
             <p className="hint">
               POST /v1/access/request — {pending.via === "loopback" ? "127.0.0.1 broker" : "local channel"},
               not FastAPI.
+            </p>
+            <p className="hint" data-testid="broker-why">
+              Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
             </p>
             <div className="actions">
               <button

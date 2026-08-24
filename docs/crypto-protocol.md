@@ -569,7 +569,7 @@ LOCKED  →  UNLOCKING  →  UNLOCKED  →  LOCKING  →  LOCKED
 ### Recommended Auto-Lock Triggers
 - Configurable inactivity timeout
 - Document / tab visibility change (`visibilitychange`)
-- Desktop app (macOS): screen lock and system sleep (`desktop-lock`). Tray hide does **not** lock.
+- Desktop app: screen lock and system sleep (`desktop-lock`). Tray hide does **not** lock.
 - Extension: 5-minute idle lock (popup close does **not** lock, so a fill shortcut can still run). Worker eviction also drops in-memory plaintext.
 - Mobile app backgrounded
 

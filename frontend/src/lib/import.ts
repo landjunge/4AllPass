@@ -1,3 +1,4 @@
+import { resolveProvider } from "@4allpass/providers";
 import { newEntryId, type VaultEntry } from "./entries.ts";
 import { looksLikeSharePackage } from "./share.ts";
 
@@ -23,11 +24,12 @@ function asEntry(partial: {
   url?: string;
   notes?: string;
 }): VaultEntry {
+  const resolved = resolveProvider(partial.url ?? "");
   return {
     id: newEntryId(),
     kind: "web",
     title: partial.title?.trim() ?? "",
-    provider: "",
+    provider: resolved.providerName ?? "",
     account: "",
     username: partial.username?.trim() ?? "",
     password: partial.password ?? "",
@@ -36,14 +38,75 @@ function asEntry(partial: {
     port: "",
     protocol: "",
     capabilities: "",
-    credentialType: "",
+    credentialType: "password",
     notes: partial.notes?.trim() ?? "",
+    totpSecret: "",
     updatedAt: new Date().toISOString(),
+    domain: resolved.normalizedDomain,
+    providerId: resolved.providerId ?? "",
+    providerConfidence: resolved.confidence,
+    providerMatchType: resolved.matchType,
   };
 }
 
 function usable(entry: VaultEntry): boolean {
   return Boolean(entry.title || entry.username || entry.password);
+}
+
+export interface BrowserLoginRow {
+  url: string;
+  username: string;
+  password: string;
+  title?: string;
+  source?: string;
+}
+
+export function entriesFromBrowserLogins(rows: BrowserLoginRow[]): VaultEntry[] {
+  return rows
+    .map((row) =>
+      asEntry({
+        title: row.title || row.url,
+        username: row.username,
+        password: row.password,
+        url: row.url,
+        notes: row.source ? `browser:${row.source}` : "",
+      }),
+    )
+    .filter(usable);
+}
+
+export function importReviewRows(
+  entries: VaultEntry[],
+): Array<{
+  id: string;
+  title: string;
+  username: string;
+  url: string;
+  provider: string;
+  confidence: number;
+}> {
+  return entries.map((entry) => ({
+    id: entry.id,
+    title: entry.title || entry.url,
+    username: entry.username,
+    url: entry.url,
+    provider: entry.provider || "Unknown",
+    confidence: entry.providerConfidence,
+  }));
+}
+
+export function mergeImportedLogins(existing: VaultEntry[], incoming: VaultEntry[]): VaultEntry[] {
+  const keyOf = (entry: VaultEntry): string =>
+    `${entry.url.replace(/^https?:\/\//, "").split("/")[0] ?? ""}|${entry.username}`.toLowerCase();
+  const byKey = new Map(existing.map((entry) => [keyOf(entry), entry]));
+  for (const entry of incoming) {
+    const key = keyOf(entry);
+    const prev = byKey.get(key);
+    if (!prev || (entry.password && entry.password !== prev.password)) {
+      byKey.set(key, prev ? { ...prev, password: entry.password, updatedAt: entry.updatedAt } : entry);
+    }
+  }
+  return [...byKey.values()];
 }
 
 function parseCsv(text: string): ImportResult {

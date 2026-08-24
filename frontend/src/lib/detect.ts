@@ -3,6 +3,7 @@
  * Auto-detect ≠ auto-approve (`docs/eight-week-agent-access.md` week 3).
  */
 import { emptyDraft, type EntryDraft, type EntryKind } from "./entries.ts";
+import { parseOtpauth } from "./totp.ts";
 
 export interface DetectedCredential {
   kind: EntryKind;
@@ -15,6 +16,7 @@ export interface DetectedCredential {
   protocol: string;
   capabilities: string;
   username: string;
+  totpSecret: string;
   label: string;
 }
 
@@ -35,6 +37,26 @@ export function detectCredential(raw: string): DetectedCredential | null {
   const token = firstToken(text);
   const blob = text.replace(/\s+/g, " ");
 
+  if (/^otpauth:\/\/totp\//i.test(text)) {
+    const parsed = parseOtpauth(text);
+    if (parsed) {
+      return {
+        kind: "web",
+        provider: parsed.issuer,
+        title: parsed.issuer || parsed.account || "TOTP",
+        password: "",
+        url: "",
+        host: "",
+        port: "",
+        protocol: "",
+        capabilities: "login",
+        username: parsed.account,
+        totpSecret: parsed.secret,
+        label: `TOTP · ${parsed.issuer || parsed.account}`,
+      };
+    }
+  }
+
   if (/^ghp_[A-Za-z0-9_]{8,}$/i.test(token) || /^github_pat_[A-Za-z0-9_]{8,}$/i.test(token)) {
     return {
       kind: "api",
@@ -47,6 +69,7 @@ export function detectCredential(raw: string): DetectedCredential | null {
       protocol: "",
       capabilities: "repository.read",
       username: "",
+      totpSecret: "",
       label: "GitHub personal access token · API",
     };
   }
@@ -63,6 +86,7 @@ export function detectCredential(raw: string): DetectedCredential | null {
       protocol: "",
       capabilities: "api.read",
       username: "",
+      totpSecret: "",
       label: "OpenAI API key · API",
     };
   }
@@ -79,6 +103,7 @@ export function detectCredential(raw: string): DetectedCredential | null {
       protocol: "",
       capabilities: "api.read",
       username: "",
+      totpSecret: "",
       label: "Stripe API key · API",
     };
   }
@@ -105,6 +130,7 @@ export function detectCredential(raw: string): DetectedCredential | null {
       protocol: /\bsftp\b/i.test(blob) || /:22\b/.test(blob) ? "sftp" : "ftp",
       capabilities: "sftp.read",
       username: userLine && userLine !== host ? userLine : "",
+      totpSecret: "",
       label: `FTP/SFTP · ${host}`,
     };
   }
@@ -128,6 +154,7 @@ export function detectCredential(raw: string): DetectedCredential | null {
       protocol: "",
       capabilities: "login",
       username: "",
+      totpSecret: "",
       label: `Web · ${host || http[0]}`,
     };
   }
@@ -149,5 +176,6 @@ export function draftFromDetection(detected: DetectedCredential): EntryDraft {
     protocol: detected.protocol || draft.protocol,
     capabilities: detected.capabilities || draft.capabilities,
     username: detected.username,
+    totpSecret: detected.totpSecret || draft.totpSecret,
   };
 }

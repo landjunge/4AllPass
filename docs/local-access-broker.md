@@ -4,8 +4,9 @@
 
 `npm run app` / `python -m app.local` serves the relay on the **same origin**
 (`http://127.0.0.1:8788/v1/access/request`). The process still never decrypts
-and never mints provider tokens. Manual `npm run broker` (Node, `:8787`) remains
-for a Vite-only session.
+and never mints provider tokens. Manual `npm run broker` runs `@4allpass/broker`
+(Node, `:8787`) for a Vite-only session. That package is **not** the product
+path and does not evaluate policy.
 
 A foreign process (n8n HTTP Request, `@4allpass/access`, `examples/n8n-access-client.mjs`) can ask the unlocked app for a time-boxed credential without using `BroadcastChannel`.
 
@@ -50,7 +51,7 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 |---|---|
 | Pairing token | Required on every call. Printed at start; not on the public API. |
 | Bind | `127.0.0.1` only. |
-| Browser grant path | `Origin: http(s)://…` on `POST /v1/access/request` is **403**. n8n/Node typically send no Origin. |
+| Browser grant path | `Origin: http(s)://…` or `Origin: null` on `POST /v1/access/request` is **403**. n8n/Node typically send no Origin. |
 | PWA poll | CORS for the local app (`:8788`) and Vite (`:5173` / `:4173`). |
 | Vault locked | No PWA poller → `denied` / `vault_locked`. No secret. |
 | Policy | Still in the PWA (`decideAccess`). Unknown app = DENY. |

@@ -81,10 +81,10 @@ function unwrapForCrossCheck(
     expectVaultKeyVersion: vaultKeyVersion,
     ...(type === "device"
       ? {
-          expectDeviceId: assertId("crossCheck.deviceId", entry.deviceId ?? entry.envelope.deviceId),
+          expectDeviceId: assertId("crossCheck.deviceId", entry.deviceId),
           expectDeviceKeyVersion: assertVersion(
             "crossCheck.deviceKeyVersion",
-            entry.deviceKeyVersion ?? entry.envelope.deviceKeyVersion,
+            entry.deviceKeyVersion,
           ),
         }
       : {}),

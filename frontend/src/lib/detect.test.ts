@@ -32,6 +32,18 @@ test("ftp host plus login is SFTP class", () => {
   assert.match(detected?.protocol ?? "", /ftp/i);
 });
 
+test("otpauth totp uri becomes a totp secret, not a password", () => {
+  const detected = detectCredential(
+    "otpauth://totp/GitHub:ada@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub",
+  );
+  assert.ok(detected);
+  assert.equal(detected?.totpSecret, "JBSWY3DPEHPK3PXP");
+  assert.equal(detected?.password, "");
+  assert.equal(detected?.username, "ada@example.com");
+  const draft = draftFromDetection(detected!);
+  assert.equal(draft.totpSecret, "JBSWY3DPEHPK3PXP");
+});
+
 test("https URL is Web, not auto-approved", () => {
   const detected = detectCredential("https://github.com/login");
   assert.ok(detected);

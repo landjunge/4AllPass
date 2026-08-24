@@ -266,6 +266,7 @@ async def register_credential(
             vault_id=vault.id,
             purpose="create",
             challenge=raw_challenge,
+            device_id=device.device_id,
         )
         if record is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="challenge not found")

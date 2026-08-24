@@ -4,7 +4,7 @@ use std::{
     process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
 use tauri::{
@@ -13,6 +13,12 @@ use tauri::{
     Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 use tauri_plugin_notification::NotificationExt;
+
+mod browser_passwords;
+mod browsers;
+mod firefox_logins;
+mod sleep_stall;
+use sleep_stall::slept_through;
 
 const CORE_HOST: &str = "127.0.0.1";
 const CORE_PORT: u16 = 8788;
@@ -154,44 +160,169 @@ fn start_hidden() -> bool {
 
 /// Ask the unlocked UI to zeroize the Vault Key. Not disk encryption.
 const DESKTOP_LOCK_EVENT: &str = "desktop-lock";
+const LOCK_POLL: Duration = Duration::from_millis(400);
+const SLEEP_STALL: Duration = Duration::from_secs(5);
+
+fn emit_desktop_lock(app: &tauri::AppHandle) {
+    hide_prompt(app);
+    deny_closed_prompt(app);
+    let _ = app.emit(DESKTOP_LOCK_EVENT, ());
+}
 
 #[cfg(target_os = "macos")]
-fn watch_desktop_lock(app: tauri::AppHandle) {
-    thread::spawn(move || {
+struct OsLockProbe {
+    screen: Option<i32>,
+    sleep: Option<i32>,
+}
+
+#[cfg(target_os = "macos")]
+impl OsLockProbe {
+    fn new() -> Self {
         #[link(name = "System", kind = "dylib")]
         extern "C" {
             fn notify_register_check(name: *const i8, out_token: *mut i32) -> u32;
-            fn notify_check(token: i32, out_flag: *mut i32) -> u32;
-            fn notify_get_state(token: i32, out_state: *mut u64) -> u32;
         }
-
         fn register(name: &[u8]) -> Option<i32> {
             let mut token = 0i32;
             let status = unsafe { notify_register_check(name.as_ptr() as *const i8, &mut token) };
             (status == 0).then_some(token)
         }
+        Self {
+            screen: register(b"com.apple.screenIsLocked\0"),
+            sleep: register(b"com.apple.system.sleep\0"),
+        }
+    }
 
-        let screen = register(b"com.apple.screenIsLocked\0");
-        let sleep = register(b"com.apple.system.sleep\0");
+    fn is_locked(&self) -> bool {
+        #[link(name = "System", kind = "dylib")]
+        extern "C" {
+            fn notify_check(token: i32, out_flag: *mut i32) -> u32;
+            fn notify_get_state(token: i32, out_state: *mut u64) -> u32;
+        }
+        if let Some(token) = self.screen {
+            let mut state = 0u64;
+            if unsafe { notify_get_state(token, &mut state) } == 0 && state != 0 {
+                return true;
+            }
+        }
+        if let Some(token) = self.sleep {
+            let mut flag = 0i32;
+            if unsafe { notify_check(token, &mut flag) } == 0 && flag != 0 {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+#[cfg(target_os = "windows")]
+struct OsLockProbe;
+
+#[cfg(target_os = "windows")]
+impl OsLockProbe {
+    fn new() -> Self {
+        Self
+    }
+
+    fn is_locked(&self) -> bool {
+        const DESKTOP_SWITCHDESKTOP: u32 = 0x0100;
+        #[link(name = "user32")]
+        extern "system" {
+            fn OpenInputDesktop(
+                flags: u32,
+                inherit: i32,
+                desired_access: u32,
+            ) -> *mut core::ffi::c_void;
+            fn CloseDesktop(desktop: *mut core::ffi::c_void) -> i32;
+        }
+        unsafe {
+            let desk = OpenInputDesktop(0, 0, DESKTOP_SWITCHDESKTOP);
+            if desk.is_null() {
+                true
+            } else {
+                CloseDesktop(desk);
+                false
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+struct OsLockProbe {
+    session: Option<String>,
+    last: std::cell::Cell<Option<Instant>>,
+    cached: std::cell::Cell<bool>,
+}
+
+#[cfg(target_os = "linux")]
+impl OsLockProbe {
+    fn new() -> Self {
+        Self {
+            session: std::env::var("XDG_SESSION_ID").ok().filter(|s| !s.is_empty()),
+            last: std::cell::Cell::new(None),
+            cached: std::cell::Cell::new(false),
+        }
+    }
+
+    fn is_locked(&self) -> bool {
+        if let Some(prev) = self.last.get() {
+            if prev.elapsed() < Duration::from_secs(1) {
+                return self.cached.get();
+            }
+        }
+        self.last.set(Some(Instant::now()));
+        let mut cmd = Command::new("loginctl");
+        cmd.arg("show-session");
+        if let Some(id) = self.session.as_deref() {
+            cmd.arg(id);
+        } else {
+            cmd.arg("self");
+        }
+        cmd.args(["-p", "LockedHint", "--value"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
+        let locked = cmd
+            .output()
+            .ok()
+            .map(|out| {
+                String::from_utf8_lossy(&out.stdout)
+                    .trim()
+                    .eq_ignore_ascii_case("yes")
+            })
+            .unwrap_or(false);
+        self.cached.set(locked);
+        locked
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+struct OsLockProbe;
+
+#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+impl OsLockProbe {
+    fn new() -> Self {
+        Self
+    }
+
+    fn is_locked(&self) -> bool {
+        false
+    }
+}
+
+fn watch_desktop_lock(app: tauri::AppHandle) {
+    thread::spawn(move || {
+        let probe = OsLockProbe::new();
         let mut announced = false;
+        let mut last_tick = SystemTime::now();
         loop {
-            thread::sleep(Duration::from_millis(400));
-            let mut lock_now = false;
-            if let Some(token) = screen {
-                let mut state = 0u64;
-                if unsafe { notify_get_state(token, &mut state) } == 0 && state != 0 {
-                    lock_now = true;
-                }
-            }
-            if let Some(token) = sleep {
-                let mut flag = 0i32;
-                if unsafe { notify_check(token, &mut flag) } == 0 && flag != 0 {
-                    lock_now = true;
-                }
-            }
-            if lock_now {
+            thread::sleep(LOCK_POLL);
+            let now = SystemTime::now();
+            let stalled = slept_through(last_tick, now, SLEEP_STALL);
+            last_tick = now;
+            if stalled || probe.is_locked() {
                 if !announced {
-                    let _ = app.emit(DESKTOP_LOCK_EVENT, ());
+                    emit_desktop_lock(&app);
                     announced = true;
                 }
             } else {
@@ -200,9 +331,6 @@ fn watch_desktop_lock(app: tauri::AppHandle) {
         }
     });
 }
-
-#[cfg(not(target_os = "macos"))]
-fn watch_desktop_lock(_app: tauri::AppHandle) {}
 
 fn show_main(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -339,7 +467,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             access_prompt,
             access_decide,
-            access_dismiss
+            access_dismiss,
+            browsers::list_browser_profiles,
+            browsers::extension_install,
+            browsers::open_browser_for_extension,
+            browsers::open_autofill_demo,
+            browser_passwords::import_browser_logins
         ])
         .setup(|app| {
             if start_hidden() {
@@ -403,3 +536,4 @@ pub fn run() {
         }
     });
 }
+

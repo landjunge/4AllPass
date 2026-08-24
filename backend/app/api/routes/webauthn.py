@@ -98,6 +98,7 @@ async def consume_challenge(
         vault_id=vault.id,
         purpose=payload.purpose,
         challenge=raw,
+        device_id=payload.device_id,
     )
     if record is None:
         # Missing, expired, already used, or binding mismatch — same 404.
@@ -129,7 +130,11 @@ async def consume_challenge(
         .options(selectinload(WebAuthnCredential.device))
     )
     cred = result.scalar_one_or_none()
-    if cred is None or cred.revoked_at is not None:
+    if (
+        cred is None
+        or cred.revoked_at is not None
+        or cred.device.revoked_at is not None
+    ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="credential not found")
     if cred.public_key is None:
         raise HTTPException(status_code=422, detail="credential has no COSE public key")

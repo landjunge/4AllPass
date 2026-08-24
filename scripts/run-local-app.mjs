@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distIndex = resolve(root, "frontend/dist/index.html");
+const extManifest = resolve(root, "extension/dist/chromium/manifest.json");
 const venvPython = resolve(root, "backend/.venv/bin/python");
 const openWindow = process.argv.includes("--open");
 
@@ -32,6 +33,10 @@ async function main() {
   if (!existsSync(distIndex)) {
     console.log("Building frontend (frontend/dist missing)…");
     await run("npm", ["run", "build"]);
+  }
+  if (!existsSync(extManifest)) {
+    console.log("Building extension (extension/dist/chromium missing)…");
+    await run("npm", ["run", "build:extension"]);
   }
   const args = ["-m", "app.local"];
   if (openWindow) args.push("--open");

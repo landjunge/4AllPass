@@ -1,6 +1,6 @@
 # What to improve (priority)
 
-Product north star: devices own the vault **cryptographically**. The **wedge** is agent credential access (`docs/eight-week-agent-access.md`) — not “a nicer Bitwarden.” FastAPI still never sees secrets.
+Product north star: devices own the vault **cryptographically**. **v3 focus** (`docs/product-maturity.md`): authentication effortless for humans, controlled for machines. Autofill is the product, not a side feature. Agent access is advanced. One credential engine for both. Not “a nicer Bitwarden.” FastAPI still never sees secrets.
 
 `docs/roadmap.md` phases 2–3 are largely done (backend + PWA exist). Do not restart scaffolding.
 
@@ -10,19 +10,22 @@ Hard revoke in the PWA (`hardRevokeDevice`), soft revoke that drops the envelope
 
 ## Now
 
-1. **Desktop + agent access are on main** (`src-tauri/`, local SQLite core, loopback broker in-process). Dev leftover: `npm run broker`. Do not auto-publish. Do not grow a FastAPI token API. Do not open an unauthenticated localhost grant endpoint. Tollgate is a later *client*. A marketplace n8n node is still not shipped.
-2. Safari.app fill / real Touch ID still unproven. Do not block the wedge on it.
-3. Do not start TOTP, iOS Autofill, Plus, public-key wrapping, or a Tollgate merge.
+Reliability before expansion. Do not rewrite crypto, Tauri, or FastAPI. Do not delete the Access tab; do not put it on the first screen.
+
+1. **Autofill V1 + P1b Assist + P2 Why + P3 TOTP + `install.sh`** are on `main`. Intel Mac one-liner → window proven 2026-08-24 (rolling tag `desktop`, SHA-256). Passkey store still later (real platform APIs only). Next feel-able proof: Fill on GitHub (two pages, two clicks). Do not reimplement the engine. Do not start a multi-step engine in this slice.
+2. Browser cards, Chrome/Firefox import + review, provider resolver: **on main**. Do not reimplement.
+3. **Phase A — double-click, paused.** Apple ~99 USD/year not affordable. No `v0.1.2`. Terminal install is the pause: `docs/install-terminal.md`.
+4. Do not start Safari import, write-back into Chrome `Login Data`, Access simulator, 500 providers, second Tauri, FastAPI token API, Tollgate merge, n8n marketplace, or a passkey store.
 
 Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-share files are on main (`docs/sharing.md`).
 
 ## Later (do not start)
 
-- Organizations / teams
+- Organizations / teams — specified in `docs/team-mode.md` + `docs/team-roadmap.md`. **Do not implement** until the maintainer accepts the review. Must not become PAM.
 - Social login as a crypto factor
 - Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android)
 - Passkey store as a separate vault product
-- Shamir, TOTP
+- Shamir. TOTP on vault entries is on `main` (RFC 6238). Passkey store still later.
 - Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)
 - Post-quantum hybrid-KEM: concept is `docs/post-quantum-roadmap.md`. Do not implement ML-KEM until public-key wrapping exists.
 

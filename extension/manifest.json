@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "4AllPass",
   "version": "0.1.0",
-  "description": "Fill logins from your self-hosted 4AllPass vault. Decryption stays on this device.",
+  "description": "Fill logins from your 4AllPass vault. Chromium, Firefox, and Safari. Decryption stays on this device.",
   "icons": {
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
@@ -33,8 +33,10 @@
     "http://localhost:*/*",
     "http://127.0.0.1:8000/*",
     "http://127.0.0.1:8010/*",
+    "http://127.0.0.1:8788/*",
     "http://localhost:8000/*",
-    "http://localhost:8010/*"
+    "http://localhost:8010/*",
+    "http://localhost:8788/*"
   ],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "browser_specific_settings": {

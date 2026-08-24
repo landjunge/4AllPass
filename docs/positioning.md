@@ -2,18 +2,21 @@
 
 **Zielgruppe:** Technisch versierte Einzelpersonen und kleine Teams, die volle Datenkontrolle wollen — Self-Hoster, die Bitwarden/Vaultwarden nutzen aber UI oder Autofill leid sind, oder die 1Password/Proton Pass mögen, aber nicht von einem Cloud-Anbieter und dessen Preispolitik abhängen wollen.
 
-**Wedge (8 Wochen, [`eight-week-agent-access.md`](eight-week-agent-access.md)):**
+**Öffentlich (2026-08-23):**
 
-> 4AllPass — Secure credential access for humans, applications and AI agents.  
-> Your agents need access. They don't need your secrets.
+> A local-first password vault that lets you securely share limited access with AI agents.
 
-Nicht „besserer Bitwarden“, nicht „Secret Manager“. Einstieg: **AI-Agent Credential Access**. Expansion: humans → applications → agents.
+DE: Lokaler Passwort-Tresor. Begrenzt Zugang für KI-Agenten, wenn du das willst.
+
+Einstieg: Browser → Tresor → Autofill ([`browser-sync.md`](browser-sync.md)). Agent Access bleibt **Advanced** (Access-Tab), nicht der erste Bildschirm. Nicht „besserer Bitwarden“.
 
 **Heute (Vault, ehrlich):**
 
 > Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Self-hosted, Zero-Knowledge, offenes Protokoll.
 
-Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** später scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
+Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
+
+**Nicht gegen 1Password Unified Access / EAM antreten.** Die haben Cloud, verifizierte Machine-Identities, JIT, Attribution, Mobile, Audit. Unser Feld: **lokal, ZK, kein Account bei uns, FastAPI mintet keine Tokens.** Agent-Zugang ist die Haltung „ohne uns zu vertrauen“, nicht Feature-Parität. Identität ist heute ein String + Pairing-Token — ehrlich, nicht OS-Binding.
 
 ---
 

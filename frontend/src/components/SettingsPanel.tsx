@@ -6,6 +6,7 @@ import {
   LAUNCH_AT_LOGIN_HINT,
   LAUNCH_AT_LOGIN_LABEL,
   SLEEP_LOCK_HINT,
+  UNINSTALL_HINT,
 } from "../lib/desktop-settings.ts";
 
 export function SettingsPanel(): ReactNode {
@@ -47,6 +48,9 @@ export function SettingsPanel(): ReactNode {
       </p>
       <p className="hint" data-testid="sleep-lock-hint">
         {SLEEP_LOCK_HINT}
+      </p>
+      <p className="hint" data-testid="uninstall-hint">
+        {UNINSTALL_HINT}
       </p>
     </section>
   );

@@ -1,0 +1,9 @@
+# 4AllPass
+
+4AllPass is a self-hosted zero-knowledge vault. Desktop app is the product. Agents get time-boxed access after Allow/Deny. Canonical: https://netzwerkpunkt.de/4allpass
+
+Hub: https://netzwerkpunkt.de
+GitHub: https://github.com/landjunge/4AllPass
+Pages: https://landjunge.github.io/4AllPass/
+Impressum: https://netzwerkpunkt.de/impressum
+Datenschutz: https://netzwerkpunkt.de/datenschutz

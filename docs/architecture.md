@@ -5,9 +5,13 @@
 **Ziel**  
 Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers steht, echte Zero-Knowledge-Sicherheit bietet und gleichzeitig modern, komfortabel und zukunftssicher ist.
 
+**Basics (2026-08-23):** Sync aller Browser und Profile — Karten, anhaken, Passwörter im Tresor. Plan: [`browser-sync.md`](browser-sync.md). Agent-Zugang ist nicht der Einstieg. Crypto-Protokoll bleibt.
+
 ---
 
 ## 1. Grundprinzipien
+
+Haltung (kein Businessplan): [`product-philosophy.md`](product-philosophy.md). Sicherheit und Eigentum werden nicht verkauft.
 
 - **Zero-Knowledge**: Der Server sieht niemals Klartext-Passwörter oder das Master-Passwort.
 - Das **Master-Passwort** ist die einzige Quelle für die Entschlüsselung (neben dem Recovery Key).
@@ -120,6 +124,7 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 - Audit-Logs
 - Passwort-Generator
 - Shamir Secret Sharing als erweiterte Recovery-Option
+- **Team Mode** — spezifiziert, nicht gebaut: [`team-mode.md`](team-mode.md), [`team-roadmap.md`](team-roadmap.md). Organisation ist eine Grenze, kein PAM. Trusted Recovery = XOR-Split des **bestehenden** Recovery Key (nicht VK, nicht Shamir in MVP). Nicht implementieren, bis das Review angenommen ist.
 
 ---
 

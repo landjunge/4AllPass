@@ -9,7 +9,10 @@ import {
   signUpWithMouse,
 } from "../live/actions.ts";
 
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../extension/dist");
+const DIST = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../extension/dist/chromium",
+);
 const API = process.env.API_ORIGIN ?? "http://127.0.0.1:8010";
 
 test("fills the demo login in two clicks after unlock", async () => {

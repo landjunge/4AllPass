@@ -24,6 +24,7 @@ import {
   deriveMasterKey,
   deriveMasterKeyFromEnvelope,
   deriveRecoveryWrappingKey,
+  equalBytes,
   encodeEncryptedEntry,
   encodeKeyEnvelope,
   encodeDeviceKeyEnvelope,
@@ -163,6 +164,7 @@ function serverChallenges(vaultId: string, deviceIdValue: string): {
             .consumeWebAuthnChallenge(vaultId, row.challengeId, {
               purpose: row.purpose,
               challenge: row.challenge,
+              deviceId: deviceIdValue,
               ...(row.purpose === "assert" &&
               artifact?.signature &&
               artifact.signature.byteLength > 0 &&
@@ -185,6 +187,18 @@ function serverChallenges(vaultId: string, deviceIdValue: string): {
 /** Generations are 1-based. Soft commits keep the version; hard revoke bumps it. */
 const INITIAL_VAULT_KEY_VERSION = 1;
 const INITIAL_DEVICE_KEY_VERSION = 1;
+
+/** Next Device-Key generation for this device. First enrol is 1; replace is n+1. */
+export function nextDeviceKeyVersion(
+  envelopes: readonly KeyEnvelope[],
+  deviceIdValue: string,
+): number {
+  const existing = envelopes.find(
+    (envelope) => envelope.type === "device" && envelope.deviceId === deviceIdValue,
+  );
+  const current = existing?.deviceKeyVersion;
+  return typeof current === "number" && current >= 1 ? current + 1 : INITIAL_DEVICE_KEY_VERSION;
+}
 
 function masterEnvelopeOf(snapshot: VaultSnapshot): KeyEnvelope {
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "master");
@@ -253,9 +267,11 @@ function openSnapshot(
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
 ): UnlockedVault {
-  // verifySnapshot returns the plaintext it already had to produce to prove the
-  // snapshot is not mixed; decrypting a second time would only widen the window
-  // in which entry plaintext exists.
+  // Decrypt the records verification returned, not the wire copies — a Proxy
+  // or getter-backed snapshot can otherwise show honest bytes to the manifest
+  // and stale bytes to decrypt (crypto-protocol.md §8.2 / F-19).
+  let entriesToOpen = snapshot.entries;
+  let envelopesToKeep = snapshot.envelopes;
   if (snapshot.sealedManifest) {
     const verified = verifySnapshotManifest(
       snapshot.sealedManifest,
@@ -268,6 +284,8 @@ function openSnapshot(
       },
     );
     savePin(revisionFromManifest(verified));
+    entriesToOpen = verified.entries;
+    envelopesToKeep = verified.envelopes;
   } else {
     savePin({
       vaultId: snapshot.vaultId,
@@ -280,7 +298,7 @@ function openSnapshot(
     vaultId: snapshot.vaultId,
     vaultKey,
     vaultKeyVersion: snapshot.vaultKeyVersion,
-    entries: snapshot.entries,
+    entries: entriesToOpen,
     crossCheckEnvelopes: crossChecks,
   }).map((entry) => {
     try {
@@ -294,7 +312,7 @@ function openSnapshot(
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
     vaultKey,
-    envelopes: snapshot.envelopes,
+    envelopes: envelopesToKeep,
     entries: entries.sort((a, b) => a.title.localeCompare(b.title)),
     unlockedWith,
   };
@@ -618,7 +636,7 @@ export async function enableDeviceUnlockForVault(
       vaultId: vault.vaultId,
       deviceId: id,
       vaultKeyVersion: vault.vaultKeyVersion,
-      deviceKeyVersion: INITIAL_DEVICE_KEY_VERSION,
+      deviceKeyVersion: nextDeviceKeyVersion(vault.envelopes, id),
       rpId: rpId(),
       challenges: challenges.provider,
       user: {
@@ -758,6 +776,10 @@ export async function hardRevokeDevice(
         expectType: "recovery",
         expectVaultKeyVersion: vault.vaultKeyVersion,
       });
+      if (!equalBytes(opened, vault.vaultKey)) {
+        zeroize(opened);
+        throw new Error("recovery key does not match the unlocked vault key");
+      }
       zeroize(opened);
     } catch (error) {
       zeroize(masterKey, recoveryKey, recoveryWrappingKey);

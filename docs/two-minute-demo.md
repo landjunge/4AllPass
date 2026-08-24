@@ -1,5 +1,7 @@
 # Two-minute demo — agent credential access
 
+Each Allow/Deny shows a **Why** (policy reason, DE+EN, no secrets). Security status is on the Access tab. FastAPI still mints nothing.
+
 **Week 7** of [`eight-week-agent-access.md`](eight-week-agent-access.md). Tracker: [#76](https://github.com/landjunge/4AllPass/issues/76).
 
 A stranger with an unlocked vault can try this without a lecture:

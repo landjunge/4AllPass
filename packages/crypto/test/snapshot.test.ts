@@ -148,6 +148,24 @@ describe("verifySnapshot / unlockSnapshot (vault-revision.md §6)", () => {
     );
   });
 
+  it("refuses a device cross-check that omits caller deviceId", () => {
+    const vaultKey = generateVaultKey();
+    const deviceKey = randomBytes(32);
+    const env = deviceEnvelope(vaultKey, deviceKey);
+
+    assert.throws(
+      () =>
+        verifySnapshot({
+          vaultId,
+          vaultKey,
+          vaultKeyVersion: VKV,
+          entries: [],
+          crossCheckEnvelopes: [{ envelope: env, wrappingKey: deviceKey }],
+        }),
+      IntegrityError,
+    );
+  });
+
   it("a wrong wrapping key surfaces as AuthFailureError, not IntegrityError", () => {
     const vaultKey = generateVaultKey();
     const deviceKey = randomBytes(32);

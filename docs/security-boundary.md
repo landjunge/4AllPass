@@ -97,7 +97,8 @@ A printed recovery key without the encrypted blobs cannot recreate the store.
 metadata**. The PWA asks the server for a one-time `publicKey.challenge`
 (`POST …/webauthn/challenges`) and consumes it after the ceremony. The server
 stores `SHA-256(challenge)`, never the raw bytes after issue, and never sees
-PRF output.
+PRF output. Consume also checks the `deviceId` the challenge was issued for,
+when one was bound. That is ceremony hygiene, not a Vault-Key proof.
 
 The server still does **not**:
 
@@ -183,6 +184,23 @@ commits that re-attach a revoked device’s envelope (HTTP 422).
 Two clients both at revision 10 → 11: exactly one wins; the loser gets 409
 with `currentRevision`.
 
+Same serialization when the two payloads differ in `vaultKeyVersion` (a normal
+same-VK commit vs a hard-revoke VK++ on the same `expectedRevision`). Measured
+in `test_concurrent_same_vk_commit_and_hard_revoke_one_wins`: statuses are
+`{200, 409}`; the live head is whichever payload held the lock — either VK₁
+with both device envelopes, or VK₂ without the revoked device’s envelope. There
+is no mixed-version snapshot. The loser retries on `currentRevision` and must
+send `vaultKeyVersion >=` the live value (a same-VK retry after a VK++ win is
+HTTP 422). The server still does not open envelopes; “rebuild under VK₂” is a
+client duty.
+
+A Device-Key Envelope mirror PUT with `expectedRevision: N` racing a snapshot
+`N→N+1` is the same CAS pointer: the PUT is 200 only if it still sees revision
+N, otherwise 409 (`test_concurrent_snapshot_commit_and_stale_mirror_put`).
+After an omit-envelope commit, GET of that mirror is 404 and PUT at the new
+head is 409 (`test_concurrent_omit_envelope_commit_and_mirror_put`). The PWA
+order (commit, then PUT) is the one that lands a mirror on the live head.
+
 The server does not open the sealed manifest. It stores the client-supplied
 object and returns it unchanged. The client verifies it under VK
 (`verifySnapshotManifest`) before pinning `revisionFromManifest`.
@@ -193,10 +211,20 @@ object and returns it unchanged. The client verifies it under VK
 
 - WebAuthn COSE verification is ceremony integrity (`fmt=none` + assertion
   signature). It is not PRF verification and does not wrap a Vault Key.
+  A challenge issued before hard-revoke does not survive metadata DELETE:
+  delayed `POST …/challenges/{id}/consume` is HTTP 404 (`credential not found`)
+  once `device.revoked_at` or `credential.revoked_at` is set
+  (`test_assert_after_hard_revoke_is_not_found`). Between the VK++ snapshot
+  commit and that DELETE there is a window where consume can still return 204;
+  that is still not unwrap of VK₂.
 - Hard revoke does not rewrap foreign device envelopes (or this device’s when
   the DK needs a WebAuthn ceremony); those devices re-enrol after master unlock.
 - Account session is bound to a client-asserted `X-Device-Id`, not to a
-  WebAuthn credential. Stolen token + stolen device id still works.
+  WebAuthn credential. Stolen token + stolen device id still works. A VK++
+  snapshot alone does **not** drop other sessions; metadata `DELETE /devices`
+  does (`test_hard_revoke_snapshot_does_not_kill_sessions_until_metadata_delete`).
+  Re-POSTing the same `deviceId` after revoke is one row (`uq_devices_vault_device_id`);
+  two concurrent re-enrols both 200 (`test_concurrent_reenrol_same_device_id_one_row`).
 - Device-Key Envelope mirror is gated on the active snapshot: PUT requires
   `expectedRevision` and a matching device envelope; GET refuses a missing
   envelope (404) or a stale `deviceKeyVersion` (409). The PWA commits the
@@ -208,11 +236,15 @@ object and returns it unchanged. The client verifies it under VK
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
 - The Chromium, Firefox, and **macOS Safari** extension decrypts on-device via
-  `@4allpass/crypto`. Unlocked entries sit in service-worker memory until Lock,
-  5 minutes idle, or worker eviction — not in extension storage. Closing the
-  popup does not lock (shortcut fill still works until idle). Fill matching uses
-  the entry URL host, not the page title. JavaScript cannot securely zeroize
-  strings. iOS Safari Web Extension and system Password AutoFill are not shipped.
+  `@4allpass/crypto`. Unlock uses the same open order as the PWA: freshness pin
+  (`chrome.storage.local`) → unwrap → sealed manifest → decrypt the records
+  verification returned. Unlocked entries sit in service-worker memory until
+  Lock, 5 minutes idle, or worker eviction — not in extension storage. Closing
+  the popup does not lock (shortcut fill still works until idle). Fill matching
+  uses the entry URL host first, then a high-confidence provider bridge; a
+  TLD-only saved host (`https://com`) does not suffix-match. JavaScript cannot
+  securely zeroize strings. iOS Safari Web Extension and system Password
+  AutoFill are not shipped.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
@@ -241,10 +273,13 @@ access broker still needs the unlocked process). Inactivity auto-lock still
 runs. **Launch at login** (Settings, default off) starts the process hidden in
 the tray. It does not unwrap the Vault Key, does not skip the password, and
 does not auto-allow. A cold start after login is LOCKED until the user unlocks.
-On macOS, **screen lock** and **system sleep** emit `desktop-lock`; the UI
-calls the same lock path and zeroizes the in-process Vault Key as well as JS
-allows. That is not FileVault, not hibernation-safe, and not implemented on
-Windows/Linux yet. The race vs actual sleep is real: a dump of RAM after a
+**Screen lock** and **system sleep** emit `desktop-lock` (macOS notify, Windows
+input-desktop, Linux logind `LockedHint`, and a >5s **wall-clock** gap between
+polls). `Instant` / CLOCK_MONOTONIC stops during suspend with the process, so a
+lid-close looks like one 400ms tick and must not be the stall clock.
+The UI calls the same lock path and zeroizes the in-process Vault Key as well as
+JS allows. A pending access prompt is denied. That is not FileVault and not
+hibernation-safe. The race vs actual sleep is real: a dump of RAM after a
 missed notification can still hold VK. An access request opens a small always-on-top prompt with Allow / Deny;
 that window receives only application / provider / scope / TTL. The grant
 material is issued in the unlocked main webview after the prompt event. The
@@ -260,16 +295,22 @@ profile also serves the **same relay** on this process
 (`POST /v1/access/request` on `http://127.0.0.1:8788`). That route is a pairing
 queue, not a token mint: the server never decrypts, never invents a GitHub
 secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
-Browser `Origin` on the grant path is 403. Pairing token required.
+Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing token required.
 `GET /api/v1/local/broker` returns that pairing token only after local storage
 auth. The **server** profile does not mount these routes. Grants live in page
-memory. Unknown applications are denied. Audit rows omit the secret.
+memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):
+unknown app DENY, missing scope DENY. `decision: "allow"` means the request is
+eligible for a **human** Allow — it is not auto-handoff. Core grants have no
+secret; the unlocked UI still attaches `material` for the existing broker
+response. Unknown applications are denied. Audit rows omit the secret.
 Application identity is a string (`n8n`) — spoofable. TTL expiry stops future
 handoffs; a copy already given is not un-known. See
 [`two-minute-demo.md`](two-minute-demo.md) and
 [`local-access-broker.md`](local-access-broker.md).
 
-Vite-only dev can still run the Node relay (`npm run broker` on `:8787`).
+Vite-only dev can still run the Node relay (`npm run broker` → `@4allpass/broker` on `:8787`).
+That package queues HTTP; it does not call `evaluatePolicy`. The sidecar
+(`backend/app/broker.py`) is what the desktop app starts.
 
 `@4allpass/access` (`fourAllPass.request({ provider, capability, ttl })`) is a
 Node client for that relay. It refuses non-loopback URLs, does not set

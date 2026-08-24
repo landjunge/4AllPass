@@ -202,6 +202,7 @@ async def test_consume_verifies_assertion_and_rejects_replay_signature(client):
         json={
             "purpose": "assert",
             "challenge": issued["challenge"],
+            "deviceId": DEVICE_A,
             "credentialId": _b64(assertion["credential_id"]),
             "clientDataJSON": _b64(assertion["client_data_json"]),
             "authenticatorData": _b64(assertion["authenticator_data"]),
@@ -217,6 +218,7 @@ async def test_consume_verifies_assertion_and_rejects_replay_signature(client):
         json={
             "purpose": "assert",
             "challenge": again["challenge"],
+            "deviceId": DEVICE_A,
             "credentialId": _b64(assertion["credential_id"]),
             "clientDataJSON": _b64(assertion["client_data_json"]),
             "authenticatorData": _b64(assertion["authenticator_data"]),
@@ -224,3 +226,88 @@ async def test_consume_verifies_assertion_and_rejects_replay_signature(client):
         },
     )
     assert replay.status_code == 422, replay.text
+
+
+async def test_assert_after_hard_revoke_is_not_found(client):
+    """Interaktions-Testplan 2.1: challenge issued, then hard-revoke, then delayed assertion.
+
+    Ceremony consume is not vault unwrap. After metadata revoke the credential
+    is 404 even if the challenge bytes are still in the client.
+    """
+    token = await _signup(client)
+    vault_id = await _vault_and_device(client, token)
+    create = await _issue(client, token, vault_id, "create")
+    key = SoftwarePasskey()
+    blob = key.registration(base64.b64decode(create["challenge"]))
+    posted = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials",
+        headers=_auth(token),
+        json={
+            "credentialId": _b64(blob["credential_id"]),
+            "rpId": RP_ID,
+            "mechanism": "prf",
+            "prfSupported": True,
+            "largeBlobSupported": False,
+            "challengeId": create["challengeId"],
+            "challenge": create["challenge"],
+            "clientDataJSON": _b64(blob["client_data_json"]),
+            "attestationObject": _b64(blob["attestation_object"]),
+        },
+    )
+    assert posted.status_code == 200, posted.text
+
+    issued = await _issue(client, token, vault_id, "assert")
+    assertion = key.assertion(base64.b64decode(issued["challenge"]))
+
+    rotated = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        headers=_auth(token),
+        json={
+            "revision": 1,
+            "vaultKeyVersion": 2,
+            "cryptoProtocolVersion": 1,
+            "envelopes": [
+                {
+                    "version": 1,
+                    "type": "master",
+                    "vaultKeyVersion": 2,
+                    "encryption": "AES-256-GCM",
+                    "nonce": "AAAAAAAAAAAAAAAA",
+                    "ciphertext": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+                    "tag": "AgICAgICAgICAgICAgICAg==",
+                    "kdf": {
+                        "algorithm": "argon2id",
+                        "version": 19,
+                        "memory": 65536,
+                        "iterations": 3,
+                        "parallelism": 4,
+                        "hashLen": 32,
+                        "salt": "ABEiM0RVZneImaq7zN3u/w==",
+                    },
+                }
+            ],
+            "entries": [],
+        },
+    )
+    assert rotated.status_code == 200, rotated.text
+    revoked = await client.delete(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}",
+        headers=_auth(token),
+    )
+    assert revoked.status_code == 200
+    assert revoked.json()["revocation"] == "metadata_only"
+
+    consumed = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges/{issued['challengeId']}/consume",
+        headers=_auth(token),
+        json={
+            "purpose": "assert",
+            "challenge": issued["challenge"],
+            "deviceId": DEVICE_A,
+            "credentialId": _b64(assertion["credential_id"]),
+            "clientDataJSON": _b64(assertion["client_data_json"]),
+            "authenticatorData": _b64(assertion["authenticator_data"]),
+            "signature": _b64(assertion["signature"]),
+        },
+    )
+    assert consumed.status_code == 404, consumed.text

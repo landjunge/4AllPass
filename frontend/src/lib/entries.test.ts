@@ -26,6 +26,19 @@ test("old plaintext without kind still unlocks as web", () => {
   assert.equal(entry.title, "GitHub");
   assert.equal(entry.password, "s3cret");
   assert.equal(entry.provider, "");
+  assert.equal(entry.totpSecret, "");
+});
+
+test("totpSecret round-trips in entry plaintext", () => {
+  const id = newEntryId();
+  const entry: VaultEntry = {
+    id,
+    ...emptyDraft("web"),
+    title: "GitHub",
+    totpSecret: "JBSWY3DPEHPK3PXP",
+  };
+  const again = decodeEntryPlaintext(id, encodeEntryPlaintext(entry));
+  assert.equal(again.totpSecret, "JBSWY3DPEHPK3PXP");
 });
 
 test("api and sftp round-trip in ciphertext JSON", () => {

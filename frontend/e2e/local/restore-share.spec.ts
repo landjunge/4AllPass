@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { clickAndType, VAULT_PASSWORD } from "../live/actions.ts";
-import type { VaultEntry } from "../../src/lib/entries.ts";
+import { emptyDraft, type VaultEntry } from "../../src/lib/entries.ts";
 import { buildSharePackage } from "../../src/lib/share.ts";
 
 const RESTORED_TITLE = "GitHub (restored)";
@@ -12,19 +12,13 @@ const DEMO_SECRET = "ghp_demo-not-a-real-key";
 function githubEntry(): VaultEntry {
   return {
     id: "entry_restored",
-    kind: "api",
+    ...emptyDraft("api"),
     title: RESTORED_TITLE,
     provider: "GitHub",
     account: "personal",
-    username: "",
     password: DEMO_SECRET,
-    url: "",
-    host: "",
-    port: "",
-    protocol: "",
     capabilities: "repository.read",
     credentialType: "personal_access_token",
-    notes: "",
     updatedAt: "2026-08-21T00:00:00.000Z",
   };
 }

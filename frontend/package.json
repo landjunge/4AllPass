@@ -12,10 +12,13 @@
     "test:e2e": "playwright test",
     "test:e2e:live": "playwright test -c playwright.live.config.ts",
     "test:e2e:autofill": "playwright test -c playwright.extension.config.ts",
+    "test:e2e:autofill-local": "playwright test -c playwright.autofill-local.config.ts",
     "test:e2e:local": "playwright test -c playwright.local.config.ts",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@4allpass/core": "*",
+    "@4allpass/providers": "*",
     "@4allpass/crypto": "*",
     "@4allpass/webauthn": "*",
     "@tauri-apps/api": "^2.9.0",

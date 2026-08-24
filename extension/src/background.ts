@@ -1,7 +1,9 @@
 import { bytesToHex, randomBytes } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
-import { entriesForPage, type FillEntry } from "./match.ts";
+import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
+import { totpFromBase32 } from "./totp.ts";
+import { entriesForPage, publicPicks, type FillEntry } from "./match.ts";
 import { unlockVault } from "./unlock.ts";
 
 interface SessionState {
@@ -87,30 +89,28 @@ async function deviceId(): Promise<string> {
 }
 
 async function activeHttpTab(): Promise<chrome.tabs.Tab | undefined> {
-  const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id && tab.url && /^https?:/.test(tab.url)) return tab;
+  const [focused] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+  if (focused?.id && focused.url && /^https?:/.test(focused.url)) return focused;
   const tabs = await ext.tabs.query({});
-  return tabs.find((candidate) => candidate.id && candidate.url && /^https?:/.test(candidate.url));
+  const http = tabs.filter((tab) => tab.id && tab.url && /^https?:/.test(tab.url));
+  http.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  return http[0];
 }
 
-async function fillInTab(tabId: number, username: string, password: string): Promise<boolean> {
+function emptyFill(reason: FillReason): FillResult {
+  return { ok: false, fields: [], mode: "skipped", reason };
+}
+
+async function sendToTab(tabId: number, payload: Record<string, unknown>): Promise<FillResult> {
   try {
-    const response = (await ext.tabs.sendMessage(tabId, {
-      type: "fill-form",
-      username,
-      password,
-    })) as { ok?: boolean } | undefined;
-    if (response?.ok) return true;
+    const response = (await ext.tabs.sendMessage(tabId, payload)) as FillResult | undefined;
+    if (response) return response;
   } catch {
     // no content script yet
   }
   await ext.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-  const retry = (await ext.tabs.sendMessage(tabId, {
-    type: "fill-form",
-    username,
-    password,
-  })) as { ok?: boolean } | undefined;
-  return Boolean(retry?.ok);
+  const retry = (await ext.tabs.sendMessage(tabId, payload)) as FillResult | undefined;
+  return retry ?? emptyFill("no-fields");
 }
 
 async function refreshBadge(tabId?: number): Promise<void> {
@@ -161,16 +161,18 @@ async function openPopupSafe(): Promise<void> {
   }
 }
 
-async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
+async function fillActive(entryId?: string, assist = false): Promise<Record<string, unknown>> {
   if (!session) {
     await openPopupSafe();
-    return { ok: false, error: "vault is locked" };
+    return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
   }
   noteActivity();
   const tab = await activeHttpTab();
-  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill" };
+  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
   const matches = entriesForPage(session.entries, tab.url);
-  if (matches.length === 0) return { ok: false, error: "no entry matches this page" };
+  if (matches.length === 0) {
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
+  }
   const chosen = entryId
     ? matches.find((entry) => entry.id === entryId)
     : matches.length === 1
@@ -178,11 +180,66 @@ async function fillActive(entryId?: string): Promise<Record<string, unknown>> {
       : undefined;
   if (!chosen) {
     await openPopupSafe();
-    return { ok: true, needsPick: true, entries: matches };
+    return { ok: true, needsPick: true, entries: publicPicks(matches) };
   }
-  const filled = await fillInTab(tab.id, chosen.username, chosen.password);
-  if (!filled) return { ok: false, error: "no login fields on this page" };
-  return { ok: true, filled: chosen.title || chosen.username };
+  const probe = await sendToTab(tab.id, { type: "probe-form" });
+  if (!probe.ok) {
+    const assistFields = probe.assistFields ?? [];
+    return {
+      ok: false,
+      error: formatFillFailure(probe),
+      reason: probe.reason,
+      fields: probe.fields,
+      filled: probe.filled ?? [],
+      assistFields,
+      hints: probe.hints ?? [],
+      mode: probe.mode,
+      confidence: probe.confidence,
+      entryId: chosen.id,
+      assistPrompt: assistFields.length ? formatAssistPrompt(assistFields) : undefined,
+    };
+  }
+  let otp = "";
+  if (chosen.totpSecret) {
+    try {
+      otp = await totpFromBase32(chosen.totpSecret);
+    } catch {
+      otp = "";
+    }
+  }
+  const filled = await sendToTab(tab.id, {
+    type: "fill-form",
+    username: chosen.username,
+    password: chosen.password,
+    otp,
+    assist,
+  });
+  if (!filled.ok) {
+    return {
+      ok: false,
+      error: formatFillFailure(filled),
+      reason: filled.reason,
+      fields: filled.fields,
+      filled: filled.filled ?? [],
+      assistFields: filled.assistFields ?? [],
+      hints: filled.hints ?? [],
+      mode: filled.mode,
+      confidence: filled.confidence,
+      entryId: chosen.id,
+    };
+  }
+  const assistFields = filled.assistFields ?? [];
+  return {
+    ok: true,
+    fields: filled.fields,
+    filled: filled.filled ?? filled.fields,
+    assistFields,
+    hints: filled.hints ?? [],
+    mode: filled.mode,
+    confidence: filled.confidence,
+    entryId: chosen.id,
+    assistPrompt: assistFields.length ? formatAssistPrompt(assistFields) : undefined,
+  };
 }
 
 ext.runtime.onInstalled.addListener(() => {
@@ -239,7 +296,7 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       await lockVault();
       return { ok: true };
     case "unlock": {
-      const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8010").replace(/\/$/, "");
+      const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8788").replace(/\/$/, "");
       await ensureApiOrigin(apiOrigin);
       const unlocked = await unlockVault({
         apiOrigin,
@@ -263,10 +320,16 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
       if (!session) return { ok: false, error: "vault is locked" };
       noteActivity();
       const tab = await activeHttpTab();
-      return { ok: true, entries: tab?.url ? entriesForPage(session.entries, tab.url) : [] };
+      return {
+        ok: true,
+        entries: tab?.url ? publicPicks(entriesForPage(session.entries, tab.url)) : [],
+      };
     }
     case "fill-tab":
-      return fillActive(typeof message.entryId === "string" ? message.entryId : undefined);
+      return fillActive(
+        typeof message.entryId === "string" ? message.entryId : undefined,
+        message.assist === true,
+      );
     default:
       return { ok: false, error: "unknown message" };
   }

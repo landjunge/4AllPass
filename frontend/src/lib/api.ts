@@ -244,6 +244,7 @@ export const api = {
     body: {
       purpose: "create" | "assert";
       challenge: string;
+      deviceId?: string;
       credentialId?: string;
       clientDataJSON?: string;
       authenticatorData?: string;

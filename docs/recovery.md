@@ -154,3 +154,11 @@ replacement.
 - A printed kit cannot be revoked retroactively; only rotation plus a pinned newer
   revision removes its usefulness.
 - The checksum protects against typos, not against a maliciously modified printout.
+
+## 6. Team split (not implemented)
+
+Team Mode must **not** add a second Recovery Secret or split the Vault Key.
+
+The specified construction (review only: [`team-mode.md`](team-mode.md) §15–18) XOR-splits **this** Recovery Key 2-of-2 after the Recovery Envelope is wrapped as today. Solo keeps the full kit. Reconstruction is local. FastAPI never sees the combined key.
+
+Do not implement that split until Team Mode is explicitly unblocked. Do not invent Shamir polynomials for `n=2`.

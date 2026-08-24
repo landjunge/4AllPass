@@ -12,7 +12,7 @@ description: >
 
 # 4AllPass
 
-Device-centric ZK vault. Wedge: **agent credential access** (`docs/eight-week-agent-access.md`). Not “a nicer Bitwarden.” Not a Tollgate feature.
+Device-centric ZK vault. **Humans: effortless auth (import + reliable autofill). Machines: controlled access (Allow/Deny, no raw password).** Not “a nicer Bitwarden.” Not a Tollgate feature. Plan: [`docs/product-maturity.md`](../../../docs/product-maturity.md).
 
 Specs in `docs/` win over comments and PR descriptions. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -102,13 +102,11 @@ cd backend && pytest
 
 Follow [references/improve.md](references/improve.md). Prefer the next **honest** milestone over new features.
 
-Current recommended order:
-
-1. The 8-week plan is in the tree. Optional loopback broker is pairing-token + `127.0.0.1`, not FastAPI. FastAPI never returns secrets. Do not merge Tollgate. Do not start public-key wrapping / ML-KEM unless asked. Do not auto-publish `docs/launch-posts.md`.
+Current recommended order: [`docs/product-maturity.md`](../../../docs/product-maturity.md) **v3**. Reliability before expansion. Autofill V1, Assist, Why, TOTP, `install.sh` (Intel Mac: Befehl → Fenster) are on `main`. Next feelable: **live GitHub fill** (two explicit fills, not a multi-step engine) and a stranger import test. **Do not rewrite crypto.** Agent/n8n is not the first screen. Apple notarization stays paused. No Safari/Windows import, no 500 providers, no launch post, no tag `v0.1.2` until asked. FastAPI never returns secrets. Do not merge Tollgate. Do not auto-publish `docs/launch-posts.md`.
 
 Hard revoke, DK-mirror CAS, server-issued challenges, COSE ceremony verification, envelope property tests, reproducible PWA/extension hashes, offline snapshot cache, Chromium autofill, Bitwarden/1Password/KeePass/CSV import, recovery-kit copy, clipboard overwrite, and v1 item-share files (`docs/sharing.md`) are **on main**. Do not reimplement them.
 
-Do not start orgs, social-login-as-crypto, native apps, “passkey store as vault”, clipboard auto-save, a **Tollgate merge**, or FastAPI token minting. Provider templates / local broker / n8n demo follow the 8-week plan only — see `docs/eight-week-agent-access.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
+Do not start orgs (review only: `docs/team-mode.md` — wait for an explicit implement decision; must not become PAM). Do not weaken ZK or admin-cannot-decrypt-employee-vault for a paid tier (`docs/product-philosophy.md`). Do not start social-login-as-crypto, native apps, “passkey store as vault”, clipboard auto-save, a **Tollgate merge**, or FastAPI token minting. Provider templates / local broker / n8n demo follow the 8-week plan only — see `docs/eight-week-agent-access.md`. MCP is not the security interface. 4AllPass must not grow spend policy; Tollgate must not grow a vault.
 
 ## Open work already in flight
 

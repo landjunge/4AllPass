@@ -6,9 +6,11 @@ import {
   auditContainsSecret,
   auditLine,
   decideAccess,
+  explainAccess,
   issueGrant,
   parseAccessBody,
   readGrant,
+  whyContainsSecret,
   wipeGrant,
   type AccessRequest,
 } from "./access.ts";
@@ -109,4 +111,13 @@ test("audit rows never contain the secret", () => {
   assert.equal(auditContainsSecret(row, secret), false);
   assert.equal(JSON.stringify(row).includes(secret), false);
   assert.equal(row.ttlSeconds, 600);
+});
+
+test("explainAccess why never contains the vault secret", () => {
+  const denied = decideAccess(req({ application: "malicious-agent" }), [github()]);
+  const why = explainAccess(denied);
+  assert.equal(whyContainsSecret(why, secret), false);
+  assert.equal(why.why.includes(secret), false);
+  const pending = decideAccess(req(), [github()]);
+  assert.equal(explainAccess(pending).code, "pending_human_allow");
 });

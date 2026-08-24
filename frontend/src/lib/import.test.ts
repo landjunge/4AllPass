@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parsePlaintextExport, plaintextImportWarning } from "./import.ts";
+import {
+  entriesFromBrowserLogins,
+  importReviewRows,
+  mergeImportedLogins,
+  parsePlaintextExport,
+  plaintextImportWarning,
+} from "./import.ts";
 
 test("warns that the file is plaintext", () => {
   assert.match(plaintextImportWarning(), /plaintext/i);
@@ -38,6 +44,8 @@ test("parses Bitwarden JSON logins and skips notes", () => {
   assert.equal(result.entries[0]?.username, "ada");
   assert.equal(result.entries[0]?.password, "secret");
   assert.equal(result.entries[0]?.url, "https://github.com");
+  assert.equal(result.entries[0]?.providerId, "github");
+  assert.equal(result.entries[0]?.domain, "github.com");
 });
 
 test("parses KeePass-style CSV", () => {
@@ -135,4 +143,37 @@ test("parses KeePass XML logins and ignores history copies", () => {
 
 test("refuses zipped or binary exports", () => {
   assert.throws(() => parsePlaintextExport("PK\u0003\u0004export"), /zipped|encrypted/i);
+});
+
+test("browser logins become vault entries", () => {
+  const entries = entriesFromBrowserLogins([
+    { url: "https://mail.example/login", username: "ada", password: "pw", title: "mail.example", source: "chrome:Default" },
+  ]);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0]?.kind, "web");
+  assert.equal(entries[0]?.username, "ada");
+  assert.match(entries[0]?.notes ?? "", /chrome:Default/);
+});
+
+test("import review never includes the password field", () => {
+  const entries = entriesFromBrowserLogins([
+    { url: "https://mail.example/", username: "ada", password: "hunter2", title: "mail.example" },
+  ]);
+  const rows = importReviewRows(entries);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.username, "ada");
+  assert.equal(JSON.stringify(rows).includes("hunter2"), false);
+  assert.equal("password" in (rows[0] ?? {}), false);
+});
+
+test("merge replaces same host and username", () => {
+  const first = entriesFromBrowserLogins([
+    { url: "https://mail.example/", username: "ada", password: "old", title: "mail.example" },
+  ]);
+  const second = entriesFromBrowserLogins([
+    { url: "https://mail.example/login", username: "ada", password: "new", title: "mail.example" },
+  ]);
+  const merged = mergeImportedLogins(first, second);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0]?.password, "new");
 });

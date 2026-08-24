@@ -79,6 +79,8 @@ async def test_local_bootstrap_is_absent_on_server_profile(client):
     assert broker.status_code in {401, 404}
     caps = await client.get("/api/v1/local/webview-caps")
     assert caps.status_code == 404
+    access = await client.post("/v1/access/request", json={"application": "n8n"})
+    assert access.status_code == 404
     get_settings.cache_clear()
 
 

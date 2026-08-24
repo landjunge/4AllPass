@@ -60,6 +60,12 @@ test("entriesForPage rejects evilgithub.com and allows login.github.com", () => 
   assert.equal(entriesForPage(entries, "https://login.github.com/session").length, 1);
 });
 
+test("entriesForPage does not suffix-match a TLD-only saved host", () => {
+  const entries = [{ id: "1", title: "TLD", username: "ada", password: "x", url: "https://com" }];
+  assert.deepEqual(entriesForPage(entries, "https://evilgithub.com/login"), []);
+  assert.equal(entriesForPage(entries, "https://com/").length, 1);
+});
+
 test("known Microsoft login domain matches a microsoft.com vault entry", () => {
   const entries = [
     { id: "1", title: "Microsoft", username: "ada@contoso.test", password: "secret", url: "https://account.microsoft.com" },

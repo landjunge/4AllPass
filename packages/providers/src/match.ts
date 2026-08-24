@@ -10,5 +10,8 @@ export function hostMatches(domain: string, host: string, match: DomainMatch): b
   if (match === "exact" || match === "login") {
     return domain === needle;
   }
-  return domain === needle || domain.endsWith(`.${needle}`);
+  if (domain === needle) return true;
+  // Single-label / TLD needles must not suffix-match (com → evilgithub.com).
+  if (!needle.includes(".")) return false;
+  return domain.endsWith(`.${needle}`);
 }

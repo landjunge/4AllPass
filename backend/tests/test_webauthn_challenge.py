@@ -23,6 +23,7 @@ async def test_issue_and_consume_roundtrip():
         vault_id=vault,
         purpose="assert",
         challenge=issued.challenge,
+        device_id="dev_1",
     )
     assert ok is not None
     assert ok.device_id == "dev_1"
@@ -60,6 +61,33 @@ async def test_consume_rejects_wrong_binding():
         vault_id=vault,
         purpose="create",
         challenge=issued.challenge,
+    )
+    assert replay is None
+
+
+async def test_consume_rejects_wrong_device_id():
+    store = MemoryChallengeStore()
+    user = uuid.uuid4()
+    vault = uuid.uuid4()
+    issued = await store.issue(
+        user_id=user, vault_id=vault, purpose="assert", device_id="dev_a", ttl_seconds=120
+    )
+    wrong = await store.consume(
+        challenge_id=issued.challenge_id,
+        user_id=user,
+        vault_id=vault,
+        purpose="assert",
+        challenge=issued.challenge,
+        device_id="dev_b",
+    )
+    assert wrong is None
+    replay = await store.consume(
+        challenge_id=issued.challenge_id,
+        user_id=user,
+        vault_id=vault,
+        purpose="assert",
+        challenge=issued.challenge,
+        device_id="dev_a",
     )
     assert replay is None
 
@@ -104,10 +132,25 @@ async def test_challenge_requires_vault_owner(client):
     assert body["challengeId"]
     assert body["challenge"]
 
+    wrong_device = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges/{body['challengeId']}/consume",
+        headers=_auth(alice),
+        json={"purpose": "assert", "challenge": body["challenge"], "deviceId": "dev_other"},
+    )
+    assert wrong_device.status_code == 404
+
+    issued = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges",
+        headers=_auth(alice),
+        json={"purpose": "assert", "deviceId": "dev_x"},
+    )
+    assert issued.status_code == 200, issued.text
+    body = issued.json()
+
     consumed = await client.post(
         f"/api/v1/vaults/{vault_id}/webauthn/challenges/{body['challengeId']}/consume",
         headers=_auth(alice),
-        json={"purpose": "assert", "challenge": body["challenge"]},
+        json={"purpose": "assert", "challenge": body["challenge"], "deviceId": "dev_x"},
     )
     assert consumed.status_code == 204
 

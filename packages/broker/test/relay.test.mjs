@@ -115,6 +115,7 @@ test("PWA origin allowlist and grant Origin helper", () => {
   assert.equal(pwaOriginAllowed("http://127.0.0.1:5173"), true);
   assert.equal(pwaOriginAllowed("https://evil.example"), false);
   assert.equal(browserGrantOrigin("https://evil.example"), true);
+  assert.equal(browserGrantOrigin("null"), true);
   assert.equal(browserGrantOrigin(""), false);
   assert.equal(browserGrantOrigin(undefined), false);
 });

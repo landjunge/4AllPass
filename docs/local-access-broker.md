@@ -51,7 +51,7 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 |---|---|
 | Pairing token | Required on every call. Printed at start; not on the public API. |
 | Bind | `127.0.0.1` only. |
-| Browser grant path | `Origin: http(s)://…` on `POST /v1/access/request` is **403**. n8n/Node typically send no Origin. |
+| Browser grant path | `Origin: http(s)://…` or `Origin: null` on `POST /v1/access/request` is **403**. n8n/Node typically send no Origin. |
 | PWA poll | CORS for the local app (`:8788`) and Vite (`:5173` / `:4173`). |
 | Vault locked | No PWA poller → `denied` / `vault_locked`. No secret. |
 | Policy | Still in the PWA (`decideAccess`). Unknown app = DENY. |

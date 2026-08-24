@@ -68,6 +68,7 @@ class ChallengeStore(Protocol):
         vault_id: UUID,
         purpose: ChallengePurpose,
         challenge: bytes,
+        device_id: str | None = None,
     ) -> StoredChallenge | None: ...
 
 
@@ -105,6 +106,7 @@ class MemoryChallengeStore:
         vault_id: UUID,
         purpose: ChallengePurpose,
         challenge: bytes,
+        device_id: str | None = None,
     ) -> StoredChallenge | None:
         key = str(challenge_id)
         item = self._items.pop(key, None)
@@ -118,6 +120,7 @@ class MemoryChallengeStore:
             or record.vault_id != vault_id
             or record.purpose != purpose
             or record.digest != digest_challenge(challenge)
+            or (record.device_id is not None and record.device_id != device_id)
         ):
             return None
         return record
@@ -155,6 +158,7 @@ class RedisChallengeStore:
         vault_id: UUID,
         purpose: ChallengePurpose,
         challenge: bytes,
+        device_id: str | None = None,
     ) -> StoredChallenge | None:
         key = CHALLENGE_PREFIX + str(challenge_id)
         redis = get_redis_client()
@@ -175,6 +179,7 @@ class RedisChallengeStore:
             or record.vault_id != vault_id
             or record.purpose != purpose
             or record.digest != digest_challenge(challenge)
+            or (record.device_id is not None and record.device_id != device_id)
         ):
             return None
         return record

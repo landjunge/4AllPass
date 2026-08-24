@@ -97,7 +97,8 @@ A printed recovery key without the encrypted blobs cannot recreate the store.
 metadata**. The PWA asks the server for a one-time `publicKey.challenge`
 (`POST …/webauthn/challenges`) and consumes it after the ceremony. The server
 stores `SHA-256(challenge)`, never the raw bytes after issue, and never sees
-PRF output.
+PRF output. Consume also checks the `deviceId` the challenge was issued for,
+when one was bound. That is ceremony hygiene, not a Vault-Key proof.
 
 The server still does **not**:
 
@@ -235,11 +236,15 @@ object and returns it unchanged. The client verifies it under VK
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
 - The Chromium, Firefox, and **macOS Safari** extension decrypts on-device via
-  `@4allpass/crypto`. Unlocked entries sit in service-worker memory until Lock,
-  5 minutes idle, or worker eviction — not in extension storage. Closing the
-  popup does not lock (shortcut fill still works until idle). Fill matching uses
-  the entry URL host, not the page title. JavaScript cannot securely zeroize
-  strings. iOS Safari Web Extension and system Password AutoFill are not shipped.
+  `@4allpass/crypto`. Unlock uses the same open order as the PWA: freshness pin
+  (`chrome.storage.local`) → unwrap → sealed manifest → decrypt the records
+  verification returned. Unlocked entries sit in service-worker memory until
+  Lock, 5 minutes idle, or worker eviction — not in extension storage. Closing
+  the popup does not lock (shortcut fill still works until idle). Fill matching
+  uses the entry URL host first, then a high-confidence provider bridge; a
+  TLD-only saved host (`https://com`) does not suffix-match. JavaScript cannot
+  securely zeroize strings. iOS Safari Web Extension and system Password
+  AutoFill are not shipped.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
@@ -290,7 +295,7 @@ profile also serves the **same relay** on this process
 (`POST /v1/access/request` on `http://127.0.0.1:8788`). That route is a pairing
 queue, not a token mint: the server never decrypts, never invents a GitHub
 secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
-Browser `Origin` on the grant path is 403. Pairing token required.
+Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing token required.
 `GET /api/v1/local/broker` returns that pairing token only after local storage
 auth. The **server** profile does not mount these routes. Grants live in page
 memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):

@@ -250,6 +250,15 @@ revision, the pass proves they all decrypt under one key, and only the pass work
 a snapshot published before the manifest existed. See `crypto-protocol.md` §8.3 for
 the comparison.
 
+Step 1 is **not optional once a manifest has been seen**. "Pre-manifest snapshot"
+is a property of the vault, not of the individual answer: a pin that carries a
+`manifestDigest` says this vault publishes manifests, and from then on
+`evaluateRevision` refuses a manifest-free state at any revision. Otherwise the
+whole of §6 could be skipped by incrementing `revision`. A vault that has never
+published a manifest still opens on the content pass alone — but its
+server-asserted `revision` is not pinned, because pinning an unverified number is
+how the pin gets poisoned.
+
 ---
 
 ## 6.1 Backend implementation status

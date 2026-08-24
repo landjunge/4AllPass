@@ -202,7 +202,18 @@ order (commit, then PUT) is the one that lands a mirror on the live head.
 
 The server does not open the sealed manifest. It stores the client-supplied
 object and returns it unchanged. The client verifies it under VK
-(`verifySnapshotManifest`) before pinning `revisionFromManifest`.
+(`verifySnapshotManifest`) before pinning `revisionFromManifest`, and pins
+**nothing else**: a snapshot without a manifest is applied but never advances the
+pin, because the server's own `revision` is a claim rather than a proof.
+
+Once a vault has been pinned with a verified manifest, a manifest-free answer is
+refused at any revision, not just at the pinned one. A commit *response* is
+checked the same way as a GET, and additionally against the revision and
+manifest digest the client just published — a 2xx is not evidence that the
+server stored what it was sent.
+
+The extension runs the same two checks (pin, then manifest) before anything is
+filled into a page.
 
 ---
 
@@ -240,6 +251,18 @@ object and returns it unchanged. The client verifies it under VK
   popup does not lock (shortcut fill still works until idle). Fill matching uses
   the entry URL host, not the page title. JavaScript cannot securely zeroize
   strings. iOS Safari Web Extension and system Password AutoFill are not shipped.
+  Its revision pin lives in `ext.storage.local` and is separate from the PWA's;
+  clearing it puts that client back on pin-on-first-use.
+- There is **no Recovery Key rotation**. No UI and no client function issues a
+  new Recovery Key, and `hardRevokeDevice` re-wraps VK₂ under the *same*
+  Recovery Wrapping Key. A vault-key rotation does not retire an exposed
+  Emergency Kit; only a new vault does. See `recovery.md` §4.
+- There is **no Master Password change flow**. `recovery.md` §4 asks the client
+  to offer one right after a recovery-key unlock; it does not.
+- `deviceKeyVersion` monotonicity is checked against the *active snapshot's*
+  envelope for that device, not a persisted high-water mark. If a device's
+  envelope is absent for a revision the floor is lost until it reappears;
+  re-attaching after a metadata revoke is refused separately.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.

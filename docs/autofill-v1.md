@@ -17,7 +17,7 @@ Kein zweites Engine. Kein neues Paket.
 2. FastAPI sieht **nie** Klartext, Fill-Ergebnisse oder Field-Maps.
 3. Verify und Logs enthalten **keine** Secrets (kein Username, kein Passwort, kein OTP).
 4. Unter Confidence **0,70** kein Auto-Fill. Assist füllt diese Felder nur nach Klick „Trotzdem füllen / Fill anyway“. Nie ein nacktes Suchfeld allein.
-5. `new-password` / Signup wird nicht als Login gefüllt.
+5. `new-password` / Signup wird nicht als Login gefüllt — auch nicht der Username.
 6. Origin der Seite ist die Trust-Grenze. `evilgithub.com` ≠ GitHub.
 7. Passkeys nicht simulieren. `autocomplete`‑Suffix `webauthn` ignorieren (P3).
 
@@ -133,7 +133,7 @@ export interface LoginModel {
 - Pro Rolle das höchst bewertete Feld.
 - `eligible === false` → kein Auto-Write. P1b darf Assist anbieten.
 - Nur Username ohne Passwort (z. B. erste Stufe GitHub): Fill erlaubt, wenn `username.confidence >= 0.70`.
-- Nur `new-password`-Felder: `password === null`, in der Regel `eligible === false`.
+- Signup (`new-password` vorhanden, kein `current-password`): `eligible === false`, kein Username-Fill.
 
 **Kompat:** `pickUsername` / `pickPassword` bleiben als Wrapper mit Threshold `0`, damit bestehende Tests grün bleiben. **Fill-Pfad** nutzt nur `buildLoginModel` mit Default-Threshold 0.70.
 
@@ -147,7 +147,7 @@ Host aus `URL.hostname`: `github.com@evil.com` ist `evil.com`; IDN-Homographen s
 Erlaubt:
 
 - exact host (ohne führendes `www.`)
-- `pageHost === entryHost` oder `pageHost.endsWith("." + entryHost)`
+- `pageHost === entryHost` oder (`entryHost` enthält `.` und `pageHost.endsWith("." + entryHost)`). TLD-only (`com`) suffix-matched nicht.
 - known-login-domain aus `@4allpass/providers` (z. B. `login.microsoftonline.com` → Microsoft)
 
 Verboten:

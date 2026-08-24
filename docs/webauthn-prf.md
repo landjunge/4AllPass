@@ -200,7 +200,7 @@ independent of `vault_key_version`, which counts generations of the Vault Key.
 | Event | `deviceKeyVersion` | `vault_key_version` |
 |---|---|---|
 | Vault Key rotation (hard revocation) | unchanged | +1 |
-| This device re-enrols / replaces its WebAuthn credential | +1 | unchanged |
+| This device re-enrols / replaces its WebAuthn credential | +1 (`nextDeviceKeyVersion` in the PWA) | unchanged |
 | Device-Key Envelope re-wrapped under a new DWK for the *same* DK | unchanged | unchanged |
 
 Rotating a Device Key:

@@ -23,7 +23,7 @@ Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-shar
 
 - Organizations / teams — specified in `docs/team-mode.md` + `docs/team-roadmap.md`. **Do not implement** until the maintainer accepts the review. Must not become PAM.
 - Social login as a crypto factor
-- Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android)
+- Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android). Mobile is a future first-class *device* of the same vault — 0 % app code now. Do not couple the vault format or sync to Tauri.
 - Passkey store as a separate vault product
 - Shamir. TOTP on vault entries is on `main` (RFC 6238). Passkey store still later.
 - Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)
@@ -44,4 +44,4 @@ If Plus ever exists: `packages/crypto` stays unchanged; broker, agent, and captu
 
 ## How to pick a task
 
-If the user says “improve 4AllPass” without a target, propose **one** item from “Now”, say why, and implement that. Do not open a new architecture debate. The architecture is frozen enough; the gap is product you can feel, not more scaffolding.
+If the user says “improve 4AllPass” without a target, propose **one** item from “Now”, say why, and implement that. Do not implement the trust-fabric vision in [`docs/architecture/future-architecture.md`](../../../../docs/architecture/future-architecture.md). The gap is product you can feel (stranger import, autofill), not more scaffolding.

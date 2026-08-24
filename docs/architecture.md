@@ -1,6 +1,6 @@
 # Architektur – 4AllPass
 
-**Self-hosted Zero-Knowledge Passwort-Manager**
+**Self-hosted Zero-Knowledge Passwort-Manager** (2026-Einstieg). Langfristige Vision, nicht bauen: [`architecture/future-architecture.md`](architecture/future-architecture.md).
 
 **Ziel**  
 Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers steht, echte Zero-Knowledge-Sicherheit bietet und gleichzeitig modern, komfortabel und zukunftssicher ist.

@@ -53,7 +53,11 @@ Live `github.com/login` (P1): **da** — ein Formular, ein Fill, kein Submit. Op
 
 ## Nicht in dieser Reihenfolge
 
-Team Mode (nur Review: [`team-mode.md`](team-mode.md) — kein PAM), 50 Provider, Zurückschreiben in Chrome/Firefox, MCP, n8n-Marketplace, Cloud-Sync, Connection-/Capability-Umbau (ChatGPT-Review: **nicht bauen**, bis explizit gesagt).
+Team Mode (nur Review: [`team-mode.md`](team-mode.md) — kein PAM), 50 Provider, Zurückschreiben in Chrome/Firefox, MCP, n8n-Marketplace, Cloud-Sync, iOS/Android-App, Connection-/Capability-Umbau (ChatGPT-Review: **nicht bauen**, bis explizit gesagt).
+
+**Mobile:** 0 % App-Code jetzt. First-Class-Device später. Vault/Crypto nicht an Tauri binden.
+
+Langfristige Vision (ADR, nicht Code): [`architecture/future-architecture.md`](architecture/future-architecture.md).
 
 ---
 

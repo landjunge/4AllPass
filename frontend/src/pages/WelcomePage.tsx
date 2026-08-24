@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { probeWebviewWebauthn } from "../lib/webauthnCapabilities.ts";
+import { prfCapabilityState, probeWebviewWebauthn } from "../lib/webauthnCapabilities.ts";
 
 export function WelcomePage({
   onCreate,
@@ -12,11 +12,12 @@ export function WelcomePage({
 
   useEffect(() => {
     void probeWebviewWebauthn().then((caps) => {
-      if (caps.prf === true) {
+      const state = prfCapabilityState(caps);
+      if (state === "available") {
         setPrfLine("Passkey/PRF seems available in this window. Vault password still works.");
         return;
       }
-      if (caps.prf === false || !caps.publicKeyCredential || !caps.credentialsCreate) {
+      if (state === "unavailable") {
         setPrfLine(
           "Passkey/PRF ist in diesem Fenster nicht nutzbar. Unlock mit Tresor-Passwort. / Passkey/PRF is not available in this window. Unlock with the vault password.",
         );

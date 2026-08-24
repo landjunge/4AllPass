@@ -2,9 +2,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
 
 const MECHANISM_LABEL: Record<string, string> = {
-  prf: "this device",
-  large_blob: "this device",
-  uv_gated_local: "this device",
+  prf: "WebAuthn PRF (rank 1)",
+  large_blob: "WebAuthn largeBlob (rank 2)",
+  uv_gated_local: "UV-gated local store (rank 3 — policy only)",
 };
 
 export function UnlockPage(): ReactNode {
@@ -60,7 +60,12 @@ export function UnlockPage(): ReactNode {
             </button>
             {mechanism ? (
               <p className="hint" data-testid="unlock-mechanism">
-                Unlocked via {MECHANISM_LABEL[mechanism] ?? mechanism}
+                Entsperrt über / Unlocked via {MECHANISM_LABEL[mechanism] ?? mechanism}
+              </p>
+            ) : null}
+            {mechanism === "uv_gated_local" ? (
+              <p className="hint" data-testid="unlock-rank3-warning">
+                Rang 3 ist nur Policy, kein PRF. / Rank 3 is policy only, not PRF.
               </p>
             ) : null}
             <div className="divider">or</div>

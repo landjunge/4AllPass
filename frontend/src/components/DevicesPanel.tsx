@@ -1,11 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
-import { webauthnPrfAvailable } from "../lib/webauthnCapabilities.ts";
+import {
+  prfCapabilityState,
+  probeWebviewWebauthn,
+  type PrfCapabilityState,
+} from "../lib/webauthnCapabilities.ts";
 
 const MECHANISM_LABEL: Record<string, string> = {
   prf: "WebAuthn PRF (rank 1)",
   large_blob: "WebAuthn largeBlob (rank 2)",
-  uv_gated_local: "UV-gated local store (rank 3)",
+  uv_gated_local: "UV-gated local store (rank 3 — policy only)",
 };
 
 export function DevicesPanel(): ReactNode {
@@ -21,7 +25,7 @@ export function DevicesPanel(): ReactNode {
   } = useApp();
   const [busy, setBusy] = useState(false);
   const [mechanism, setMechanism] = useState<string | null>(null);
-  const [prfAvailable] = useState(() => webauthnPrfAvailable());
+  const [prfState, setPrfState] = useState<PrfCapabilityState | null>(null);
   const [rotateTarget, setRotateTarget] = useState<string | null>(null);
   const [masterPassword, setMasterPassword] = useState("");
   const [recoveryKeyText, setRecoveryKeyText] = useState("");
@@ -30,6 +34,12 @@ export function DevicesPanel(): ReactNode {
   useEffect(() => {
     void refreshDevices();
   }, [refreshDevices]);
+
+  useEffect(() => {
+    void probeWebviewWebauthn().then((caps) => {
+      setPrfState(prfCapabilityState(caps));
+    });
+  }, []);
 
   async function enable(): Promise<void> {
     setBusy(true);
@@ -69,12 +79,22 @@ export function DevicesPanel(): ReactNode {
             Enabled via {MECHANISM_LABEL[mechanism] ?? mechanism}
           </p>
         ) : null}
-        {prfAvailable ? null : (
+        {prfState && prfState !== "available" ? (
           <p className="hint" data-testid="no-prf-hint">
-            This browser reports no WebAuthn PRF support, so enabling falls back to largeBlob or a
-            UV-gated local store (rank 2 or 3).
+            Dieses Fenster hat WebAuthn-PRF nicht bewiesen (Desktop-WebView oft null). Enable fällt
+            auf largeBlob oder einen UV-gated lokalen Store zurück (Rang 2 oder 3). / This window
+            has not proven WebAuthn PRF (desktop WebView often reports none). Enabling falls back to
+            largeBlob or a UV-gated local store (rank 2 or 3).
           </p>
-        )}
+        ) : null}
+        {mechanism === "uv_gated_local" ? (
+          <p className="hint" data-testid="rank3-warning">
+            Rang 3 ist nur Policy: der Wrapping-Key liegt in diesem Browser-Profil, UV-gated. Das
+            ist kein hardwaregebundenes PRF-Secret. / Rank 3 is policy only: the wrapping key lives
+            in this browser profile, gated by user verification. It is not a hardware-bound PRF
+            secret.
+          </p>
+        ) : null}
         <p className="hint">
           WebAuthn unlocks a Device Wrapping Key, which unwraps a random Device Key, which unwraps
           the Vault Key. The PRF output is never used as a key and is wiped straight after use. The

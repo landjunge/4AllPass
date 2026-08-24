@@ -300,6 +300,23 @@ pre.mono {
   border-color: var(--accent-hi);
 }
 
+.browser-card.on {
+  border-color: var(--ok);
+}
+
+.browser-card.on.open {
+  border-color: var(--ok);
+}
+
+.browser-dot {
+  width: 9px;
+  height: 9px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--ok);
+  flex-shrink: 0;
+}
+
 .browser-card-hit {
   display: flex;
   flex-direction: row;

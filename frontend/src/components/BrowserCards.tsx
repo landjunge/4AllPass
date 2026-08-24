@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   extensionInstall,
   importBrowserLogins,
@@ -10,12 +10,15 @@ import {
   type BrowserLoginRow,
   type ExtensionInstall,
 } from "../lib/browsers.ts";
+import { loadBrowserActive, saveBrowserActive } from "../lib/browser-active.ts";
 import { BrowserIcon } from "./BrowserIcon.tsx";
 
 export function BrowserCards({
+  vaultId,
   onLogins,
   onEnsureDemoLogin,
 }: {
+  vaultId: string;
   onLogins: (rows: BrowserLoginRow[]) => void;
   onEnsureDemoLogin: () => Promise<void>;
 }): ReactNode {
@@ -26,26 +29,40 @@ export function BrowserCards({
   const [hint, setHint] = useState<ExtensionInstall | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const loadedFor = useRef<string | null>(null);
 
   useEffect(() => {
     void listBrowserProfiles().then((found) => {
       setCards(found);
       if (!found) return;
-      const profiles = new Set<string>();
-      const ext = new Set<string>();
-      for (const card of found) {
-        ext.add(card.id);
-        for (const profile of card.profiles) {
-          profiles.add(profileKey(card.id, profile.id));
-        }
+      const saved = loadBrowserActive(vaultId);
+      const knownExt = new Set(found.map((card) => card.id));
+      const knownProfiles = new Set(
+        found.flatMap((card) => card.profiles.map((profile) => profileKey(card.id, profile.id))),
+      );
+      if (saved) {
+        setWantExt(new Set(saved.extensions.filter((id) => knownExt.has(id))));
+        setSelected(new Set(saved.profiles.filter((key) => knownProfiles.has(key))));
+      } else {
+        setWantExt(new Set());
+        setSelected(new Set());
       }
-      setSelected(profiles);
-      setWantExt(ext);
       if (found.length === 1) setOpenId(found[0]!.id);
+      loadedFor.current = vaultId;
     });
-  }, []);
+  }, [vaultId]);
 
   const selectedCount = useMemo(() => selected.size, [selected]);
+  const activeCount = wantExt.size;
+
+  useEffect(() => {
+    if (!vaultId || cards === "loading" || cards === null) return;
+    if (loadedFor.current !== vaultId) return;
+    saveBrowserActive(vaultId, {
+      extensions: [...wantExt],
+      profiles: [...selected],
+    });
+  }, [vaultId, wantExt, selected, cards]);
 
   if (cards === "loading") {
     return (
@@ -143,18 +160,20 @@ export function BrowserCards({
     <section className="card browser-cards" data-testid="browser-cards">
       <h3>Browser auf diesem Gerät / Browsers on this device</h3>
       <p className="hint">
-        Pro Browser: Extension und Passwörter sind getrennte Haken. Extension lädt der Browser
-        selbst — kein Mac-Passwort. / Extension vs passwords are separate. The browser installs the
-        add-on; no Mac login password for that.
+        Grün = aktiv, bleibt gemerkt. Neue Passwörter im Tresor sehen entsperrte Extensions sofort.
+        Wir schreiben nicht in Chrome oder Firefox zurück. / Green = on, remembered. New vault
+        passwords show up in unlocked extensions. We do not write into the browser password store.
       </p>
       <div className="browser-card-grid">
         {cards.map((card) => {
           const open = openId === card.id;
+          const on = wantExt.has(card.id);
           return (
             <article
               key={card.id}
-              className={open ? "browser-card open" : "browser-card"}
+              className={`browser-card${open ? " open" : ""}${on ? " on" : ""}`}
               data-testid={`browser-card-${card.id}`}
+              data-active={on ? "true" : "false"}
             >
               <button
                 type="button"
@@ -165,10 +184,11 @@ export function BrowserCards({
                 <span className="browser-card-label">
                   <strong>{card.name}</strong>
                   <span className="muted">
-                    {card.profiles.length}{" "}
+                    {on ? "aktiv / on" : "aus / off"} · {card.profiles.length}{" "}
                     {card.profiles.length === 1 ? "Profil / profile" : "Profile / profiles"}
                   </span>
                 </span>
+                {on ? <span className="browser-dot" aria-hidden /> : null}
               </button>
               {open ? (
                 <div className="browser-card-body">
@@ -178,7 +198,7 @@ export function BrowserCards({
                       checked={wantExt.has(card.id)}
                       onChange={() => toggleExt(card.id)}
                     />
-                    Extension
+                    Extension aktiv / Extension on
                   </label>
                   {wantExt.has(card.id) ? (
                     <button type="button" onClick={() => void installExt(card.id)}>
@@ -233,8 +253,9 @@ export function BrowserCards({
         </button>
       </div>
       <p className="muted">
-        {selectedCount} Profile gewählt / selected · {wantExt.size} Extensions. macOS kann nach dem
-        Anmeldepasswort fragen.
+        {activeCount} Browser aktiv / on · {selectedCount} Profile fürs Holen. macOS kann nach dem
+        Anmeldepasswort fragen. Neue Einträge im Tresor: gleiche Liste in jeder entsperrten
+        Extension.
       </p>
       {error ? <p className="error">{error}</p> : null}
       {hint ? (

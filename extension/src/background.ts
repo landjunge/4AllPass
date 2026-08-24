@@ -1,31 +1,98 @@
-import { bytesToHex, randomBytes } from "@4allpass/crypto";
+import { bytesToHex, randomBytes, zeroize, type VaultRevision } from "@4allpass/crypto";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
-import { unlockVault } from "./unlock.ts";
+import {
+  apiRequest,
+  decryptUnlockedSnapshot,
+  snapshotHead,
+  unlockVault,
+} from "./unlock.ts";
+import { defaultPinStore } from "./revision-pin.ts";
 
 interface SessionState {
   apiOrigin: string;
   token: string;
   vaultId: string;
+  deviceId: string;
+  vaultKey: Uint8Array;
+  vaultKeyVersion: number;
+  revision: number;
+  pin: VaultRevision;
   entries: FillEntry[];
 }
 
 let session: SessionState | null = null;
+let lastPullAt = 0;
+let pullTimer: ReturnType<typeof setInterval> | null = null;
 
 const MENU_FILL = "fill-login";
 const AUTO_LOCK_ALARM = "autolock";
 
+function stopPull(): void {
+  if (pullTimer !== null) {
+    clearInterval(pullTimer);
+    pullTimer = null;
+  }
+}
+
 function dropSession(): void {
+  stopPull();
+  lastPullAt = 0;
   if (session) {
     session.token = "";
+    zeroize(session.vaultKey);
     for (const entry of session.entries) {
       wipeFillEntry(entry);
     }
   }
   session = null;
+}
+
+async function pullIfChanged(force = false): Promise<void> {
+  const current = session;
+  if (!current) return;
+  const now = Date.now();
+  if (!force && now - lastPullAt < 800) return;
+  lastPullAt = now;
+  try {
+    const wire = await apiRequest<unknown>(
+      current.apiOrigin,
+      current.token,
+      current.deviceId,
+      "GET",
+      `/vaults/${current.vaultId}/snapshot`,
+    );
+    const head = snapshotHead(wire);
+    if (head.vaultId !== current.vaultId) return;
+    if (head.vaultKeyVersion !== current.vaultKeyVersion) {
+      await lockVault();
+      return;
+    }
+    if (head.revision === current.revision) return;
+    const opened = decryptUnlockedSnapshot(wire, {
+      vaultId: current.vaultId,
+      vaultKey: current.vaultKey,
+      pin: current.pin,
+    });
+    for (const entry of current.entries) wipeFillEntry(entry);
+    current.entries = opened.entries;
+    current.pin = opened.pin;
+    current.revision = opened.pin.revision;
+    await defaultPinStore().save(opened.pin);
+    await refreshBadge();
+  } catch {
+    // Keep the last good entries. The next fill or poll retries.
+  }
+}
+
+function startPull(): void {
+  stopPull();
+  pullTimer = setInterval(() => {
+    void pullIfChanged();
+  }, 2500);
 }
 
 const idle = createIdleLock(() => {
@@ -161,6 +228,7 @@ async function openPopupSafe(): Promise<void> {
 }
 
 async function fillActive(entryId?: string, assist = false): Promise<Record<string, unknown>> {
+  await pullIfChanged(true);
   if (!session) {
     await openPopupSafe();
     return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
@@ -284,7 +352,10 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function handle(message: { type?: string; [key: string]: unknown }): Promise<unknown> {
   switch (message.type) {
     case "status":
-      if (session) noteActivity();
+      if (session) {
+        noteActivity();
+        await pullIfChanged();
+      }
       return {
         ok: true,
         unlocked: session !== null,
@@ -297,9 +368,10 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
     case "unlock": {
       const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8788").replace(/\/$/, "");
       await ensureApiOrigin(apiOrigin);
+      const id = await deviceId();
       const unlocked = await unlockVault({
         apiOrigin,
-        deviceId: await deviceId(),
+        deviceId: id,
         email: String(message.email ?? ""),
         accountPassword: String(message.accountPassword ?? ""),
         vaultPassword: String(message.vaultPassword ?? ""),
@@ -308,8 +380,15 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
         apiOrigin,
         token: unlocked.token,
         vaultId: unlocked.vaultId,
+        deviceId: id,
+        vaultKey: unlocked.vaultKey,
+        vaultKeyVersion: unlocked.pin.vaultKeyVersion,
+        revision: unlocked.pin.revision,
+        pin: unlocked.pin,
         entries: unlocked.entries,
       };
+      lastPullAt = Date.now();
+      startPull();
       noteActivity();
       await setMenuEnabled(true);
       await refreshBadge();
@@ -318,6 +397,8 @@ async function handle(message: { type?: string; [key: string]: unknown }): Promi
     case "candidates-active": {
       if (!session) return { ok: false, error: "vault is locked" };
       noteActivity();
+      await pullIfChanged();
+      if (!session) return { ok: false, error: "vault is locked" };
       const tab = await activeHttpTab();
       return {
         ok: true,

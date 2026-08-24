@@ -79,7 +79,7 @@ Nicht: Browser → direkt Vault. Abbrechen lässt den Tresor unverändert. Karte
 **Hub = 4AllPass-Tresor.**
 
 1. **Rein:** gewählte Browser-Profile → Einträge im Tresor (verschlüsselt wie jeder andere Eintrag).
-2. **Raus aufs Web:** vorhandene Extension füllt Login-Formulare.
+2. **Raus aufs Web:** vorhandene Extension füllt Login-Formulare. Solange sie entsperrt ist, holt sie neuere Tresor-Revisionen nach (kein Zurückschreiben in Chrome/Firefox).
 3. **Nicht v1:** in Chromes eigene `Login Data` zurückschreiben, während Chrome läuft. Browser sperren das. Wer „Profil A und Profil B sind in Chrome selbst identisch“ will, braucht v2 (oder die Extension statt Chromes Passwort-Manager).
 
 v1 ist trotzdem dein Basics-Loop: **einmal klicken → alle gewählten Profile im Tresor sichtbar → überall ausfüllen.**

@@ -2,6 +2,7 @@ import {
   assertFreshSnapshot,
   decodeVaultSnapshot,
   deriveMasterKeyFromEnvelope,
+  IntegrityError,
   revisionFromManifest,
   sealedManifestDigest,
   unwrapVaultKey,
@@ -89,23 +90,38 @@ function masterEnvelopeOf(snapshot: VaultSnapshot): KeyEnvelope {
   return envelope;
 }
 
+export function snapshotHead(wire: unknown): {
+  vaultId: string;
+  revision: number;
+  vaultKeyVersion: number;
+} {
+  const snapshot = decodeVaultSnapshot(wire);
+  return {
+    vaultId: snapshot.vaultId,
+    revision: snapshot.revision,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+  };
+}
+
 /**
- * Same open order as the PWA: freshness pin → unwrap → sealed manifest →
- * decrypt the records verification returned, not the wire copies.
+ * Decrypt a snapshot with a Vault Key already in memory. Used to pull a newer
+ * revision without running Argon2 again. Caller keeps the key until lock.
  */
-export function openUnlockedSnapshot(
+export function decryptUnlockedSnapshot(
   wire: unknown,
   options: {
     vaultId: string;
-    vaultPassword: string;
+    vaultKey: Uint8Array;
     pin?: VaultRevision | null;
+    masterKey?: Uint8Array;
   },
 ): { entries: VaultItem[]; pin: VaultRevision } {
   const snapshot = decodeVaultSnapshot(wire);
   if (snapshot.vaultId !== options.vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
-  assertFreshSnapshot(options.pin ?? null, {
+  const pin = options.pin ?? null;
+  assertFreshSnapshot(pin, {
     vaultId: snapshot.vaultId,
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
@@ -115,6 +131,73 @@ export function openUnlockedSnapshot(
       : {}),
   });
 
+  let entries = snapshot.entries;
+  let envelopes = snapshot.envelopes;
+  let nextPin: VaultRevision;
+  if (snapshot.sealedManifest) {
+    const verified = verifySnapshotManifest(
+      snapshot.sealedManifest,
+      { entries, envelopes },
+      {
+        vaultKey: options.vaultKey,
+        vaultId: snapshot.vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+      },
+    );
+    entries = verified.entries;
+    envelopes = verified.envelopes;
+    nextPin = revisionFromManifest(verified);
+  } else {
+    if (pin?.manifestDigest) {
+      throw new IntegrityError(
+        `revision ${pin.revision} was pinned with a verified manifest; incoming state has none`,
+      );
+    }
+    nextPin = {
+      vaultId: snapshot.vaultId,
+      revision: snapshot.revision,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+      cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    };
+  }
+  const master = envelopes.find((envelope) => envelope.type === "master");
+  const items = verifySnapshot({
+    vaultId: options.vaultId,
+    vaultKey: options.vaultKey,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    entries,
+    crossCheckEnvelopes:
+      options.masterKey && master
+        ? [{ envelope: master, wrappingKey: options.masterKey }]
+        : [],
+  }).map((entry) => {
+    try {
+      return decodeItem(entry.id, entry.plaintext);
+    } finally {
+      zeroize(entry.plaintext);
+    }
+  });
+  return { entries: items, pin: nextPin };
+}
+
+/**
+ * Same open order as the PWA: freshness pin → unwrap → sealed manifest →
+ * decrypt the records verification returned, not the wire copies.
+ * The returned vaultKey is owned by the caller until lock.
+ */
+export function openUnlockedSnapshot(
+  wire: unknown,
+  options: {
+    vaultId: string;
+    vaultPassword: string;
+    pin?: VaultRevision | null;
+  },
+): { entries: VaultItem[]; pin: VaultRevision; vaultKey: Uint8Array } {
+  const snapshot = decodeVaultSnapshot(wire);
+  if (snapshot.vaultId !== options.vaultId) {
+    throw new Error("server returned a snapshot for a different vault");
+  }
   const master = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(options.vaultPassword, master);
   try {
@@ -125,48 +208,16 @@ export function openUnlockedSnapshot(
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
     try {
-      let entries = snapshot.entries;
-      let envelopes = snapshot.envelopes;
-      let pin: VaultRevision;
-      if (snapshot.sealedManifest) {
-        const verified = verifySnapshotManifest(
-          snapshot.sealedManifest,
-          { entries, envelopes },
-          {
-            vaultKey,
-            vaultId: snapshot.vaultId,
-            revision: snapshot.revision,
-            vaultKeyVersion: snapshot.vaultKeyVersion,
-          },
-        );
-        entries = verified.entries;
-        envelopes = verified.envelopes;
-        pin = revisionFromManifest(verified);
-      } else {
-        pin = {
-          vaultId: snapshot.vaultId,
-          revision: snapshot.revision,
-          vaultKeyVersion: snapshot.vaultKeyVersion,
-          cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
-        };
-      }
-      const masterForCheck = envelopes.find((envelope) => envelope.type === "master") ?? master;
-      const items = verifySnapshot({
+      const opened = decryptUnlockedSnapshot(wire, {
         vaultId: options.vaultId,
         vaultKey,
-        vaultKeyVersion: snapshot.vaultKeyVersion,
-        entries,
-        crossCheckEnvelopes: [{ envelope: masterForCheck, wrappingKey: masterKey }],
-      }).map((entry) => {
-        try {
-          return decodeItem(entry.id, entry.plaintext);
-        } finally {
-          zeroize(entry.plaintext);
-        }
+        pin: options.pin,
+        masterKey,
       });
-      return { entries: items, pin };
-    } finally {
+      return { ...opened, vaultKey };
+    } catch (error) {
       zeroize(vaultKey);
+      throw error;
     }
   } finally {
     zeroize(masterKey);
@@ -180,7 +231,13 @@ export async function unlockVault(options: {
   accountPassword: string;
   vaultPassword: string;
   pinStore?: PinStore;
-}): Promise<{ token: string; vaultId: string; entries: VaultItem[] }> {
+}): Promise<{
+  token: string;
+  vaultId: string;
+  entries: VaultItem[];
+  vaultKey: Uint8Array;
+  pin: VaultRevision;
+}> {
   const pins = options.pinStore ?? defaultPinStore();
   const auth = storageAuthRequest(options.email, options.accountPassword);
   const session = await apiRequest<{ token: string }>(
@@ -213,5 +270,11 @@ export async function unlockVault(options: {
     pin: await pins.load(vaultId),
   });
   await pins.save(opened.pin);
-  return { token: session.token, vaultId, entries: opened.entries };
+  return {
+    token: session.token,
+    vaultId,
+    entries: opened.entries,
+    vaultKey: opened.vaultKey,
+    pin: opened.pin,
+  };
 }

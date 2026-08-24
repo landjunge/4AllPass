@@ -276,6 +276,7 @@ export function VaultPage(): ReactNode {
       ) : (
         <>
         <BrowserCards
+          vaultId={vault.vaultId}
           onLogins={(rows) => {
             const incoming = entriesFromBrowserLogins(rows);
             if (incoming.length === 0) {

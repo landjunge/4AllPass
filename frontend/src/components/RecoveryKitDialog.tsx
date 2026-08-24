@@ -103,6 +103,7 @@ export function RecoveryKitDialog(): ReactNode {
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
+            data-testid="confirm-kit-stored"
           />
           I stored this recovery key offline.
         </label>

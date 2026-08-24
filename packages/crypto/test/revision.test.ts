@@ -75,4 +75,15 @@ describe("evaluateRevision", () => {
   it("assertFreshSnapshot throws on rollback", () => {
     assert.throws(() => assertFreshSnapshot(base, { ...base, revision: 1 }), RollbackError);
   });
+
+  it("refuses an advance that drops the digest after a digest pin", () => {
+    const digest = new Uint8Array(32).fill(7);
+    const pinned: VaultRevision = { ...base, manifestDigest: digest };
+    const d = evaluateRevision(pinned, { ...base, revision: 11 });
+    assert.equal(d.ok, false);
+    if (!d.ok) {
+      assert.equal(d.action, "mismatch");
+      assert.ok(d.error instanceof IntegrityError);
+    }
+  });
 });

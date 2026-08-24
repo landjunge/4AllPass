@@ -207,6 +207,13 @@ The server does not open the sealed manifest. It stores the client-supplied
 object and returns it unchanged. The client verifies it under VK
 (`verifySnapshotManifest`) before pinning `revisionFromManifest`.
 
+Once the local pin stores a `manifestDigest`, a later `GET` that omits
+`sealedManifest` is `IntegrityError` — even if the claimed `revision` is
+higher. That is not an advance. The pin is not rewritten. Unlock decrypts the
+records `verifySnapshotManifest` returned, not a second copy of the GET
+payload. A first pin without a digest (legacy snapshot, no manifest yet) still
+pins the server integers; after the first verified manifest that path is closed.
+
 ---
 
 ## 6. Remaining limitations (honest)

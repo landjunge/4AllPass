@@ -154,6 +154,34 @@ describe("attack: revision rollback", () => {
     if (!decision.ok) assert.equal(decision.action, "mismatch");
   });
 
+  it("refuses a higher-revision snapshot that omits the manifest after a digest pin", () => {
+    const pinned = revisionFromManifest(snapshotAt(2).verified);
+    const withoutDigest: VaultRevision = {
+      vaultId: pinned.vaultId,
+      revision: 3,
+      vaultKeyVersion: pinned.vaultKeyVersion,
+      cryptoProtocolVersion: pinned.cryptoProtocolVersion,
+    };
+    const decision = evaluateRevision(pinned, withoutDigest);
+    assert.equal(decision.ok, false);
+    if (!decision.ok) {
+      assert.equal(decision.action, "mismatch");
+      assert.ok(decision.error instanceof IntegrityError);
+    }
+    assert.throws(() => assertFreshSnapshot(pinned, withoutDigest), IntegrityError);
+  });
+
+  it("accepts an honest advance that carries a new manifest digest", () => {
+    const first = snapshotAt(42);
+    const next = snapshotAt(43);
+    const decision = evaluateRevision(
+      revisionFromManifest(first.verified),
+      revisionFromManifest(next.verified),
+    );
+    assert.equal(decision.ok, true);
+    if (decision.ok) assert.equal(decision.action, "advance");
+  });
+
   it("refuses a pin poisoned beyond the uint32 revision range", () => {
     assert.throws(
       () => assertFreshSnapshot(null, { ...pin, revision: REVISION_MAX + 1 }),

@@ -90,22 +90,23 @@ export function evaluateRevision(
       ),
     );
   }
+  // Once a revision was pinned with a verified manifest, every later answer
+  // must carry one — same revision, advance, and rotation. Omitting it on a
+  // higher claimed revision used to look like a clean advance and let the
+  // client pin unauthenticated server integers.
+  if (lastSeen.manifestDigest !== undefined && incoming.manifestDigest === undefined) {
+    return reject(
+      "mismatch",
+      new IntegrityError(
+        `revision ${lastSeen.revision} was pinned with a verified manifest; incoming state has none`,
+      ),
+    );
+  }
   if (incoming.revision === lastSeen.revision) {
     if (incoming.vaultKeyVersion !== lastSeen.vaultKeyVersion) {
       return reject("mismatch", new IntegrityError("same revision but different vaultKeyVersion"));
     }
-    if (lastSeen.manifestDigest !== undefined) {
-      // Once a revision has been pinned with a verified manifest, an answer for
-      // that same revision must come with the same manifest — and must come with
-      // one at all, otherwise the check could simply be dropped.
-      if (incoming.manifestDigest === undefined) {
-        return reject(
-          "mismatch",
-          new IntegrityError(
-            `revision ${incoming.revision} was pinned with a verified manifest; incoming state has none`,
-          ),
-        );
-      }
+    if (lastSeen.manifestDigest !== undefined && incoming.manifestDigest !== undefined) {
       if (bytesToHex(lastSeen.manifestDigest) !== bytesToHex(incoming.manifestDigest)) {
         return reject(
           "mismatch",

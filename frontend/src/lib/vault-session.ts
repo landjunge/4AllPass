@@ -35,6 +35,7 @@ import {
   generateRecoveryKey,
   generateSalt,
   generateVaultKey,
+  IntegrityError,
   kdfParamsFrom,
   parseRecoveryKey,
   revisionFromManifest,
@@ -286,6 +287,9 @@ function openSnapshot(
   // Decrypt the records verification returned, not the wire copies — a Proxy
   // or getter-backed snapshot can otherwise show honest bytes to the manifest
   // and stale bytes to decrypt (crypto-protocol.md §8.2 / F-19).
+  const pin = loadPin(snapshot.vaultId);
+  let revision = snapshot.revision;
+  let vaultKeyVersion = snapshot.vaultKeyVersion;
   let entriesToOpen = snapshot.entries;
   let envelopesToKeep = snapshot.envelopes;
   if (snapshot.sealedManifest) {
@@ -300,9 +304,16 @@ function openSnapshot(
       },
     );
     savePin(revisionFromManifest(verified));
+    revision = verified.manifest.revision;
+    vaultKeyVersion = verified.manifest.vaultKeyVersion;
     entriesToOpen = verified.entries;
     envelopesToKeep = verified.envelopes;
   } else {
+    if (pin?.manifestDigest) {
+      throw new IntegrityError(
+        `revision ${pin.revision} was pinned with a verified manifest; incoming state has none`,
+      );
+    }
     savePin({
       vaultId: snapshot.vaultId,
       revision: snapshot.revision,
@@ -313,7 +324,7 @@ function openSnapshot(
   const entries: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
     vaultKey,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
+    vaultKeyVersion,
     entries: entriesToOpen,
     crossCheckEnvelopes: crossChecks,
   }).map((entry) => {
@@ -325,8 +336,8 @@ function openSnapshot(
   });
   return {
     vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
+    revision,
+    vaultKeyVersion,
     vaultKey,
     envelopes: envelopesToKeep,
     entries: entries.sort((a, b) => a.title.localeCompare(b.title)),

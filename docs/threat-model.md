@@ -58,6 +58,7 @@
 | Drop entries (truncation) or inject extra records | Manifest declares the complete set → `IntegrityError` |
 | Re-attach a revoked device's envelope | Not in the manifest of the current snapshot → `IntegrityError` |
 | Serve two different snapshots under one revision | Pinned `manifestDigest` → `mismatch` (equivocation) |
+| Omit `sealedManifest` after a digest pin, with a higher claimed revision | `IntegrityError` (`mismatch`); pin unchanged. Not an advance. |
 | Flip `vault_key_version` or `device_key_version` backwards | `downgrade` / `IntegrityError`; both are in AAD |
 | Change `deviceId`, envelope `type`, `vault_id`, crypto version, or the Argon2id parameters on an existing blob | AES-GCM AAD mismatch → `AuthFailureError` |
 | Hand a Device-Key Envelope of another vault / device / credential to a client | Expectation check → `IntegrityError` |

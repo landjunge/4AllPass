@@ -90,8 +90,9 @@ The client pins the last accepted `(vault_id, revision, vault_key_version, crypt
 |---|---|
 | no pin yet | `first_seen` — accept and pin |
 | same revision **and** same `vault_key_version` **and** same manifest digest | `same` |
-| higher revision, same `vault_key_version` | `advance` |
-| higher revision **and** higher `vault_key_version` | `rotation` |
+| higher revision, same `vault_key_version`, incoming has a manifest digest | `advance` |
+| higher revision **and** higher `vault_key_version`, incoming has a manifest digest | `rotation` |
+| digest pin, incoming has **no** manifest digest (same or higher revision) | **`mismatch` — refuse** |
 | lower revision | **`rollback` — refuse** |
 | lower `vault_key_version` | **`downgrade` — refuse** |
 | lower `crypto_protocol_version` | **`downgrade` — refuse** |

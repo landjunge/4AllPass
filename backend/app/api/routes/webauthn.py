@@ -98,6 +98,7 @@ async def consume_challenge(
         vault_id=vault.id,
         purpose=payload.purpose,
         challenge=raw,
+        device_id=payload.device_id,
     )
     if record is None:
         # Missing, expired, already used, or binding mismatch — same 404.

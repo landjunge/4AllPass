@@ -47,6 +47,22 @@ async def test_grant_without_ui_is_vault_locked(local_app):
         assert "access_token" not in res.json()
 
 
+async def test_null_origin_on_grant_is_403(local_app):
+    runtime, app = local_app
+    await _create_schema()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=runtime.origin) as client:
+        res = await client.post(
+            "/v1/access/request",
+            headers={
+                "Authorization": f"Bearer {runtime.broker_token}",
+                "Origin": "null",
+            },
+            json={"application": "n8n", "provider": "GitHub", "scope": ["repository.read"], "ttl": 15},
+        )
+        assert res.status_code == 403
+
+
 async def test_browser_origin_on_grant_is_403(local_app):
     runtime, app = local_app
     await _create_schema()

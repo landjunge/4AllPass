@@ -42,7 +42,10 @@ export function pwaOriginAllowed(origin, allowlist = DEFAULT_PWA_ORIGINS) {
 
 /** Browser pages must not call the grant path. Node/n8n typically send no Origin. */
 export function browserGrantOrigin(origin) {
-  return typeof origin === "string" && /^https?:\/\//i.test(origin);
+  return (
+    typeof origin === "string" &&
+    (origin.toLowerCase() === "null" || /^https?:\/\//i.test(origin))
+  );
 }
 
 function readBearer(req) {

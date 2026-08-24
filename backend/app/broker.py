@@ -28,6 +28,8 @@ def browser_grant_origin(origin: str | None) -> bool:
     if not origin:
         return False
     lower = origin.lower()
+    if lower == "null":
+        return True
     return lower.startswith("http://") or lower.startswith("https://")
 
 

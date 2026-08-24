@@ -202,6 +202,7 @@ async def test_consume_verifies_assertion_and_rejects_replay_signature(client):
         json={
             "purpose": "assert",
             "challenge": issued["challenge"],
+            "deviceId": DEVICE_A,
             "credentialId": _b64(assertion["credential_id"]),
             "clientDataJSON": _b64(assertion["client_data_json"]),
             "authenticatorData": _b64(assertion["authenticator_data"]),
@@ -217,6 +218,7 @@ async def test_consume_verifies_assertion_and_rejects_replay_signature(client):
         json={
             "purpose": "assert",
             "challenge": again["challenge"],
+            "deviceId": DEVICE_A,
             "credentialId": _b64(assertion["credential_id"]),
             "clientDataJSON": _b64(assertion["client_data_json"]),
             "authenticatorData": _b64(assertion["authenticator_data"]),
@@ -301,6 +303,7 @@ async def test_assert_after_hard_revoke_is_not_found(client):
         json={
             "purpose": "assert",
             "challenge": issued["challenge"],
+            "deviceId": DEVICE_A,
             "credentialId": _b64(assertion["credential_id"]),
             "clientDataJSON": _b64(assertion["client_data_json"]),
             "authenticatorData": _b64(assertion["authenticator_data"]),

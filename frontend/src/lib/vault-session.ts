@@ -177,11 +177,27 @@ function serverChallenges(vaultId: string, deviceIdValue: string): {
                   }
                 : {}),
             })
-            .catch(() => undefined);
+            .catch((error: unknown) => {
+              console.warn(consumeFailureNote(error));
+            });
         }),
       );
     },
   };
+}
+
+/**
+ * Consume is ceremony hygiene. Unlock must still succeed if it fails.
+ * The note must not include challenge bytes, vault ids, or API detail.
+ */
+export function consumeFailureNote(error: unknown): string {
+  if (error instanceof ApiError) {
+    return `webauthn challenge consume failed (HTTP ${error.status})`;
+  }
+  if (error instanceof Error && error.name && error.name !== "Error") {
+    return `webauthn challenge consume failed (${error.name})`;
+  }
+  return "webauthn challenge consume failed";
 }
 
 /** Generations are 1-based. Soft commits keep the version; hard revoke bumps it. */

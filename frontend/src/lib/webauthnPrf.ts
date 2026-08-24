@@ -162,7 +162,7 @@ type AuthenticationExtensionsResultsWithPrf = AuthenticationExtensionsClientOutp
 /**
  * webauthn-prf.md §2.2 step 1–2: request an assertion with the PRF eval
  * input. `challenge` must come from the server (anti-replay). Callers
- * supply it; a dedicated WebAuthn-ceremony endpoint is not wired yet.
+ * supply it via `vault-session` (`POST …/webauthn/challenges` + consume).
  */
 export function buildAssertionRequestOptions(
   identity: Pick<DeviceIdentity, 'rpId' | 'vaultId' | 'credentialId'>,

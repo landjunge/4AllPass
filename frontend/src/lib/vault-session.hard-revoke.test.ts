@@ -29,6 +29,7 @@ import { setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import {
   CommitConflict,
+  consumeFailureNote,
   hardRevokeDevice,
   nextDeviceKeyVersion,
   setDeviceUnlockStoreForTests,
@@ -265,6 +266,17 @@ test("hardRevokeDevice includes local device envelope when uv_gated_local and en
   assert.deepEqual(deviceIds, [SELF]);
   assert.ok(!deviceIds.includes(TARGET));
   assert.equal(committedPayload.current.vaultKeyVersion, 2);
+});
+
+test("consumeFailureNote reports status without API detail or ids", () => {
+  const leak = new ApiError(404, { detail: "vault vault-secret-id challenge abcdef0123456789" });
+  assert.equal(consumeFailureNote(leak), "webauthn challenge consume failed (HTTP 404)");
+  assert.equal(consumeFailureNote(leak).includes("vault-secret-id"), false);
+  assert.equal(consumeFailureNote(new TypeError("failed to fetch")), "webauthn challenge consume failed (TypeError)");
+  assert.equal(
+    consumeFailureNote(new Error("recovery key ABCDE-FGHIJ still in this message")),
+    "webauthn challenge consume failed",
+  );
 });
 
 test("nextDeviceKeyVersion increments on re-enrol and starts at 1", () => {

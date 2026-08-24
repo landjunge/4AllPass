@@ -39,7 +39,7 @@ Trigger (unverändert): Popup **Diese Seite füllen / Fill this page**, `Ctrl+Sh
 Desktop-Unlock: `POST /auth/local` mintet nur eine **Storage-Session**. Unwrap des Tresors bleibt lokal unter dem Tresor-Passwort. FastAPI sieht den Vault-Key nicht. E-mail + Konto-Passwort bleiben für das Server-Profil.  
 Kein stilles Fill beim Laden der Seite in V1 (das ist der Bitwarden-Default-Streit). Explizite Nutzeraktion.
 
-**GitHub live** (`github.com/login`): Fixture in `fill.test.ts` ist ein Formular (Username + `current-password`; Suffix `webauthn` ignoriert). Username-only / Passwort-only / OTP-Seiten bleiben supported. Das ist **kein** Multi-Step-Engine. Live-Seite bleibt in diesem Slice ein manueller Check.
+**GitHub live** (`github.com/login`, Stand 2026-08): ein Formular, Username + `current-password`. Suffix `webauthn` ignorieren. Fixture: `test-login-github.html` + `fill.test.ts`. E2E: Playwright `autofill-local` (kein Submit). Username-only / Passwort-only / OTP bleiben Unit-Tests. Live `github.com` ist kein CI. Kein Multi-Step-Engine.
 
 ---
 
@@ -268,7 +268,8 @@ P3: Passkeys / OTP — echte Platform-APIs, nicht simulieren.
 
 Aus [`product-maturity.md`](product-maturity.md):
 
-- [x] Ein Login auf der Demo-Seite ohne Copy-Paste (`test-login.html`, gleichwertig für V1). GitHub live bleibt manuell.
+- [x] Ein Login auf der Demo-Seite ohne Copy-Paste (`test-login.html`, gleichwertig für V1).
+- [x] GitHub-förmiges Login ohne Copy-Paste (`test-login-github.html`, Playwright `autofill-local`). Live `github.com` bleibt ein manueller Check.
 - [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
 - [x] Unit-Tests für §9 grün.
 - [x] Keine Secrets in `FillResult` / Logs.

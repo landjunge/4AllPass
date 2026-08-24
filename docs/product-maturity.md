@@ -227,7 +227,7 @@ Sichtbarkeit (Phase C) erst nach P0+P1. Nicht auto-publishen.
 Sicherheit:
 
 - [x] FastAPI mintet keine Tokens. (halten)
-- [x] README sagt die Wahrheit zu Notarisierung, PRF, Autofill (Demo ja, GitHub-Live noch nicht).
+- [x] README sagt die Wahrheit zu Notarisierung, PRF, Autofill (Demo + GitHub-förmige Fixture).
 
 P0:
 
@@ -238,7 +238,7 @@ P0:
 P1:
 
 - [x] Login ohne Copy-Paste auf der Demo-Seite (`test-login.html`, Playwright `autofill-local`).
-- [ ] GitHub (oder gleichwertige Live-Seite) ohne Copy-Paste — manuell. GitHub ist zwei Seiten: Fill auf `/login`, dann Fill auf der Passwort-Seite. Kein Multi-Step-Engine (P1b, nicht dieser Slice). Fixture in `extension/test/fill.test.ts`.
+- [x] GitHub-förmiges Login ohne Copy-Paste — ein Formular (`test-login-github.html`, Playwright `autofill-local`). `webauthn`-Suffix ignoriert. Split-Seiten bleiben Unit-Tests. Live `github.com` bleibt ein manueller Check, kein Multi-Step-Engine.
 - [x] Misserfolg erklärt erkannt / gefüllt / Ergebnis, keine Secrets.
 
 Installation (Apple, wenn leistbar):
@@ -253,7 +253,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Am Gerät:** GitHub-Login ohne Copy-Paste (zwei Fills: Username, dann Passwort). Fremder-Import bleibt der P0-Nachweis. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
+**Fremder-Import:** App auf fremdem Mac, Browser-Karten, Import-Review ohne Passwort in der Liste. GitHub-förmiges Fill ist in der Fixture. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
 
 **Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 

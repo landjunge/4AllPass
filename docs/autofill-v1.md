@@ -148,12 +148,14 @@ Erlaubt:
 
 - exact host (ohne führendes `www.`)
 - `pageHost === entryHost` oder (`entryHost` enthält `.` und `pageHost.endsWith("." + entryHost)`). TLD-only (`com`) suffix-matched nicht.
-- known-login-domain aus `@4allpass/providers` (z. B. `login.microsoftonline.com` → Microsoft)
+- known-login-domain aus `@4allpass/providers` (z. B. `account.microsoft.com` → `login.microsoftonline.com` bei Confidence ≥ 0.95)
+- URL-loser Eintrag mit `providerId`, wenn die Seite denselben Provider ≥ 0.95 auflöst
 
 Verboten:
 
 - `evilgithub.com` als GitHub
-- Raten eines Provider-Ids unter Confidence 0.95 ohne Bestätigung (Import). Für Fill: nur Einträge, die nach der Suffix-Regel matchen.
+- `providerId`-Tag auf einer fremden URL (`https://contoso.example` + `microsoft`, `https://evilgithub.com` + `github`) als Brücke zur Login-Domain
+- Raten eines Provider-Ids unter Confidence 0.95 ohne Bestätigung (Import). Für Fill: gespeicherte URL gewinnt vor dem Tag.
 
 Mehrere Treffer: Popup/Menü zeigt Titel + Username-Maske (`j***@x.de` oder Länge), **nicht** das Passwort. Ein Treffer darf direkt gefüllt werden nach explizitem Trigger.
 
@@ -226,7 +228,7 @@ Session-Lock (`idle-lock.ts`) bleibt: bei Lock Secrets im Background zeroizen. F
 |---|---|
 | `extension/src/fill.ts` | `InputLike` erweitern, `score*` / `buildLoginModel`, Wrapper `pick*` |
 | `extension/src/content.ts` | `describe()` mit label/placeholder/aria; `safeFill`; `FillResult` |
-| `extension/src/match.ts` | Suffix-Regel + gleiche Provider-Id nur bei Confidence ≥ 0.95. Popup-Liste ohne Passwort (`publicPicks`). |
+| `extension/src/match.ts` | Suffix-Regel; Provider-Brücke nur wenn die gespeicherte URL denselben Provider ≥ 0.95 auflöst (Tag allein überschreibt keine fremde URL). Popup-Liste ohne Passwort (`publicPicks`). |
 | `extension/src/background.ts` | FillResult entgegennehmen; bei `!eligible` nicht fill-form senden |
 | `extension/test/fill.test.ts` | Spec-Tokens, Threshold, Signup-Skip, given-name ≠ username |
 
@@ -242,6 +244,9 @@ Zusätzlich:
 - `autocomplete=new-password` only → password null, nicht fill
 - `autocomplete=given-name` neben `type=password` → given-name nicht als username
 - `evilgithub.com` vs Eintrag `github.com` → kein Match
+- `https://evilgithub.com` + `providerId: github` auf github.com → kein Match
+- `https://contoso.example` + `providerId: microsoft` auf login.microsoftonline.com → kein Match
+- URL-loser `providerId: microsoft` auf login.microsoftonline.com → Match
 - `login.github.com` vs `github.com` → Match (Suffix `.{host}`)
 - schwacher `type=text name=q` allein → nicht eligible
 - `type=password` ohne autocomplete → score ≥ 0.70, eligible wenn Passwort-Feld da

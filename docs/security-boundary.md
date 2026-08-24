@@ -1,7 +1,7 @@
 # Security boundary (implementation)
 
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-18
+**Date:** 2026-08-24
 
 This document describes what the **running backend + PWA / local app** actually enforce.
 It does not restate the crypto protocol. If a sentence here disagrees with
@@ -98,7 +98,9 @@ metadata**. The PWA asks the server for a one-time `publicKey.challenge`
 (`POST …/webauthn/challenges`) and consumes it after the ceremony. The server
 stores `SHA-256(challenge)`, never the raw bytes after issue, and never sees
 PRF output. Consume also checks the `deviceId` the challenge was issued for,
-when one was bound. That is ceremony hygiene, not a Vault-Key proof.
+when one was bound. That is ceremony hygiene, not a Vault-Key proof. A failed
+consume is `console.warn`’d without challenge bytes, vault ids, or API detail;
+unlock still proceeds.
 
 The server still does **not**:
 
@@ -241,8 +243,11 @@ object and returns it unchanged. The client verifies it under VK
   verification returned. Unlocked entries sit in service-worker memory until
   Lock, 5 minutes idle, or worker eviction — not in extension storage. Closing
   the popup does not lock (shortcut fill still works until idle). Fill matching
-  uses the entry URL host first, then a high-confidence provider bridge; a
-  TLD-only saved host (`https://com`) does not suffix-match. JavaScript cannot
+  uses the entry URL host first, then a high-confidence provider bridge from
+  the stored URL (a `providerId` tag cannot override a conflicting host). A
+  TLD-only saved host (`https://com`) does not suffix-match. DevicesPanel
+  treats missing `getClientCapabilities` PRF as unproven, not as “PRF exists”
+  because `PublicKeyCredential` is present. JavaScript cannot
   securely zeroize strings. iOS Safari Web Extension and system Password
   AutoFill are not shipped.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites

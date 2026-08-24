@@ -120,7 +120,7 @@ Optional später, nicht im ersten Schnitt: SHA-256 der Release-Assets prüfen.
 | 4 | `scripts/install.ps1` Windows | Ein Befehl; SmartScreen kann noch warnen (kein Zertifikat) |
 | 5 | CI schreibt `*.sha256` neben die Artefakte; `install.sh` / `install.ps1` prüfen | Tamper an der Datei → Abbruch |
 
-Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac. Kein Tag `v0.1.2` nur dafür — `workflow_dispatch` auf `desktop.yml` reicht für ein Test-Artefakt.
+Schritt 0 ist Voraussetzung für 1. Ohne Intel-DMG kein One-Liner auf diesem Mac. Kein Tag `v0.1.2` nur dafür — `workflow_dispatch` legt den rolling Prerelease-Tag `desktop` an (nicht `v*`).
 
 ---
 

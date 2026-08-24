@@ -224,3 +224,36 @@ jobs:
             dist/*.AppImage
             dist/*.sha256
           fail_on_unmatched_files: false
+
+  rolling:
+    name: Rolling prerelease
+    needs: bundle
+    if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List downloaded installers
+        run: find dist -type f | sort
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop
+          name: Desktop (rolling)
+          prerelease: true
+          generate_release_notes: false
+          body: |
+            Rolling desktop build from workflow_dispatch. Not a version tag.
+            Ad-hoc (not notarized). install.sh verifies sibling *.sha256.
+            Vault folders are never deleted. FastAPI never mints tokens.
+          files: |
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
+            dist/**/*.sha256
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.sha256
+          fail_on_unmatched_files: false

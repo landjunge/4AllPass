@@ -4,6 +4,7 @@ import { afterEach, test } from "node:test";
 import {
   clearCopiedSecret,
   copySecret,
+  readClipboardText,
   resetCopiedSecretForTests,
 } from "./clipboard.ts";
 
@@ -28,6 +29,13 @@ function fakeClipboard(initial = "") {
     },
   };
 }
+
+test("readClipboardText is one shot and does not write", async () => {
+  const { clipboard, writes } = fakeClipboard("sk-test-not-a-live-key");
+  const got = await readClipboardText(clipboard);
+  assert.equal(got, "sk-test-not-a-live-key");
+  assert.deepEqual(writes, []);
+});
 
 test("copySecret writes then clears if the clipboard still matches", async () => {
   const { clipboard, writes } = fakeClipboard();

@@ -38,6 +38,14 @@ async function overwriteIfOurs(clipboard: SecretClipboard): Promise<void> {
   }
 }
 
+/** One click, one read. Not a background watcher. */
+export async function readClipboardText(
+  clipboard?: SecretClipboard,
+): Promise<string> {
+  const clip = clipboard ?? defaultClipboard();
+  return clip.readText();
+}
+
 export async function copySecret(text: string, options: CopySecretOptions = {}): Promise<void> {
   const clipboard = options.clipboard ?? defaultClipboard();
   const clearAfterMs = options.clearAfterMs ?? CLIPBOARD_CLEAR_MS;

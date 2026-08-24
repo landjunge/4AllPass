@@ -11,6 +11,7 @@ import {
   type ExtensionInstall,
 } from "../lib/browsers.ts";
 import { loadBrowserActive, saveBrowserActive } from "../lib/browser-active.ts";
+import { useCopy } from "../state/copy-mode.tsx";
 import { BrowserIcon } from "./BrowserIcon.tsx";
 
 export function BrowserCards({
@@ -22,6 +23,7 @@ export function BrowserCards({
   onLogins: (rows: BrowserLoginRow[]) => void;
   onEnsureDemoLogin: () => Promise<void>;
 }): ReactNode {
+  const { t } = useCopy();
   const [cards, setCards] = useState<BrowserCard[] | null | "loading">("loading");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [wantExt, setWantExt] = useState<Set<string>>(new Set());
@@ -158,11 +160,18 @@ export function BrowserCards({
 
   return (
     <section className="card browser-cards" data-testid="browser-cards">
-      <h3>Browser auf diesem Gerät / Browsers on this device</h3>
-      <p className="hint">
-        Grün = aktiv, bleibt gemerkt. Neue Passwörter im Tresor sehen entsperrte Extensions sofort.
-        Wir schreiben nicht in Chrome oder Firefox zurück. / Green = on, remembered. New vault
-        passwords show up in unlocked extensions. We do not write into the browser password store.
+      <h3>{t({ de: "Browser auf diesem Gerät", en: "Browsers on this device" })}</h3>
+      <p className="hint compact" data-testid="browser-sync-explainer">
+        {t(
+          {
+            de: "Grün = an (gemerkt). Neue Passwörter nur im Tresor. Die Erweiterung holt sie, wenn sie offen ist. Nicht in Chrome schreiben.",
+            en: "Green = on (remembered). New passwords stay in the vault. An unlocked add-on picks them up. We do not write into Chrome.",
+          },
+          {
+            de: "Kein bidirektionales Sync. Import rein, Autofill raus. Entsperrte Extension pollt die Snapshot-Revision.",
+            en: "Not two-way sync. Import in, autofill out. Unlocked extension polls snapshot revision.",
+          },
+        )}
       </p>
       <div className="browser-card-grid">
         {cards.map((card) => {
@@ -253,9 +262,12 @@ export function BrowserCards({
         </button>
       </div>
       <p className="muted">
-        {activeCount} Browser aktiv / on · {selectedCount} Profile fürs Holen. macOS kann nach dem
-        Anmeldepasswort fragen. Neue Einträge im Tresor: gleiche Liste in jeder entsperrten
-        Extension.
+        {t(
+          {
+            de: `${activeCount} an, ${selectedCount} Profile zum Holen.`,
+            en: `${activeCount} on, ${selectedCount} profiles to fetch.`,
+          },
+        )}
       </p>
       {error ? <p className="error">{error}</p> : null}
       {hint ? (

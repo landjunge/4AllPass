@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 import { App } from "./App.tsx";
 import { AppProvider } from "./state/app-state.tsx";
+import { CopyModeProvider } from "./state/copy-mode.tsx";
 import "./styles.css";
 
 registerSW({ immediate: true });
@@ -12,8 +13,10 @@ if (!container) throw new Error("missing #root");
 
 createRoot(container).render(
   <StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <CopyModeProvider>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </CopyModeProvider>
   </StrictMode>,
 );

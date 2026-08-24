@@ -28,6 +28,7 @@ import {
   type DemoSceneId,
 } from "../lib/access-demo.ts";
 import type { VaultEntry } from "../lib/entries.ts";
+import { useCopy } from "../state/copy-mode.tsx";
 
 export function AccessPanel({
   entries,
@@ -36,6 +37,7 @@ export function AccessPanel({
   entries: VaultEntry[];
   onSeedDemo?: () => Promise<void>;
 }): ReactNode {
+  const { t } = useCopy();
   const ready = hasGithubReadCredential(entries);
   const [scene, setScene] = useState<DemoSceneId>(() => startingScene(entries));
   const [pending, setPending] = useState<AccessRequest | null>(null);
@@ -126,19 +128,18 @@ export function AccessPanel({
   return (
     <div className="columns">
       <section className="card" data-testid="programs-intro">
-        <h3>Programme / Apps</h3>
-        <p>
-          Dein Tresor speichert Passwörter. Ein Programm — etwa n8n oder ein Agent — darf sie nicht
-          einfach mitnehmen. Es fragt hier. Du sagst Erlauben oder Ablehnen.
-        </p>
-        <p>
-          Erlauben gilt nur kurz. Danach ist Schluss. Unbekannte Programme werden abgelehnt. Das
-          Passwort bleibt im Tresor.
-        </p>
-        <p className="hint">
-          Alltag bleibt Einträge und Autofill. Diese Seite brauchst du nur, wenn ein Programm Zugang
-          will. / Day-to-day is entries and autofill. This page is only when a program wants access.
-          Allow is short-lived. Unknown programs are denied. The password stays in the vault.
+        <h3>{t({ de: "Programme", en: "Apps" })}</h3>
+        <p className="hint compact">
+          {t(
+            {
+              de: "Ein Programm darf Passwörter nicht einfach mitnehmen. Es fragt hier. Du sagst Erlauben oder Ablehnen. Unbekannt = nein.",
+              en: "A program cannot take passwords by itself. It asks here. You Allow or Deny. Unknown = no.",
+            },
+            {
+              de: "Policy in @4allpass/core. Unknown app DENY. Allow = menschlicher Klick, TTL-Grant, kein FastAPI-Token.",
+              en: "Policy in @4allpass/core. Unknown app DENY. Allow = human click, TTL grant, no FastAPI token.",
+            },
+          )}
         </p>
       </section>
       <section className="card">

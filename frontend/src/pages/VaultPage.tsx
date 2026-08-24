@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 import { demoGithubDraft } from "../lib/access-demo.ts";
 import { autofillDemoDraft, isAutofillDemoEntry } from "../lib/autofill-demo.ts";
-import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
+import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../lib/clipboard.ts";
 import { detectCredential, draftFromDetection } from "../lib/detect.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../lib/providers.ts";
 import {
@@ -37,6 +38,7 @@ import { SettingsPanel } from "../components/SettingsPanel.tsx";
 
 export function VaultPage(): ReactNode {
   const { vault, saveEntries } = useApp();
+  const { t, plain } = useCopy();
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EntryDraft | null>(null);
@@ -107,6 +109,23 @@ export function VaultPage(): ReactNode {
       providerConfidence: entry.providerConfidence,
       providerMatchType: entry.providerMatchType,
     });
+  }
+
+  function applyDetect(text: string): void {
+    const found = detectCredential(text);
+    if (!found) {
+      setDetectedLabel(
+        "Nichts erkannt. Wähle Website, API oder SSH. / Nothing recognized. Pick Web, API, or SSH/SFTP.",
+      );
+      return;
+    }
+    setDraft({
+      ...draftFromDetection(found),
+      password: found.password || draft?.password || generatePassword(),
+    });
+    setDetectedLabel(
+      `${found.label}. Speichern legt es in den Tresor. Programme bekommen es nicht automatisch. / Save stores it encrypted. Programs do not get it automatically.`,
+    );
   }
 
   async function save(): Promise<void> {
@@ -217,7 +236,7 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("entries")}
           data-testid="tab-entries"
         >
-          Entries ({entries.length})
+          {t({ de: "Einträge", en: "Entries" })} ({entries.length})
         </button>
         <button
           type="button"
@@ -225,7 +244,7 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("access")}
           data-testid="tab-access"
         >
-          Programme
+          {t({ de: "Programme", en: "Apps" })}
         </button>
         <button
           type="button"
@@ -233,7 +252,7 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("devices")}
           data-testid="tab-devices"
         >
-          Devices
+          {t({ de: "Geräte", en: "Devices" })}
         </button>
         <button
           type="button"
@@ -241,9 +260,9 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("settings")}
           data-testid="tab-settings"
         >
-          Settings
+          {t({ de: "Einstellungen", en: "Settings" })}
         </button>
-        <span className="revision" data-testid="revision">
+        <span className={plain ? "sr-only" : "revision"} data-testid="revision">
           revision {vault.revision} · vault key v{vault.vaultKeyVersion}
         </span>
       </nav>
@@ -355,36 +374,57 @@ export function VaultPage(): ReactNode {
           <section className="card detail">
             {draft ? (
               <>
-                <h3>{selectedId ? "Edit entry" : "New entry"}</h3>
+                <h3>{selectedId ? "Eintrag / Edit" : "Neuer Eintrag / New entry"}</h3>
+                <p className="hint">
+                  {t(
+                    {
+                      de: "Ein Klick liest die Zwischenablage einmal. Kein dauerndes Mitlesen. Speichern musst du selbst.",
+                      en: "One click reads the clipboard once. No background watch. You still save.",
+                    },
+                    {
+                      de: "Detect: ghp_/sk-/Stripe. Kein Clipboard-Watcher (#59). Prefill, kein Grant.",
+                      en: "Detect: ghp_/sk-/Stripe. Not a clipboard watcher. Prefill, never a grant.",
+                    },
+                  )}
+                </p>
                 <label>
-                  Paste credential
+                  Einfügen / Paste
                   <textarea
                     rows={3}
                     value={paste}
                     onChange={(event) => setPaste(event.target.value)}
                     data-testid="detect-paste"
-                    placeholder="ghp_… or ftp.example.com / https://…"
+                    placeholder="ghp_… · sk-… · ftp.example.com · https://…"
                   />
                 </label>
-                <p className="hint">Detect fills the form. It never grants access.</p>
-                <button
-                  type="button"
-                  data-testid="detect-apply"
-                  onClick={() => {
-                    const found = detectCredential(paste);
-                    if (!found) {
-                      setDetectedLabel("Nothing recognized. Pick Web, API, or SSH/SFTP.");
-                      return;
-                    }
-                    setDraft({
-                      ...draftFromDetection(found),
-                      password: found.password || draft?.password || generatePassword(),
-                    });
-                    setDetectedLabel(`${found.label}. Save to store it encrypted. Access still needs Allow.`);
-                  }}
-                >
-                  Detect
-                </button>
+                <div className="actions">
+                  <button
+                    type="button"
+                    className="primary"
+                    data-testid="detect-clipboard"
+                    onClick={() => {
+                      void readClipboardText()
+                        .then((text) => {
+                          setPaste(text);
+                          applyDetect(text);
+                        })
+                        .catch(() => {
+                          setDetectedLabel(
+                            "Zwischenablage nicht lesbar. Einfügen und Erkennen. / Clipboard blocked. Paste, then Detect.",
+                          );
+                        });
+                    }}
+                  >
+                    Zwischenablage einmal lesen / Read clipboard once
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="detect-apply"
+                    onClick={() => applyDetect(paste)}
+                  >
+                    Eingefügtes erkennen / Detect paste
+                  </button>
+                </div>
                 {detectedLabel ? (
                   <p className="ok" data-testid="detect-label">
                     {detectedLabel}

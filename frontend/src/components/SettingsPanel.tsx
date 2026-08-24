@@ -8,9 +8,13 @@ import {
   SLEEP_LOCK_HINT,
   UNINSTALL_HINT,
 } from "../lib/desktop-settings.ts";
+import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 
 export function SettingsPanel(): ReactNode {
   const desktop = isTauriShell();
+  const { vault } = useApp();
+  const { plain, setPlain, t } = useCopy();
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +36,24 @@ export function SettingsPanel(): ReactNode {
 
   return (
     <section className="card" data-testid="settings-desktop">
-      <h3>Einstellungen / Settings</h3>
+      <h3>{t({ de: "Einstellungen", en: "Settings" })}</h3>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={plain}
+          data-testid="plain-language"
+          onChange={(event) => setPlain(event.target.checked)}
+        />
+        {t({ de: "Leichte Sprache (Standard)", en: "Plain language (default)" })}
+      </label>
+      <p className="hint" data-testid="plain-language-hint">
+        {t(
+          {
+            de: "An: kurze Sätze, DE und EN. Aus: mehr Fachwörter, für Kenner.",
+            en: "On: short sentences, DE and EN. Off: more jargon, for experts.",
+          },
+        )}
+      </p>
       <label className="checkbox">
         <input
           type="checkbox"
@@ -52,6 +73,20 @@ export function SettingsPanel(): ReactNode {
       <p className="hint" data-testid="uninstall-hint">
         {UNINSTALL_HINT}
       </p>
+      {vault ? (
+        <p className="hint" data-testid="settings-revision">
+          {t(
+            {
+              de: `Tresor-Stand ${vault.revision}`,
+              en: `vault revision ${vault.revision}`,
+            },
+            {
+              de: `revision ${vault.revision} · vault key v${vault.vaultKeyVersion}`,
+              en: `revision ${vault.revision} · vault key v${vault.vaultKeyVersion}`,
+            },
+          )}
+        </p>
+      ) : null}
     </section>
   );
 }

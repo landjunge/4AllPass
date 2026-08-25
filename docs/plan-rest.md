@@ -22,7 +22,7 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 ## Als Nächstes (genau das)
 
 ```text
-#120  P0 Fremder-Mac-Test  — übersprungen (kein zweiter Mac, nicht erledigt)
+#120  P0 Fremder-Mac-Test  — übersprungen (Besucher kommt die Tage, nicht erledigt)
 #121  P1 Autofill härten   — Code auf main (Honeypot/Dialog/Assist-e2e)
 #123  Audit-Freeze         — auf main (Fill-TOCTOU, Agent-Identität, Recovery-Rotation, Rank-3)
   →   Rest: Apple (#112, Geld) und Später (Shadow DOM, Passkeys, Launch)
@@ -32,7 +32,7 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 
 Kein Connection-/Capability-Umbau. Kein zweiter Plan.
 
-1. **[#120](https://github.com/landjunge/4AllPass/issues/120)** — kein zweiter Mac. CI deckt Review-UI (`import-review`, `browser-cards-import`). Mensch-Test bleibt offen, **blockiert den Plan nicht**.
+1. **[#120](https://github.com/landjunge/4AllPass/issues/120)** — Besucher kommt die Tage. Bis dahin übersprungen, **nicht erledigt**. Checkliste: [`freeze.md`](freeze.md). CI deckt Review-UI (`import-review`, `browser-cards-import`). Blockiert den Plan nicht.
 
 2. **[#121](https://github.com/landjunge/4AllPass/issues/121) — P1 Autofill härten (Code)** — jetzt. Spec: [`autofill-v1.md`](autofill-v1.md). Kein Multi-Step-Engine, kein Shadow-DOM. Live `github.com/login` opt-in (`LIVE_GITHUB=1`).
 

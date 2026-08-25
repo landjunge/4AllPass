@@ -46,6 +46,36 @@ Same machine is allowed. Do not file this as `#120` (that issue needs a **strang
 
 ---
 
+## Fremder Mac (#120) — übersprungen, Besucher kommt die Tage
+
+Nicht als erledigt. Derselbe Entwickler-Mac zählt nicht. Wenn jemand mit einem **anderen** Mac da ist, nur das:
+
+### Checkliste für den Besuch (10–15 min)
+
+**DE**
+
+1. Terminal, ein Befehl, Enter — Fenster muss aufgehen:
+
+   ```sh
+   curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
+   ```
+
+   Intel → `*_x64.dmg`. Apple Silicon → `*_aarch64.dmg`. Ohne Apple-Notar: Script nimmt Quarantäne weg. Doppelklick allein kann warnen — das ist [#112](https://github.com/landjunge/4AllPass/issues/112), nicht der Vault.
+
+2. Tresor anlegen. Recovery-Kit **nicht** überspringen. Blatt/Datei weglegen.
+
+3. Browser-Karten: Chrome/Firefox sichtbar?
+
+4. Import: Review zeigt Host + Username. **Kein Passwort in der Liste.** Bestätigen. Chrome/Firefox selbst unverändert.
+
+5. Optional: in der App Demo-Login öffnen oder Extension `test-login.html` füllen. Nicht Submit auf einer echten Seite verlangen.
+
+6. Eine Zeile notieren: Mac-Modell, was ging, was hakte (Gatekeeper, Pfad, UX). Das gehört in [#120](https://github.com/landjunge/4AllPass/issues/120).
+
+**EN** — same six steps. Vault password stays on that Mac. No silent import. The website never gets the vault.
+
+---
+
 ## What still needs a human or money
 
 | Item | Issue |

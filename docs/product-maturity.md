@@ -235,7 +235,7 @@ P0:
 
 - [x] Dieser Intel-Mac: `scripts/install.sh` → Fenster, Vault bleibt.
 - [x] Import-Review: Host + Username, nie Passwort (Playwright `import-review` Datei-CSV, `browser-cards-import` zwei gemockte Chrome-Profile). Browser-Karten + Keychain auf einem **fremden** Mac bleibt ein menschlicher Check.
-- [ ] Fremder Mac: App auf, Tresor, Browser-Karten, derselbe Review. **2026-08-25 übersprungen (kein zweiter Mac), nicht als erledigt.** Plan geht weiter mit [#121](https://github.com/landjunge/4AllPass/issues/121).
+- [ ] Fremder Mac: App auf, Tresor, Browser-Karten, derselbe Review. **2026-08-26 übersprungen (Besucher kommt die Tage), nicht als erledigt.** Checkliste: [`freeze.md`](freeze.md).
 - [x] `evilgithub.com` wird nicht zu GitHub. (`packages/providers` + Extension-Match-Tests)
 
 P1:

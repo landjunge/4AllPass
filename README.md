@@ -92,7 +92,7 @@ Weitere klare Beschreibungen:
 | Produkt | Desktop (Tauri), SQLite, Loopback `:8788` | Desktop app, SQLite, loopback `:8788` |
 | Tresor | Geräte besitzen den Vault kryptografisch. Unlock = Tresor-Passwort | Devices own the vault cryptographically. Unlock = vault password |
 | Import | Browser-Karten, Chrome/Firefox, Review **ohne** Passwort in der Liste | Browser cards, Chrome/Firefox, review **without** passwords in the list |
-| Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste (Playwright). GitHub-Live **noch nicht** abgehakt | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste (Playwright). Live GitHub **not** checked off |
+| Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste. Live `github.com/login` opt-in, kein Submit, kein CI | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste. Live `github.com/login` opt-in, no submit, not CI |
 | Extension-Unlock | Nur Tresor-Passwort gegen `http://127.0.0.1:8788` (`POST /auth/local`) | Vault password only against `http://127.0.0.1:8788` |
 | Agent | Loopback-Broker, Origin 403, Pairing-Token. Identität ist ein **String** (`n8n`) | Loopback broker, Origin 403, pairing token. Identity is a **string** |
 | Recovery | Emergency Kit, kein Server-Reset | Emergency kit, no server reset |
@@ -101,7 +101,7 @@ Weitere klare Beschreibungen:
 | Apple | Notarisierung **pausiert** (~99 USD/Jahr) | Notarization **paused** |
 | Audit | Kein unabhängiges Drittaudit | No third-party audit yet |
 
-Details: [`docs/comparison.md`](docs/comparison.md), [`docs/product-maturity.md`](docs/product-maturity.md), [`docs/security-boundary.md`](docs/security-boundary.md).
+Details: [`docs/comparison.md`](docs/comparison.md), [`docs/product-maturity.md`](docs/product-maturity.md), [`docs/security-boundary.md`](docs/security-boundary.md), Freeze: [`docs/freeze.md`](docs/freeze.md).
 
 ---
 

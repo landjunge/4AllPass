@@ -1,6 +1,6 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-24. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate.
+Stand: 2026-08-26. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` auf `main`.
 
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
@@ -257,7 +257,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Code P0–P1/P1b (ohne Shadow DOM) auf `main`.** [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112); später Shadow DOM / Passkey-Store / Launch. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
+**Audit-Freeze auf `main` ([#123](https://github.com/landjunge/4AllPass/pull/123)).** Tester-Notiz: [`freeze.md`](freeze.md). Code P0–P1/P1b (ohne Shadow DOM) liegt. [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112), Dritt-Audit [#38](https://github.com/landjunge/4AllPass/issues/38). Später: Shadow DOM / Passkey-Store / Launch. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
 Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
 

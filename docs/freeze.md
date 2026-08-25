@@ -1,0 +1,57 @@
+# Freeze — 2026-08-26
+
+**DE.** Code-Stand nach internem adversarial Review. Kein Launch, kein Store, kein Dritt-Audit.
+**EN.** Code snapshot after an internal adversarial review. Not a launch, not a store build, not a third-party audit.
+
+Commit family: `#123` on `main` (`harden(audit-freeze)`). Specs: [`security-boundary.md`](security-boundary.md), [`adversarial-review.md`](adversarial-review.md), [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md), [`audit-scope.md`](audit-scope.md).
+
+---
+
+## What this freeze is
+
+| Held | Not claimed |
+|---|---|
+| Crypto core + sealed snapshots + hard revoke | Independent third-party audit |
+| Autofill V1 (no Shadow DOM / iframe engine) | “Fill works on every website” |
+| Pairing token + human Allow for agents | Cryptographic agent identity |
+| Rank 3 UV-gated store | Face ID = hardware-bound vault |
+| Compromised recovery → VK++ | Old print un-known on a copy already given |
+
+README remains honest: **no independent third-party audit yet.**
+
+---
+
+## What a tester can do without Apple and without a second Mac
+
+Same machine is allowed. Do not file this as `#120` (that issue needs a **stranger** Mac).
+
+1. Terminal-Install: [`install-terminal.md`](install-terminal.md) / `scripts/install.sh`. Vault folder stays on re-install.
+2. First run: Tresor + Recovery-Kit (nicht überspringen).
+3. Browser-Karten → Import-Review: Host + Username, **kein Passwort in der Liste**. Confirm. Browser-DB nicht mutiert.
+4. Extension: `frontend/public/test-login.html` füllen. Optional live `github.com/login` (kein Submit).
+5. Access-Tab: [`two-minute-demo.md`](two-minute-demo.md) — Allow / delete DENY / TTL / unknown DENY. Secret nicht in Audit-Zeilen.
+6. Geräte: Rank-3-Hinweis lesen, wenn PRF fehlt. „Kit gestohlen“ nur testen, wenn du das Kit wirklich rotieren willst.
+
+**DE+EN** in der UI. Website bekommt nie den Vault. FastAPI mintet keine Tokens.
+
+---
+
+## What a tester must not do
+
+- Launch-Posts, Store, Tag `v0.1.2`.
+- Connection/Capability, Team Mode, MCP, Tollgate.
+- Passkey-Store simulieren.
+- Pairing-Token wie eine Session-ID behandeln — das ist der lokale Root-of-Access für Agenten.
+- Rang 3 als „Touch ID bindet den Authenticator kryptografisch“ beschreiben.
+
+---
+
+## What still needs a human or money
+
+| Item | Issue |
+|---|---|
+| Fremder Mac: Install, Karten, Review | [#120](https://github.com/landjunge/4AllPass/issues/120) |
+| Apple Notar / Doppelklick | [#112](https://github.com/landjunge/4AllPass/issues/112) |
+| Externes Audit | [#38](https://github.com/landjunge/4AllPass/issues/38) |
+
+Shadow DOM, Passkey-Store, Launch: später, gleicher Plan — nicht dieser Freeze.

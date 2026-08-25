@@ -28,7 +28,7 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
   →   Rest: Apple (#112, Geld) und Später (Shadow DOM, Passkeys, Launch)
 ```
 
-**Freeze:** keine Feature-Flut. Crypto/Vault nicht anfassen. Connection/Capability nicht bauen. Nächster sinnvoller Schritt ist Mensch (fremder Mac) oder Geld (Apple), nicht mehr Code.
+**Freeze:** keine Feature-Flut. Crypto/Vault nicht anfassen. Connection/Capability nicht bauen. Nächster sinnvoller Schritt ist Mensch (fremder Mac) oder Geld (Apple), nicht mehr Code. Handoff: [`freeze.md`](freeze.md).
 
 Kein Connection-/Capability-Umbau. Kein zweiter Plan.
 

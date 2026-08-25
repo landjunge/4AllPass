@@ -2,8 +2,8 @@
 
 **Audience:** an independent auditor (e.g. Cure53, Radically Open Security).  
 **Not in scope for this document:** performing the audit.  
-**Date:** 2026-08-20  
-**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `security-boundary.md`, `test-vectors.md`, `test-vectors-argon2id.md`.
+**Date:** 2026-08-26  
+**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`.
 
 This is a map of what to review, what the running system actually enforces, and where honesty gaps remain. Specs in `docs/` win over comments. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -44,7 +44,10 @@ The server must never receive or derive: Master Password, VK, DK, DWK, PRF outpu
 
 ### M1 — Crypto core (`packages/crypto`)
 
-Start with `docs/adversarial-review.md` and the `test/adversarial-*.test.ts` suite.
+Start with `docs/adversarial-review.md` (crypto core) and
+`docs/adversarial-review-boundaries.md` (extension fill, broker, rollback,
+hard-revoke, WebAuthn substitution, localhost). Then the
+`test/adversarial-*.test.ts` suite.
 
 Check:
 
@@ -68,6 +71,12 @@ Known-answer tests: `npm test` (default, includes `test/property-envelope.test.t
 - Foreign vault/device ids → 404, never 403.
 - Snapshot write: row lock, `expectedRevision` CAS, reject `vaultKeyVersion` decrease, 409 on conflict.
 - `DELETE /devices` is `metadata_only`. Soft revoke = next snapshot without that envelope. Hard revoke = PWA `hardRevokeDevice` (`vaultKeyVersion++`, re-encrypt, omit target, CAS, then metadata DELETE).
+
+### M4b — Extension fill + local broker (2026-08-26 freeze)
+
+See `docs/adversarial-review-boundaries.md`. Fill origin is re-checked before
+`executeScript`. Pairing token is not agent identity. TTL expires 4AllPass
+handoffs, not the provider credential already copied. Rank 3 is policy only.
 
 ### M4 — PWA claim surface
 

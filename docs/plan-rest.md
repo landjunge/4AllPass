@@ -1,6 +1,7 @@
 # Restplan — 4AllPass
 
-Stand: 2026-08-25. Live `github.com/login` Fill ist opt-in geprüft.
+Stand: 2026-08-26. Live `github.com/login` Fill ist opt-in geprüft.  
+Audit-Freeze auf `main` (`#123`).
 
 Quelle der Reihenfolge: [`product-maturity.md`](product-maturity.md) **v3**.  
 Diese Datei ist die **Kurzfassung des Rests** — nicht ein zweiter Plan.
@@ -23,8 +24,11 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 ```text
 #120  P0 Fremder-Mac-Test  — übersprungen (kein zweiter Mac, nicht erledigt)
 #121  P1 Autofill härten   — Code auf main (Honeypot/Dialog/Assist-e2e)
+#123  Audit-Freeze         — auf main (Fill-TOCTOU, Agent-Identität, Recovery-Rotation, Rank-3)
   →   Rest: Apple (#112, Geld) und Später (Shadow DOM, Passkeys, Launch)
 ```
+
+**Freeze:** keine Feature-Flut. Crypto/Vault nicht anfassen. Connection/Capability nicht bauen. Nächster sinnvoller Schritt ist Mensch (fremder Mac) oder Geld (Apple), nicht mehr Code.
 
 Kein Connection-/Capability-Umbau. Kein zweiter Plan.
 
@@ -90,6 +94,7 @@ Einmal-Erkennung der Zwischenablage (kein Watcher) ist auf `main`.
 | P2 Access | Why, Simulator, Loopback 127.0.0.1, Origin 403, unknown DENY. Nicht erster Bildschirm. |
 | P3 TOTP | RFC 6238 am Vault-Eintrag. Secret nur im verschlüsselten Entry. |
 | Härten | Digest-Pin braucht `sealedManifest`. Import-Pfade enthalten. CSP auf Sidecar-Origin. Tresor zu: Button oder Ruhemodus. Leichte Sprache an. |
+| Audit-Freeze `#123` | Fill-Origin vor `executeScript`. HTTP-Downgrade und `github.io` Suffix zu. PAIRING TOKEN ≠ Agent. Recovery: kompromittiert → VK++. Rank 3 = Policy. |
 
 **Offen bleiben nur:** ein fremder Mac, und Apple wenn das Abo geht.
 

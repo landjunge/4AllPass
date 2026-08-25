@@ -7,6 +7,13 @@
 AES-256-GCM tells the client that a snapshot was not *modified*.  
 It does **not** tell the client that a snapshot is the *latest*.
 
+**Pin-on-first-use is intentional.** A brand-new client with no local pin accepts
+the first authentic snapshot it is offered (`evaluateRevision` action
+`first_seen`). It cannot tell a honest history from an attacker-constructed
+valid history. After that pin, lower revision / VK / protocol, missing
+manifest, or same-revision equivocation is `RollbackError` / `IntegrityError`.
+Do not try to encrypt this away.
+
 A malicious or crashed server can therefore:
 
 - replay an older authentic vault (rollback),

@@ -166,6 +166,22 @@ No new Critical/High vault-break. Existing adversarial tests still hold:
 
 ---
 
+## Pass 3 — Recovery / freshness / hard-revoke / PRF integration
+
+ChatGPT's five freeze items:
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Compromised recovery MUST VK-rotate | **code invariant** `wrapRecoveryEnvelope` + `rotateCompromisedRecovery` |
+| 2 | WebAuthn enable → unlock identity substitution | tests: wrong deviceId, swapped credentialId, foreign envelope |
+| 3 | Autofill TOCTOU before executeScript | already on this branch (`fillTargetStillHolds`) |
+| 4 | Pairing token ≠ agent identity | already on this branch |
+| 5 | Rank 3 is policy, not authenticator bind | Unlock + Devices UI DE/EN |
+
+No Critical/High vault-break in this pass. First-use pin is documented as a trust boundary, not a bug.
+
+---
+
 ## Attack paths (what we actually tried)
 
 ### 1 — Credential leakage (evil site → extension → fill)

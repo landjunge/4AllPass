@@ -65,7 +65,10 @@ export function UnlockPage(): ReactNode {
             ) : null}
             {mechanism === "uv_gated_local" ? (
               <p className="hint" data-testid="unlock-rank3-warning">
-                Rang 3 ist nur Policy, kein PRF. / Rank 3 is policy only, not PRF.
+                Rang 3 ist nur ein Policy-Tor: Face ID / Touch ID gibt den lokalen Wrapping-Key frei.
+                Das ist keine kryptografische Authenticator-Bindung wie PRF. / Rank 3 is a policy
+                gate only: user verification releases a wrapping key stored in this browser. It is
+                not a hardware-bound PRF secret.
               </p>
             ) : null}
             <div className="divider">or</div>

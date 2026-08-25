@@ -45,6 +45,7 @@ import {
   unwrapVaultKey,
   verifySnapshot,
   verifySnapshotManifest,
+  wrapRecoveryEnvelope,
   wrapVaultKey,
   zeroize,
 } from "@4allpass/crypto";
@@ -378,7 +379,6 @@ export async function createVault(
   const salt = generateSalt(16);
   const masterKey = deriveMasterKey(masterPassword, salt, profile);
   const recoveryKey = generateRecoveryKey();
-  const recoveryWrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
   try {
     const masterEnvelope = wrapVaultKey({
       vaultKey,
@@ -388,11 +388,11 @@ export async function createVault(
       vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
       kdf: kdfParamsFrom(profile, salt),
     });
-    const recoveryEnvelope = wrapVaultKey({
+    const recoveryEnvelope = wrapRecoveryEnvelope({
+      reason: "create",
       vaultKey,
-      wrappingKey: recoveryWrappingKey,
+      recoveryKey,
       vaultId,
-      type: "recovery",
       vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
     });
     const envelopes = [masterEnvelope, recoveryEnvelope];
@@ -419,7 +419,7 @@ export async function createVault(
     ]);
     return { vault, recoveryKey: formatRecoveryKey(recoveryKey) };
   } finally {
-    zeroize(masterKey, recoveryKey, recoveryWrappingKey);
+    zeroize(masterKey, recoveryKey);
   }
 }
 
@@ -732,6 +732,167 @@ export async function revokeDevice(
     (envelope) => !(envelope.type === "device" && envelope.deviceId === targetDeviceId),
   );
   return commitSnapshot(vault, vault.entries, envelopes);
+}
+
+function recoveryEnvelopeOf(vault: UnlockedVault): KeyEnvelope {
+  const envelope = vault.envelopes.find((candidate) => candidate.type === "recovery");
+  if (!envelope) throw new Error("snapshot has no recovery envelope");
+  return envelope;
+}
+
+function assertMasterOpensVault(vault: UnlockedVault, masterPassword: string): {
+  masterEnvelope: KeyEnvelope;
+  masterKey: Uint8Array;
+} {
+  const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
+  if (!masterEnvelope) throw new Error("snapshot has no master envelope");
+  if (!masterEnvelope.kdf) throw new Error("master envelope is missing kdf parameters");
+  const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  try {
+    const verified = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId: vault.vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: vault.vaultKeyVersion,
+    });
+    if (
+      verified.length !== vault.vaultKey.length ||
+      !verified.every((b, i) => b === vault.vaultKey[i])
+    ) {
+      zeroize(verified);
+      throw new Error("master password does not match the unlocked vault key");
+    }
+    zeroize(verified);
+    return { masterEnvelope, masterKey };
+  } catch (error) {
+    zeroize(masterKey);
+    throw error;
+  }
+}
+
+/**
+ * Operator still holds the kit. Same Vault Key, new print. The old key must
+ * unwrap the current recovery envelope. Compromised kits must not use this path.
+ */
+export async function replaceTrustedRecoveryKey(
+  vault: UnlockedVault,
+  oldRecoveryKeyText: string,
+): Promise<{ vault: UnlockedVault; recoveryKey: string }> {
+  const recoveryEnvelope = recoveryEnvelopeOf(vault);
+  const oldKey = parseRecoveryKey(oldRecoveryKeyText);
+  const oldRwk = deriveRecoveryWrappingKey({ recoveryKey: oldKey, vaultId: vault.vaultId });
+  try {
+    const opened = unwrapVaultKey(recoveryEnvelope, {
+      wrappingKey: oldRwk,
+      vaultId: vault.vaultId,
+      expectType: "recovery",
+      expectVaultKeyVersion: vault.vaultKeyVersion,
+    });
+    if (!equalBytes(opened, vault.vaultKey)) {
+      zeroize(opened);
+      throw new Error("recovery key does not match the unlocked vault key");
+    }
+    zeroize(opened);
+  } finally {
+    zeroize(oldRwk);
+  }
+
+  const nextKey = generateRecoveryKey();
+  try {
+    const nextEnvelope = wrapRecoveryEnvelope({
+      reason: "trusted_replacement",
+      vaultKey: vault.vaultKey,
+      recoveryKey: nextKey,
+      vaultId: vault.vaultId,
+      vaultKeyVersion: vault.vaultKeyVersion,
+      previousVaultKeyVersion: vault.vaultKeyVersion,
+      previousRecoveryKey: oldKey,
+    });
+    const envelopes = vault.envelopes.map((envelope) =>
+      envelope.type === "recovery" ? nextEnvelope : envelope,
+    );
+    const updated = await commitSnapshot(vault, vault.entries, envelopes);
+    return { vault: updated, recoveryKey: formatRecoveryKey(nextKey) };
+  } finally {
+    zeroize(oldKey, nextKey);
+  }
+}
+
+/**
+ * The printed kit may be stolen. MUST mint VK₂ and a new recovery key. The
+ * stolen print still unwraps VK₁; it must not wrap VK₂. Other devices re-enrol.
+ */
+export async function rotateCompromisedRecovery(
+  vault: UnlockedVault,
+  options: { masterPassword: string; previousRecoveryKeyText?: string },
+): Promise<{ vault: UnlockedVault; recoveryKey: string }> {
+  const { masterEnvelope, masterKey } = assertMasterOpensVault(vault, options.masterPassword);
+  const previousRecoveryKey = options.previousRecoveryKeyText
+    ? parseRecoveryKey(options.previousRecoveryKeyText)
+    : undefined;
+  const nextVaultKeyVersion = vault.vaultKeyVersion + 1;
+  const vaultKey2 = generateVaultKey();
+  const { salt: _oldSalt, ...kdfParams } = masterEnvelope.kdf!;
+  const salt2 = generateSalt(16);
+  const masterKey2 = deriveMasterKey(options.masterPassword, salt2, kdfParams);
+  const nextRecoveryKey = generateRecoveryKey();
+
+  const currentId = deviceId();
+  let localDevice: { deviceKey: Uint8Array; deviceKeyVersion: number } | null = null;
+  const selfEntitled = vault.envelopes.some(
+    (envelope) => envelope.type === "device" && envelope.deviceId === currentId,
+  );
+  if (selfEntitled) {
+    localDevice = await tryLocalDeviceKey(vault.vaultId, currentId);
+  }
+
+  let transferredVaultKey = false;
+  try {
+    const envelopes: KeyEnvelope[] = [
+      wrapVaultKey({
+        vaultKey: vaultKey2,
+        wrappingKey: masterKey2,
+        vaultId: vault.vaultId,
+        type: "master",
+        vaultKeyVersion: nextVaultKeyVersion,
+        kdf: kdfParamsFrom(kdfParams, salt2),
+      }),
+      wrapRecoveryEnvelope({
+        reason: "compromised_rotation",
+        vaultKey: vaultKey2,
+        recoveryKey: nextRecoveryKey,
+        vaultId: vault.vaultId,
+        vaultKeyVersion: nextVaultKeyVersion,
+        previousVaultKeyVersion: vault.vaultKeyVersion,
+        previousRecoveryKey,
+      }),
+    ];
+    if (localDevice) {
+      envelopes.push(
+        wrapVaultKey({
+          vaultKey: vaultKey2,
+          wrappingKey: localDevice.deviceKey,
+          vaultId: vault.vaultId,
+          type: "device",
+          vaultKeyVersion: nextVaultKeyVersion,
+          deviceId: currentId,
+          deviceKeyVersion: localDevice.deviceKeyVersion,
+        }),
+      );
+    }
+    const previousKey = vault.vaultKey;
+    const updated = await commitSnapshot(vault, vault.entries, envelopes, {
+      vaultKey: vaultKey2,
+      vaultKeyVersion: nextVaultKeyVersion,
+    });
+    transferredVaultKey = true;
+    zeroize(previousKey);
+    return { vault: updated, recoveryKey: formatRecoveryKey(nextRecoveryKey) };
+  } finally {
+    zeroize(masterKey, masterKey2, nextRecoveryKey, previousRecoveryKey);
+    if (!transferredVaultKey) zeroize(vaultKey2);
+    if (localDevice) zeroize(localDevice.deviceKey);
+  }
 }
 
 /**

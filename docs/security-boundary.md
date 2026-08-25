@@ -153,7 +153,9 @@ The PWA implements both layers:
 | Path | Client | Crypto effect |
 |---|---|---|
 | **Soft** `revokeDevice` | Metadata DELETE, then commit revision N+1 **without** that device envelope, **same** `vaultKeyVersion` | Device can no longer unwrap via sync; a client that already holds VK still can |
-| **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery (device envelopes only if DK is locally recoverable without WebAuthn) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
+| **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery **with the same recovery key** (kit still trusted) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
+| **Compromised recovery** `rotateCompromisedRecovery` | Verify master → VK+1 → **new** recovery key → re-encrypt → CAS | Stolen print unwraps VK₁ only; it must not wrap VK₂ |
+| **Trusted kit replace** `replaceTrustedRecoveryKey` | Old key must unwrap current recovery envelope → new print, **same** VK | Convenience; not for a stolen kit |
 
 Foreign Device Keys are never available to the acting client. This device’s DK is
 only rewrapped when it is already recoverable from local material (no new

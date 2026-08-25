@@ -426,6 +426,44 @@ describe("unlockWithDevice", () => {
   });
 });
 
+describe("registration → assertion identity substitution", () => {
+  it("refuses unlock when the caller deviceId is not the enrolled device", async () => {
+    const fixture = await enable({ supportsPrf: true });
+    await assert.rejects(
+      () =>
+        unlockWithDevice({
+          client: fixture.client,
+          store: fixture.store,
+          vaultId: VAULT_ID,
+          deviceId: "dev_other_profile",
+          vaultKeyVersion: VAULT_KEY_VERSION,
+          deviceEnvelope: fixture.deviceEnvelope,
+        }),
+      DeviceUnlockUnavailableError,
+    );
+  });
+
+  it("refuses a swapped credential id on the local record", async () => {
+    const fixture = await enable({ supportsPrf: true });
+    const record = await fixture.store.load(VAULT_ID, DEVICE_ID);
+    assert.ok(record);
+    const other = fixture.client.addCredential(RP_ID);
+    await fixture.store.save({ ...record, credentialId: bytesToBase64(other) });
+    await assert.rejects(
+      () =>
+        unlockWithDevice({
+          client: fixture.client,
+          store: fixture.store,
+          vaultId: VAULT_ID,
+          deviceId: DEVICE_ID,
+          vaultKeyVersion: VAULT_KEY_VERSION,
+          deviceEnvelope: fixture.deviceEnvelope,
+        }),
+      DeviceUnlockUnavailableError,
+    );
+  });
+});
+
 describe("stored records", () => {
   it("never contains the Vault Key or the Device Key", async () => {
     const fixture = await enable({ supportsPrf: false, supportsLargeBlob: false });

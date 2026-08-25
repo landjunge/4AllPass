@@ -29,7 +29,9 @@ import {
   hardRevokeDevice,
   hasDeviceUnlock,
   lock as lockVault,
+  replaceTrustedRecoveryKey,
   revokeDevice,
+  rotateCompromisedRecovery,
   unlockWithDevice,
   unlockWithMasterPassword,
   unlockWithRecoveryKey,
@@ -77,6 +79,8 @@ interface AppActions {
     masterPassword: string,
     recoveryKeyText?: string,
   ): Promise<void>;
+  replaceTrustedRecovery(oldRecoveryKeyText: string): Promise<void>;
+  rotateCompromisedRecovery(masterPassword: string, previousRecoveryKeyText?: string): Promise<void>;
   refreshDevices(): Promise<void>;
   dismissRecoveryKey(): void;
   clearMessages(): void;
@@ -393,6 +397,32 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             }
           }
         }, "Vault key rotated. Old snapshots stay readable only to holders of the previous key.");
+      },
+
+      async replaceTrustedRecovery(oldRecoveryKeyText) {
+        const current = vaultRef.current;
+        if (!current) throw new Error("vault is locked");
+        await withStatus(async () => {
+          const next = await replaceTrustedRecoveryKey(current, oldRecoveryKeyText);
+          setUnlocked(next.vault);
+          setRecoveryKey(next.recoveryKey);
+        }, "New recovery key printed. The previous kit no longer opens this revision.");
+      },
+
+      async rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText) {
+        const current = vaultRef.current;
+        if (!current) throw new Error("vault is locked");
+        await withStatus(async () => {
+          const next = await rotateCompromisedRecovery(current, {
+            masterPassword,
+            ...(previousRecoveryKeyText ? { previousRecoveryKeyText } : {}),
+          });
+          setUnlocked(next.vault);
+          setRecoveryKey(next.recoveryKey);
+          if (!next.vault.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
+            setDeviceUnlockAvailable(false);
+          }
+        }, "Vault key rotated because the recovery kit may be stolen. Save the new kit.");
       },
 
       refreshDevices,

@@ -187,8 +187,9 @@ export {
   deriveRecoveryWrappingKey,
   formatRecoveryKey,
   parseRecoveryKey,
+  wrapRecoveryEnvelope,
 } from "./recovery.ts";
-export type { DeriveRecoveryWrappingKeyOptions } from "./recovery.ts";
+export type { DeriveRecoveryWrappingKeyOptions, RecoveryWrapReason, WrapRecoveryEnvelopeOptions } from "./recovery.ts";
 
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

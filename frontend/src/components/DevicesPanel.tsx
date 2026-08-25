@@ -19,6 +19,8 @@ export function DevicesPanel(): ReactNode {
     enableBiometrics,
     revoke,
     hardRevoke,
+    replaceTrustedRecovery,
+    rotateCompromisedRecovery,
     thisDeviceId,
     deviceUnlockAvailable,
     vault,
@@ -29,6 +31,9 @@ export function DevicesPanel(): ReactNode {
   const [rotateTarget, setRotateTarget] = useState<string | null>(null);
   const [masterPassword, setMasterPassword] = useState("");
   const [recoveryKeyText, setRecoveryKeyText] = useState("");
+  const [kitAction, setKitAction] = useState<"none" | "trusted" | "compromised">("none");
+  const [oldKitText, setOldKitText] = useState("");
+  const [compromisePassword, setCompromisePassword] = useState("");
   const needsRecoveryKey = Boolean(vault?.envelopes.some((env) => env.type === "recovery"));
 
   useEffect(() => {
@@ -89,10 +94,10 @@ export function DevicesPanel(): ReactNode {
         ) : null}
         {mechanism === "uv_gated_local" ? (
           <p className="hint" data-testid="rank3-warning">
-            Rang 3 ist nur Policy: der Wrapping-Key liegt in diesem Browser-Profil, UV-gated. Das
-            ist kein hardwaregebundenes PRF-Secret. / Rank 3 is policy only: the wrapping key lives
-            in this browser profile, gated by user verification. It is not a hardware-bound PRF
-            secret.
+            Rang 3 ist nur ein Policy-Tor, keine kryptografische Authenticator-Bindung. Face ID /
+            Touch ID gibt den Wrapping-Key in diesem Browser-Profil frei — das ist nicht PRF. / Rank
+            3 is a policy gate, not a cryptographic authenticator bind. Face ID / Touch ID releases
+            a wrapping key stored in this browser profile. That is not PRF.
           </p>
         ) : null}
         <p className="hint">
@@ -227,6 +232,120 @@ export function DevicesPanel(): ReactNode {
           </form>
         ) : null}
       </section>
+
+      {needsRecoveryKey ? (
+        <section className="card">
+          <h3>Notfall-Schlüssel / Emergency kit</h3>
+          <p className="hint">
+            Ein gestohlener Recovery Key ist vollständiger Vault-Zugriff. Nur ersetzen, wenn der
+            alte Schlüssel noch bei dir ist. Wenn er kompromittiert sein kann: Vault-Key rotieren.
+            / A stolen recovery key is full vault access. Replace the print only while you still
+            hold the old kit. If it may be stolen: rotate the vault key.
+          </p>
+          {kitAction === "none" ? (
+            <div className="device-actions">
+              <button type="button" onClick={() => setKitAction("trusted")} data-testid="replace-recovery-trusted">
+                Neuen Schlüssel drucken / Print a new kit
+              </button>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => setKitAction("compromised")}
+                data-testid="rotate-recovery-compromised"
+              >
+                Kit gestohlen / Kit may be stolen
+              </button>
+            </div>
+          ) : null}
+          {kitAction === "trusted" ? (
+            <form
+              className="rotate-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setBusy(true);
+                void replaceTrustedRecovery(oldKitText)
+                  .then(() => {
+                    setKitAction("none");
+                    setOldKitText("");
+                  })
+                  .finally(() => setBusy(false));
+              }}
+            >
+              <label>
+                Bisheriger Recovery Key / Current recovery key
+                <textarea
+                  value={oldKitText}
+                  onChange={(event) => setOldKitText(event.target.value)}
+                  rows={3}
+                  required
+                  data-testid="trusted-recovery-current"
+                />
+              </label>
+              <p className="hint">
+                Gleiche Vault-Key-Generation, neuer Druck. / Same vault-key generation, new print.
+              </p>
+              <div className="device-actions">
+                <button type="submit" disabled={busy} data-testid="confirm-trusted-recovery">
+                  {busy ? "…" : "Neuen Schlüssel erzeugen / Mint new kit"}
+                </button>
+                <button type="button" className="link" onClick={() => setKitAction("none")}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : null}
+          {kitAction === "compromised" ? (
+            <form
+              className="rotate-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setBusy(true);
+                void rotateCompromisedRecovery(compromisePassword, oldKitText || undefined)
+                  .then(() => {
+                    setKitAction("none");
+                    setOldKitText("");
+                    setCompromisePassword("");
+                  })
+                  .finally(() => setBusy(false));
+              }}
+            >
+              <label>
+                Vault password
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={compromisePassword}
+                  onChange={(event) => setCompromisePassword(event.target.value)}
+                  required
+                  minLength={10}
+                  data-testid="compromised-recovery-password"
+                />
+              </label>
+              <label>
+                Alter Recovery Key, falls noch da / Previous kit if you still have it
+                <textarea
+                  value={oldKitText}
+                  onChange={(event) => setOldKitText(event.target.value)}
+                  rows={3}
+                  data-testid="compromised-recovery-old"
+                />
+              </label>
+              <p className="hint">
+                Erzwingt eine neue Vault-Key-Generation. Der alte Druck öffnet VK₂ nicht. / Forces a
+                new vault-key generation. The stolen print cannot open VK₂.
+              </p>
+              <div className="device-actions">
+                <button type="submit" className="danger" disabled={busy} data-testid="confirm-compromised-recovery">
+                  {busy ? "Rotating…" : "Vault-Key rotieren / Rotate vault key"}
+                </button>
+                <button type="button" className="link" onClick={() => setKitAction("none")}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

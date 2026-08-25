@@ -14,9 +14,13 @@ import {
 function isFillableInput(input: HTMLInputElement): boolean {
   if (input.hidden || input.type === "hidden" || input.disabled || input.readOnly) return false;
   if (input.getAttribute("aria-hidden") === "true") return false;
+  if (input.closest("[inert]")) return false;
+  const dialog = input.closest("dialog");
+  if (dialog instanceof HTMLDialogElement && !dialog.open) return false;
   const style = getComputedStyle(input);
   if (style.display === "none" || style.visibility === "hidden") return false;
   if (Number.parseFloat(style.opacity) < 0.05) return false;
+  if (style.pointerEvents === "none") return false;
   const box = input.getBoundingClientRect();
   if (box.width < 2 || box.height < 2) return false;
   return true;

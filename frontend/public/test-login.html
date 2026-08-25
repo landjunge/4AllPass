@@ -21,6 +21,13 @@
       style="width: 1px; height: 1px; position: absolute; left: -9999px"
     />
     <input id="trap-aria" name="trap_login" type="text" autocomplete="username" aria-hidden="true" />
+    <dialog id="trap-dialog">
+      <input id="trap-dialog-user" name="trap_dialog_user" type="text" autocomplete="username" />
+      <input id="trap-dialog-pass" name="trap_dialog_pass" type="password" autocomplete="current-password" />
+    </dialog>
+    <div inert>
+      <input id="trap-inert" name="trap_inert" type="text" autocomplete="username" />
+    </div>
     <h2>GitHub-shaped (name=login, id=login_field)</h2>
     <form id="github-login" action="#" method="post">
       <label>Username or email <input id="login_field" name="login" type="text" /></label>

@@ -74,6 +74,8 @@ test("local vault password unlocks the extension and fills the demo login", asyn
     await expect(login.locator("#trap-opacity")).toHaveValue("");
     await expect(login.locator("#trap-tiny")).toHaveValue("");
     await expect(login.locator("#trap-aria")).toHaveValue("");
+    await expect(login.locator("#trap-dialog-user")).toHaveValue("");
+    await expect(login.locator("#trap-inert")).toHaveValue("");
   } finally {
     await context.close();
   }

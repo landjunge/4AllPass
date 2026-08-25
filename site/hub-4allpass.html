@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>4AllPass — Digitaler Tresor, der wirklich dir gehört | Netzwerkpunkt</title>
+<meta name="description" content="Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge. Desktop-App zuerst. Agenten nur nach Allow/Deny + TTL."/>
+<meta name="author" content="Daniel Filipek (landjunge)"/>
+<meta name="robots" content="index, follow, max-image-preview:large"/>
+<link rel="canonical" href="https://4allpass.netzwerkpunkt.de/"/>
+<link rel="alternate" hreflang="de" href="https://4allpass.netzwerkpunkt.de/"/>
+<link rel="alternate" hreflang="de" href="https://netzwerkpunkt.de/4allpass"/>
+<link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/"/>
+<link rel="alternate" hreflang="x-default" href="https://4allpass.netzwerkpunkt.de/"/>
+<meta property="og:locale" content="de_DE"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://4allpass.netzwerkpunkt.de/"/>
+<meta property="og:title" content="4AllPass — Digitaler Tresor, der wirklich dir gehört"/>
+<meta property="og:description" content="Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge. Desktop-App zuerst. Agenten nur nach Allow/Deny."/>
+<meta property="og:site_name" content="Netzwerkpunkt"/>
+<meta property="og:image" content="https://netzwerkpunkt.de/og.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="theme-color" content="#0a0b0a"/>
+<link rel="icon" href="https://netzwerkpunkt.de/favicon.svg" type="image/svg+xml"/>
+<link rel="stylesheet" href="https://netzwerkpunkt.de/hub.css"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"4AllPass","applicationCategory":"SecurityApplication","operatingSystem":"macOS, Windows, Linux","description":"Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge. Desktop-App zuerst. Agenten nur nach Allow/Deny + TTL.","url":"https://4allpass.netzwerkpunkt.de/","downloadUrl":"https://github.com/landjunge/4AllPass/releases/tag/desktop","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Daniel Filipek","alternateName":"landjunge"},"sameAs":["https://github.com/landjunge/4AllPass","https://landjunge.github.io/4AllPass/","https://netzwerkpunkt.de/4allpass"]}</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="https://netzwerkpunkt.de/" aria-label="Netzwerkpunkt Start">
+      <img src="https://netzwerkpunkt.de/favicon.svg" width="28" height="28" alt=""/>
+      <span>Netzwerkpunkt</span>
+    </a>
+    <nav class="nav" aria-label="Produkte">
+      <a href="https://netzwerkpunkt.de/tollgate">Tollgate</a>
+      <a href="https://netzwerkpunkt.de/gnom-hub-v1">Gnom-Hub-V1</a>
+      <a href="https://netzwerkpunkt.de/4allpass" aria-current="page">4AllPass</a>
+      <a href="https://netzwerkpunkt.de/threaddesk">ThreadDesk</a>
+      <a href="https://netzwerkpunkt.de/agent-x-files">Agent-X-Files</a>
+      <a href="https://netzwerkpunkt.de/test">Test Phase</a>
+    </nav>
+    <a class="login" href="https://netzwerkpunkt.de/test">Anmelden</a>
+  </div>
+</header>
+<main>
+  <div class="wrap" style="padding-top:2rem;"><a href="https://netzwerkpunkt.de/" class="login">Alle Produkte</a></div>
+  <section class="hero wrap" style="padding-top:1.5rem;">
+    <p class="kicker">Credentials · Local-first · In Arbeit</p>
+    <h1>4AllPass</h1>
+    <p class="lead">Ein digitaler Tresor, der wirklich dir gehört.</p>
+    <p class="q">Ich gehe auf eine Seite — 4AllPass erledigt den Login.</p>
+    <div class="row">
+      <a class="btn btn-accent" href="https://github.com/landjunge/4AllPass/releases/tag/desktop" rel="noreferrer">Desktop laden</a>
+      <a class="btn btn-ghost" href="https://github.com/landjunge/4AllPass" rel="noreferrer">GitHub</a>
+      <a class="btn btn-ghost" href="https://landjunge.github.io/4AllPass/" rel="noreferrer">Dokumentation</a>
+    </div>
+  </section>
+  <section class="wrap" style="padding-bottom:2rem;">
+    <a class="shot" href="https://github.com/landjunge/4AllPass"><img src="https://netzwerkpunkt.de/img/hub-4allpass.jpg" alt="4AllPass Desktop und Autofill" width="1440" height="810"/></a>
+  </section>
+  <section class="pills">
+    <article><h2>Zuverlässiges Autofill</h2><p>Import aus dem Browser, Review ohne Passwort in der Liste, dann Login ohne Copy-Paste.</p></article>
+    <article><h2>Zero-Knowledge</h2><p>Argon2id, AES-256-GCM. Vault Key pure random. FastAPI mintet keine Tokens.</p></article>
+    <article><h2>Agenten kontrolliert</h2><p>Allow/Deny + TTL. Nie erster Bildschirm, nie den ganzen Tresor.</p></article>
+  </section>
+  <section class="wrap" style="padding:3.5rem 1.25rem;">
+    <h2>Was ist es</h2>
+    <p>4AllPass ist ein <strong>lokaler Passwort-Tresor</strong>. Das Produkt ist die Desktop-App (Tauri + SQLite). Agenten nur nach explizitem Allow/Deny + TTL.</p>
+    <h2 style="margin-top:2.5rem;font-size:1.25rem;">Warum</h2>
+    <p>Zuerst muss Autofill im Alltag funktionieren — dann kann daraus eine Vertrauensinfrastruktur werden. Vision: Daniel Filipek (landjunge).</p>
+    <h2 style="margin-top:2.5rem;">Fakten</h2>
+    <dl>
+      <div class="fact"><dt class="kicker">Produkt</dt><dd>Desktop · SQLite · Loopback :8788</dd></div>
+      <div class="fact"><dt class="kicker">Stack</dt><dd>TypeScript · Tauri · FastAPI</dd></div>
+      <div class="fact"><dt class="kicker">Crypto</dt><dd>Argon2id · AES-256-GCM · Hard-Revoke</dd></div>
+      <div class="fact"><dt class="kicker">Domain</dt><dd>Heute Subdomain; 4allpass.de später (0 € jetzt)</dd></div>
+      <div class="fact"><dt class="kicker">Docs</dt><dd><a href="https://landjunge.github.io/4AllPass/">landjunge.github.io/4AllPass</a></dd></div>
+    </dl>
+    <h2 style="margin-top:2.5rem;font-size:1.25rem;">Install</h2>
+    <p><code>curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh</code></p>
+  </section>
+  <section class="wrap" style="padding:2rem 1.25rem 3rem;" id="faq">
+    <p class="kicker">FAQ</p>
+    <h2>Kurz und ehrlich</h2>
+    <details style="margin-top:1rem;padding:.75rem 0;border-bottom:1px solid rgba(236,234,228,.12)"><summary>Cloud-Account?</summary><p>Nein. Desktop-App, Schlüssel bei dir.</p></details>
+    <details style="padding:.75rem 0;border-bottom:1px solid rgba(236,234,228,.12)"><summary>Recovery-Kit verloren?</summary><p>Kein Server-Reset. Absicht.</p></details>
+    <details style="padding:.75rem 0;border-bottom:1px solid rgba(236,234,228,.12)"><summary>macOS-Warnung?</summary><p>Ad-hoc: Rechtsklick → Öffnen. Notarisierung pausiert (Kosten).</p></details>
+    <details style="padding:.75rem 0;border-bottom:1px solid rgba(236,234,228,.12)"><summary>Agenten / n8n?</summary><p>Nur Allow/Deny + TTL, nie den ganzen Tresor.</p></details>
+    <details style="padding:.75rem 0;border-bottom:1px solid rgba(236,234,228,.12)"><summary>4allpass.de?</summary><p>Kommt später. Heute: diese Subdomain. Dann 301.</p></details>
+  </section>
+  <section class="wrap" style="padding:3rem 1.25rem 4rem;">
+    <p class="kicker">Die anderen vier</p>
+    <div class="others">
+      <a href="https://netzwerkpunkt.de/tollgate"><strong>Tollgate</strong><span class="q" style="display:block">Sicherheits-Schicht zwischen Agents und dem Internet.</span></a>
+      <a href="https://netzwerkpunkt.de/gnom-hub-v1"><strong>Gnom-Hub-V1</strong><span class="q" style="display:block">Brainstorm frei. Execute nur auf Absicht.</span></a>
+      <a href="https://netzwerkpunkt.de/threaddesk"><strong>ThreadDesk</strong><span class="q" style="display:block">Persistente Threads. Speichert Kontext.</span></a>
+      <a href="https://netzwerkpunkt.de/agent-x-files"><strong>Agent-X-Files</strong><span class="q" style="display:block">Detektivspiel. KI-Partnerin, nicht Autopilot.</span></a>
+    </div>
+  </section>
+</main>
+<footer class="foot">
+  <div class="wrap bar">
+    <p>Daniel Filipek (landjunge) · Berlin · lokaler Tresor zuerst</p>
+    <p class="mono">
+      <a href="https://netzwerkpunkt.de/impressum">Impressum</a> ·
+      <a href="https://netzwerkpunkt.de/datenschutz">Datenschutz</a> ·
+      <a href="https://github.com/landjunge/4AllPass">GitHub</a>
+    </p>
+  </div>
+</footer>
+</body>
+</html>

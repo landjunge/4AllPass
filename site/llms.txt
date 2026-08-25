@@ -1,9 +1,31 @@
 # 4AllPass
 
-4AllPass is a self-hosted zero-knowledge vault. Desktop app is the product. Agents get time-boxed access after Allow/Deny. Canonical: https://netzwerkpunkt.de/4allpass
+> Local-first password vault. Reliable autofill. Zero-knowledge. Agents only after Allow/Deny + TTL.
 
-Hub: https://netzwerkpunkt.de
-GitHub: https://github.com/landjunge/4AllPass
-Pages: https://landjunge.github.io/4AllPass/
-Impressum: https://netzwerkpunkt.de/impressum
-Datenschutz: https://netzwerkpunkt.de/datenschutz
+The product is the **Desktop app** (Tauri + SQLite + loopback :8788).
+The server never sees plaintext. FastAPI never mints provider tokens.
+Recovery kit is mandatory — no server-side reset.
+
+## Primary URLs (today)
+- Product (canonical): https://4allpass.netzwerkpunkt.de/
+- Hub entry: https://netzwerkpunkt.de/4allpass
+- Docs / GitHub Pages: https://landjunge.github.io/4AllPass/
+- Source: https://github.com/landjunge/4AllPass
+- Desktop builds: https://github.com/landjunge/4AllPass/releases/tag/desktop
+
+## Future domain
+When budget allows: 4allpass.de (preferred) or 4allpass.com — then 301 from the subdomain.
+See site/DOMAIN-STRATEGY.md. Do not buy a domain until product P0 is solid.
+
+## Key docs
+- Product description: https://github.com/landjunge/4AllPass/blob/main/docs/product-description.md
+- For normal people: https://github.com/landjunge/4AllPass/blob/main/docs/README-HUMAN.md
+- Roadmap (house model): https://github.com/landjunge/4AllPass/blob/main/docs/zukunftsplan.md
+- Security boundary: https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md
+
+## Vision
+Daniel Filipek (landjunge). Foundation first: excellent password manager, then multi-vault, agents, identity, machines.
+
+## Legal
+- Impressum: https://netzwerkpunkt.de/impressum
+- Datenschutz: https://netzwerkpunkt.de/datenschutz

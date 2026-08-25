@@ -864,7 +864,7 @@ export async function rotateCompromisedRecovery(
         vaultId: vault.vaultId,
         vaultKeyVersion: nextVaultKeyVersion,
         previousVaultKeyVersion: vault.vaultKeyVersion,
-        previousRecoveryKey,
+        ...(previousRecoveryKey ? { previousRecoveryKey } : {}),
       }),
     ];
     if (localDevice) {

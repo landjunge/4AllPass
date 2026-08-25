@@ -304,9 +304,10 @@ pre.mono {
 
 .browser-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 8px;
   margin: 8px 0;
+  align-items: start;
 }
 
 .browser-card {
@@ -314,6 +315,7 @@ pre.mono {
   border-radius: var(--radius-md);
   background: var(--bg-elev);
   overflow: hidden;
+  min-width: 0;
 }
 
 .browser-card.open {
@@ -341,10 +343,10 @@ pre.mono {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   text-align: left;
-  padding: 12px;
+  padding: 8px 10px;
   background: transparent;
   border: 0;
   color: inherit;
@@ -367,9 +369,34 @@ pre.mono {
 }
 
 .browser-card-body {
-  display: grid;
+  display: none;
+}
+
+.browser-card-panel {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+
+.browser-card-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  padding: 0 12px 12px;
+  margin-bottom: 6px;
+}
+
+.browser-card-panel-head button {
+  padding: 4px 8px;
+  min-height: 24px;
+  font-size: 12px;
+}
+
+.compact-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
 }
 
 .browser-ext {
@@ -397,10 +424,15 @@ pre.mono {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 2px 12px;
+  max-height: 9.5rem;
+  overflow: auto;
 }
 
 .browser-profiles li {
-  margin: 6px 0;
+  margin: 0;
 }
 
 .browser-profiles label {

@@ -62,6 +62,7 @@ export function BrowserCards({
 
   const selectedCount = useMemo(() => selected.size, [selected]);
   const activeCount = wantExt.size;
+  const openCard = cards !== "loading" && cards !== null ? cards.find((card) => card.id === openId) : undefined;
 
   useEffect(() => {
     if (!vaultId || cards === "loading" || cards === null) return;
@@ -184,6 +185,9 @@ export function BrowserCards({
         {cards.map((card) => {
           const open = openId === card.id;
           const on = wantExt.has(card.id);
+          const picked = card.profiles.filter((profile) =>
+            selected.has(profileKey(card.id, profile.id)),
+          ).length;
           return (
             <article
               key={card.id}
@@ -200,62 +204,71 @@ export function BrowserCards({
                 <span className="browser-card-label">
                   <strong>{card.name}</strong>
                   <span className="muted">
-                    {on ? "aktiv / on" : "aus / off"} · {card.profiles.length}{" "}
-                    {card.profiles.length === 1 ? "Profil / profile" : "Profile / profiles"}
+                    {picked}/{card.profiles.length}
                   </span>
                 </span>
                 {on ? <span className="browser-dot" aria-hidden /> : null}
               </button>
-              {open ? (
-                <div className="browser-card-body">
-                  <label className="browser-ext">
-                    <input
-                      type="checkbox"
-                      checked={wantExt.has(card.id)}
-                      onChange={() => toggleExt(card.id)}
-                    />
-                    Extension aktiv / Extension on
-                  </label>
-                  {wantExt.has(card.id) ? (
-                    <button type="button" onClick={() => void installExt(card.id)}>
-                      Extension laden / Load add-on
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    data-testid={`open-autofill-demo-${card.id}`}
-                    onClick={() => void openDemo(card.id)}
-                  >
-                    Demo-Login öffnen / Open demo login
-                  </button>
-                  <ul className="browser-profiles">
-                    {card.profiles.length === 0 ? (
-                      <li className="muted">Kein Profil gefunden. / No profile found.</li>
-                    ) : (
-                      card.profiles.map((profile) => {
-                        const key = profileKey(card.id, profile.id);
-                        return (
-                          <li key={key}>
-                            <label>
-                              <input
-                                type="checkbox"
-                                data-testid={`browser-profile-${key}`}
-                                checked={selected.has(key)}
-                                onChange={() => toggleProfile(key)}
-                              />
-                              {profile.name} — Passwörter holen später / fetch later
-                            </label>
-                          </li>
-                        );
-                      })
-                    )}
-                  </ul>
-                </div>
-              ) : null}
             </article>
           );
         })}
       </div>
+      {openCard ? (
+        <div className="browser-card-panel" data-testid="browser-card-panel">
+          <div className="browser-card-panel-head">
+            <strong>{openCard.name}</strong>
+            <label className="browser-ext">
+              <input
+                type="checkbox"
+                checked={wantExt.has(openCard.id)}
+                onChange={() => toggleExt(openCard.id)}
+              />
+              {t({ de: "Extension", en: "Add-on" })}
+            </label>
+            {wantExt.has(openCard.id) ? (
+              <button type="button" onClick={() => void installExt(openCard.id)}>
+                {t({ de: "Laden", en: "Load" })}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              data-testid={`open-autofill-demo-${openCard.id}`}
+              onClick={() => void openDemo(openCard.id)}
+            >
+              Demo
+            </button>
+          </div>
+          <ul className="browser-profiles">
+            {openCard.profiles.length === 0 ? (
+              <li className="muted">Kein Profil gefunden. / No profile found.</li>
+            ) : (
+              openCard.profiles.map((profile) => {
+                const key = profileKey(openCard.id, profile.id);
+                return (
+                  <li key={key}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        data-testid={`browser-profile-${key}`}
+                        checked={selected.has(key)}
+                        onChange={() => toggleProfile(key)}
+                      />
+                      {profile.name}
+                    </label>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      ) : (
+        <p className="muted compact-hint">
+          {t({
+            de: "Karte antippen, Profile anhaken, unten holen.",
+            en: "Tap a card, tick profiles, fetch below.",
+          })}
+        </p>
+      )}
       <div className="actions">
         <button
           type="button"

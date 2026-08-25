@@ -279,6 +279,9 @@ fn chromium_profiles(data: &Path) -> Vec<BrowserProfile> {
                 .and_then(|v| v.as_object())
             {
                 for (dir_name, info) in cache {
+                    if skip_chromium_profile(dir_name) {
+                        continue;
+                    }
                     let name = info
                         .get("name")
                         .and_then(|v| v.as_str())
@@ -308,6 +311,9 @@ fn chromium_dirs(data: &Path) -> Vec<BrowserProfile> {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let name = name.to_string_lossy();
+        if skip_chromium_profile(&name) {
+            continue;
+        }
         if name == "Default" || name.starts_with("Profile ") {
             let dir = data.join(name.as_ref());
             if dir.join("Preferences").is_file() || dir.join("Login Data").is_file() {
@@ -320,6 +326,10 @@ fn chromium_dirs(data: &Path) -> Vec<BrowserProfile> {
         }
     }
     out
+}
+
+fn skip_chromium_profile(dir_name: &str) -> bool {
+    matches!(dir_name, "System Profile" | "Guest Profile")
 }
 
 fn display_chromium_dir(dir: &str) -> String {
@@ -629,6 +639,25 @@ mod tests {
         let names: Vec<_> = chrome_card.profiles.iter().map(|p| p.name.as_str()).collect();
         assert!(names.contains(&"Person 1"));
         assert!(names.contains(&"Arbeit"));
+        fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn chromium_skips_system_and_guest_profiles() {
+        let root = scratch();
+        let chrome = root.join("Library/Application Support/Google/Chrome");
+        fs::create_dir_all(chrome.join("Default")).unwrap();
+        fs::write(
+            chrome.join("Local State"),
+            r#"{"profile":{"info_cache":{"Default":{"name":"Person 1"},"System Profile":{"name":"System Profile"},"Guest Profile":{"name":"Gast"}}}}"#,
+        )
+        .unwrap();
+        let apps = root.join("Applications");
+        fs::create_dir_all(apps.join("Google Chrome.app")).unwrap();
+        let cards = list_browser_cards(&root, &[apps.as_path()]);
+        let chrome_card = cards.iter().find(|c| c.id == "chrome").expect("chrome");
+        let names: Vec<_> = chrome_card.profiles.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, ["Person 1"]);
         fs::remove_dir_all(&root).ok();
     }
 

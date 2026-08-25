@@ -75,6 +75,19 @@ The long-term product vision comes from **Daniel Filipek (landjunge)**.
 
 ---
 
+## How this is built / Wie dieses Projekt entsteht
+
+**System Designer & Product Architect** — Daniel Filipek (landjunge)
+
+Ich arbeite anders: Ich entwickle Systeme und Produkte mit KI als technischem Partner.
+
+Produktvision, Prioritäten und Architekturentscheidungen kommen von mir. Implementierung, Tests und Dokumentation entstehen mit KI als technischem Partner. Ich bin kein klassischer Softwareentwickler. Stärke: Probleme erkennen, in eigenständige Werkzeuge zerlegen, Schnittstellen und Grenzen klar halten.
+
+Was ich einbringe: Idee, Systemdenken, Anforderungen, gewünschtes Verhalten, klare Grenzen.  
+Was überprüfbar sein muss: der Code, die Specs, die Tests. Reviews sind willkommen.
+
+Gerade bei 4AllPass behaupte ich **nicht**, dass die Kryptographie sicher ist. Annahmen stehen in den Specs. Es gibt **noch kein unabhängiges Drittaudit**. Security-Reviews und Versuche, das System zu brechen, sind ausdrücklich willkommen.
+
 Kein Cloud-Account bei uns. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md) — Produkt zuerst, Sicherheit und Eigentum werden nicht verkauft.
 
 Weitere klare Beschreibungen:

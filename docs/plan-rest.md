@@ -22,8 +22,8 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 
 ```text
 #120  P0 Fremder-Mac-Test  — übersprungen (kein zweiter Mac, nicht erledigt)
-  →   #121 P1 Autofill härten   (Code)   ← jetzt
-  →   Rest laut product-maturity.md
+#121  P1 Autofill härten   — Code auf main (Honeypot/Dialog/Assist-e2e)
+  →   Rest: Apple (#112, Geld) und Später (Shadow DOM, Passkeys, Launch)
 ```
 
 Kein Connection-/Capability-Umbau. Kein zweiter Plan.

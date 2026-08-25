@@ -257,7 +257,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**[#121](https://github.com/landjunge/4AllPass/issues/121) Autofill härten** (Code, [`autofill-v1.md`](autofill-v1.md)). [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac: übersprungen, kein zweiter Rechner — nicht abgehakt. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
+**Code P0–P1/P1b (ohne Shadow DOM) auf `main`.** [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112); später Shadow DOM / Passkey-Store / Launch. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
 Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
 

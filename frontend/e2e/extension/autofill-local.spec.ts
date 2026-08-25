@@ -76,6 +76,8 @@ test("local vault password unlocks the extension and fills the demo login", asyn
     await expect(login.locator("#trap-aria")).toHaveValue("");
     await expect(login.locator("#trap-dialog-user")).toHaveValue("");
     await expect(login.locator("#trap-inert")).toHaveValue("");
+    await expect(login.locator("#given")).toHaveValue("");
+    await expect(login.locator("#new-pass")).toHaveValue("");
   } finally {
     await context.close();
   }
@@ -100,6 +102,41 @@ test("local vault fills a GitHub-shaped login in one click", async () => {
       pickTitle: "GitHub",
     });
     await expect(login.locator('input[name="required_field_test"]')).toHaveValue("");
+  } finally {
+    await context.close();
+  }
+});
+
+test("assist fills the weak username only after an explicit click", async () => {
+  const { context, extensionId } = await launchExtension();
+  try {
+    const page = await context.newPage();
+    await ensureLocalVault(page, ORIGIN);
+    await addEntryWithMouse(page, {
+      title: "Assist login",
+      username: "ada@example.com",
+      password: "s3cret-assist",
+      url: `${ORIGIN}/test-login-assist.html`,
+    });
+
+    const popup = await context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+    await popup.locator("#api").fill(ORIGIN);
+    await popup.locator("#vault").fill(VAULT_PASSWORD);
+    await popup.locator("#unlock-btn").click();
+    await expect(popup.locator("#status")).toContainText("Unlocked", { timeout: 60_000 });
+
+    const login = await context.newPage();
+    await login.goto(`${ORIGIN}/test-login-assist.html`);
+    await login.bringToFront();
+    await popup.bringToFront();
+    await popup.locator("#fill").click();
+    await popup.locator("#picks button").filter({ hasText: "Assist login" }).click({ timeout: 8_000 }).catch(() => undefined);
+    await expect(login.locator("#password")).toHaveValue("s3cret-assist");
+    await expect(login.locator("#q")).toHaveValue("");
+    await expect(popup.locator("#assist")).toBeVisible();
+    await popup.locator("#assist").click();
+    await expect(login.locator("#q")).toHaveValue("ada@example.com");
   } finally {
     await context.close();
   }

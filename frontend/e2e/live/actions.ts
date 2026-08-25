@@ -69,7 +69,10 @@ export async function addEntryWithMouse(
   entry: { title: string; username: string; password: string; url?: string },
 ): Promise<void> {
   await page.getByTestId("new-entry").click();
-  await clickAndType(page, page.getByTestId("entry-title"), entry.title);
+  const title = page.getByTestId("entry-title");
+  await expect(title).toBeVisible({ timeout: 30_000 });
+  await title.scrollIntoViewIfNeeded();
+  await clickAndType(page, title, entry.title);
   await clickAndType(page, page.getByTestId("entry-username"), entry.username);
   await clickAndType(page, page.getByTestId("entry-password"), entry.password);
   if (entry.url) await clickAndType(page, page.getByLabel("URL", { exact: true }), entry.url);

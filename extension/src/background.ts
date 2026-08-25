@@ -4,7 +4,7 @@ import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
-import { isHttpUrl, pickFillTab } from "./tab-target.ts";
+import { isHttpUrl, isPrivilegedExtensionSender, pageOrigin, pickFillTab, sameFillOrigin } from "./tab-target.ts";
 import {
   apiRequest,
   decryptUnlockedSnapshot,
@@ -270,7 +270,10 @@ async function fillActive(
   if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
   rememberHttpTab(tab);
   await ensurePageOrigin(tab.url);
-  const matches = entriesForPage(session.entries, tab.url);
+  const matchedUrl = tab.url;
+  const matchedOrigin = pageOrigin(matchedUrl);
+  if (!matchedOrigin) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  const matches = entriesForPage(session.entries, matchedUrl);
   if (matches.length === 0) {
     return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
   }
@@ -284,6 +287,17 @@ async function fillActive(
     return { ok: true, needsPick: true, entries: publicPicks(matches) };
   }
   const probe = await sendToTab(tab.id, { type: "probe-form" });
+  const liveAfterProbe = await ext.tabs.get(tab.id).catch(() => undefined);
+  if (
+    (probe.pageOrigin && probe.pageOrigin !== matchedOrigin) ||
+    !sameFillOrigin(matchedUrl, liveAfterProbe?.url)
+  ) {
+    return {
+      ok: false,
+      error: formatFillFailure({ reason: "origin-mismatch" }),
+      reason: "origin-mismatch",
+    };
+  }
   if (!probe.ok) {
     const assistFields = probe.assistFields ?? [];
     return {
@@ -314,6 +328,7 @@ async function fillActive(
     password: chosen.password,
     otp,
     assist,
+    expectedOrigin: matchedOrigin,
   });
   if (!filled.ok) {
     return {
@@ -386,10 +401,10 @@ ext.tabs.onUpdated.addListener((tabId, change) => {
   }
 });
 
-ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+ext.runtime.onMessage.addListener((message, sender, sendResponse) => {
   void (async () => {
     try {
-      sendResponse(await handle(message));
+      sendResponse(await handle(message, sender));
     } catch (error) {
       sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) });
     }
@@ -397,7 +412,13 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function handle(message: { type?: string; [key: string]: unknown }): Promise<unknown> {
+async function handle(
+  message: { type?: string; [key: string]: unknown },
+  sender: { tab?: { id?: number } | null } = {},
+): Promise<unknown> {
+  if (!isPrivilegedExtensionSender(sender)) {
+    return { ok: false, error: "not allowed" };
+  }
   switch (message.type) {
     case "status":
       if (session) {

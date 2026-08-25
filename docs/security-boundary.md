@@ -1,7 +1,7 @@
 # Security boundary (implementation)
 
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-24
+**Date:** 2026-08-25
 
 This document describes what the **running backend + PWA / local app** actually enforce.
 It does not restate the crypto protocol. If a sentence here disagrees with
@@ -257,7 +257,13 @@ pins the server integers; after the first verified manifest that path is closed.
   the popup does not lock (shortcut fill still works until idle). Fill matching
   uses the entry URL host first, then a high-confidence provider bridge from
   the stored URL (a `providerId` tag cannot override a conflicting host). A
-  TLD-only saved host (`https://com`) does not suffix-match. DevicesPanel
+  TLD-only saved host (`https://com`) does not suffix-match. Shared-parent
+  hosts (`github.io`, `vercel.app`, …) do not suffix-match either. An HTTPS
+  vault URL is not filled into `http://` of the same host (loopback HTTP is
+  allowed). The content script refuses a fill whose `expectedOrigin` is not
+  `location.origin`, so a tab that navigated after matching does not receive
+  the password. Privileged extension messages (`unlock`, `fill-tab`, …) from
+  a content-script sender (`sender.tab`) are rejected. DevicesPanel
   treats missing `getClientCapabilities` PRF as unproven, not as “PRF exists”
   because `PublicKeyCredential` is present. JavaScript cannot
   securely zeroize strings. iOS Safari Web Extension and system Password

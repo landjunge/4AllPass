@@ -39,10 +39,13 @@ export type FillReason =
   | "no-match"
   | "no-fields"
   | "verify-mismatch"
-  | "signup";
+  | "signup"
+  | "origin-mismatch";
 
 export interface FillResult {
   ok: boolean;
+  /** Origin the content script actually ran in. Never a secret. */
+  pageOrigin?: string;
   /** Fields the model recognized (never values). */
   fields: Array<"username" | "password" | "otp">;
   /** Fields whose DOM value matched after Safe Fill. */
@@ -87,6 +90,8 @@ export function fillErrorMessage(reason: FillReason | undefined): string {
       return "Sieht nach Registrierung aus / this looks like a sign-up form";
     case "verify-mismatch":
       return "Seite hat Fill nicht übernommen / page did not accept the fill";
+    case "origin-mismatch":
+      return "Seite hat gewechselt / page origin changed";
     case "no-fields":
     default:
       return "Keine Login-Felder / no login fields on this page";

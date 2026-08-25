@@ -1,42 +1,76 @@
-# Domain-Strategie 4AllPass (kostenlos jetzt → eigene Domain später)
+# Domain-Strategie — Netzwerkpunkt zuerst
 
 **Stand:** 2026-08-25  
-**Budget:** 0 € — keine Domain kaufen, bis Geld da ist.
+**Entscheidung:** `netzwerkpunkt.de` ist die **Hauptdomain**. Dort werden Repos/Produkte ab einer bestimmten Reife **vorgestellt**. Einzel-Domains (`4allpass.de` o.ä.) sind optional und nicht nötig.
 
-## Heute (kostenlos)
+## Architektur
+
+```text
+netzwerkpunkt.de              ← Marke, Portfolio, Hub
+  ├── /                       ← Übersicht aller Werkzeuge
+  ├── /4allpass               ← Produkt-Eintrag im Hub
+  ├── /tollgate
+  ├── /gnom-hub-v1
+  └── …
+
+4allpass.netzwerkpunkt.de     ← Produkt-Landing (Subdomain)
+tollgate.netzwerkpunkt.de     ← analog
+…
+
+github.com/landjunge/…        ← Source
+*.github.io/…                 ← Doku-Spiegel (optional)
+```
+
+**Regel:** Ein Produkt erscheint auf dem Hub, wenn es vorzeigbar ist (Install, klare Story, kein reines Experiment). Davor reicht Repo + interne Docs.
+
+## URLs für 4AllPass (heute)
 
 | Rolle | URL |
 |-------|-----|
-| **Kanonische Produktseite** | `https://4allpass.netzwerkpunkt.de/` |
-| Portfolio-Hub | `https://netzwerkpunkt.de/4allpass` |
-| Doku-Spiegel (GitHub Pages) | `https://landjunge.github.io/4AllPass/` |
+| **Marke / Portfolio** | `https://netzwerkpunkt.de/` |
+| **Hub-Eintrag** | `https://netzwerkpunkt.de/4allpass` |
+| **Produkt-Landing** | `https://4allpass.netzwerkpunkt.de/` |
+| Doku-Spiegel | `https://landjunge.github.io/4AllPass/` |
 | Source / Releases | `https://github.com/landjunge/4AllPass` |
 
-Alles verlinkt sich gegenseitig (`sameAs` im Schema + sichtbare Links).  
-**Eine Story:** Tresor gehört dem Benutzer → Autofill → ZK → Agenten nur Allow/Deny.
+### Canonical-Empfehlung
 
-## Später (wenn Budget da)
+- **Produkt-Landing (Subdomain):** canonical = sich selbst  
+  `https://4allpass.netzwerkpunkt.de/`
+- **Hub-Pfad `/4allpass`:** gleiche Story, canonical **auf die Subdomain**  
+  (oder 301 → Subdomain — eine Variante wählen, nicht beide ranken lassen)
+- **GitHub Pages:** eigenes canonical + `alternate` / Links zur Subdomain und zum Hub
 
-Kandidaten: `4allpass.de` (bevorzugt, DE) oder `4allpass.com`.
+Schema `sameAs`: GitHub, Hub, Subdomain, Pages.
 
-### Migration (Checklist)
+## SEO unter der Hauptdomain
 
-1. Domain registrieren + DNS (A/AAAA oder CNAME auf denselben Host wie die Subdomain, oder GitHub Pages Custom Domain)
-2. TLS (Let’s Encrypt / Cloudflare Free)
-3. **301 Redirect** von `4allpass.netzwerkpunkt.de` → `https://4allpass.de/` (permanent)
-4. Canonical + OG + Schema `url` / `sameAs` auf die neue Domain umstellen
-5. Sitemap aktualisieren, Search Console Property für die neue Domain
-6. GitHub Pages: optional Custom Domain `docs.4allpass.de` oder weiter github.io
-7. README + Docs-Links aktualisieren
+1. **Autorität sammelt `netzwerkpunkt.de`** — starke interne Verlinkung Hub → Produkt-Subdomain.
+2. Subdomains sind eigene „Sites“ für Google; sie brauchen **eigene** guten Inhalt + Sitemap, profitieren aber von sichtbaren Links vom Hub.
+3. Eine Produkt-Story überall (Mensch zuerst bei 4AllPass) — kein Agent-first auf der Subdomain und Tresor-Story auf Pages.
+4. Search Console: Property für `netzwerkpunkt.de` **und** optional URL-Präfix-Property für die Produkt-Subdomain.
 
-### Was *nicht* nötig ist
+## Eigene Produkt-Domain (optional, später)
 
-- Domain jetzt „parken“ ohne Inhalt
-- Zwei parallele Marken-Stories
-- Bezahltes SEO-Tool
+`4allpass.de` / `.com` ist **kein Muss**. Sinnvoll nur wenn:
 
-### Zwischenzeit
+- Budget da ist **und**
+- das Produkt stabil vorzeigbar ist **und**
+- ein eigener Domain-Name klaren Nutzen hat (Presse, Partner, Merch)
 
-- Subdomain ist vollwertige Produkt-URL (kein „Provisorium“ in der Copy)
-- In FAQ/Footer ehrlich: eigene Domain kommt später
-- Kein Geld in Ads oder Premium-DNS stecken, bevor Autofill/P0 stabil ist
+Dann: 301 von `4allpass.netzwerkpunkt.de` → `4allpass.de`, Canonical umstellen.  
+Der Hub-Eintrag unter `netzwerkpunkt.de/4allpass` bleibt (Marke bleibt Netzwerkpunkt).
+
+## Budget 0 €
+
+- Keine Domain kaufen
+- Kein Premium-DNS / keine Ads für Rankings
+- Fokus: Inhalt + Hub-Links + HTTPS + eine Canonical-Linie
+
+## Checkliste Produkt „reif für den Hub“
+
+- [ ] Install / Download erklärbar
+- [ ] Eine klare Nutzen-Story (Landing)
+- [ ] Security-Grenzen ehrlich (kein Overclaim)
+- [ ] Link vom Hub + Subdomain live
+- [ ] GitHub README zeigt auf Hub + Subdomain

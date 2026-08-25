@@ -1,6 +1,7 @@
-# 4AllPass — für normale Menschen / for normal people
+# 4AllPass — für normale Menschen
 
-**DE / EN**
+**DE / EN**  
+Zusatz-README. Kein Jargon. Alltagsprache.
 
 ---
 
@@ -23,7 +24,7 @@ Du installierst sie, legst einen Tresor an, holst deine Passwörter aus dem Brow
 Installieren → Importieren → Autofill → fertig
 ```
 
-Agenten (z. B. n8n oder KI-Tools) dürfen nur dann etwas, wenn du es explizit erlaubst – und nur für begrenzte Zeit.  
+Agenten (z. B. n8n) dürfen nur dann etwas, wenn du es explizit erlaubst – und nur für begrenzte Zeit.  
 Sie bekommen **nie** den ganzen Tresor.
 
 ### Was du davon hast
@@ -42,9 +43,7 @@ Wir bauen **nicht** gerade:
 - 20 Zukunftsfeatures gleichzeitig
 
 Zuerst muss 4AllPass im Alltag einfach und vertrauenswürdig sein.  
-Dann kann daraus später mehr werden.
-
-Die langfristige Produktvision stammt von **Daniel Filipek (landjunge)**.
+Dann kann daraus später mehr werden – genau so, wie es die Produktvision von Daniel Filipek (landjunge) vorsieht.
 
 ---
 
@@ -67,7 +66,7 @@ You install it, create a vault, import your passwords from the browser, and from
 Install → Import → Autofill → done
 ```
 
-Agents (e.g. n8n or AI tools) only get something when you explicitly allow it – and only for a limited time.  
+Agents (e.g. n8n) only get something when you explicitly allow it – and only for a limited time.  
 They **never** get the whole vault.
 
 ### What you get
@@ -86,6 +85,4 @@ We are **not** currently building:
 - 20 future features at once
 
 First 4AllPass must be simple and trustworthy in everyday use.  
-Only then can more grow out of it.
-
-The long-term product vision comes from **Daniel Filipek (landjunge)**.
+Only then can more grow out of it – exactly as the product vision of Daniel Filipek (landjunge) intends.

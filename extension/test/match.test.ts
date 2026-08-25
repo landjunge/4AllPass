@@ -6,6 +6,20 @@ test("hostnameOf strips www", () => {
   assert.equal(hostnameOf("https://www.github.com/login"), "github.com");
 });
 
+test("entriesForPage treats www.github.com as github.com", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.equal(entriesForPage(entries, "https://www.github.com/login").length, 1);
+  assert.equal(entriesForPage(entries, "https://foo.github.com/login").length, 1);
+});
+
+test("entriesForPage rejects encoded-dot and lookalike hosts", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.deepEqual(entriesForPage(entries, "https://github.com%2eevil.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://github.com.evil.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://evilgithub.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://github.com.evil.test/login"), []);
+});
+
 test("entriesForPage matches host and ignores unrelated", () => {
   const entries = [
     { id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com/login" },

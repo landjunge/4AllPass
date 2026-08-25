@@ -4,7 +4,13 @@ import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
 import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
-import { isHttpUrl, isPrivilegedExtensionSender, pageOrigin, pickFillTab, sameFillOrigin } from "./tab-target.ts";
+import {
+  fillTargetStillHolds,
+  isHttpUrl,
+  isPrivilegedExtensionSender,
+  pageOrigin,
+  pickFillTab,
+} from "./tab-target.ts";
 import {
   apiRequest,
   decryptUnlockedSnapshot,
@@ -288,10 +294,7 @@ async function fillActive(
   }
   const probe = await sendToTab(tab.id, { type: "probe-form" });
   const liveAfterProbe = await ext.tabs.get(tab.id).catch(() => undefined);
-  if (
-    (probe.pageOrigin && probe.pageOrigin !== matchedOrigin) ||
-    !sameFillOrigin(matchedUrl, liveAfterProbe?.url)
-  ) {
+  if (!fillTargetStillHolds(matchedOrigin, liveAfterProbe?.url, probe.pageOrigin)) {
     return {
       ok: false,
       error: formatFillFailure({ reason: "origin-mismatch" }),

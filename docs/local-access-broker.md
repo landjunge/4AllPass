@@ -55,7 +55,8 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 | PWA poll | CORS for the local app (`:8788`) and Vite (`:5173` / `:4173`). |
 | Vault locked | No PWA poller → `denied` / `vault_locked`. No secret. |
 | Policy | Still in the PWA (`decideAccess`). Unknown app = DENY. |
-| Identity | Application name is still a **string**. The token is not OS identity. |
+| Identity | **PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata, not authentication. The token proves the caller knows the secret, not that the process is n8n. Treat the pairing token as the local root-of-access for agents. Cryptographic agent keys are not V1 (ADR-008). |
+| TTL | 4AllPass stops later handoffs after `ttl`. It does **not** expire the provider credential already copied (GitHub PAT stays valid until GitHub says otherwise). |
 | Logs | Broker logs status, not `access_token`. |
 
 `@4allpass/access` is that Node client: loopback URL only, no `Origin` header, pairing token required. It does not decrypt and does not talk to FastAPI. Using it from a web page will 403 on the grant path.

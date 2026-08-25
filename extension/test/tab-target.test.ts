@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  fillTargetStillHolds,
   isHttpUrl,
   isPrivilegedExtensionSender,
   pageOrigin,
@@ -32,6 +33,15 @@ test("sameFillOrigin refuses a navigation between match and fill", () => {
   assert.equal(sameFillOrigin("https://github.com/login", "https://evil.example/login"), false);
   assert.equal(sameFillOrigin("https://github.com/login", "http://github.com/login"), false);
   assert.equal(pageOrigin("https://github.com/login"), "https://github.com");
+});
+
+test("fillTargetStillHolds refuses github.com → evil.com before executeScript", () => {
+  const github = "https://github.com";
+  assert.equal(fillTargetStillHolds(github, "https://github.com/session", github), true);
+  assert.equal(fillTargetStillHolds(github, "https://evil.example/login", "https://evil.example"), false);
+  assert.equal(fillTargetStillHolds(github, "https://github.com/login", "https://evil.example"), false);
+  assert.equal(fillTargetStillHolds(github, "https://evil.example/login", github), false);
+  assert.equal(fillTargetStillHolds(github, undefined, github), false);
 });
 
 test("content-script senders are not privileged", () => {

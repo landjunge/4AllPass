@@ -4,7 +4,7 @@
 snapshot rollback, hard-revoke race, WebAuthn credential substitution, localhost
 `:8788`). Not `packages/crypto` internals — those are
 [`adversarial-review.md`](adversarial-review.md).
-**Date:** 2026-08-25
+**Date:** 2026-08-26 (pass 2: agent identity, TTL, DOM fill, recovery/PRF/revoke)
 **Companions:** `security-boundary.md`, `autofill-v1.md`, `local-access-broker.md`,
 `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`
 
@@ -129,6 +129,41 @@ Server race is held: `SELECT … FOR UPDATE` / SQLite `BEGIN IMMEDIATE`, unique
 `@noble/ciphers ^1.3.0` and `@noble/hashes ^2.3.0`. Lockfile exists. Exact pins
 + hash + reproducible build are supply-chain hardening, not a working exploit.
 
+### F-B7 — Agent TTL is a grant clock, not a provider-token clock · **medium** · accepted
+
+`issueGrant` copies `entry.password` into `access_token` and sets `expiresAt`
+from `ttlSeconds`. After that clock, `approvedResponse` / `readGrant` refuse
+*later 4AllPass handoffs*. The GitHub PAT (or other secret) already sitting in
+n8n is not rotated. Docs that say “time-boxed credential” without this split
+are an over-claim.
+
+**Test.** `TTL expires later 4AllPass handoffs; the vault secret is not rotated`.
+
+### F-B8 — Page DOM is the final autofill trust boundary · **accepted**
+
+Not a bug. After fill, page JS can read `input.value`. Documented in
+`security-boundary.md` and `autofill-v1.md` invariant 8.
+
+### F-B9 — Suffix match on ordinary registrable domains · **accepted**
+
+`github.com` → `foo.github.com` is intentional. Shared-parent hosts are denied
+(F-B3). Per-provider `matchPolicy: exact | subdomains | provider` is future,
+not V1.
+
+---
+
+## Pass 2 — Recovery, hard-revoke, rollback, WebAuthn-PRF
+
+No new Critical/High vault-break. Existing adversarial tests still hold:
+
+| Area | What was checked | Result |
+|---|---|---|
+| Recovery | Printed key is never AES; RWK = HKDF bound to vault; all-zero rejected; checksum is transcription not security; recovery vs device HKDF domains differ | held (`adversarial-kdf-prf`, `recovery.ts`) |
+| Hard revoke | Master (+ recovery if present) must unwrap the **same** VK before rotate; `hardRevokeDevice` CAS then metadata DELETE; recovery envelope that unwraps a different VK is refused; server will not decrease `vaultKeyVersion` | held (`vault-session.hard-revoke.test.ts`, backend race test) |
+| Rollback | Pin from verified manifest; older authentic snapshot is `RollbackError`; mixed entries fail digest | held (`adversarial-freshness`) |
+| PRF | 32 bytes, not all-zero, not used as AES key, `eval.first` bound to RP+vault, DWK bound to rp/vault/device/credential, assertion `rawId` must match | held (`adversarial-kdf-prf`, `assertPrfOutput`) |
+| Agent identity | `TRUSTED_APPLICATIONS` is a string list. Spoofed `n8n` is policy-allow eligible. **Not built** (P2/P3, ADR-008) | documented; test pins the limitation |
+
 ---
 
 ## Attack paths (what we actually tried)
@@ -147,7 +182,9 @@ Server race is held: `SELECT … FOR UPDATE` / SQLite `BEGIN IMMEDIATE`, unique
 | `evil.github.io` vs stored `github.io` | **was a fill; now denied** |
 | iframe: `all_frames` default false; match uses `tab.url` (top) | no fill into a foreign iframe |
 | `github.com` page, evil iframe | fill targets the top document, not the iframe |
-| Navigation between match and fill | **was open; now `origin-mismatch`** |
+| Navigation between match and fill | **was open; now `origin-mismatch`** (`fillTargetStillHolds` before executeScript) |
+| `www.github.com` / `foo.github.com` | match (www stripped; subdomain is intentional) |
+| `github.com%2eevil.com` | hostname `github.com.evil.com` → no match |
 | Content script `fill-tab` to background | rejected (`sender.tab`) |
 | `externally_connectable` | absent |
 

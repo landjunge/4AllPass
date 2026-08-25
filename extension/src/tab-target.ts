@@ -18,6 +18,20 @@ export function sameFillOrigin(matchedUrl: string, liveUrl: string | undefined):
   return Boolean(matched && live && matched === live);
 }
 
+/**
+ * Gate immediately before sendToTab/executeScript with a password.
+ * Probe and live tab must still be the origin that won the match.
+ */
+export function fillTargetStillHolds(
+  matchedOrigin: string,
+  liveUrl: string | undefined,
+  probeOrigin?: string,
+): boolean {
+  if (!matchedOrigin) return false;
+  if (probeOrigin && probeOrigin !== matchedOrigin) return false;
+  return pageOrigin(liveUrl) === matchedOrigin;
+}
+
 /** Popup / service worker. A content-script sender has `tab.id`. */
 export function isPrivilegedExtensionSender(sender: { tab?: { id?: number } | null }): boolean {
   return sender.tab == null || sender.tab.id === undefined;

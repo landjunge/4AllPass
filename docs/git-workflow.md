@@ -59,6 +59,8 @@ chore: bump non-crypto npm deps
 - Branch-Name klar und beschreibend.
 - PR-Body mit dem Template füllen und die Checkliste ehrlich abhaken.
 
+Auf **diesem** Mac: `scripts/install-git-hooks.sh` setzt einen `post-commit`-Hook, der nach jedem Commit pusht (sonst bleibt Arbeit nur lokal). GitHub kann dabei schreiben: „Bypassed rule violations / required status checks“ — das ist **kein** kaputtes Git. Der Push ist durch, CI läuft danach. Echter Fehler nur, wenn der Hook `post-commit: push … failed` sagt.
+
 ## Releases
 
 - Tag `desktop` = rolling Prerelease (Desktop-Builds via workflow_dispatch).
@@ -76,4 +78,4 @@ Für `main`:
 - Do not allow force pushes
 - Restrict who can push (nur landjunge)
 
-Das schützt vor versehentlichem Broken-Main.
+Das schützt vor versehentlichem Broken-Main. Direkt-Push auf `main` (dieser Hook) umgeht die Checks mit Admin-Rechten; CI muss trotzdem grün werden. Nicht mit einem Git-Fehler verwechseln.

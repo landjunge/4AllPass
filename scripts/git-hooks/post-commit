@@ -1,0 +1,29 @@
+#!/bin/sh
+# Auto-push after commit so work is not only local.
+# GitHub may print "Bypassed rule violations" / "required status checks" on a
+# successful main push — that is a warning, not a failed git. Only non-zero
+# push exit is a real error.
+if [ "${SKIP_POST_COMMIT_PUSH:-}" = "1" ]; then
+  exit 0
+fi
+gitdir=$(git rev-parse --git-path .)
+if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; then
+  exit 0
+fi
+if ! git remote get-url origin >/dev/null 2>&1; then
+  exit 0
+fi
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "HEAD" ]; then
+  exit 0
+fi
+logfile="${TMPDIR:-/tmp}/4allpass-post-commit-push.log"
+export GIT_TERMINAL_PROMPT=0
+if git push -u origin "$branch" >"$logfile" 2>&1; then
+  exit 0
+fi
+if git pull --rebase origin "$branch" >>"$logfile" 2>&1 && git push -u origin "$branch" >>"$logfile" 2>&1; then
+  exit 0
+fi
+echo "post-commit: push of $branch failed (commit is local). See $logfile" >&2
+exit 0

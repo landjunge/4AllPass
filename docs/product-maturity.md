@@ -257,7 +257,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Fremder Mac:** Browser-Karten + Import-Review (Passwort nie in der Liste). Review-UI ist in CI für Datei-Import. Live `github.com/login` ist opt-in geprüft. Apple weiter pausiert. Passkey-Store, Launch-Posts und Team Mode nicht in dieser Reihenfolge.
+**[#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac** (menschlich) → danach **[#121](https://github.com/landjunge/4AllPass/issues/121) Autofill härten** (Code, [`autofill-v1.md`](autofill-v1.md)) → Rest dieser Datei. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
 Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
 

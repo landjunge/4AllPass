@@ -1,6 +1,6 @@
 # Restplan — 4AllPass
 
-Stand: 2026-08-24. Live `github.com/login` Fill ist opt-in geprüft.
+Stand: 2026-08-25. Live `github.com/login` Fill ist opt-in geprüft.
 
 Quelle der Reihenfolge: [`product-maturity.md`](product-maturity.md) **v3**.  
 Diese Datei ist die **Kurzfassung des Rests** — nicht ein zweiter Plan.
@@ -20,13 +20,19 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 
 ## Als Nächstes (genau das)
 
-Kein weiterer Code-Slice in dieser Reihenfolge.
+```text
+#120  P0 Fremder-Mac-Test  (menschlich)
+  →   #121 P1 Autofill härten   (Code)
+  →   Rest laut product-maturity.md
+```
 
-1. **Fremder Mac (P0, menschlich)**  
+Kein Connection-/Capability-Umbau. Kein zweiter Plan.
+
+1. **[#120](https://github.com/landjunge/4AllPass/issues/120) — Fremder Mac (P0, menschlich)**  
    App auf → Tresor → Browser-Karten → Import-Review **ohne Passwort in der Liste** → Bestätigen.  
    Review-UI ist in CI für Datei-Import (`import-review`) und für Karten + zwei Profile (`browser-cards-import`, Tauri gemockt). Keychain auf einem fremden Rechner bleibt ein Mensch-Test.
 
-Live `github.com/login` (P1): **da** — ein Formular, ein Fill, kein Submit. Opt-in, kein CI: `LIVE_GITHUB=1 npm run test:e2e:autofill-github-live -w @4allpass/frontend`.
+2. **[#121](https://github.com/landjunge/4AllPass/issues/121) — P1 Autofill härten (Code)** — nach #120, laut [`autofill-v1.md`](autofill-v1.md). Was der Fremden-Test bricht, zuerst. Kein Multi-Step-Engine, kein Shadow-DOM in diesem Slice. Live `github.com/login` ist opt-in da (`LIVE_GITHUB=1`).
 
 ---
 

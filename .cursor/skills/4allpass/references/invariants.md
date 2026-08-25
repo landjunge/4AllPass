@@ -14,6 +14,10 @@ WebAuthn PRF ──HKDF──► DWK ──unwraps──► Device-Key Envelope 
 - Vault Key is always random. Never derive VK from the master password.
 - Raw PRF output is never used as a key. HKDF → DWK only.
 - Master password and Recovery Key never leave the client. No e-mail reset.
+- Compromised recovery **must** increment `vaultKeyVersion` and mint a new
+  recovery key (`wrapRecoveryEnvelope` reason `compromised_rotation`). Envelope
+  replacement under the same VK is only `trusted_replacement` after proving the
+  old kit.
 
 ## AAD / identity
 

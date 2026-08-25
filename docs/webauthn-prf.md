@@ -273,8 +273,11 @@ which is what keeps rank 2 above rank 3.
 
 ### Rank 3 (must be documented to the user)
 
+UI copy (Unlock + Devices) must say this in DE and EN. Face ID / Touch ID at
+rank 3 is **not** “this authenticator is cryptographically bound to the vault.”
+
 - DK is wrapped under a random 256-bit **Local Storage Key** held in IndexedDB / platform storage.
-- The client **refuses** to load that blob until a WebAuthn assertion with `userVerification = "required"` succeeds.
+- The client **refuses** to load that blob until a WebAuthn assertion with `userVerification = "required"` succeeds. That is a **policy gate**.
 - A modified client or XSS after UV can skip the gate and read the blob.
 - A remote / malicious server still cannot unwrap the Device Envelope (it never sees DK).
 

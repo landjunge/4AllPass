@@ -6,6 +6,20 @@ test("hostnameOf strips www", () => {
   assert.equal(hostnameOf("https://www.github.com/login"), "github.com");
 });
 
+test("entriesForPage treats www.github.com as github.com", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.equal(entriesForPage(entries, "https://www.github.com/login").length, 1);
+  assert.equal(entriesForPage(entries, "https://foo.github.com/login").length, 1);
+});
+
+test("entriesForPage rejects encoded-dot and lookalike hosts", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.deepEqual(entriesForPage(entries, "https://github.com%2eevil.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://github.com.evil.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://evilgithub.com/login"), []);
+  assert.deepEqual(entriesForPage(entries, "https://github.com.evil.test/login"), []);
+});
+
 test("entriesForPage matches host and ignores unrelated", () => {
   const entries = [
     { id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com/login" },
@@ -45,6 +59,41 @@ test("hostnameOf ignores userinfo (github.com@evil.com is evil.com)", () => {
 test("hostnameOf punycodes IDN homographs, not the latin lookalike", () => {
   assert.equal(hostnameOf("https://g\u0456thub.com/login"), "xn--gthub-n2e.com");
   assert.notEqual(hostnameOf("https://g\u0456thub.com/login"), "github.com");
+});
+
+test("hostnameOf strips a trailing DNS dot", () => {
+  assert.equal(hostnameOf("https://github.com./login"), "github.com");
+});
+
+test("entriesForPage does not fill an HTTPS GitHub entry into HTTP github.com", () => {
+  const entries = [{ id: "1", title: "GitHub", username: "ada", password: "x", url: "https://github.com" }];
+  assert.deepEqual(entriesForPage(entries, "http://github.com/login"), []);
+  assert.equal(entriesForPage(entries, "https://github.com/login").length, 1);
+});
+
+test("entriesForPage still fills loopback HTTP (local test-login)", () => {
+  const entries = [
+    {
+      id: "1",
+      title: "Demo",
+      username: "ada",
+      password: "x",
+      url: "http://127.0.0.1:8788/test-login.html",
+    },
+  ];
+  assert.equal(entriesForPage(entries, "http://127.0.0.1:8788/test-login.html").length, 1);
+});
+
+test("entriesForPage does not suffix-match a shared parent host (github.io)", () => {
+  const parent = [{ id: "1", title: "Pages", username: "ada", password: "x", url: "https://github.io" }];
+  assert.deepEqual(entriesForPage(parent, "https://evil.github.io/login"), []);
+  assert.equal(entriesForPage(parent, "https://github.io/").length, 1);
+
+  const tenant = [
+    { id: "2", title: "Mine", username: "ada", password: "x", url: "https://ada.github.io" },
+  ];
+  assert.equal(entriesForPage(tenant, "https://ada.github.io/app").length, 1);
+  assert.deepEqual(entriesForPage(tenant, "https://evil.github.io/login"), []);
 });
 
 test("entriesForPage does not fill a GitHub entry on github.com@evil.com", () => {

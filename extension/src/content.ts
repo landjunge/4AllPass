@@ -90,7 +90,7 @@ function mergeMode(modes: FillMode[]): FillMode {
 
 function probeForm(): FillResult {
   const likes = visibleInputs().map(describe);
-  return probeFromModel(likes, buildLoginModel(likes));
+  return { ...probeFromModel(likes, buildLoginModel(likes)), pageOrigin: location.origin };
 }
 
 function fillForm(username: string, password: string, otp = "", assist = false): FillResult {
@@ -164,6 +164,18 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return;
   }
   if (message?.type !== "fill-form") return;
+  const expectedOrigin = typeof message.expectedOrigin === "string" ? message.expectedOrigin : "";
+  if (!expectedOrigin || expectedOrigin !== location.origin) {
+    sendResponse({
+      ok: false,
+      fields: [],
+      filled: [],
+      mode: "skipped",
+      reason: "origin-mismatch",
+      pageOrigin: location.origin,
+    } satisfies FillResult);
+    return;
+  }
   sendResponse(
     fillForm(
       String(message.username ?? ""),

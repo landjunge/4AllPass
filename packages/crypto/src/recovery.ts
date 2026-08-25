@@ -8,10 +8,13 @@ import {
   RECOVERY_GROUP_SIZE,
 } from "./constants.ts";
 import { rwkHkdfInfo, rwkHkdfSalt } from "./encoding/aad.ts";
-import { concat } from "./encoding/bytes.ts";
+import { concat, equalBytes } from "./encoding/bytes.ts";
 import { frame } from "./encoding/framing.ts";
+import { wrapVaultKey } from "./envelope.ts";
 import { ProtocolError } from "./errors.ts";
+import { zeroize } from "./memory.ts";
 import { assertBytes, assertId, assertVersion, requireSameBytes } from "./validate.ts";
+import type { KeyEnvelope } from "./types.ts";
 
 /**
  * Crockford Base32: no `I`, `L`, `O`, `U`, so the common transcription mistakes
@@ -147,4 +150,74 @@ export function deriveRecoveryWrappingKey(opts: DeriveRecoveryWrappingKeyOptions
   const salt = sha256(rwkHkdfSalt(vaultId));
   const info = rwkHkdfInfo(vaultId, cryptoVersion);
   return hkdf(sha256, recoveryKey, salt, info, KEY_BYTES);
+}
+
+/**
+ * Why a Recovery Envelope is being written. Compromised kits must not share a
+ * Vault Key with the stolen print.
+ *
+ * - `create` — first kit, at vault creation.
+ * - `trusted_replacement` — operator still holds the old kit; same VK, new print.
+ * - `compromised_rotation` — kit may be stolen; MUST mint a new VK (`+1`) and a
+ *   new recovery key. The stolen print must not wrap VK₂.
+ */
+export type RecoveryWrapReason = "create" | "trusted_replacement" | "compromised_rotation";
+
+export interface WrapRecoveryEnvelopeOptions {
+  reason: RecoveryWrapReason;
+  vaultKey: Uint8Array;
+  recoveryKey: Uint8Array;
+  vaultId: string;
+  vaultKeyVersion: number;
+  previousVaultKeyVersion?: number;
+  /** Required for `trusted_replacement`. Optional for `compromised_rotation`
+   *  (when known, the new key must differ). */
+  previousRecoveryKey?: Uint8Array;
+}
+
+export function wrapRecoveryEnvelope(opts: WrapRecoveryEnvelopeOptions): KeyEnvelope {
+  const vaultId = assertId("vaultId", opts.vaultId);
+  const vaultKeyVersion = assertVersion("vaultKeyVersion", opts.vaultKeyVersion);
+  const recoveryKey = assertRecoveryKeyBytes(opts.recoveryKey);
+
+  if (opts.reason === "create") {
+    if (opts.previousVaultKeyVersion !== undefined) {
+      throw new ProtocolError("create must not carry a previous vaultKeyVersion");
+    }
+  } else if (opts.reason === "trusted_replacement") {
+    const previous = assertVersion("previousVaultKeyVersion", opts.previousVaultKeyVersion);
+    if (previous !== vaultKeyVersion) {
+      throw new ProtocolError("trusted recovery replacement must keep vaultKeyVersion");
+    }
+    const previousRecoveryKey = assertRecoveryKeyBytes(opts.previousRecoveryKey);
+    if (equalBytes(previousRecoveryKey, recoveryKey)) {
+      throw new ProtocolError("trusted recovery replacement must mint a new recovery key");
+    }
+  } else if (opts.reason === "compromised_rotation") {
+    const previous = assertVersion("previousVaultKeyVersion", opts.previousVaultKeyVersion);
+    if (vaultKeyVersion !== previous + 1) {
+      throw new ProtocolError("compromised recovery key must increment vaultKeyVersion");
+    }
+    if (opts.previousRecoveryKey !== undefined) {
+      const previousRecoveryKey = assertRecoveryKeyBytes(opts.previousRecoveryKey);
+      if (equalBytes(previousRecoveryKey, recoveryKey)) {
+        throw new ProtocolError("compromised recovery rotation must mint a new recovery key");
+      }
+    }
+  } else {
+    throw new ProtocolError(`unknown recovery wrap reason: ${String(opts.reason)}`);
+  }
+
+  const wrappingKey = deriveRecoveryWrappingKey({ recoveryKey, vaultId });
+  try {
+    return wrapVaultKey({
+      vaultKey: opts.vaultKey,
+      wrappingKey,
+      vaultId,
+      type: "recovery",
+      vaultKeyVersion,
+    });
+  } finally {
+    zeroize(wrappingKey);
+  }
 }

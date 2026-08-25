@@ -10,6 +10,7 @@ import {
   hexToBytes,
   parseRecoveryKey,
   unwrapVaultKey,
+  wrapRecoveryEnvelope,
   wrapVaultKey,
 } from "../src/index.ts";
 import { wrapVaultKeyWithNonce } from "../src/test-only.ts";
@@ -156,6 +157,101 @@ describe("recovery wrapping key", () => {
         expectType: "recovery",
         expectVaultKeyVersion: C.vault_key_version,
       }),
+    );
+  });
+});
+
+describe("recovery wrap reasons", () => {
+  it("create wraps under the current vault key generation", () => {
+    const envelope = wrapRecoveryEnvelope({
+      reason: "create",
+      vaultKey: hexToBytes(C.vault_key),
+      recoveryKey,
+      vaultId: C.vault_id,
+      vaultKeyVersion: 1,
+    });
+    assert.equal(envelope.type, "recovery");
+    assert.equal(envelope.vaultKeyVersion, 1);
+  });
+
+  it("trusted replacement keeps vaultKeyVersion and refuses the same printed key", () => {
+    const next = generateRecoveryKey();
+    const envelope = wrapRecoveryEnvelope({
+      reason: "trusted_replacement",
+      vaultKey: hexToBytes(C.vault_key),
+      recoveryKey: next,
+      vaultId: C.vault_id,
+      vaultKeyVersion: 1,
+      previousVaultKeyVersion: 1,
+      previousRecoveryKey: recoveryKey,
+    });
+    assert.equal(envelope.vaultKeyVersion, 1);
+    assert.throws(
+      () =>
+        wrapRecoveryEnvelope({
+          reason: "trusted_replacement",
+          vaultKey: hexToBytes(C.vault_key),
+          recoveryKey,
+          vaultId: C.vault_id,
+          vaultKeyVersion: 1,
+          previousVaultKeyVersion: 1,
+          previousRecoveryKey: recoveryKey,
+        }),
+      ProtocolError,
+    );
+    assert.throws(
+      () =>
+        wrapRecoveryEnvelope({
+          reason: "trusted_replacement",
+          vaultKey: hexToBytes(C.vault_key),
+          recoveryKey: next,
+          vaultId: C.vault_id,
+          vaultKeyVersion: 2,
+          previousVaultKeyVersion: 1,
+          previousRecoveryKey: recoveryKey,
+        }),
+      ProtocolError,
+    );
+  });
+
+  it("compromised rotation must increment vaultKeyVersion and mint a new key", () => {
+    const next = generateRecoveryKey();
+    const vk2 = generateRecoveryKey();
+    const envelope = wrapRecoveryEnvelope({
+      reason: "compromised_rotation",
+      vaultKey: vk2,
+      recoveryKey: next,
+      vaultId: C.vault_id,
+      vaultKeyVersion: 2,
+      previousVaultKeyVersion: 1,
+      previousRecoveryKey: recoveryKey,
+    });
+    assert.equal(envelope.vaultKeyVersion, 2);
+    assert.throws(
+      () =>
+        wrapRecoveryEnvelope({
+          reason: "compromised_rotation",
+          vaultKey: vk2,
+          recoveryKey: next,
+          vaultId: C.vault_id,
+          vaultKeyVersion: 1,
+          previousVaultKeyVersion: 1,
+          previousRecoveryKey: recoveryKey,
+        }),
+      /must increment vaultKeyVersion/,
+    );
+    assert.throws(
+      () =>
+        wrapRecoveryEnvelope({
+          reason: "compromised_rotation",
+          vaultKey: vk2,
+          recoveryKey,
+          vaultId: C.vault_id,
+          vaultKeyVersion: 2,
+          previousVaultKeyVersion: 1,
+          previousRecoveryKey: recoveryKey,
+        }),
+      /must mint a new recovery key/,
     );
   });
 });

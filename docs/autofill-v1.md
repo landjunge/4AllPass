@@ -1,7 +1,7 @@
 # Autofill V1 — Credential Interaction Engine
 
 **Status:** verbindlich für P1. Field Intelligence, Safe Fill, Probe, Provider-Match, Assist auf `main`. Shadow-DOM/Multi-Step/iframe nicht in V1.  
-**Stand:** 2026-08-24  
+**Stand:** 2026-08-25  
 **Plan:** [`product-maturity.md`](product-maturity.md)  
 **Install/Build der Extension:** [`autofill-extension.md`](autofill-extension.md)  
 **Provider:** [`provider-resolution.md`](provider-resolution.md)
@@ -18,8 +18,9 @@ Kein zweites Engine. Kein neues Paket.
 3. Verify und Logs enthalten **keine** Secrets (kein Username, kein Passwort, kein OTP).
 4. Unter Confidence **0,70** kein Auto-Fill. Assist füllt diese Felder nur nach Klick „Trotzdem füllen / Fill anyway“. Nie ein nacktes Suchfeld allein.
 5. `new-password` / Signup wird nicht als Login gefüllt — auch nicht der Username.
-6. Origin der Seite ist die Trust-Grenze. `evilgithub.com` ≠ GitHub.
+6. Origin der Seite ist die Trust-Grenze. `evilgithub.com` ≠ GitHub. Fill prüft die Origin **noch einmal** direkt vor dem Setzen der Felder (`fillTargetStillHolds` vor `sendToTab` / `executeScript`); eine Navigation dazwischen ist `origin-mismatch`. Ein HTTPS-Eintrag wird nicht in `http://` derselben Hosts gefüllt (Loopback ausgenommen). Shared-Parent-Hosts (`github.io`, `vercel.app`, …) werden nicht als Suffix behandelt. Suffix-Match auf `foo.github.com` bei gespeichertem `github.com` ist eine bewusste Vertrauensentscheidung, kein Versehen.
 7. Passkeys nicht simulieren. `autocomplete`‑Suffix `webauthn` ignorieren (P3).
+8. Nach einem Fill kann die Seite das Passwort aus dem DOM lesen. Das ist die **letzte Autofill-Trust-Grenze**. Die Website bekommt nie den Vault.
 
 ---
 

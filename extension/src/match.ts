@@ -12,14 +12,57 @@ export interface FillEntry {
 
 const PROVIDER_FILL_MIN = 0.95;
 
+/**
+ * Each child label is a different tenant. Not a full Public Suffix List —
+ * only the shared parents we refuse to suffix-match.
+ */
+const SHARED_PARENT_HOSTS = new Set([
+  "github.io",
+  "githubusercontent.com",
+  "herokuapp.com",
+  "netlify.app",
+  "vercel.app",
+  "appspot.com",
+  "azurewebsites.net",
+  "pages.dev",
+  "web.app",
+  "glitch.me",
+  "tumblr.com",
+  "wordpress.com",
+]);
+
 export function hostnameOf(value: string): string | null {
   try {
     // URL.hostname, not string splits: github.com@evil.com → evil.com;
     // IDN homographs → punycode. Tests in match.test.ts.
-    const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+    const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
     return host || null;
   } catch {
     return null;
+  }
+}
+
+function isLoopbackHost(host: string): boolean {
+  const bare = host.toLowerCase().replace(/^\[|\]$/g, "");
+  return bare === "127.0.0.1" || bare === "localhost" || bare === "::1";
+}
+
+/** HTTPS always. HTTP only on loopback, or when the stored URL is itself HTTP. */
+function pageSchemeAllowsFill(pageUrl: string, entryUrl: string): boolean {
+  let page: URL;
+  try {
+    page = new URL(pageUrl);
+  } catch {
+    return false;
+  }
+  if (page.protocol === "https:") return true;
+  if (page.protocol !== "http:") return false;
+  if (isLoopbackHost(page.hostname)) return true;
+  if (!entryUrl) return false;
+  try {
+    return new URL(entryUrl).protocol === "http:";
+  } catch {
+    return false;
   }
 }
 
@@ -31,6 +74,7 @@ function hostMatch(pageHost: string, entryUrl: string): boolean {
   // CSV row `https://com/` would match github.com (and every other .com).
   const labels = entryHost.split(".").filter(Boolean);
   if (labels.length < 2) return false;
+  if (SHARED_PARENT_HOSTS.has(entryHost)) return false;
   return pageHost.endsWith(`.${entryHost}`);
 }
 
@@ -60,6 +104,7 @@ export function entriesForPage(entries: FillEntry[], pageUrl: string): FillEntry
   const pageHost = hostnameOf(pageUrl);
   if (!pageHost) return [];
   return entries.filter((entry) => {
+    if (!pageSchemeAllowsFill(pageUrl, entry.url)) return false;
     if (entry.url && hostMatch(pageHost, entry.url)) return true;
     return providerMatch(pageUrl, entry);
   });

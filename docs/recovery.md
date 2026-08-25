@@ -134,17 +134,22 @@ cannot restore access without it.
    immediately offer to set a new Master Password (new Master Envelope) and to
    re-enrol devices.
 
-### Rotation
+### Rotation (two operations — do not mix)
 
-Issuing a new Recovery Key is a normal snapshot write: generate a new key, derive a
-new RWK, replace the Recovery Envelope, commit revision `N+1`. Because the old
-envelope is absent from the new snapshot, the old kit stops working as soon as the
-new revision is pinned — subject to the same "a malicious server can withhold the
-new snapshot" caveat as any other revocation.
+The library refuses to wrap a recovery envelope without a `reason`. There is no
+silent “just replace the envelope”.
 
-If the Recovery Key may have been exposed, treat it as a compromised secret that
-knows VK: perform a **hard rotation** (`vault-revision.md` §5), not just an envelope
-replacement.
+| Reason | Function | Vault Key | New print |
+|---|---|---|---|
+| Operator still holds the kit | `replaceTrustedRecoveryKey` | **same** `vaultKeyVersion` | required; old key must unwrap current VK |
+| Kit may be stolen | `rotateCompromisedRecovery` | **MUST** `vaultKeyVersion++` | required; stolen print must not wrap VK₂ |
+
+`wrapRecoveryEnvelope({ reason: "compromised_rotation", vaultKeyVersion: previous })`
+throws. Re-wrapping the stolen key under a new VK is also refused when the previous
+key is supplied.
+
+Device hard-revoke (`hardRevokeDevice`) is a **different** path: it keeps the
+existing recovery kit and rewraps it under VK₂ because the kit is still trusted.
 
 ---
 

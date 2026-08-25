@@ -106,6 +106,25 @@ test("approved response shape matches the access API", () => {
   }
 });
 
+test("TTL expires later 4AllPass handoffs; the vault secret is not rotated", () => {
+  const entry = github();
+  const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);
+  const expired = approvedResponse(grant, 1_000 + 10_000);
+  assert.equal(expired.status, "denied");
+  if (expired.status === "denied") assert.equal(expired.reason, "expired");
+  assert.deepEqual(readGrant(grant, 1_000 + 10_000), { status: "denied", reason: "expired" });
+  assert.equal(entry.password, secret);
+  const wiped = wipeGrant(grant);
+  assert.equal(wiped.material, "");
+});
+
+test("application n8n is policy metadata, not proof of process identity", () => {
+  const spoofed = decideAccess(req({ application: "n8n" }), [github()]);
+  assert.equal(spoofed.status, "pending");
+  const unknown = decideAccess(req({ application: "malicious-agent" }), [github()]);
+  assert.equal(unknown.status, "denied");
+});
+
 test("audit rows never contain the secret", () => {
   const row = auditLine(req(), "APPROVED");
   assert.equal(auditContainsSecret(row, secret), false);

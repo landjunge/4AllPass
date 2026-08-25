@@ -1,7 +1,7 @@
 # Security boundary (implementation)
 
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-24
+**Date:** 2026-08-25
 
 This document describes what the **running backend + PWA / local app** actually enforce.
 It does not restate the crypto protocol. If a sentence here disagrees with
@@ -153,7 +153,9 @@ The PWA implements both layers:
 | Path | Client | Crypto effect |
 |---|---|---|
 | **Soft** `revokeDevice` | Metadata DELETE, then commit revision N+1 **without** that device envelope, **same** `vaultKeyVersion` | Device can no longer unwrap via sync; a client that already holds VK still can |
-| **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery (device envelopes only if DK is locally recoverable without WebAuthn) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
+| **Hard** `hardRevokeDevice` | Verify master (+ recovery if present) → VK+1 → re-encrypt entries → rebuild master/recovery **with the same recovery key** (kit still trusted) → omit target → sealed manifest → **CAS commit**, then metadata DELETE | Snapshot N+1 is sealed under VK₂; holders of VK₁ cannot decrypt it |
+| **Compromised recovery** `rotateCompromisedRecovery` | Verify master → VK+1 → **new** recovery key → re-encrypt → CAS | Stolen print unwraps VK₁ only; it must not wrap VK₂ |
+| **Trusted kit replace** `replaceTrustedRecoveryKey` | Old key must unwrap current recovery envelope → new print, **same** VK | Convenience; not for a stolen kit |
 
 Foreign Device Keys are never available to the acting client. This device’s DK is
 only rewrapped when it is already recoverable from local material (no new
@@ -257,9 +259,18 @@ pins the server integers; after the first verified manifest that path is closed.
   the popup does not lock (shortcut fill still works until idle). Fill matching
   uses the entry URL host first, then a high-confidence provider bridge from
   the stored URL (a `providerId` tag cannot override a conflicting host). A
-  TLD-only saved host (`https://com`) does not suffix-match. DevicesPanel
-  treats missing `getClientCapabilities` PRF as unproven, not as “PRF exists”
-  because `PublicKeyCredential` is present. JavaScript cannot
+  TLD-only saved host (`https://com`) does not suffix-match. Shared-parent
+  hosts (`github.io`, `vercel.app`, …) do not suffix-match either. An HTTPS
+  vault URL is not filled into `http://` of the same host (loopback HTTP is
+  allowed). The content script refuses a fill whose `expectedOrigin` is not
+  `location.origin`, so a tab that navigated after matching does not receive
+  the password. Privileged extension messages (`unlock`, `fill-tab`, …) from
+  a content-script sender (`sender.tab`) are rejected. After a successful
+  fill, the page JavaScript can read the input (`input.value`, listeners).
+  That is the **final autofill trust boundary**, not a 4AllPass bug — the
+  website never receives the vault, only field values in its own DOM.
+  DevicesPanel treats missing `getClientCapabilities` PRF as unproven, not as
+  “PRF exists” because `PublicKeyCredential` is present. JavaScript cannot
   securely zeroize strings. iOS Safari Web Extension and system Password
   AutoFill are not shipped.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
@@ -322,9 +333,21 @@ unknown app DENY, missing scope DENY. `decision: "allow"` means the request is
 eligible for a **human** Allow — it is not auto-handoff. Core grants have no
 secret; the unlocked UI still attaches `material` for the existing broker
 response. Unknown applications are denied. Audit rows omit the secret.
-Application identity is a string (`n8n`) — spoofable. TTL expiry stops future
-handoffs; a copy already given is not un-known. See
-[`two-minute-demo.md`](two-minute-demo.md) and
+**PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata,
+not authentication. The pairing token proves *this process knows the secret*,
+not *this is n8n*. Treat it as the **local root-of-access for agents**
+(mode 0600 file; also `GET /api/v1/local/broker` after local storage auth). A
+stolen token plus the string `n8n` is still eligible for a human Allow. That
+is V1. Cryptographic agent keys are
+[`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)
+and are **not** built yet.
+
+**TTL is a 4AllPass grant clock, not a provider-token clock.** `ttl` /
+`expires_in` stop *later handoffs from this process*. After Allow, n8n already
+holds a copy of the vault secret (e.g. a GitHub PAT). 4AllPass does not rotate
+or expire that provider credential. A copy already given is not un-known.
+
+See [`two-minute-demo.md`](two-minute-demo.md) and
 [`local-access-broker.md`](local-access-broker.md).
 
 Vite-only dev can still run the Node relay (`npm run broker` → `@4allpass/broker` on `:8787`).

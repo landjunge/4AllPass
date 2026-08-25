@@ -21,18 +21,16 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 ## Als Nächstes (genau das)
 
 ```text
-#120  P0 Fremder-Mac-Test  (menschlich)
-  →   #121 P1 Autofill härten   (Code)
+#120  P0 Fremder-Mac-Test  — übersprungen (kein zweiter Mac, nicht erledigt)
+  →   #121 P1 Autofill härten   (Code)   ← jetzt
   →   Rest laut product-maturity.md
 ```
 
 Kein Connection-/Capability-Umbau. Kein zweiter Plan.
 
-1. **[#120](https://github.com/landjunge/4AllPass/issues/120) — Fremder Mac (P0, menschlich)**  
-   App auf → Tresor → Browser-Karten → Import-Review **ohne Passwort in der Liste** → Bestätigen.  
-   Review-UI ist in CI für Datei-Import (`import-review`) und für Karten + zwei Profile (`browser-cards-import`, Tauri gemockt). Keychain auf einem fremden Rechner bleibt ein Mensch-Test.
+1. **[#120](https://github.com/landjunge/4AllPass/issues/120)** — kein zweiter Mac. CI deckt Review-UI (`import-review`, `browser-cards-import`). Mensch-Test bleibt offen, **blockiert den Plan nicht**.
 
-2. **[#121](https://github.com/landjunge/4AllPass/issues/121) — P1 Autofill härten (Code)** — nach #120, laut [`autofill-v1.md`](autofill-v1.md). Was der Fremden-Test bricht, zuerst. Kein Multi-Step-Engine, kein Shadow-DOM in diesem Slice. Live `github.com/login` ist opt-in da (`LIVE_GITHUB=1`).
+2. **[#121](https://github.com/landjunge/4AllPass/issues/121) — P1 Autofill härten (Code)** — jetzt. Spec: [`autofill-v1.md`](autofill-v1.md). Kein Multi-Step-Engine, kein Shadow-DOM. Live `github.com/login` opt-in (`LIVE_GITHUB=1`).
 
 ---
 

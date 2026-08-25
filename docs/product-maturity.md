@@ -235,7 +235,7 @@ P0:
 
 - [x] Dieser Intel-Mac: `scripts/install.sh` → Fenster, Vault bleibt.
 - [x] Import-Review: Host + Username, nie Passwort (Playwright `import-review` Datei-CSV, `browser-cards-import` zwei gemockte Chrome-Profile). Browser-Karten + Keychain auf einem **fremden** Mac bleibt ein menschlicher Check.
-- [ ] Fremder Mac: App auf, Tresor, Browser-Karten, derselbe Review.
+- [ ] Fremder Mac: App auf, Tresor, Browser-Karten, derselbe Review. **2026-08-25 übersprungen (kein zweiter Mac), nicht als erledigt.** Plan geht weiter mit [#121](https://github.com/landjunge/4AllPass/issues/121).
 - [x] `evilgithub.com` wird nicht zu GitHub. (`packages/providers` + Extension-Match-Tests)
 
 P1:
@@ -257,7 +257,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**[#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac** (menschlich) → danach **[#121](https://github.com/landjunge/4AllPass/issues/121) Autofill härten** (Code, [`autofill-v1.md`](autofill-v1.md)) → Rest dieser Datei. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
+**[#121](https://github.com/landjunge/4AllPass/issues/121) Autofill härten** (Code, [`autofill-v1.md`](autofill-v1.md)). [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac: übersprungen, kein zweiter Rechner — nicht abgehakt. Apple weiter pausiert. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
 Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
 

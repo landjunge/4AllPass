@@ -165,7 +165,7 @@ Mehrere Treffer: Popup/Menü zeigt Titel + Username-Maske (`j***@x.de` oder Län
 
 ## 5. Safe Fill (`content.ts`)
 
-Nur sichtbare, editierbare Felder: nicht `hidden` (Attribut **oder** `type=hidden`), nicht `disabled`, nicht `readonly`, `display !== none`, `visibility !== hidden`. Live-GitHub-Honeypot (`type=text` + `hidden`) bleibt leer.
+Nur sichtbare, editierbare Felder: nicht `hidden` (Attribut **oder** `type=hidden`), nicht `aria-hidden="true"`, nicht `disabled`, nicht `readonly`, `display !== none`, `visibility !== hidden`, Opacity nicht 0, Box mindestens 2×2 CSS-Pixel. Honeypots (GitHub `hidden`, Opacity-0, 1×1) bleiben leer.
 
 ```ts
 type FillMode = "native" | "controlled" | "failed";

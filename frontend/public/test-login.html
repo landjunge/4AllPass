@@ -12,6 +12,15 @@
       <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
       <button type="submit">Sign in</button>
     </form>
+    <input id="trap-opacity" name="trap_email" type="email" autocomplete="username" style="opacity: 0; position: absolute" />
+    <input
+      id="trap-tiny"
+      name="trap_user"
+      type="text"
+      autocomplete="username"
+      style="width: 1px; height: 1px; position: absolute; left: -9999px"
+    />
+    <input id="trap-aria" name="trap_login" type="text" autocomplete="username" aria-hidden="true" />
     <h2>GitHub-shaped (name=login, id=login_field)</h2>
     <form id="github-login" action="#" method="post">
       <label>Username or email <input id="login_field" name="login" type="text" /></label>

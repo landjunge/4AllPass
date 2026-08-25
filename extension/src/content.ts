@@ -11,12 +11,19 @@ import {
   probeFromModel,
 } from "./fill.ts";
 
+function isFillableInput(input: HTMLInputElement): boolean {
+  if (input.hidden || input.type === "hidden" || input.disabled || input.readOnly) return false;
+  if (input.getAttribute("aria-hidden") === "true") return false;
+  const style = getComputedStyle(input);
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  if (Number.parseFloat(style.opacity) < 0.05) return false;
+  const box = input.getBoundingClientRect();
+  if (box.width < 2 || box.height < 2) return false;
+  return true;
+}
+
 function visibleInputs(): HTMLInputElement[] {
-  return [...document.querySelectorAll("input")].filter((input) => {
-    if (input.hidden || input.type === "hidden" || input.disabled || input.readOnly) return false;
-    const style = getComputedStyle(input);
-    return style.display !== "none" && style.visibility !== "hidden";
-  });
+  return [...document.querySelectorAll("input")].filter(isFillableInput);
 }
 
 function describe(input: HTMLInputElement): InputLike {

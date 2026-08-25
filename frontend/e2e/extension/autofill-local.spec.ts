@@ -65,12 +65,15 @@ test("local vault password unlocks the extension and fills the demo login", asyn
       password: "s3cret-autofill",
       url: `${ORIGIN}/test-login.html`,
     });
-    await unlockAndFill(context, extensionId, `${ORIGIN}/test-login.html`, {
+    const login = await unlockAndFill(context, extensionId, `${ORIGIN}/test-login.html`, {
       user: "ada@example.com",
       pass: "s3cret-autofill",
       userSel: "#username",
       passSel: "#password",
     });
+    await expect(login.locator("#trap-opacity")).toHaveValue("");
+    await expect(login.locator("#trap-tiny")).toHaveValue("");
+    await expect(login.locator("#trap-aria")).toHaveValue("");
   } finally {
     await context.close();
   }

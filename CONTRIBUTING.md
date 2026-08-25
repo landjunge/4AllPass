@@ -15,6 +15,19 @@ The server must never receive or derive: master password, vault key, device key,
 | `backend` | Accounts, ownership, snapshot CAS, opaque blobs | Decrypt or “verify” PRF |
 | `frontend` / `extension` | All cryptography | Trust server metadata as crypto proof |
 
+## Branching & Commits
+
+See the full rules in [`docs/git-workflow.md`](docs/git-workflow.md).
+
+Short version:
+
+- One theme per branch / PR
+- Prefixes: `feat/`, `fix/`, `docs/`, `harden/`, `ci/`, `chore/`, `test/`, `refactor/`
+- Conventional Commits (`feat(extension): …`, `docs: …`, `harden(crypto): …`)
+- Agents always open a PR (never direct push to `main` unless the coordinator explicitly says so)
+- Docs-only and small harden PRs may self-merge after green CI
+- Prefer squash-merge and short-lived branches
+
 ## Checks
 
 ```sh

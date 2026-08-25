@@ -11,7 +11,77 @@ Install → Import → Autofill → fertig
 Agent → Access-Tab (Allow/Deny + TTL) — Advanced
 ```
 
+---
+
+## Für normale Menschen / For normal people
+
+### DE — Einfach erklärt
+
+4AllPass ist ein digitaler Tresor, der **wirklich dir gehört**.
+
+Bei den meisten Passwort-Apps speichert eine Firma deine Daten in der Cloud.  
+Bei 4AllPass kann die Firma (oder der Server) deine Passwörter **nicht lesen**.
+
+Alles Wichtige liegt bei dir auf dem Gerät.  
+Der Server ist nur ein verschlüsselter Speicher.
+
+**Das Produkt ist die Desktop-App.**  
+Du installierst sie, legst einen Tresor an, holst deine Passwörter aus dem Browser und ab dann erledigt 4AllPass den Login für dich.
+
+Agenten (z. B. n8n oder KI-Tools) dürfen nur dann etwas, wenn du es explizit erlaubst – und nur für begrenzte Zeit.  
+Sie bekommen **nie** den ganzen Tresor.
+
+**Was du davon hast**
+- Zuverlässiges Autofill (der Login wird einfach erledigt)
+- Passwörter bleiben bei dir
+- Kein Cloud-Account nötig
+- Notfall-Kit (ohne das geht nichts mehr – und das ist gut so)
+- Später: Zugang für KI-Agenten, aber nur unter deiner Kontrolle
+
+**Was wir bewusst nicht machen**  
+Wir bauen gerade **nicht** Blockchain, eigene digitale Identität oder 20 Zukunftsfeatures.  
+Zuerst muss 4AllPass im Alltag einfach und vertrauenswürdig sein. Dann kann daraus später mehr werden.
+
+Die langfristige Produktvision stammt von **Daniel Filipek (landjunge)**.
+
+### EN — Simply explained
+
+4AllPass is a digital vault that **truly belongs to you**.
+
+With most password apps a company stores your data in the cloud.  
+With 4AllPass the company (or the server) **cannot read** your passwords.
+
+Everything important stays on your device.  
+The server is only an encrypted storage.
+
+**The product is the Desktop app.**  
+You install it, create a vault, import your passwords from the browser, and from then on 4AllPass handles the login for you.
+
+Agents (e.g. n8n or AI tools) only get something when you explicitly allow it – and only for a limited time.  
+They **never** get the whole vault.
+
+**What you get**
+- Reliable autofill (login just works)
+- Passwords stay with you
+- No cloud account required
+- Emergency Kit (without it there is no recovery – and that is intentional)
+- Later: access for AI agents, but only under your control
+
+**What we deliberately do not do**  
+We are **not** currently building blockchain, our own digital identity system, or 20 future features at once.  
+First 4AllPass must be simple and trustworthy in everyday use. Only then can more grow out of it.
+
+The long-term product vision comes from **Daniel Filipek (landjunge)**.
+
+---
+
 Kein Cloud-Account bei uns. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md) — Produkt zuerst, Sicherheit und Eigentum werden nicht verkauft.
+
+Weitere klare Beschreibungen:
+- [`docs/product-description.md`](docs/product-description.md)
+- [`docs/README-HUMAN.md`](docs/README-HUMAN.md)
+- [`docs/zukunftsplan.md`](docs/zukunftsplan.md)
+- [`docs/entstehungslinie.md`](docs/entstehungslinie.md)
 
 ---
 
@@ -168,6 +238,11 @@ Es gibt **noch kein** unabhängiges Drittaudit. Vergleich (ehrlich ✅ / ⚠️ 
 Produkt:
 
 - Philosophie (kein Businessplan): [`docs/product-philosophy.md`](docs/product-philosophy.md)
+- Produktbeschreibung: [`docs/product-description.md`](docs/product-description.md)
+- Human-README: [`docs/README-HUMAN.md`](docs/README-HUMAN.md)
+- Zukunftsplan: [`docs/zukunftsplan.md`](docs/zukunftsplan.md)
+- Entstehungslinie: [`docs/entstehungslinie.md`](docs/entstehungslinie.md)
+- Git-Workflow: [`docs/git-workflow.md`](docs/git-workflow.md)
 - Produktreife v3: [`docs/product-maturity.md`](docs/product-maturity.md)
 - Positionierung: [`docs/positioning.md`](docs/positioning.md)
 - Browser-Sync: [`docs/browser-sync.md`](docs/browser-sync.md)

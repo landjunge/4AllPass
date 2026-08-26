@@ -98,7 +98,7 @@ Einmal-Erkennung der Zwischenablage (kein Watcher) ist auf `main`.
 | Audit-Freeze `#123` | Fill-Origin vor `executeScript`. HTTP-Downgrade und `github.io` Suffix zu. PAIRING TOKEN ≠ Agent. Recovery: kompromittiert → VK++. Rank 3 = Policy. |
 | External-01 `#124` | Manifest-KDF production floor. Browser-Import: temp `0700`, shred, `zeroize`. `BrowserLogin` Debug redacted. F-25 Nonce-Budget bleibt Policy. |
 
-**Offen bleiben nur:** ein fremder Mac, und Apple wenn das Abo geht.
+**Offen bleiben nur:** ein fremder Mac, und Apple wenn das Abo geht. Öffentliche Install-Seite: `https://4allpass.netzwerkpunkt.de/` (HTTPS) + GitHub Pages `site/` (Actions).
 
 ---
 

@@ -8,9 +8,11 @@
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="Daniel Filipek (landjunge)" />
   <meta name="keywords" content="Passwortmanager, Zero-Knowledge, Desktop, Autofill, Passkeys, lokaler Tresor, Agent Access, 4AllPass" />
-  <link rel="canonical" href="https://landjunge.github.io/4AllPass/" />
-  <link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/" />
+  <link rel="canonical" href="https://4allpass.netzwerkpunkt.de/" />
   <link rel="alternate" hreflang="de" href="https://4allpass.netzwerkpunkt.de/" />
+  <link rel="alternate" hreflang="en" href="https://4allpass.netzwerkpunkt.de/#en" />
+  <link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/" />
+  <link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/#en" />
   <link rel="alternate" hreflang="x-default" href="https://4allpass.netzwerkpunkt.de/" />
   <meta property="og:locale" content="de_DE" />
   <meta property="og:type" content="website" />
@@ -97,7 +99,9 @@ footer{border-top:1px solid var(--line);padding:1.6rem 20px 2.4rem;color:var(--m
       <p class="k">Passwort-Tresor · Zero-Knowledge · Desktop first</p>
       <h1>Ein digitaler Tresor, der wirklich dir gehört.</h1>
       <p class="claim">Bei den meisten Passwort-Apps speichert eine Firma deine Daten in der Cloud. Bei 4AllPass kann der Server deine Passwörter <strong>nicht lesen</strong>. Alles Wichtige liegt bei dir auf dem Gerät.</p>
+      <p class="claim" lang="en" id="en">With most password apps a company stores your data in the cloud. With 4AllPass the server <strong>cannot read</strong> your passwords. What matters stays on your device.</p>
       <p class="claim">Das Produkt ist die <strong>Desktop-App</strong>. Du installierst sie, legst einen Tresor an, importierst Passwörter aus dem Browser — und ab dann erledigt 4AllPass den Login.</p>
+      <p class="claim" lang="en">The product is the <strong>desktop app</strong>. Install it, create a vault, import from the browser — then 4AllPass handles the login.</p>
       <p class="flow" aria-label="Produktfluss">
         <span>Installieren</span><span>→</span><span>Importieren</span><span>→</span><span>Autofill</span><span>→</span><span>fertig</span>
       </p>
@@ -106,7 +110,8 @@ footer{border-top:1px solid var(--line);padding:1.6rem 20px 2.4rem;color:var(--m
         <a class="g" href="https://github.com/landjunge/4AllPass">Quellcode</a>
         <a class="g" href="https://4allpass.netzwerkpunkt.de/">Produktseite</a>
       </div>
-      <p class="note">macOS-Builds sind derzeit ad-hoc (nicht notariert): Rechtsklick → Öffnen, oder <code>scripts/install.sh</code>. Unlock = Tresor-Passwort. Ohne Recovery-Kit kein Zurücksetzen.</p>
+      <p class="note">macOS-Builds sind derzeit ad-hoc (nicht notariert): Rechtsklick → Öffnen, oder der One-Liner unten. Unlock = Tresor-Passwort. Ohne Recovery-Kit kein Zurücksetzen.</p>
+      <p class="note" lang="en">macOS builds are ad-hoc (not notarized): right-click → Open, or the one-liner below. Unlock = vault password. No recovery kit means no reset.</p>
     </section>
 
     <section class="grid" aria-label="Säulen">
@@ -130,7 +135,8 @@ footer{border-top:1px solid var(--line);padding:1.6rem 20px 2.4rem;color:var(--m
         <h2>Fundament zuerst</h2>
         <p class="claim">Kein Blockchain, keine eigene digitale Identität, keine 20 Zukunftsfeatures auf einmal. Zuerst muss 4AllPass im Alltag einfach und vertrauenswürdig sein. Dann kann daraus mehr werden — genau so, wie die Produktvision von Daniel Filipek (landjunge) vorsieht.</p>
         <pre><code>curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh</code></pre>
-        <p class="note">Oder ohne Pipe: Script speichern, lesen, <code>sh install.sh</code>. Windows: siehe Releases.</p>
+        <p class="note">Installer pinnt GitHub-Tag <code>desktop</code> und prüft SHA-256. Vault-Ordner bleibt. Ohne Pipe: Script speichern, lesen, <code>sh install.sh</code>. Windows: <code>irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex</code>.</p>
+        <p class="note" lang="en">The installer pins GitHub tag <code>desktop</code> and checks SHA-256. The vault folder is never deleted. Without a pipe: save, read, <code>sh install.sh</code>.</p>
       </div>
       <div>
         <p class="k">Fakten</p>

@@ -24,7 +24,7 @@ Jetzt: keine Domain kaufen. Später: 301 Subdomain → `4allpass.de` (oder `.com
 - [x] robots.txt + sitemap.xml
 - [x] llms.txt
 - [x] FAQ (details/summary, kein JS)
-- [ ] GitHub Pages aktivieren
-- [ ] hub-HTML auf VPS
+- [x] GitHub Pages aktivieren (Actions, 2026-08-26)
+- [x] hub-HTML auf VPS (`https://4allpass.netzwerkpunkt.de/`, HTTPS Let’s Encrypt)
 - [ ] Search Console: Property für Subdomain (kostenlos)
 - [ ] Eigenes OG-Bild 1200×630 (optional, Canva Free)

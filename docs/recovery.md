@@ -6,7 +6,9 @@
 
 The Recovery Key is the only way back into a vault when the Master Password is lost
 and no enrolled device remains. There is no server-side reset, no e-mail recovery
-and no OAuth path. That makes two properties non-negotiable: it must carry full
+and no OAuth path. A Hosted endpoint that vanishes is the same class of fact: the
+kit plus a sealed snapshot still open; “support sends a reset link” is forbidden
+([`vault-storage.md`](vault-storage.md)). That makes two properties non-negotiable: it must carry full
 256-bit entropy, and a human must be able to copy it off a printed sheet without
 silently corrupting it.
 

@@ -26,6 +26,8 @@ File copy of `vault.db` would mix server blobs with client keys. Live Chrome DB 
 
 Selective “phone gets TOTP only” is **not** implemented. It needs item keys or a second vault (YELLOW/RED).
 
+Two writers at revision N both committing N+1: exactly one 200, one 409. **Not** last-write-wins. v1 client loads the winner; it does not auto-merge entries. Placement / 409 UX: [`docs/vault-storage.md`](../../vault-storage.md).
+
 ## Future impact
 
 Do not couple this protocol to Tauri. PWA, extension, and a later mobile client consume the same snapshot.

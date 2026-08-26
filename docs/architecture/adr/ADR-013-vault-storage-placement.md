@@ -13,7 +13,7 @@ Three layers: **Client** (decrypts) · **Vault Server** (opaque snapshot CAS) ·
 
 Three placements, one protocol: this device only · own server · later 4AllPass Hosted Vault.
 
-The server is never a password manager. Offline local copy is required when a remote placement is on.
+The server is never a password manager and never the trust anchor for secrets. Offline local copy is required when a remote placement is on. Conflicts are CAS 409, then reload — not last-write-wins. Recovery and exit from Hosted do not need us.
 
 Authoritative write-up: [`docs/vault-storage.md`](../../vault-storage.md). Sync bytes: [ADR-006](ADR-006-sync-protocol.md). Mobile still 0 %: [ADR-009](ADR-009-mobile-client.md).
 
@@ -31,4 +31,4 @@ The running FastAPI already refuses VK / master password / plaintext. Local SQLi
 
 Public copy: **Local-first. Sync optional. Server of your choice.** Not “no cloud sync” as a forever claim.
 
-Do not ship a storage-mode UI, a Hosted SKU, or S3/WebDAV until this spec’s “later” is an explicit implement decision. Do not put the vault on the marketing site.
+Do not ship a storage-mode UI, a Hosted SKU, or S3/WebDAV until this spec’s “later” is an explicit implement decision. Do not put the vault on the marketing site. Do not last-write-wins on 409. Hosted exit must be a sealed snapshot copy the user can take without us.

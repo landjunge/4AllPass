@@ -10,7 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_engine, reset_engine
-from app.local import port_held, prepare_local_runtime
+from app.local import port_held, prepare_local_runtime, sidecar_parent_gone
 from app.main import create_app, loopback_connect_origin
 
 
@@ -92,6 +92,13 @@ def test_local_rejects_non_loopback(tmp_path):
 
 def test_port_held_false_for_unused():
     assert port_held("127.0.0.1", 1) is False
+
+
+def test_sidecar_parent_gone_when_reparented_to_launchd():
+    assert sidecar_parent_gone(100, 1) is True
+    assert sidecar_parent_gone(100, 100) is False
+    assert sidecar_parent_gone(100, 101) is True
+    assert sidecar_parent_gone(1, 1) is False
 
 
 @pytest.mark.asyncio(loop_scope="session")

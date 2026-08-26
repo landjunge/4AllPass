@@ -16,6 +16,8 @@ import secrets
 import socket
 import subprocess
 import sys
+import threading
+import time
 import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
@@ -136,9 +138,35 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def sidecar_parent_gone(initial_ppid: int, current_ppid: int) -> bool:
+    """True when the Tauri parent is gone. init/launchd is 1. Not used for `python -m app.local`."""
+    if initial_ppid <= 1:
+        return False
+    return current_ppid in (0, 1) or current_ppid != initial_ppid
+
+
+def _watch_tauri_parent() -> None:
+    if os.environ.get("FOURALLPASS_SIDECAR") != "1":
+        return
+    parent = os.getppid()
+
+    def loop() -> None:
+        while True:
+            time.sleep(1)
+            try:
+                os.kill(parent, 0)
+            except OSError:
+                os._exit(0)
+            if sidecar_parent_gone(parent, os.getppid()):
+                os._exit(0)
+
+    threading.Thread(target=loop, name="sidecar-parent", daemon=True).start()
+
+
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
     runtime = prepare_local_runtime(data_dir=args.data_dir, ui_dist=args.ui_dist, port=args.port)
+    _watch_tauri_parent()
     if port_held(runtime.host, runtime.port):
         print(
             f"4AllPass läuft schon auf {runtime.origin} / already running.",

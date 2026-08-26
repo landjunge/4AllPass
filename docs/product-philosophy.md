@@ -19,7 +19,7 @@ The primary goal is to build a product that is:
 - trustworthy
 - privacy-preserving
 - easy to use
-- self-hostable
+- self-hostable (local-first; where the sealed vault lives is a placement, not a second product — [`vault-storage.md`](vault-storage.md))
 - useful for individuals and teams
 - designed for both humans and AI agents
 
@@ -48,7 +48,7 @@ Possible future areas may include:
 - enterprise administration
 - advanced audit and security features
 - professional support
-- managed hosting
+- managed hosting (**4AllPass Hosted Vault**: same sealed snapshot API, still cannot decrypt — [`vault-storage.md`](vault-storage.md))
 - enterprise integrations
 - optional commercial services
 

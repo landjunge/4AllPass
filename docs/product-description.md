@@ -23,7 +23,7 @@ Das Backend kann Daten speichern und zwischen Geräten transportieren – es kan
 „Ich schaue jetzt mal nach Daniels Passwörtern.“
 
 **Das Produkt ist die Desktop-App** (Tauri + lokales SQLite + Loopback auf `:8788`).  
-Kein Cloud-Account bei uns. FastAPI mintet keine Tokens.  
+Kein verpflichtender Cloud-Dienst. Local-first. Sync optional. Server deiner Wahl ([`vault-storage.md`](vault-storage.md)). FastAPI mintet keine Tokens.  
 Agenten bekommen Zugang nur nach explizitem Allow/Deny + TTL – und nie als ersten Bildschirm.
 
 ### Was der Benutzer wirklich will
@@ -73,7 +73,7 @@ The backend can store data and move it between devices – it cannot simply say:
 “Let me look at Daniel’s passwords.”
 
 **The product is the Desktop app** (Tauri + local SQLite + loopback on `:8788`).  
-No cloud account with us. FastAPI never mints tokens.  
+No mandatory cloud service. Local-first. Sync optional. Server of your choice ([`vault-storage.md`](vault-storage.md)). FastAPI never mints tokens.  
 Agents get access only after explicit Allow/Deny + TTL – and never as the first screen.
 
 ### What the user actually wants

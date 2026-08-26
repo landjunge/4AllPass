@@ -1,6 +1,6 @@
 # 4AllPass
 
-> Local-first password vault. Reliable autofill. Zero-knowledge. Agents only after Allow/Deny + TTL.
+> Local-first password vault. Sync optional. Server of your choice. Reliable autofill. Zero-knowledge. Agents only after Allow/Deny + TTL.
 
 The product is the **Desktop app** (Tauri + SQLite + loopback :8788).
 The server never sees plaintext. FastAPI never mints provider tokens.

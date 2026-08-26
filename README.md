@@ -34,7 +34,7 @@ Sie bekommen **nie** den ganzen Tresor.
 **Was du davon hast**
 - Zuverlässiges Autofill (der Login wird einfach erledigt)
 - Passwörter bleiben bei dir
-- Kein Cloud-Account nötig
+- Kein verpflichtender Cloud-Dienst (Local-first. Sync optional. Server deiner Wahl.)
 - Notfall-Kit (ohne das geht nichts mehr – und das ist gut so)
 - Später: Zugang für KI-Agenten, aber nur unter deiner Kontrolle
 
@@ -63,7 +63,7 @@ They **never** get the whole vault.
 **What you get**
 - Reliable autofill (login just works)
 - Passwords stay with you
-- No cloud account required
+- No mandatory cloud service (local-first. Sync optional. Server of your choice.)
 - Emergency Kit (without it there is no recovery – and that is intentional)
 - Later: access for AI agents, but only under your control
 
@@ -92,7 +92,7 @@ Open Source und öffentlich entwickelt. Kritik, Tests und Beiträge sind willkom
 
 Gerade bei 4AllPass behaupte ich **nicht**, dass die Kryptographie sicher ist. Annahmen stehen in den Specs. Es gibt **noch kein unabhängiges Drittaudit**. Security-Reviews und Versuche, das System zu brechen, sind ausdrücklich willkommen.
 
-Kein Cloud-Account bei uns. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md) — Produkt zuerst, Sicherheit und Eigentum werden nicht verkauft.
+Kein verpflichtender Cloud-Dienst. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Schichten: Client · Vault Server · Hosting ([`docs/vault-storage.md`](docs/vault-storage.md)). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md) — Produkt zuerst, Sicherheit und Eigentum werden nicht verkauft.
 
 Weitere klare Beschreibungen:
 - [`docs/product-description.md`](docs/product-description.md)
@@ -107,6 +107,7 @@ Weitere klare Beschreibungen:
 | | DE | EN |
 |---|---|---|
 | Produkt | Desktop (Tauri), SQLite, Loopback `:8788` | Desktop app, SQLite, loopback `:8788` |
+| Ablage | Local-first. Sync optional. Server deiner Wahl. Heute: dieses Gerät; eigener FastAPI-Server möglich; Hosted nicht angeboten ([`docs/vault-storage.md`](docs/vault-storage.md)) | Local-first. Sync optional. Server of your choice. Today: this device; own FastAPI server possible; Hosted not offered |
 | Tresor | Geräte besitzen den Vault kryptografisch. Unlock = Tresor-Passwort | Devices own the vault cryptographically. Unlock = vault password |
 | Import | Browser-Karten, Chrome/Firefox, Review **ohne** Passwort in der Liste | Browser cards, Chrome/Firefox, review **without** passwords in the list |
 | Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste. Live `github.com/login` opt-in, kein Submit, kein CI | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste. Live `github.com/login` opt-in, no submit, not CI |

@@ -39,7 +39,7 @@ Sie bekommen **nie** den ganzen Tresor.
 
 - Zuverlässiges Autofill (der Login wird einfach erledigt)
 - Passwörter bleiben bei dir
-- Kein Cloud-Account nötig
+- Kein verpflichtender Cloud-Dienst (Local-first. Sync optional. Server deiner Wahl.)
 - Notfall-Kit (ohne das geht nichts mehr – und das ist gut so)
 - Später: Zugang für KI-Agenten, aber nur unter deiner Kontrolle
 
@@ -89,7 +89,7 @@ They **never** get the whole vault.
 
 - Reliable autofill (login just works)
 - Passwords stay with you
-- No cloud account required
+- No mandatory cloud service (local-first. Sync optional. Server of your choice.)
 - Emergency Kit (without it there is no recovery – and that is intentional)
 - Later: access for AI agents, but only under your control
 

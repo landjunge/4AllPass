@@ -14,5 +14,6 @@
 | [010](ADR-010-post-quantum-readiness.md) | Post-quantum readiness | accepted as non-implementation |
 | [011](ADR-011-credential-model.md) | Credential model | accepted as wide JSON |
 | [012](ADR-012-proof-and-signature-layer.md) | Proof and signature layer | research — do not build |
+| [013](ADR-013-vault-storage-placement.md) | Vault storage placement | accepted as the model; Hosted/picker not built |
 
 Parent: [`../future-architecture.md`](../future-architecture.md).

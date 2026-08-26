@@ -75,7 +75,7 @@ Attack, impact, fix, test that would fail if reverted.
 ## Language, logo, SEO (standing)
 
 - **DE und EN** on every user-facing surface in the same PR: README, `index.html` title/description, PWA manifest, store/GitHub About. Specs in `docs/` may stay as they are until touched.
-- **SEO every time** we ship something people land on: `<title>`, `meta name="description"`, Open Graph, GitHub description + topics. Keywords match the wedge (credential access, agents, Zero-Knowledge, self-hosted) — not “better Bitwarden.”
+- **SEO every time** we ship something people land on: `<title>`, `meta name="description"`, Open Graph, GitHub description + topics. Keywords match the wedge (credential access, agents, Zero-Knowledge, local-first, self-hosted) — not “better Bitwarden.” Storage placement: [`docs/vault-storage.md`](../../../docs/vault-storage.md).
 - **Logo is 4AllPass only:** Elster + goldener Schlüssel + Schriftzug `4AllPass`. Do not mix this mark with other products. Do not drop the wordmark.
 
 ## How to code

@@ -24,6 +24,7 @@ Hard-revoke two Playwright profiles and live Chrome+Brave are on main. Item-shar
 - Organizations / teams — specified in `docs/team-mode.md` + `docs/team-roadmap.md`. **Do not implement** until the maintainer accepts the review. Must not become PAM.
 - Social login as a crypto factor
 - Native apps as a second product (Tauri desktop is on main; do not start Electron / iOS / Android). Mobile is a future first-class *device* of the same vault — 0 % app code now. Do not couple the vault format or sync to Tauri.
+- **4AllPass Hosted Vault / storage-mode picker / S3·WebDAV·Nextcloud** — model: `docs/vault-storage.md`. Same snapshot API as local. Do not implement until an explicit decision. Do not call Hosted a cloud password manager.
 - Passkey store as a separate vault product
 - Shamir. TOTP on vault entries is on `main` (RFC 6238). Passkey store still later.
 - Wrapping a Vault Key or item key to a **foreign** Device Key (needs public-key wrapping)

@@ -62,7 +62,7 @@ Kein Connection-/Capability-Umbau. Kein zweiter Plan.
 
 ## Nicht in dieser Reihenfolge
 
-Team Mode (nur Review: [`team-mode.md`](team-mode.md) — kein PAM), 50 Provider, Zurückschreiben in Chrome/Firefox, MCP, n8n-Marketplace, Cloud-Sync, iOS/Android-App, Connection-/Capability-Umbau (ChatGPT-Review: **nicht bauen**, bis explizit gesagt).
+Team Mode (nur Review: [`team-mode.md`](team-mode.md) — kein PAM), 50 Provider, Zurückschreiben in Chrome/Firefox, MCP, n8n-Marketplace, 4AllPass Hosted Vault / Storage-Picker / S3-WebDAV (Modell: [`vault-storage.md`](vault-storage.md) — **nicht bauen**, bis explizit gesagt), iOS/Android-App, Connection-/Capability-Umbau (ChatGPT-Review: **nicht bauen**, bis explizit gesagt).
 
 **Mobile:** 0 % App-Code jetzt. First-Class-Device später. Vault/Crypto nicht an Tauri binden.
 

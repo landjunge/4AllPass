@@ -13,6 +13,7 @@ Security · Crypto · Autofill · Desktop · Recovery · UX
 
 1. Etage — Multi-Device
 Desktop · Mobile · Browser · Device Identity · Sync
+(Placement: [`vault-storage.md`](vault-storage.md) — Client decrypts; endpoint is sealed storage.)
 
 2. Etage — Verbundene Tresore
 Mehrere eigenständige Vaults · Connections · Trust · Capabilities · Revocation

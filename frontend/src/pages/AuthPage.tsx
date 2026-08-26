@@ -1,10 +1,30 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { ApiError } from "../lib/api.ts";
 import { useApp } from "../state/app-state.tsx";
+
+const LAST_EMAIL_KEY = "4allpass.last-email";
+
+function readLastEmail(): string {
+  try {
+    return localStorage.getItem(LAST_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function rememberEmail(value: string): void {
+  try {
+    if (value) localStorage.setItem(LAST_EMAIL_KEY, value);
+  } catch {
+    /* WKWebView storage can throw */
+  }
+}
 
 export function AuthPage(): ReactNode {
   const { signIn, signUp } = useApp();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-up");
-  const [email, setEmail] = useState("");
+  const remembered = readLastEmail();
+  const [mode, setMode] = useState<"sign-in" | "sign-up">(remembered ? "sign-in" : "sign-up");
+  const [email, setEmail] = useState(remembered);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -14,8 +34,12 @@ export function AuthPage(): ReactNode {
     try {
       if (mode === "sign-in") await signIn(email, password);
       else await signUp(email, password);
-    } catch {
-      // The banner shows the reason.
+      rememberEmail(email);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        rememberEmail(email);
+        setMode("sign-in");
+      }
     } finally {
       setBusy(false);
     }

@@ -56,7 +56,9 @@ export function UnlockPage(): ReactNode {
               disabled={busy !== "none"}
               data-testid="unlock-biometrics"
             >
-              {busy === "device" ? "Waiting for this device…" : "Unlock with this device"}
+              {busy === "device"
+                ? "Warten auf dieses Gerät… / Waiting…"
+                : "Mit diesem Gerät öffnen / Unlock with this device"}
             </button>
             {mechanism ? (
               <p className="hint" data-testid="unlock-mechanism">
@@ -77,7 +79,7 @@ export function UnlockPage(): ReactNode {
 
         {useRecovery ? (
           <label>
-            Recovery key
+            Recovery-Schlüssel / Recovery key
             <textarea
               value={recovery}
               onChange={(event) => setRecovery(event.target.value)}
@@ -88,7 +90,7 @@ export function UnlockPage(): ReactNode {
           </label>
         ) : (
           <label>
-            Vault password
+            Tresor-Passwort / Vault password
             <input
               type="password"
               autoComplete="current-password"
@@ -100,7 +102,7 @@ export function UnlockPage(): ReactNode {
           </label>
         )}
         <button type="submit" disabled={busy !== "none"} data-testid="unlock-submit">
-          {busy === "password" ? "Deriving key…" : "Unlock"}
+          {busy === "password" ? "Einen Moment…" : "Öffnen / Unlock"}
         </button>
         <button type="button" className="link" onClick={() => setUseRecovery(!useRecovery)}>
           {useRecovery ? "Tresor-Passwort / Use the vault password" : "Recovery-Schlüssel / Use the recovery key"}
@@ -108,7 +110,7 @@ export function UnlockPage(): ReactNode {
         <p className="hint" data-testid="unlock-hint">
           {deviceUnlockAvailable
             ? "Dieses Gerät kann in einem Schritt entsperren. Das Tresor-Passwort gilt weiter. Ohne Passwort oder Recovery-Kit kein Zurück. / This device can unlock in one step. The vault password still works. No password or recovery kit means no way back."
-            : "Unlock = Tresor-Passwort. Passkey/PRF in diesem Fenster unbewiesen. Ohne Passwort oder Recovery-Kit kein Zurück — niemand setzt es zurück. / Unlock = vault password. Passkey/PRF unproven here. No password or recovery kit means no way back."}
+            : "Öffnen = Tresor-Passwort. Ohne Passwort oder Recovery-Kit kein Zurück — niemand setzt es zurück. / Unlock = vault password. No password or recovery kit means no way back."}
         </p>
       </form>
     </div>

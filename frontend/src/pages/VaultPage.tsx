@@ -323,11 +323,11 @@ export function VaultPage(): ReactNode {
             <DevicesPanel />
           ) : settingsPane === "security" ? (
             <section className="card" data-testid="settings-security">
-              <h3>{t({ de: "Wie ist mein Tresor geschützt?", en: "How is my vault protected?" })}</h3>
+              <h3>{t({ de: "Kontrolle", en: "Checking" })}</h3>
               <p className="hint">
                 {t({
-                  de: "Verschlüsselt auf diesem Gerät. Nur du kannst ihn öffnen. Zahlen darunter nur zur Kontrolle.",
-                  en: "Encrypted on this device. Only you can open it. Numbers below are for checking.",
+                  de: "Nur zur Kontrolle. Für den Alltag brauchst du das nicht.",
+                  en: "For checking. Everyday use does not need this.",
                 })}
               </p>
               <dl className="tech-dl" data-testid="settings-revision">

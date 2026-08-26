@@ -34,7 +34,7 @@ Sie bekommen **nie** den ganzen Tresor.
 **Was du davon hast**
 - Zuverlässiges Autofill (der Login wird einfach erledigt)
 - Passwörter bleiben bei dir
-- Kein Cloud-Account nötig
+- Kein verpflichtender Cloud-Dienst (Local-first. Sync optional. Server deiner Wahl.)
 - Notfall-Kit (ohne das geht nichts mehr – und das ist gut so)
 - Später: Zugang für KI-Agenten, aber nur unter deiner Kontrolle
 
@@ -63,7 +63,7 @@ They **never** get the whole vault.
 **What you get**
 - Reliable autofill (login just works)
 - Passwords stay with you
-- No cloud account required
+- No mandatory cloud service (local-first. Sync optional. Server of your choice.)
 - Emergency Kit (without it there is no recovery – and that is intentional)
 - Later: access for AI agents, but only under your control
 
@@ -92,13 +92,7 @@ Open Source und öffentlich entwickelt. Kritik, Tests und Beiträge sind willkom
 
 Gerade bei 4AllPass behaupte ich **nicht**, dass die Kryptographie sicher ist. Annahmen stehen in den Specs. Es gibt **noch kein unabhängiges Drittaudit**. Security-Reviews und Versuche, das System zu brechen, sind ausdrücklich willkommen.
 
-Kein Cloud-Account bei uns. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md) — Produkt zuerst, Sicherheit und Eigentum werden nicht verkauft.
-
-Weitere klare Beschreibungen:
-- [`docs/product-description.md`](docs/product-description.md)
-- [`docs/README-HUMAN.md`](docs/README-HUMAN.md)
-- [`docs/zukunftsplan.md`](docs/zukunftsplan.md)
-- [`docs/entstehungslinie.md`](docs/entstehungslinie.md)
+Kein verpflichtender Cloud-Dienst. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Docs-Index (was läuft vs Zukunft): [`docs/README.md`](docs/README.md). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md).
 
 ---
 
@@ -107,6 +101,7 @@ Weitere klare Beschreibungen:
 | | DE | EN |
 |---|---|---|
 | Produkt | Desktop (Tauri), SQLite, Loopback `:8788` | Desktop app, SQLite, loopback `:8788` |
+| Ablage | Local-first. Sync optional. Server deiner Wahl. Wire: [`docs/vault-protocol.md`](docs/vault-protocol.md). Placement: [`docs/vault-storage.md`](docs/vault-storage.md) | Local-first. Sync optional. Server of your choice. Same protocol everywhere; Hosted not offered |
 | Tresor | Geräte besitzen den Vault kryptografisch. Unlock = Tresor-Passwort | Devices own the vault cryptographically. Unlock = vault password |
 | Import | Browser-Karten, Chrome/Firefox, Review **ohne** Passwort in der Liste | Browser cards, Chrome/Firefox, review **without** passwords in the list |
 | Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste. Live `github.com/login` opt-in, kein Submit, kein CI | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste. Live `github.com/login` opt-in, no submit, not CI |
@@ -203,24 +198,14 @@ Es gibt **noch kein** unabhängiges Drittaudit. Vergleich (ehrlich ✅ / ⚠️ 
 
 ## Dokumentation
 
-Produkt:
+Start here: [`docs/README.md`](docs/README.md) (authority order, implemented vs later).
 
-- Philosophie (kein Businessplan): [`docs/product-philosophy.md`](docs/product-philosophy.md)
-- Produktbeschreibung: [`docs/product-description.md`](docs/product-description.md)
-- Human-README: [`docs/README-HUMAN.md`](docs/README-HUMAN.md)
-- Zukunftsplan: [`docs/zukunftsplan.md`](docs/zukunftsplan.md)
-- Entstehungslinie: [`docs/entstehungslinie.md`](docs/entstehungslinie.md)
-- Git-Workflow: [`docs/git-workflow.md`](docs/git-workflow.md)
-- Produktreife v3: [`docs/product-maturity.md`](docs/product-maturity.md)
-- Positionierung: [`docs/positioning.md`](docs/positioning.md)
-- Browser-Sync: [`docs/browser-sync.md`](docs/browser-sync.md)
-- Autofill V1: [`docs/autofill-v1.md`](docs/autofill-v1.md)
-- Extension bauen/laden: [`docs/autofill-extension.md`](docs/autofill-extension.md)
-- Provider (Domain ≠ Name): [`docs/provider-resolution.md`](docs/provider-resolution.md)
-- Desktop: [`docs/desktop.md`](docs/desktop.md)
-- Distribution / Apple: [`docs/distribution.md`](docs/distribution.md)
-- Team Mode (**Review, nicht gebaut**): [`docs/team-mode.md`](docs/team-mode.md), [`docs/team-roadmap.md`](docs/team-roadmap.md)
-- Agent-Playbook: [`.cursor/skills/4allpass/SKILL.md`](.cursor/skills/4allpass/SKILL.md)
+- What runs: [`docs/security-boundary.md`](docs/security-boundary.md)
+- Vault wire / placement: [`docs/vault-protocol.md`](docs/vault-protocol.md), [`docs/vault-storage.md`](docs/vault-storage.md)
+- Product sequence: [`docs/product-maturity.md`](docs/product-maturity.md)
+- Vision (not a build license): [`docs/architecture/future-architecture.md`](docs/architecture/future-architecture.md)
+- Agent later: [`docs/architecture/agent-access.md`](docs/architecture/agent-access.md), MAIP draft [`docs/specs/maip-v0.1.md`](docs/specs/maip-v0.1.md)
+- Team Mode (**review, not built**): [`docs/team-mode.md`](docs/team-mode.md)
 
 Zugang / Broker:
 

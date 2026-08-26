@@ -1,11 +1,32 @@
 # Security boundary (implementation)
 
+**Status:** Implemented (this file). Highest authority for “what runs.”  
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-25
+**Date:** 2026-08-26  
+**Index:** [README.md](README.md)
 
 This document describes what the **running backend + PWA / local app** actually enforce.
 It does not restate the crypto protocol. If a sentence here disagrees with
 `packages/crypto`, the library and its tests win.
+
+**Standing rules**
+
+1. The server stores the vault. The client owns the vault.
+2. Agents receive capabilities, not the vault. **Today** that is still a raw-secret handoff after human Allow; TTL does not un-know a copy already given. Mediated proxy is **later**.
+3. Identity is shared (later: MAIP). Authorization stays local. **Today** `application: "n8n"` is **not** cryptographic identity.
+4. Small core, strict guarantees, optional extensions.
+
+| Component | Plaintext secrets? | Vault Key? | Own policy? |
+|---|---|---|---|
+| Desktop client | yes (after unlock) | yes (after unlock) | yes |
+| Mobile client | later | later | later |
+| Browser extension | limited (unlocked fill) | local only | host match |
+| Vault server | no | no | storage auth only |
+| Hosting provider | no | no | no (placement only; **no Hosted SKU today**) |
+| Agent | normally no; v1 grant may copy a secret | no | no |
+| Tollgate / Gnom-Hub / MCP | no | no | their domain only; they do not unwrap VK |
+
+Public copy must not exceed this file: **Local-first. Sync optional. Server deiner Wahl.** Desktop = client. Self-host = placement.
 
 ---
 
@@ -350,7 +371,7 @@ not *this is n8n*. Treat it as the **local root-of-access for agents**
 stolen token plus the string `n8n` is still eligible for a human Allow. That
 is V1. Cryptographic agent keys are
 [`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)
-and are **not** built yet.
+and are **not** built yet. The later profile is [`specs/maip-v0.1.md`](specs/maip-v0.1.md) (experimental draft).
 
 **TTL is a 4AllPass grant clock, not a provider-token clock.** `ttl` /
 `expires_in` stop *later handoffs from this process*. After Allow, n8n already

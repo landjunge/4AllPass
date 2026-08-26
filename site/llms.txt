@@ -1,6 +1,6 @@
 # 4AllPass
 
-> Local-first password vault. Reliable autofill. Zero-knowledge. Agents only after Allow/Deny + TTL.
+> Local-first password vault. Sync optional. Server of your choice. Reliable autofill. Zero-knowledge. Agents only after Allow/Deny + TTL.
 
 The product is the **Desktop app** (Tauri + SQLite + loopback :8788).
 The server never sees plaintext. FastAPI never mints provider tokens.
@@ -18,10 +18,9 @@ When budget allows: 4allpass.de (preferred) or 4allpass.com — then 301 from th
 See site/DOMAIN-STRATEGY.md. Do not buy a domain until product P0 is solid.
 
 ## Key docs
-- Product description: https://github.com/landjunge/4AllPass/blob/main/docs/product-description.md
-- For normal people: https://github.com/landjunge/4AllPass/blob/main/docs/README-HUMAN.md
-- Roadmap (house model): https://github.com/landjunge/4AllPass/blob/main/docs/zukunftsplan.md
+- Index: https://github.com/landjunge/4AllPass/blob/main/docs/README.md
 - Security boundary: https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md
+- Product sequence: https://github.com/landjunge/4AllPass/blob/main/docs/product-maturity.md
 
 ## Vision
 Daniel Filipek (landjunge). Foundation first: excellent password manager, then multi-vault, agents, identity, machines.

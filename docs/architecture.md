@@ -1,9 +1,16 @@
 # Architektur – 4AllPass
 
-**Self-hosted Zero-Knowledge Passwort-Manager** (2026-Einstieg). Langfristige Vision, nicht bauen: [`architecture/future-architecture.md`](architecture/future-architecture.md).
+**Status:** Shape of the product. What *runs* is [`security-boundary.md`](security-boundary.md).  
+**Date:** 2026-08-26
+
+**Der Server speichert den Tresor. Der Client besitzt den Tresor.**
+
+Desktop is the client. Self-hosting is where sealed snapshots may live. Managed hosting is **later**, same protocol, no Cloud Edition: [`vault-storage.md`](vault-storage.md), [`vault-protocol.md`](vault-protocol.md).
+
+Vision (do not implement from this paragraph): [`architecture/future-architecture.md`](architecture/future-architecture.md). Agents later: [`architecture/agent-access.md`](architecture/agent-access.md), [`specs/maip-v0.1.md`](specs/maip-v0.1.md). Index: [`README.md`](README.md).
 
 **Ziel**  
-Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers steht, echte Zero-Knowledge-Sicherheit bietet und gleichzeitig modern, komfortabel und zukunftssicher ist.
+Ein Tresor, der dem Nutzer gehört. Wo der *verschlüsselte* Tresor liegt, entscheidet der Nutzer (dieses Gerät, eigener Server, später optional Hosted). Zero-Knowledge bleibt: der Endpoint sieht keinen Klartext.
 
 **Basics (2026-08-23):** Sync aller Browser und Profile — Karten, anhaken, Passwörter im Tresor. Plan: [`browser-sync.md`](browser-sync.md). Agent-Zugang ist nicht der Einstieg. Crypto-Protokoll bleibt.
 
@@ -13,7 +20,7 @@ Ein selbst gehosteter Passwort-Manager, der unter voller Kontrolle des Nutzers s
 
 Haltung (kein Businessplan): [`product-philosophy.md`](product-philosophy.md). Sicherheit und Eigentum werden nicht verkauft.
 
-- **Zero-Knowledge**: Der Server sieht niemals Klartext-Passwörter oder das Master-Passwort.
+- **Zero-Knowledge**: Der Vault-Endpoint sieht niemals Klartext-Passwörter oder das Master-Passwort. Hosting ändert das Protokoll nicht. Ein Tresor darf technisch **nicht** von seinem Hoster abhängen ([`vault-protocol.md`](vault-protocol.md), [`vault-storage.md`](vault-storage.md)).
 - Das **Master-Passwort** ist die einzige Quelle für die Entschlüsselung (neben dem Recovery Key).
 - **Biometrie** und **Social-Login** sind reine Komfort-Funktionen und ersetzen das Master-Passwort nicht.
 - Gerätezugriff: Der Nutzer entscheidet pro Browser-Profil und Gerät, welche die Vault-Daten erhalten (kryptografisch über Device Envelopes).
@@ -96,11 +103,11 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 
 | Schicht          | Technologie                          |
 |------------------|--------------------------------------|
-| Backend          | FastAPI + PostgreSQL + Redis         |
+| Vault Protocol v1 | FastAPI `/api/v1`; local SQLite **or** Postgres — same wire ([`vault-protocol.md`](vault-protocol.md)) |
 | Frontend         | React + TypeScript                   |
 | Crypto           | Gemeinsame Library (Web + Extensions)|
 | Extensions       | Chromium (Manifest V3) + Firefox     |
-| Deployment       | Native (Postgres + Redis + uvicorn + Vite); Docker optional |
+| Deployment       | Local: SQLite loopback. Server: Postgres + Redis. Docker optional |
 | Biometrie        | WebAuthn                             |
 
 ---

@@ -28,27 +28,26 @@ Do **not** merge the products. Do **not** invent a proprietary super-protocol. T
 
 > 4AllPass knows no Tollgate policies. Tollgate knows no vault contents. Gnom-Hub knows no secrets.
 
+> Identity is shared (later: [`specs/maip-v0.1.md`](specs/maip-v0.1.md)). Authorization stays local.
+
 | Product | Question it answers | Must not start doing |
 |---|---|---|
-| **4AllPass** | Who are you, and which secrets may you get? | Agent orchestration; spend/budget; model allow-lists; “run this workflow” |
+| **MAIP** (later) | Who is this agent, cryptographically? | Tool rights, spend, secrets |
+| **4AllPass** | Which secrets may this **verified** identity use? | Agent orchestration; spend/budget; model allow-lists; “run this workflow” |
 | **Tollgate** | What may you do with that access, right now? | Store the personal vault; become a password manager; invent Vault Keys |
 | **Gnom-Hub** | Which agent is working on which task? | Hold production API keys; admit spend; unwrap VK |
+| **MCP / tools** | Which tools may this identity call? | Become the security boundary |
 
 ```text
                     ┌─────────────────────┐
-                    │       4AllPass       │
-                    │ Identity + Secrets   │
+                    │ MAIP (later)         │
+                    │ Who is the agent?    │
                     └──────────┬──────────┘
-                               │ Capability
-                               ▼
-                    ┌─────────────────────┐
-                    │      Tollgate       │
-                    │ Policy + Guardrails │
-                    └──────────┬──────────┘
-                               │ allowed action
-                ┌──────────────┼──────────────┐
-                ▼              ▼              ▼
-              n8n           Gnom-Hub       AI Agents
+                               │ verified identity
+        ┌──────────────┬───────┴────────┬──────────────┐
+        ▼              ▼                ▼              ▼
+    4AllPass        Tollgate         Gnom-Hub        MCP
+    secrets         execution        runtime         tools
 ```
 
 Words to keep using:

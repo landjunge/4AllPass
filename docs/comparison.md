@@ -6,7 +6,7 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 
 | Kriterium | 4AllPass | Bitwarden | 1Password | Proton Pass |
 |---|---|---|---|---|
-| Self-Hosting | ✅ Default: Desktop / `npm run app`, SQLite, kein Postgres. Postgres+Redis nur Server-Pfad | ✅ optional (Vaultwarden trivial) | ❌ | ❌ |
+| Self-Hosting / placement | ✅ Default: this device (Desktop / `npm run app`, SQLite). Own FastAPI server optional. Hosted Vault later, same protocol (`docs/vault-storage.md`). No mandatory cloud. | ✅ optional (Vaultwarden trivial); server is part of the concept | ❌ their infrastructure | ❌ |
 | Zero-Knowledge | ✅ Server sieht keine Klartext-Einträge und keine Vault Keys | ✅ | ✅ | ✅ |
 | Master-Passwort-Ableitung | ✅ Argon2id (Profile in `packages/crypto`) | ⚠️ PBKDF2/Argon2id konfigurierbar | ⚠️ PBKDF2 + Secret Key | ✅ Argon2 |
 | WebAuthn / Passkey-Unlock | ⚠️ PRF > largeBlob im **Protokoll**; in der Tauri-Webview **unbewiesen**. Unlock = Tresor-Passwort | ⚠️ vorhanden, oft Zusatzschritt | ⚠️ vorhanden | ✅ |
@@ -24,7 +24,7 @@ Wettbewerber-Spalten stützen sich auf öffentliche Produktangaben und Nutzerfee
 
 Quellen für die 4AllPass-Spalte:
 
-- Self-Hosting: Desktop / `python -m app.local` (SQLite). Postgres+Redis: README „Server“
+- Self-Hosting / placement: Desktop / `python -m app.local` (SQLite). Postgres+Redis: README „Server“. Model: `docs/vault-storage.md`
 - ZK / KDF / PRF: `packages/crypto`, `packages/webauthn`, `docs/crypto-protocol.md`, `docs/webauthn-prf.md`. PRF in WKWebView: unproven
 - Agent access: `packages/access`, sidecar `broker.py`, `docs/security-boundary.md` § loopback. Application identity is a string. 1Password EAM is a different product (cloud, verified machine identity, JIT) — not a feature-parity target.
 - Recovery: `frontend/src/components/RecoveryKitDialog.tsx`, `docs/recovery.md`

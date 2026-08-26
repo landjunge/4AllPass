@@ -169,7 +169,7 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 
 Haltung: [`product-philosophy.md`](product-philosophy.md) — Produkt zuerst, Kern frei, Sicherheit und Eigentum nicht verkaufen. Kein Monetarisierungsplan in dieser Datei.
 
-Kein Core-Rewrite. Kein zweites Tauri. **Keine iOS-/Android-App in dieser Reihenfolge** (0 % jetzt). Connection/Capability-UI nicht bauen, bis ausdrücklich gesagt. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein Cloud-Sync, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1.
+Kein Core-Rewrite. Kein zweites Tauri. **Keine iOS-/Android-App in dieser Reihenfolge** (0 % jetzt). Connection/Capability-UI nicht bauen, bis ausdrücklich gesagt. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein verpflichtender Cloud-Dienst, kein 4AllPass-Hosted-SKU, kein S3/WebDAV, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1. Modell: [`vault-storage.md`](vault-storage.md).
 
 Langfristige Vision (nicht implementieren): [`architecture/future-architecture.md`](architecture/future-architecture.md). Check: [`architecture/future-compatibility-check.md`](architecture/future-compatibility-check.md).
 
@@ -259,7 +259,7 @@ Recovery:
 
 **Audit-Freeze auf `main` ([#123](https://github.com/landjunge/4AllPass/pull/123)).** Tester-Notiz: [`freeze.md`](freeze.md). Code P0–P1/P1b (ohne Shadow DOM) liegt. [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112), Dritt-Audit [#38](https://github.com/landjunge/4AllPass/issues/38). Später: Shadow DOM / Passkey-Store / Launch. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
-Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
+Index: [`README.md`](README.md). Vision (not this sequence): [`architecture/future-architecture.md`](architecture/future-architecture.md).
 
 **Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 

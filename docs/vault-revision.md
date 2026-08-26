@@ -167,7 +167,11 @@ cache is not a second security boundary.
 3. Client produces snapshot `N+1` (new nonces, same AAD rules) **including a sealed manifest for `N+1`**.
 4. Server writes snapshot `N+1` **in full** (envelopes + entries + manifest). It is not active yet.
 5. Server CAS: `if active_revision == N then active_revision = N+1`.
-6. On CAS failure the client re-fetches and retries.
+6. On CAS failure the client **must not last-write-wins**. v1: surface the
+   conflict (`CommitConflict` / HTTP 409), load the winning snapshot, and let
+   the user continue. Do not auto-replay the loser’s in-memory entries onto
+   the winner (that drops the other device’s edits). Do not merge fields.
+   Entry-level merge is later. Placement rules: [`vault-storage.md`](vault-storage.md).
 
 If the process dies between steps 4 and 5, `active_revision` is still `N`.  
 The incomplete `N+1` object is never served. It may be garbage-collected.
@@ -187,7 +191,7 @@ one. These are requirements on the storage layer, not on the crypto core:
 | B4 | Reads are served **from one revision only**. There is no endpoint that assembles “current envelopes” with “current entries” from different revisions. |
 | B5 | Exactly one snapshot may exist per `(vault_id, revision)`. A second write to an existing revision is rejected, not merged — otherwise the server can equivocate. |
 | B6 | `revision` increases by exactly 1 per committed write and never decreases; `vault_key_version` never decreases. |
-| B7 | Concurrent writers are serialized by the CAS. A losing writer re-fetches, re-verifies and rebuilds; it must not retry with a stale manifest. |
+| B7 | Concurrent writers are serialized by the CAS. A losing writer re-fetches and re-verifies the **winning** snapshot. It must not retry with a stale manifest and must not silently overlay its unsaved plaintext onto that winner (v1: reload; no auto-merge). |
 | B8 | Partial uploads of `N+1` are garbage, never served, and may be collected. |
 | B9 | Revoked device envelopes are absent from later snapshots; they are not tombstoned in a way that lets them be served again. |
 

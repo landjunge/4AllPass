@@ -9,6 +9,15 @@
 
 > **4AllPass MUST NOT assume that a principal is human, that a credential is a password, that a device is trusted because it is connected, or that a vault must contain all credentials of its owner.**
 
+Standing rules (docs, not a license to implement):
+
+1. The server stores the vault. The client owns the vault. ([`../vault-storage.md`](../vault-storage.md), [`../vault-protocol.md`](../vault-protocol.md))
+2. Agents receive capabilities, not the vault. ([`agent-access.md`](agent-access.md))
+3. Identity is shared. Authorization stays local. ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md))
+4. Small core, strict guarantees, optional extensions.
+
+Map: [`../security-boundary.md`](../security-boundary.md). **Do not implement this file.** Code sequence remains [`../product-maturity.md`](../product-maturity.md) v3. Index: [`../README.md`](../README.md).
+
 The password manager is the **entry**. It is also what we ship in 2026. A half-built fabric is worse than an excellent vault.
 
 **Store less. Prove more.** Do not invent a proprietary identity standard if W3C VC / OpenID4VP / EUDI already fit. 4AllPass knows no Tollgate policies; Tollgate knows no vault contents.
@@ -121,31 +130,49 @@ Do **not** replace it with a 12-type union in the autofill slice. Autofill and i
 
 ## Agents (NOW vs LATER)
 
-NOW: string application, loopback broker, human Allow, TTL, no durable raw password.
+NOW: string application, loopback broker, human Allow, TTL, no durable raw password. Pairing token ≠ identity.
 
-LATER: same policy engine, plus a key. Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
+LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
 
 ---
 
-## Roadmap (realistic vs locked v3)
+## Roadmap (docs sequence — does not replace v3 autofill)
 
-### Phase 1 — 2026 — Excellent password manager — **NOW**
+Product **NOW** is still Install → Import → Autofill ([`../product-maturity.md`](../product-maturity.md)). The list below is the *architecture* order so hosting and agents do not fork the vault.
 
-Install, import (Chrome/Firefox, review without password), provider exact-match, autofill V1, TOTP, recovery kit, desktop sidecar.  
-**Open:** stranger Mac import; Apple notarization if paid.  
-**Not:** Connection UI, passkey store, Safari import, launch posts.
+### Phase 1 — Stabilize what runs
 
-### Phase 2 — 2026/27 — Multi-device vault — **NEXT**
+Security-freeze leftovers, Tauri trust boundary, lock lifecycle, `handoff: "raw_secret"` honesty, quieter UI, installer/CI. Stranger-Mac import. No Connection rebuild.
 
-Same envelopes, more devices. Selective **device** enrol (already). Optional vault *spaces* = extra VK. Sync remains sealed snapshot CAS unless item keys exist. Mobile-ready **format**, not App Store apps.
+### Phase 2 — Vault Protocol v1 named
 
-### Phase 3 — 2027 — Vault federation / agent keys — **LATER**
+[`../vault-protocol.md`](../vault-protocol.md) + running `/api/v1`. CAS, pin, envelopes. No S3/WebDAV.
 
-Only after public-key wrapping exists. Connections + capabilities. Team Mode if the review is accepted (not PAM).
+### Phase 3 — Self-hosted server as the same binary
 
-### Phase 4+ — Identity wallet, proofs, machines, PQC hybrid
+Desktop ↔ one 4AllPass server. HTTPS off-loopback. No provider directory.
 
-Standards (VC, OpenID4VP). Passkey **store** via platform APIs. Proofs. Robots as principal type. Hybrid KEM when wrapping exists. DNA never as secret.
+### Phase 4 — Multi-device against that server
+
+Enrol, revoke, CAS 409 reload, rollback pin, offline cache. Second device is a **device envelope**, not a Cloud Edition.
+
+### Phase 5 — MAIP / agent identity core v0.1
+
+Spec: [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md). First among Gnom-Hub, Tollgate, 4AllPass. Still unknown=DENY. FastAPI still mints no vault unwrap. **Not** a second identity product if W3C VC already fits a *human* wallet; MAIP is the *agent* local profile.
+
+### Phase 6 — Credential proxy / mediated access
+
+[`../secret-access-layer.md`](../secret-access-layer.md). Prefer proxy over raw PAT. Default off.
+
+### Phase 7 — Server migration
+
+Sealed snapshot A → B, same Vault Key. Proves no hosting lock-in.
+
+### Phase 8 — Managed hosting partners
+
+Same protocol. Endpoint URL only. No Cloud Edition.
+
+Phase 4+ identity wallet / PQC / Team Mode stay **research or review-only** as in the table above. DNA is never a wrapping secret.
 
 ---
 
@@ -177,7 +204,7 @@ Standards (VC, OpenID4VP). Passkey **store** via platform APIs. Proofs. Robots a
 
 ## Do not build yet
 
-iOS/Android apps, Connection/Capability UI, VaultConnection table, MCP security, n8n marketplace, Chrome write-back, passkey store, 500 providers, Team Mode code, Shamir, ML-KEM, document signing, robots, DNA, Coinbase, PAM, second Tauri, FastAPI token mint, Tollgate merge.
+iOS/Android apps, Connection/Capability UI, VaultConnection table, MCP security, n8n marketplace, Chrome write-back, passkey store, 500 providers, Team Mode code, Shamir, ML-KEM, document signing, robots, DNA, Coinbase, PAM, second Tauri, FastAPI token mint, Tollgate merge, S3, WebDAV, Nextcloud, Kubernetes operator, hosted billing, SPIFFE/OAuth agent adapters, DID, blockchain, trust scores, CRDT sync, auto-merge, `packages/vault-protocol`, MAIP library, provider directory.
 
 ---
 

@@ -12,7 +12,7 @@ Einstieg: Browser → Tresor → Autofill ([`browser-sync.md`](browser-sync.md))
 
 **Heute (Vault, ehrlich):**
 
-> Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Self-hosted, Zero-Knowledge, offenes Protokoll.
+> Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Local-first. Sync optional. Server deiner Wahl. Kein verpflichtender Cloud-Dienst. Desktop = Client. Self-host = Ablage. Zero-Knowledge, offenes Protokoll.
 
 Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
 
@@ -55,7 +55,7 @@ Antwort, die **im Produkt sichtbar** sein muss, nicht nur im Marketing:
 
 ## Was wir heute behaupten dürfen
 
-- Self-Hosting ist der Kern, nicht ein Add-on.
+- Local-first ist der Kern: kein verpflichtender Cloud-Dienst. Self-Hosting ist möglich, nicht Pflicht. Hosted später dasselbe Protokoll ([`vault-storage.md`](vault-storage.md)).
 - Der Server speichert nur undurchsichtige Envelopes. Account-Passwort entschlüsselt den Vault nicht.
 - Argon2id, AES-256-GCM, zufälliger Vault Key, Recovery Envelope, WebAuthn-PRF-Unlock sind im Client implementiert.
 - Specs und KATs liegen öffentlich im Repo.

@@ -1,0 +1,69 @@
+# 4AllPass docs
+
+**Status:** Index. Not a spec.
+
+A new reader should need **this page plus five links**, not twenty files.
+
+| Question | Read |
+|---|---|
+| What is 4AllPass **today**? | [../README.md](../README.md) |
+| What does the running software **enforce**? | [security-boundary.md](security-boundary.md) |
+| How is the vault stored and synced? | [vault-protocol.md](vault-protocol.md), [vault-storage.md](vault-storage.md) |
+| How do agents access secrets **today**? | [security-boundary.md](security-boundary.md) §7, [local-access-broker.md](local-access-broker.md) |
+| How should agents access secrets **later**? | [architecture/agent-access.md](architecture/agent-access.md) |
+| What is MAIP? | [specs/maip-v0.1.md](specs/maip-v0.1.md) — experimental draft, **not implemented** |
+| What do we build next? | [product-maturity.md](product-maturity.md) (v3) |
+| What is vision, not code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
+
+---
+
+## Authority (conflicts)
+
+```text
+security-boundary.md          what the running code enforces
+        ↓
+architecture.md               shape (client owns vault, server stores blobs)
+        ↓
+crypto-protocol.md
+vault-protocol.md
+vault-revision.md
+recovery.md
+ADRs
+        ↓
+product-maturity.md           product sequence (NOW)
+architecture/future-architecture.md   vision (NOT a build license)
+        ↓
+README / site                 must not out-claim the docs above
+```
+
+If two documents disagree: **the higher one wins.**  
+If a spec disagrees with `packages/crypto`: **the library and its tests win.**
+
+Public copy: **Local-first. Sync optional. Server deiner Wahl. Kein verpflichtender Cloud-Dienst.**  
+Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix those words.
+
+---
+
+## Implemented vs later
+
+| Topic | Today | Later (do not build on “weiter”) |
+|---|---|---|
+| Vault crypto | Client AES-GCM, envelopes | Unchanged |
+| Desktop | Tauri + local SQLite | Same client, optional remote URL |
+| Self-host FastAPI | Exists (compose) | URL field in the client |
+| Managed hosting | **Not offered** | Same protocol, different endpoint |
+| Autofill | Chromium + Firefox + Safari wrapper | Shadow DOM / multi-step later |
+| Agent access | String `n8n` + pairing token + human Allow | MAIP verify, then local policy |
+| Agent identity | **Not cryptographic** | [MAIP v0.1](specs/maip-v0.1.md) experimental |
+| Grant | `handoff: "raw_secret"`; TTL does not un-know a copy | Mediated proxy ([secret-access-layer.md](secret-access-layer.md)) |
+| Multi-device sync | Snapshot CAS, 409, pin | No CRDT; 409 → reload |
+| Mobile apps | 0 % | Same vault protocol |
+| Team Mode | Spec only | Not PAM |
+
+---
+
+## Keep (do not “consolidate away”)
+
+Crypto and security records stay: `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md`, `audit-scope.md`, `test-vectors*`, `architecture/adr/`.
+
+Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.

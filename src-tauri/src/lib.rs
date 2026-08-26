@@ -17,6 +17,7 @@ use tauri_plugin_notification::NotificationExt;
 mod browser_passwords;
 mod browsers;
 mod firefox_logins;
+mod secret_fs;
 mod sleep_stall;
 use sleep_stall::{should_emit_desktop_lock, slept_through};
 

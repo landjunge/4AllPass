@@ -60,7 +60,14 @@ function publish(
   entries: EncryptedEntry[],
   envelopes: KeyEnvelope[],
 ) {
-  const manifest = buildManifest({ vaultId: VAULT_ID, revision, vaultKeyVersion, entries, envelopes });
+  const manifest = buildManifest({
+    vaultId: VAULT_ID,
+    revision,
+    vaultKeyVersion,
+    entries,
+    envelopes,
+    ...testProfile,
+  });
   const sealed = sealManifest({ vaultKey, manifest });
   return { revision, vaultKeyVersion, entries, envelopes, manifest, sealed };
 }
@@ -118,6 +125,7 @@ describe("end-to-end vault lifecycle", () => {
           vaultId: VAULT_ID,
           revision: snapshot.revision,
           vaultKeyVersion: snapshot.vaultKeyVersion,
+          ...testProfile,
         },
       );
       const incoming = revisionFromManifest(verified);
@@ -264,7 +272,7 @@ describe("end-to-end vault lifecycle", () => {
         verifySnapshotManifest(
           snapshot3.sealed,
           { entries: snapshot3.entries, envelopes: [master, recovery, deviceEnvelope, phoneEnvelope] },
-          { vaultKey, vaultId: VAULT_ID, revision: 3, vaultKeyVersion: 1 },
+          { vaultKey, vaultId: VAULT_ID, revision: 3, vaultKeyVersion: 1, ...testProfile },
         ),
       IntegrityError,
     );
@@ -333,7 +341,7 @@ describe("end-to-end vault lifecycle", () => {
         verifySnapshotManifest(
           snapshot4.sealed,
           { entries: snapshot4.entries, envelopes: [...snapshot4.envelopes, phoneEnvelope] },
-          { vaultKey: vaultKey2, vaultId: VAULT_ID, revision: 4, vaultKeyVersion: 2 },
+          { vaultKey: vaultKey2, vaultId: VAULT_ID, revision: 4, vaultKeyVersion: 2, ...testProfile },
         ),
       IntegrityError,
     );

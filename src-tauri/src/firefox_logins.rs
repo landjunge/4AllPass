@@ -12,6 +12,8 @@ use sha1::Sha1;
 use sha2::{Digest, Sha256};
 
 use crate::browser_passwords::BrowserLogin;
+use crate::secret_fs::{secret_temp_dir, shred_tree};
+use zeroize::Zeroize;
 
 enum Der<'a> {
     Seq(Vec<Der<'a>>),
@@ -256,15 +258,7 @@ pub fn read_firefox_logins(profile_dir: &Path, source: &str) -> Result<Vec<Brows
     if !key4.is_file() || !logins.is_file() {
         return Err(format!("no key4.db/logins.json in {}", profile_dir.display()));
     }
-    let tmp = std::env::temp_dir().join(format!(
-        "4ap-ff-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos()
-    ));
-    fs::create_dir_all(&tmp).map_err(|err| err.to_string())?;
+    let tmp = secret_temp_dir("4ap-ff")?;
     fs::copy(&key4, tmp.join("key4.db")).map_err(|err| err.to_string())?;
     fs::copy(&logins, tmp.join("logins.json")).map_err(|err| err.to_string())?;
     for extra in ["key4.db-wal", "key4.db-shm", "key4.db-journal"] {
@@ -274,46 +268,50 @@ pub fn read_firefox_logins(profile_dir: &Path, source: &str) -> Result<Vec<Brows
         }
     }
     let result = (|| {
-        let master = firefox_master_key(&tmp.join("key4.db"), b"")?;
-        let text = fs::read_to_string(tmp.join("logins.json")).map_err(|err| err.to_string())?;
-        let json: serde_json::Value = serde_json::from_str(&text).map_err(|err| err.to_string())?;
-        let Some(list) = json.get("logins").and_then(|v| v.as_array()) else {
-            return Ok(Vec::new());
-        };
-        let mut out = Vec::new();
-        for item in list {
-            let host = item
-                .get("hostname")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let enc_user = item
-                .get("encryptedUsername")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let enc_pass = item
-                .get("encryptedPassword")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let username = decrypt_login_field(enc_user, &master).unwrap_or_default();
-            let password = match decrypt_login_field(enc_pass, &master) {
-                Ok(p) => p,
-                Err(_) => continue,
+        let mut master = firefox_master_key(&tmp.join("key4.db"), b"")?;
+        let built = (|| {
+            let text = fs::read_to_string(tmp.join("logins.json")).map_err(|err| err.to_string())?;
+            let json: serde_json::Value = serde_json::from_str(&text).map_err(|err| err.to_string())?;
+            let Some(list) = json.get("logins").and_then(|v| v.as_array()) else {
+                return Ok(Vec::new());
             };
-            if username.is_empty() && password.is_empty() {
-                continue;
+            let mut out = Vec::new();
+            for item in list {
+                let host = item
+                    .get("hostname")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let enc_user = item
+                    .get("encryptedUsername")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let enc_pass = item
+                    .get("encryptedPassword")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let username = decrypt_login_field(enc_user, &master).unwrap_or_default();
+                let password = match decrypt_login_field(enc_pass, &master) {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                if username.is_empty() && password.is_empty() {
+                    continue;
+                }
+                out.push(BrowserLogin {
+                    title: title_from_host(&host),
+                    url: host,
+                    username,
+                    password,
+                    source: source.to_string(),
+                });
             }
-            out.push(BrowserLogin {
-                title: title_from_host(&host),
-                url: host,
-                username,
-                password,
-                source: source.to_string(),
-            });
-        }
-        Ok(out)
+            Ok(out)
+        })();
+        master.zeroize();
+        built
     })();
-    let _ = fs::remove_dir_all(&tmp);
+    shred_tree(&tmp);
     result
 }
 

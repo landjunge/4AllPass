@@ -3,7 +3,7 @@
 **Audience:** an independent auditor (e.g. Cure53, Radically Open Security).  
 **Not in scope for this document:** performing the audit.  
 **Date:** 2026-08-26  
-**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`.
+**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `adversarial-review-external-01.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`.
 
 This is a map of what to review, what the running system actually enforces, and where honesty gaps remain. Specs in `docs/` win over comments. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -21,6 +21,7 @@ This is a map of what to review, what the running system actually enforces, and 
 | Specs | `docs/` | Protocol claims vs implementation. Over-claims are findings |
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 | Client artifacts | `frontend/dist`, `extension/dist` | Tree hash via `scripts/hash-dist.mjs`. Two-build check: `npm run verify:reproducible`. Same-toolchain only (`docs/reproducible-builds.md`) |
+| Native import (Tauri/Rust) | `src-tauri/src/browser_passwords.rs`, `firefox_logins.rs` | Chromium Safe Storage + Firefox key4.db. First adversarial pass: `adversarial-review-external-01.md`. |
 
 Out of scope until they exist in tree: native apps, org/team **implementation** (spec only: `docs/team-mode.md`), public-key wrapping to a foreign device. Item-share files are in tree (`docs/sharing.md`).
 
@@ -77,6 +78,12 @@ Known-answer tests: `npm test` (default, includes `test/property-envelope.test.t
 See `docs/adversarial-review-boundaries.md`. Fill origin is re-checked before
 `executeScript`. Pairing token is not agent identity. TTL expires 4AllPass
 handoffs, not the provider credential already copied. Rank 3 is policy only.
+
+### M5 — Native browser credential import
+
+See `adversarial-review-external-01.md`. Temp dirs must be owner-only (`0700`);
+files overwritten before unlink; Keychain/Firefox keys and decrypt buffers
+zeroized; `BrowserLogin` Debug redacts `password`.
 
 ### M4 — PWA claim surface
 

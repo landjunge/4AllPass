@@ -3,7 +3,7 @@
 **DE.** Code-Stand nach internem adversarial Review. Kein Launch, kein Store, kein Dritt-Audit.
 **EN.** Code snapshot after an internal adversarial review. Not a launch, not a store build, not a third-party audit.
 
-Commit family: `#123` + `#124` on `main`. Specs: [`security-boundary.md`](security-boundary.md), [`adversarial-review.md`](adversarial-review.md), [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md), [`adversarial-review-external-01.md`](adversarial-review-external-01.md), [`audit-scope.md`](audit-scope.md).
+Commit family: `#123` + `#124` + `#125` (Install pin `desktop`) on `main`. Specs: [`security-boundary.md`](security-boundary.md), [`adversarial-review.md`](adversarial-review.md), [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md), [`adversarial-review-external-01.md`](adversarial-review-external-01.md), [`audit-scope.md`](audit-scope.md). Product page: `https://4allpass.netzwerkpunkt.de/` (Let’s Encrypt). GitHub Pages: `https://landjunge.github.io/4AllPass/` (Actions).
 
 ---
 

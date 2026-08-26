@@ -368,7 +368,7 @@ export function DevicesPanel(): ReactNode {
             >
               <label>
                 {t({ de: "Tresor-Passwort", en: "Vault password" })}
-                <input>
+                <input
                   type="password"
                   autoComplete="current-password"
                   value={compromisePassword}

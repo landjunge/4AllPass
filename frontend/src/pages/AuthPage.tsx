@@ -32,7 +32,7 @@ export function AuthPage(): ReactNode {
         </p>
         <label>
           E-Mail / E-mail
-          <input>
+          <input
             type="email"
             autoComplete="username"
             value={email}

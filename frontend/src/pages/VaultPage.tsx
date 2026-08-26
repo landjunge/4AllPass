@@ -743,7 +743,7 @@ export function VaultPage(): ReactNode {
                   </div>
                   <label>
                     {t({ de: "Eigenes Template", en: "Custom template" })}
-                    <textarea>
+                    <textarea
                       rows={4}
                       value={customTemplate}
                       onChange={(event) => setCustomTemplate(event.target.value)}
@@ -776,7 +776,7 @@ export function VaultPage(): ReactNode {
                   </button>
                   <label>
                     {t({ de: "Anbieter", en: "Provider" })}
-                    <input>
+                    <input
                       value={draft.provider}
                       onChange={(event) => setDraft({ ...draft, provider: event.target.value })}
                       data-testid="entry-provider"
@@ -784,7 +784,7 @@ export function VaultPage(): ReactNode {
                   </label>
                   <label>
                     {t({ de: "Konto", en: "Account" })}
-                    <input>
+                    <input
                       value={draft.account}
                       onChange={(event) => setDraft({ ...draft, account: event.target.value })}
                       data-testid="entry-account"
@@ -793,7 +793,7 @@ export function VaultPage(): ReactNode {
                   {draft.kind === "api" ? (
                     <label>
                       {t({ de: "Rechte", en: "Capabilities" })}
-                      <input>
+                      <input
                         value={draft.capabilities}
                         onChange={(event) => setDraft({ ...draft, capabilities: event.target.value })}
                         data-testid="entry-capabilities"
@@ -803,7 +803,7 @@ export function VaultPage(): ReactNode {
                   ) : null}
                   <label>
                     {t({ de: "TOTP-Geheimnis (Base32 / otpauth)", en: "TOTP secret (Base32 / otpauth)" })}
-                    <input>
+                    <input
                       type="password"
                       value={draft.totpSecret}
                       onChange={(event) => {

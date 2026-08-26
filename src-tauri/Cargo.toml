@@ -13,6 +13,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+# Linux webview (wry → webkit2gtk 2.0 → gtk 0.18 → glib 0.18.5) cannot take
+# glib 0.20 (GHSA-wrw7-89jp-8q8g / RUSTSEC-2024-0429) until Tauri leaves GTK3.
+# We do not call VariantStrIter. macOS/Windows do not link this crate.
+# Track: docs/desktop.md
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-notification = "2"

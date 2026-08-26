@@ -92,6 +92,16 @@ Node agents should use `@4allpass/access` (`fourAllPass.request`). Loopback only
 n8n: Access tab → HTTP Request recipe (POST JSON). Not a marketplace node. n8n-in-Docker uses
 `host.docker.internal`; the broker stays on the host.
 
+## Linux `glib` advisory (GHSA-wrw7-89jp-8q8g)
+
+Dependabot flags `glib` 0.18.5 (RUSTSEC-2024-0429): unsound `VariantStrIter` in the GTK3 Rust bindings.
+
+**We cannot bump to 0.20** on Tauri 2. Linux webview is `wry 0.55 → webkit2gtk 2.0 → gtk 0.18 → glib 0.18`. glib 0.20 is the GTK4 line; that stack is a later Tauri / WebKitGTK 6 move, not this product.
+
+4AllPass does not call `VariantStrIter`. macOS and Windows do not link `glib`. Linux-only, transitive, no vault crypto.
+
+When Tauri 2 ships a GTK4 Linux webview, drop this note and take glib ≥ 0.20.
+
 ## What this is not
 
 - Not FastAPI token minting.

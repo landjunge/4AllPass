@@ -12,7 +12,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | How do agents access secrets **today**? | [security-boundary.md](security-boundary.md) §7, [local-access-broker.md](local-access-broker.md) |
 | How should agents access secrets **later**? | [architecture/agent-access.md](architecture/agent-access.md) |
 | What is MAIP? | [specs/maip-v0.1.md](specs/maip-v0.1.md) — experimental draft, **not implemented** |
-| What do we build next? | [product-maturity.md](product-maturity.md) (v3) — code done; remaining: stranger Mac, Apple, third-party audit |
+| What do we build next? | [product-maturity.md](product-maturity.md) (v3) — code sequence done; remaining humans: stranger Mac, Apple, audit. **Later in that file:** own VPS as cloud simulation, then mobile as same-vault device. |
 | What is vision, not code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
 
 ---

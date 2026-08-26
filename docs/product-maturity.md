@@ -103,6 +103,8 @@ Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent
 
 Was ein Fremder merkt: App auf, Tresor, Browser erkannt, Import bestätigt.
 
+**Konto schon da:** `POST /auth/register` → **409**. Nicht nochmal anlegen. Entweder **Anmelden** oder das Konto **erst löschen** (sonst Konflikt). Kein stilles Load-failed. Das ist First-Run-Ehrlichkeit, kein Cloud-Feature.
+
 - Desktop startet (ad-hoc: Rechtsklick / Terminal-Install [`install-terminal.md`](install-terminal.md)).
 - First Run: Tresor + Recovery-Kit, keine Lügen.
 - Import: Kopie der Browser-DB → Review **ohne Passwort** → Confirm → `saveEntries`. Nie still, nie Live-DB schreiben.
@@ -169,7 +171,11 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 
 Haltung: [`product-philosophy.md`](product-philosophy.md) — Produkt zuerst, Kern frei, Sicherheit und Eigentum nicht verkaufen. Kein Monetarisierungsplan in dieser Datei.
 
-Kein Core-Rewrite. Kein zweites Tauri. **Keine iOS-/Android-App in dieser Reihenfolge** (0 % jetzt). Connection/Capability-UI nicht bauen, bis ausdrücklich gesagt. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, kein verpflichtender Cloud-Dienst, kein 4AllPass-Hosted-SKU, kein S3/WebDAV, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1. Modell: [`vault-storage.md`](vault-storage.md).
+Kein Core-Rewrite. Kein zweites Tauri. Connection/Capability-UI nicht bauen, bis ausdrücklich gesagt. Keine 500 Provider. Kein Browser-Zurückschreiben. Kein Safari-Keychain / Windows / Linux-Import, bis Chrome+Firefox-Import von einem Fremden getestet ist. Kein MCP, kein n8n-Marketplace, **kein verpflichtender Cloud-Dienst**, **kein zweites Cloud-Protokoll**, kein S3/WebDAV-Picker, kein Enterprise, keine KI im Resolver. Kein Passkey-Store jetzt. Keine Launch-Posts vor P0+P1. Modell: [`vault-storage.md`](vault-storage.md).
+
+**Eigener VServer ist erlaubt** als Platzierung (Mode B, gleiches `/api/v1`). Das ist **Cloud-Simulation / Self-host**, kein „Cloud Password Manager“ und kein Hosted-SKU. Domain: `4allpass.netzwerkpunkt.de` — nicht 4allpass.net.
+
+**Mobile** ist im Plan **danach**: erstes Gerät-Telefon desselben Tresors ([`ADR-009`](architecture/adr/ADR-009-mobile-client.md)). 0 % App-Code, bis Desktop-First-Run + VServer-Sync stehen. Kein zweites Crypto, kein zweites Tauri.
 
 Langfristige Vision (nicht implementieren): [`architecture/future-architecture.md`](architecture/future-architecture.md). Check: [`architecture/future-compatibility-check.md`](architecture/future-compatibility-check.md).
 
@@ -259,11 +265,39 @@ Recovery:
 
 **Code dieser Reihenfolge ist auf `main`.** Install, Import-Review (CI), Autofill V1, Access Allow/Deny, TOTP, Freeze #2, UI eine Frage pro Screen.
 
-Was **kein Code** mehr ist:
+Was **kein Code** mehr ist (P0 menschlich):
 
 1. [#120](https://github.com/landjunge/4AllPass/issues/120) — Besucher mit **fremdem** Mac (übersprungen, nicht erledigt).
 2. [#112](https://github.com/landjunge/4AllPass/issues/112) — Apple ~99 USD/Jahr für Doppelklick / `v0.1.2`.
 3. [#38](https://github.com/landjunge/4AllPass/issues/38) — unabhängiges Dritt-Audit.
+
+---
+
+## Danach — eigener VServer und Mobile (Plan, nicht jetzt bauen)
+
+Eigener VServer ist da. Deshalb darf der Plan **Cloud-Simulation** und **Mobile** enthalten, ohne ein Cloud-Produkt zu werden.
+
+### Cloud-Simulation (VServer)
+
+Dasselbe wie heute Self-host: FastAPI lagert **nur Chiffretext**. Client verschlüsselt. CAS 409, Pin, Recovery unabhängig vom Server. Raus ohne Lock-in.
+
+| Ist | Ist nicht |
+|---|---|
+| Desktop + später Phone gegen **einen** Server unter eurer Kontrolle | Cloud Edition / zweites Protokoll |
+| `4allpass.netzwerkpunkt.de` (oder ein Pfad darauf) als Storage-URL | 4allpass.net |
+| Beweis: zweites Gerät öffnet denselben Tresor | S3-Picker, Managed-SKU, Website = Vault |
+
+Reihenfolge: **zuerst** Desktop A (lokal) zuverlässig, **dann** derselbe Client gegen den VServer (zweites Gerät / zweiter Mac). Kein Hosted-Billing, kein `ProviderEncryptionKey`.
+
+### Mobile (nach VServer-Sync)
+
+Phone = weiteres **Gerät** desselben Tresors. Gleiche Snapshots, gleiches Recovery-Kit, unknown = DENY. PWA auf dem Handy ist erlaubt, bis native Autofill sich lohnt. Native iOS/Android erst, wenn Desktop ↔ VServer ↔ zweites Gerät steht.
+
+Nicht: Fork von `packages/crypto`. Nicht: zweites Tauri. Nicht: Website bekommt den Vault.
+
+### Konto schon registriert (First-Run, kann Slice 2 sein)
+
+Wenn die E-Mail schon da ist: **nicht** nochmal `register`. UI: *Schon ein Konto — anmelden. Neu nur nach Löschen.* Server bleibt 409. Konto löschen ist **Account**-Löschen (Storage), nicht Vault-Reset: ohne Passwort/Kit bleibt der Tresor zu.
 
 Tester-Notiz: [`freeze.md`](freeze.md). Später im selben Plan, nicht jetzt: Shadow DOM, Passkey-Store, Launch-Posts, Connection/Capability, Team Mode, MAIP-Implementierung, Hosted-SKU.
 

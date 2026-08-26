@@ -2,7 +2,7 @@
 
 **Status:** Standing model. Local-only Desktop and self-host FastAPI are **implemented**. Managed hosting / URL picker / Hosted SKU are **not**.  
 **Date:** 2026-08-26  
-**Not this document:** a Cloud Edition, S3/WebDAV/Nextcloud, a provider directory, a mobile app, or a live Hosted SKU.
+**Not this document:** a Cloud Edition, S3/WebDAV/Nextcloud, a provider directory, or a live Hosted SKU. Own VPS as **self-host / cloud simulation** and mobile as a later **same-protocol device** are in [`product-maturity.md`](product-maturity.md) (plan, not a build license).
 
 Companion: [`vault-protocol.md`](vault-protocol.md) (the named wire), [`security-boundary.md`](security-boundary.md), [`architecture/adr/ADR-006-sync-protocol.md`](architecture/adr/ADR-006-sync-protocol.md), [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-009-mobile-client.md), [`product-philosophy.md`](product-philosophy.md).
 

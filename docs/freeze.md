@@ -3,7 +3,7 @@
 **DE.** Code-Stand nach internem adversarial Review. Kein Launch, kein Store, kein Dritt-Audit.
 **EN.** Code snapshot after an internal adversarial review. Not a launch, not a store build, not a third-party audit.
 
-Commit family: `#123` on `main` (`harden(audit-freeze)`). Specs: [`security-boundary.md`](security-boundary.md), [`adversarial-review.md`](adversarial-review.md), [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md), [`audit-scope.md`](audit-scope.md).
+Commit family: `#123` + `#124` on `main`. Specs: [`security-boundary.md`](security-boundary.md), [`adversarial-review.md`](adversarial-review.md), [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md), [`adversarial-review-external-01.md`](adversarial-review-external-01.md), [`audit-scope.md`](audit-scope.md).
 
 ---
 
@@ -16,6 +16,7 @@ Commit family: `#123` on `main` (`harden(audit-freeze)`). Specs: [`security-boun
 | Pairing token + human Allow for agents | Cryptographic agent identity |
 | Rank 3 UV-gated store | Face ID = hardware-bound vault |
 | Compromised recovery → VK++ | Old print un-known on a copy already given |
+| Native import temp `0700` + zeroize + redacted Debug | Persistent AEAD seal counter (F-25, policy) |
 
 README remains honest: **no independent third-party audit yet.**
 

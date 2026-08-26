@@ -25,7 +25,8 @@ Website bekommt **nie** den Vault. FastAPI mintet **keine** Tokens.
 #120  P0 Fremder-Mac-Test  — übersprungen (Besucher kommt die Tage, nicht erledigt)
 #121  P1 Autofill härten   — Code auf main (Honeypot/Dialog/Assist-e2e)
 #123  Audit-Freeze         — auf main (Fill-TOCTOU, Agent-Identität, Recovery-Rotation, Rank-3)
-  →   Rest: Apple (#112, Geld) und Später (Shadow DOM, Passkeys, Launch)
+#124  External-01          — auf main (F-24 Manifest-KDF, F-26 Import-Temp/Zeroize, F-27 Debug)
+  →   Rest: Apple (#112, Geld), Fremder Mac (#120, kommt die Tage), Später (Shadow DOM, Passkeys, Launch)
 ```
 
 **Freeze:** keine Feature-Flut. Crypto/Vault nicht anfassen. Connection/Capability nicht bauen. Nächster sinnvoller Schritt ist Mensch (fremder Mac) oder Geld (Apple), nicht mehr Code. Handoff: [`freeze.md`](freeze.md).
@@ -95,6 +96,7 @@ Einmal-Erkennung der Zwischenablage (kein Watcher) ist auf `main`.
 | P3 TOTP | RFC 6238 am Vault-Eintrag. Secret nur im verschlüsselten Entry. |
 | Härten | Digest-Pin braucht `sealedManifest`. Import-Pfade enthalten. CSP auf Sidecar-Origin. Tresor zu: Button oder Ruhemodus. Leichte Sprache an. |
 | Audit-Freeze `#123` | Fill-Origin vor `executeScript`. HTTP-Downgrade und `github.io` Suffix zu. PAIRING TOKEN ≠ Agent. Recovery: kompromittiert → VK++. Rank 3 = Policy. |
+| External-01 `#124` | Manifest-KDF production floor. Browser-Import: temp `0700`, shred, `zeroize`. `BrowserLogin` Debug redacted. F-25 Nonce-Budget bleibt Policy. |
 
 **Offen bleiben nur:** ein fremder Mac, und Apple wenn das Abo geht.
 

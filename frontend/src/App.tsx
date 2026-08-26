@@ -58,7 +58,7 @@ export function App(): ReactNode {
             ) : null}
             {localMode ? null : (
               <button type="button" className="link" onClick={() => void signOut()}>
-                Sign out
+                Abmelden / Sign out
               </button>
             )}
           </div>
@@ -69,7 +69,7 @@ export function App(): ReactNode {
         <div className="banner error" role="alert" data-testid="error-banner">
           <span>{error}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Dismiss
+            Schließen / Dismiss
           </button>
         </div>
       ) : null}
@@ -77,7 +77,7 @@ export function App(): ReactNode {
         <div className="banner notice" data-testid="notice-banner">
           <span>{notice}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Dismiss
+            Schließen / Dismiss
           </button>
         </div>
       ) : null}

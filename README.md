@@ -2,76 +2,36 @@
 
 <p align="center"><img src="frontend/public/logo.png" alt="4AllPass" width="420" /></p>
 
-**DE:** Lokaler Passwort-Tresor. Browser-Passwörter holen, Autofill, Zero-Knowledge. Agenten bekommen Zugang nur nach Allow/Deny — nicht als ersten Bildschirm.
-
-**EN:** Local-first password vault. Import from browsers, autofill, zero-knowledge. Agents get limited access only after Allow/Deny — not the first screen.
+**DE:** Lokaler Passwort-Tresor. Browser-Passwörter übernehmen, Autofill, Zero-Knowledge.  
+**EN:** Local-first password vault. Import from browsers, autofill, zero-knowledge.
 
 ```text
-Install → Import → Autofill → fertig
-Agent → Access-Tab (Allow/Deny + TTL) — Advanced
+Installieren → Importieren → Autofill → fertig
+Zugriff (Allow/Deny) ist Advanced — nicht der Einstieg
 ```
 
 ---
 
 ## Für normale Menschen / For normal people
 
-### DE — Einfach erklärt
+4AllPass ist ein digitaler Tresor, der **wirklich dir gehört**. / A digital vault that **truly belongs to you**.
 
-4AllPass ist ein digitaler Tresor, der **wirklich dir gehört**.
+Bei den meisten Passwort-Apps speichert eine Firma deine Daten in der Cloud. Bei 4AllPass kann die Firma (oder der Server) deine Passwörter **nicht lesen**.  
+With most password apps a company stores your data in the cloud. Here the company (or the server) **cannot read** your passwords.
 
-Bei den meisten Passwort-Apps speichert eine Firma deine Daten in der Cloud.  
-Bei 4AllPass kann die Firma (oder der Server) deine Passwörter **nicht lesen**.
+**Das Produkt ist die Desktop-App.** Installieren, Tresor anlegen, Passwörter aus dem Browser holen — danach erledigt 4AllPass den Login.  
+**The product is the desktop app.** Install, create a vault, import from the browser — then 4AllPass handles the login.
 
-Alles Wichtige liegt bei dir auf dem Gerät.  
-Der Server ist nur ein verschlüsselter Speicher.
+Agenten (n8n, KI-Tools) nur nach **Erlauben oder Ablehnen**, nie den ganzen Tresor. / Agents only after **Allow or Deny**, never the whole vault.
 
-**Das Produkt ist die Desktop-App.**  
-Du installierst sie, legst einen Tresor an, holst deine Passwörter aus dem Browser und ab dann erledigt 4AllPass den Login für dich.
-
-Agenten (z. B. n8n oder KI-Tools) dürfen nur dann etwas, wenn du es explizit erlaubst – und nur für begrenzte Zeit.  
-Sie bekommen **nie** den ganzen Tresor.
-
-**Was du davon hast**
-- Zuverlässiges Autofill (der Login wird einfach erledigt)
-- Passwörter bleiben bei dir
+**Was du davon hast / What you get**
+- Autofill ohne Copy-Paste
+- Schlüssel auf diesem Gerät
 - Kein verpflichtender Cloud-Dienst (Local-first. Sync optional. Server deiner Wahl.)
-- Notfall-Kit (ohne das geht nichts mehr – und das ist gut so)
-- Später: Zugang für KI-Agenten, aber nur unter deiner Kontrolle
+- Notfall-Kit — ohne das gibt es kein Zurück, und das ist Absicht
+- Agent-Zugang nur unter deiner Kontrolle, nicht als ersten Bildschirm
 
-**Was wir bewusst nicht machen**  
-Wir bauen gerade **nicht** Blockchain, eigene digitale Identität oder 20 Zukunftsfeatures.  
-Zuerst muss 4AllPass im Alltag einfach und vertrauenswürdig sein. Dann kann daraus später mehr werden.
-
-Die langfristige Produktvision stammt von **Daniel Filipek (landjunge)**.
-
-### EN — Simply explained
-
-4AllPass is a digital vault that **truly belongs to you**.
-
-With most password apps a company stores your data in the cloud.  
-With 4AllPass the company (or the server) **cannot read** your passwords.
-
-Everything important stays on your device.  
-The server is only an encrypted storage.
-
-**The product is the Desktop app.**  
-You install it, create a vault, import your passwords from the browser, and from then on 4AllPass handles the login for you.
-
-Agents (e.g. n8n or AI tools) only get something when you explicitly allow it – and only for a limited time.  
-They **never** get the whole vault.
-
-**What you get**
-- Reliable autofill (login just works)
-- Passwords stay with you
-- No mandatory cloud service (local-first. Sync optional. Server of your choice.)
-- Emergency Kit (without it there is no recovery – and that is intentional)
-- Later: access for AI agents, but only under your control
-
-**What we deliberately do not do**  
-We are **not** currently building blockchain, our own digital identity system, or 20 future features at once.  
-First 4AllPass must be simple and trustworthy in everyday use. Only then can more grow out of it.
-
-The long-term product vision comes from **Daniel Filipek (landjunge)**.
+Wir bauen **nicht** Blockchain, eigene digitale Identität oder 20 Zukunftsfeatures auf einmal. Zuerst Alltag. Vision: **Daniel Filipek (landjunge)**.
 
 ---
 
@@ -79,50 +39,15 @@ The long-term product vision comes from **Daniel Filipek (landjunge)**.
 
 **System Designer & Product Architect** — Daniel Filipek (landjunge)
 
-Ich arbeite anders: Ich entwickle Systeme und Produkte mit KI als technischem Partner.
+Ich entwickle Systeme mit KI als technischem Partner. Produktvision und Grenzen kommen von mir. Code, Specs und Tests müssen überprüfbar sein. Ich behaupte **nicht**, dass die Kryptographie sicher ist — Annahmen stehen in den Specs. **Noch kein unabhängiges Drittaudit.** Reviews sind willkommen.
 
-Meine Stärke liegt darin, Probleme zu erkennen, Systeme in eigenständige Werkzeuge zu zerlegen und klare Grenzen und Schnittstellen zu definieren. Produktvision, Prioritäten und Architekturentscheidungen kommen von mir. KI ist der technische Partner für Implementierung, Tests und Dokumentation.
-
-Ich bin kein klassischer Softwareentwickler und kein Security-Spezialist. Die technische Umsetzung entsteht gemeinsam mit KI und muss – besonders bei sicherheitskritischen Projekten – überprüfbar sein.
-
-Was ich einbringe: Idee, Systemdenken, Anforderungen, gewünschtes Verhalten, klare Grenzen.  
-Was überprüfbar sein muss: der Code, die Specs, die Tests. Reviews sind willkommen.
-
-Open Source und öffentlich entwickelt. Kritik, Tests und Beiträge sind willkommen.
-
-Gerade bei 4AllPass behaupte ich **nicht**, dass die Kryptographie sicher ist. Annahmen stehen in den Specs. Es gibt **noch kein unabhängiges Drittaudit**. Security-Reviews und Versuche, das System zu brechen, sind ausdrücklich willkommen.
-
-Kein verpflichtender Cloud-Dienst. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. **Produkt ist die Desktop-App** ([`docs/desktop.md`](docs/desktop.md)). Docs-Index (was läuft vs Zukunft): [`docs/README.md`](docs/README.md). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md).
-
----
-
-## Heute / Today (ehrlich)
-
-| | DE | EN |
-|---|---|---|
-| Produkt | Desktop (Tauri), SQLite, Loopback `:8788` | Desktop app, SQLite, loopback `:8788` |
-| Ablage | Local-first. Sync optional. Server deiner Wahl. Wire: [`docs/vault-protocol.md`](docs/vault-protocol.md). Placement: [`docs/vault-storage.md`](docs/vault-storage.md) | Local-first. Sync optional. Server of your choice. Same protocol everywhere; Hosted not offered |
-| Tresor | Geräte besitzen den Vault kryptografisch. Unlock = Tresor-Passwort | Devices own the vault cryptographically. Unlock = vault password |
-| Import | Browser-Karten, Chrome/Firefox, Review **ohne** Passwort in der Liste | Browser cards, Chrome/Firefox, review **without** passwords in the list |
-| Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste. Live `github.com/login` opt-in, kein Submit, kein CI | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste. Live `github.com/login` opt-in, no submit, not CI |
-| Extension-Unlock | Nur Tresor-Passwort gegen `http://127.0.0.1:8788` (`POST /auth/local`) | Vault password only against `http://127.0.0.1:8788` |
-| Agent | Loopback-Broker, Origin 403, Pairing-Token. Identität ist ein **String** (`n8n`) | Loopback broker, Origin 403, pairing token. Identity is a **string** |
-| Recovery | Emergency Kit, kein Server-Reset | Emergency kit, no server reset |
-| WebAuthn PRF | Im Protokoll; in der Tauri-Webview **unbewiesen** | In the protocol; **unproven** in the Tauri webview |
-| Team Mode | Spec, **kein Code** — Organisation = Grenze, kein PAM | Spec, **no code** — org is a boundary, not PAM |
-| Apple | Notarisierung **pausiert** (~99 USD/Jahr) | Notarization **paused** |
-| Audit | Kein unabhängiges Drittaudit | No third-party audit yet |
-
-Details: [`docs/comparison.md`](docs/comparison.md), [`docs/product-maturity.md`](docs/product-maturity.md), [`docs/security-boundary.md`](docs/security-boundary.md), Freeze: [`docs/freeze.md`](docs/freeze.md).
+Kein verpflichtender Cloud-Dienst. Der Server sieht keinen Klartext. FastAPI mintet **keine** Tokens. Docs: [`docs/README.md`](docs/README.md). Haltung: [`docs/product-philosophy.md`](docs/product-philosophy.md).
 
 ---
 
 ## Install
 
-**DE.** Ein Befehl. Kein Node, kein Python, kein Docker, kein Postgres.
-**EN.** One command. No Node, no Python, no Docker, no Postgres.
-
-Seite / site: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/) · Hub: [netzwerkpunkt.de](https://netzwerkpunkt.de/)
+Ein Befehl. Kein Node, kein Python, kein Docker. / One command. No Node, Python, or Docker.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
@@ -130,159 +55,47 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 
 Windows: `irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex`
 
-Ohne Pipe: Script speichern, lesen, `sh install.sh`. Der Installer nimmt den GitHub-Tag **`desktop`**, prüft SHA-256, startet die App. Vault-Ordner wird **nicht** gelöscht. Unlock = Tresor-Passwort. Noch nicht notariert: manuelles DMG → Rechtsklick → Öffnen. SHA-256 schützt vor kaputtem Download, **nicht** vor einem kompromittierten GitHub-Release (Hash und Binary aus derselben Quelle). Alpha.
+Seite: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/) · [Releases · desktop](https://github.com/landjunge/4AllPass/releases/tag/desktop)
 
-Download ohne Terminal: [Releases · desktop](https://github.com/landjunge/4AllPass/releases/tag/desktop).
-
-Danach / Then:
+Ohne Pipe: Script speichern, lesen, `sh install.sh`. Tag **`desktop`**, SHA-256. Vault-Ordner wird **nicht** gelöscht. Noch nicht notariert: Rechtsklick → Öffnen. SHA-256 schützt vor kaputtem Download, **nicht** vor einem kompromittierten GitHub-Account. Alpha.
 
 1. Tresor anlegen, Recovery-Kit bestätigen.
-2. Browser-Karten: Import-Review **ohne** Passwort in der Liste → Confirm.
-3. Extension: Demo-Login füllen.
+2. Browser: Import-Review **ohne** Passwort in der Liste → Bestätigen.
+3. Autofill auf der Seite.
 
-Agent-Zugang: Access-Tab, nicht der Einstieg. Entwickeln: **Development** unten. Server/Postgres/Redis/Docker gehören **nicht** zur Installation.
+---
+
+## Heute / Today (ehrlich)
+
+| | |
+|---|---|
+| Produkt | Desktop-App. Unlock = Tresor-Passwort |
+| Ablage | Local-first. Sync optional. Server deiner Wahl. Hosted **nicht** angeboten |
+| Import | Chrome/Firefox. Review ohne Passwort in der Liste |
+| Autofill | Chromium, Firefox, Safari-Wrapper. Live `github.com/login` opt-in, kein Submit |
+| Zugriff | Allow/Deny auf diesem Rechner. `n8n` ist ein **Name**, kein Ausweis. TTL holt eine Kopie nicht zurück |
+| Recovery | Emergency Kit. Kein Server-Reset |
+| WebAuthn PRF | Im Protokoll; in der Desktop-Webview **unbewiesen** |
+| Apple | Notarisierung pausiert (~99 USD/Jahr) |
+| Audit | Kein unabhängiges Drittaudit |
+
+Was die Software **wirklich** erzwingt: [`docs/security-boundary.md`](docs/security-boundary.md).
 
 ---
 
 ## Development
 
-Node, Python, Git, Postgres, Redis und Docker sind **nur** für den Source-Build. Die Desktop-App braucht das nicht.
+Nur für den Source-Build. Die Desktop-App braucht das nicht.
 
 ```sh
 git clone https://github.com/landjunge/4AllPass.git
-cd 4AllPass
-npm install
+cd 4AllPass && npm install
 cd backend && python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-cd ..
+pip install -r requirements-dev.txt && cd ..
 npm run build:extension
-npm run tauri:dev          # Fenster
-# npm run tauri:build      # DMG / AppImage / NSIS
-# npm run app              # Sidecar ohne Tauri: http://127.0.0.1:8788
+npm run tauri:dev
 ```
 
-Mehrere Nutzer auf einer API (optional): PostgreSQL + Redis, siehe [`backend/README.md`](backend/README.md). Docker: `docker compose up --build` — nicht parallel zum Native-Pfad. Notarisierung: [`docs/distribution.md`](docs/distribution.md), [#112](https://github.com/landjunge/4AllPass/issues/112).
+Tests: `npm test` · `npm run typecheck` · `cd backend && pytest`. Mitmachen: [`CONTRIBUTING.md`](CONTRIBUTING.md). Sicherheit: [`SECURITY.md`](SECURITY.md).
 
-## Aufbau
-
-| Pfad | Was es ist |
-|---|---|
-| [`packages/crypto`](packages/crypto) | `@4allpass/crypto` — Crypto Protocol v1. Kein UI, kein Netz, kein Authenticator-I/O |
-| [`packages/webauthn`](packages/webauthn) | `@4allpass/webauthn` — Geräteentsperrung: PRF > largeBlob > UV-gespeicherter Store |
-| [`packages/core`](packages/core) | `@4allpass/core` — Access-Policy, Grant-Metadaten, Audit. Kein Secret. `allow` = menschlicher Allow, nicht Auto-Handoff |
-| [`packages/providers`](packages/providers) | `@4allpass/providers` — Domain → Provider + Confidence. Lokal, kein Netz. `evilgithub.com` ≠ GitHub |
-| [`packages/access`](packages/access) | `@4allpass/access` — Loopback-Client für Agenten. Nicht FastAPI |
-| [`packages/broker`](packages/broker) | `@4allpass/broker` — Dev-Relay `:8787`. Produkt-Broker ist der Sidecar (`broker.py` auf `:8788`) |
-| [`backend`](backend) | FastAPI. Lokal: SQLite + Memory-Sessions. Server: PostgreSQL + Redis. Nur undurchsichtige Envelopes |
-| [`frontend`](frontend) | React + TypeScript. Die gesamte Kryptographie läuft hier |
-| [`src-tauri`](src-tauri) | Desktop-Fenster (Tauri). UI vom lokalen Origin `:8788` |
-| [`extension`](extension) | Chromium-Familie + Firefox + macOS-Safari. Ein Source, drei Packs. Entschlüsselt auf dem Gerät |
-| [`docs`](docs) | Die verbindlichen Spezifikationen |
-
-Mitmachen: [`CONTRIBUTING.md`](CONTRIBUTING.md). Sicherheitsmeldungen: [`SECURITY.md`](SECURITY.md). Board: [4AllPass-Projekt](https://github.com/users/landjunge/projects/2).
-
-## Warum dem trauen?
-
-Der Server ist ein Blob-Store. Er sieht weder Master-Passwort noch Vault Key noch Klartext-Einträge. Das steht in Specs und Tests, nicht auf einer Marketingseite:
-
-- Was Backend + App **wirklich** erzwingen: [`docs/security-boundary.md`](docs/security-boundary.md)
-- Bedrohungsmodell: [`docs/threat-model.md`](docs/threat-model.md)
-- Adversarial Review: [`docs/adversarial-review.md`](docs/adversarial-review.md)
-- AES-256-GCM-KATs: [`docs/test-vectors.md`](docs/test-vectors.md)
-- Argon2id-KATs: [`docs/test-vectors-argon2id.md`](docs/test-vectors-argon2id.md)
-- Recovery (kein Server-Reset): [`docs/recovery.md`](docs/recovery.md)
-- Audit-Karte: [`docs/audit-scope.md`](docs/audit-scope.md)
-- Reproduzierbarer Tree-Hash: [`docs/reproducible-builds.md`](docs/reproducible-builds.md)
-
-Es gibt **noch kein** unabhängiges Drittaudit. Vergleich (ehrlich ✅ / ⚠️ / ⏳): [`docs/comparison.md`](docs/comparison.md).
-
-## Dokumentation
-
-Start here: [`docs/README.md`](docs/README.md) (authority order, implemented vs later).
-
-- What runs: [`docs/security-boundary.md`](docs/security-boundary.md)
-- Vault wire / placement: [`docs/vault-protocol.md`](docs/vault-protocol.md), [`docs/vault-storage.md`](docs/vault-storage.md)
-- Product sequence: [`docs/product-maturity.md`](docs/product-maturity.md)
-- Vision (not a build license): [`docs/architecture/future-architecture.md`](docs/architecture/future-architecture.md)
-- Agent later: [`docs/architecture/agent-access.md`](docs/architecture/agent-access.md), MAIP draft [`docs/specs/maip-v0.1.md`](docs/specs/maip-v0.1.md)
-- Team Mode (**review, not built**): [`docs/team-mode.md`](docs/team-mode.md)
-
-Zugang / Broker:
-
-- Loopback-Broker: [`docs/local-access-broker.md`](docs/local-access-broker.md)
-- Zwei-Minuten-Demo: [`docs/two-minute-demo.md`](docs/two-minute-demo.md)
-
-Crypto (verbindlich):
-
-- Crypto Protocol v1: [`docs/crypto-protocol.md`](docs/crypto-protocol.md)
-- WebAuthn-PRF: [`docs/webauthn-prf.md`](docs/webauthn-prf.md)
-- Vault-Revision: [`docs/vault-revision.md`](docs/vault-revision.md)
-- Recovery: [`docs/recovery.md`](docs/recovery.md)
-- Threat Model: [`docs/threat-model.md`](docs/threat-model.md)
-- Security Boundary: [`docs/security-boundary.md`](docs/security-boundary.md)
-- Item-Share: [`docs/sharing.md`](docs/sharing.md)
-- Post-Quantum (Konzept): [`docs/post-quantum-roadmap.md`](docs/post-quantum-roadmap.md)
-
-Launch-Entwürfe nicht auto-publishen: [`docs/launch-posts.md`](docs/launch-posts.md).
-
-## Schlüsselpfad
-
-```
-Master-Passwort ──Argon2id──► Master Key ──unwraps──► Master Envelope ──► Vault Key
-Recovery Key ─────────────────────────────unwraps──► Recovery Envelope ─► Vault Key
-WebAuthn-Assertion + PRF ──HKDF──► DWK ──unwraps──► Device-Key Envelope ─► Device Key
-                                                     Device Envelope ─────► Vault Key
-```
-
-Der Vault Key ist immer zufällig, nie aus einem Passwort abgeleitet. Roher PRF-Output ist nie ein Schlüssel.
-
-## Projektstruktur
-
-```
-4allpass/
-├── docs/                 verbindliche Specs
-├── packages/crypto/      Zero-Knowledge-Crypto-Kern
-├── packages/webauthn/    WebAuthn PRF / largeBlob / UV-Unlock
-├── packages/core/        Access-Policy + Grant-Metadaten (kein Secret)
-├── packages/providers/   Domain → Provider (kein Netz)
-├── packages/access/      Agent-Loopback-Client
-├── packages/broker/      Dev-Node-Relay :8787 (Produkt: Sidecar)
-├── backend/              FastAPI; lokal SQLite
-├── frontend/             React + TypeScript + PWA (Vite)
-├── extension/            Autofill (Chromium / Firefox / Safari-Wrapper)
-├── src-tauri/            Desktop (Tauri)
-├── docker-compose.yml    optional; Native braucht das nicht
-└── scripts/              unabhängige Testvektor-Prüfung
-```
-
-## Tests
-
-```sh
-npm install
-npm test                    # KATs + Adversarial-Suite + core/broker/extension
-npm run test:crypto:heavy   # inkl. 32–128 MiB Argon2id-Profile
-npm run test:webauthn
-npm run typecheck
-npm run build:extension     # siehe docs/autofill-extension.md
-node scripts/verify-aes-gcm-vectors.mjs
-python3 scripts/verify-argon2id-vectors.py
-cd backend && pytest
-```
-
-## Backend
-
-Konto- und Vault-HTTP-API (`/api/v1`). Das Konto-Passwort ist **nicht** das Master-Passwort und kann einen Tresor nicht entschlüsseln. Lokal: `POST /api/v1/auth/local` (kein E-Mail-Konto).
-
-```
-POST /api/v1/auth/register | login | logout | local
-GET  /api/v1/auth/me
-GET/POST /api/v1/vaults
-GET      /api/v1/vaults/{id}/snapshot
-POST     /api/v1/vaults/{id}/snapshots    # CAS: expectedRevision
-         /api/v1/vaults/{id}/devices…
-POST     /api/v1/vaults/{id}/webauthn/challenges
-```
-
-Fremde Vaults liefern **404**. Kein `/v1/access` auf FastAPI — der Broker ist Loopback.
-
-Siehe [`backend/README.md`](backend/README.md).
+Der Vault Key ist zufällig, nie aus dem Passwort abgeleitet. Specs: [`docs/README.md`](docs/README.md).

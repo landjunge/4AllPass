@@ -14,18 +14,12 @@ export function WelcomePage({
     void probeWebviewWebauthn().then((caps) => {
       const state = prfCapabilityState(caps);
       if (state === "available") {
-        setPrfLine("Passkey/PRF seems available in this window. Vault password still works.");
-        return;
-      }
-      if (state === "unavailable") {
         setPrfLine(
-          "Passkey/PRF ist in diesem Fenster nicht nutzbar. Unlock mit Tresor-Passwort. / Passkey/PRF is not available in this window. Unlock with the vault password.",
+          "Dieses Fenster kann Geräte-Entsperren. Das Tresor-Passwort gilt weiter. / This window can unlock with this device. The vault password still works.",
         );
         return;
       }
-      setPrfLine(
-        "Passkey/PRF in this window is unconfirmed. Unlock with the vault password until a ceremony succeeds.",
-      );
+      setPrfLine(null);
     });
   }, []);
 
@@ -38,7 +32,9 @@ export function WelcomePage({
         <p className="hint">
           Als Nächstes nur das Tresor-Passwort — oder eine Share-Datei, wenn du schon einen Tresor
           hast. Kein Konto, keine E-Mail. Wenn du das Passwort vergisst, hilft nur der
-          Recovery-Schlüssel — niemand kann ihn zurücksetzen.
+          Recovery-Schlüssel — niemand kann ihn zurücksetzen. / Next: vault password, or a share
+          file if you already have a vault. No account. If you forget the password, only the
+          recovery key helps — nobody can reset it.
         </p>
         {prfLine ? (
           <p className="hint" data-testid="webview-prf">

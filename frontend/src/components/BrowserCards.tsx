@@ -14,6 +14,31 @@ import { loadBrowserActive, saveBrowserActive } from "../lib/browser-active.ts";
 import { useCopy } from "../state/copy-mode.tsx";
 import { BrowserIcon } from "./BrowserIcon.tsx";
 
+function isImportable(key: string): boolean {
+  return !key.startsWith("safari:");
+}
+
+function cardStatus(
+  t: (plain: { de: string; en: string }) => string,
+  on: boolean,
+  picked: number,
+): string {
+  if (on && picked > 0) {
+    return t({
+      de: `Autofill an · ${picked} Profil${picked === 1 ? "" : "e"}`,
+      en: `Autofill on · ${picked} profile${picked === 1 ? "" : "s"}`,
+    });
+  }
+  if (on) return t({ de: "Autofill an", en: "Autofill on" });
+  if (picked > 0) {
+    return t({
+      de: `${picked} Profil${picked === 1 ? "" : "e"}`,
+      en: `${picked} profile${picked === 1 ? "" : "s"}`,
+    });
+  }
+  return t({ de: "Tippen zum Verbinden", en: "Tap to connect" });
+}
+
 export function BrowserCards({
   vaultId,
   onLogins,
@@ -46,7 +71,11 @@ export function BrowserCards({
       );
       if (saved) {
         setWantExt(new Set(saved.extensions.filter((id) => knownExt.has(id))));
-        setSelected(new Set(saved.profiles.filter((key) => knownProfiles.has(key))));
+        setSelected(
+          new Set(
+            saved.profiles.filter((key) => knownProfiles.has(key) && isImportable(key)),
+          ),
+        );
       } else {
         setWantExt(new Set());
         setSelected(new Set());
@@ -60,7 +89,10 @@ export function BrowserCards({
       });
   }, [vaultId]);
 
-  const selectedCount = useMemo(() => selected.size, [selected]);
+  const importableCount = useMemo(
+    () => [...selected].filter(isImportable).length,
+    [selected],
+  );
   const activeCount = wantExt.size;
   const openCard = cards !== "loading" && cards !== null ? cards.find((card) => card.id === openId) : undefined;
 
@@ -76,7 +108,9 @@ export function BrowserCards({
   if (cards === "loading") {
     return (
       <section className="card browser-cards" data-testid="browser-cards">
-        <p className="muted">Browser werden gesucht… / Looking for browsers…</p>
+        <p className="muted">
+          {t({ de: "Browser werden gesucht…", en: "Looking for browsers…" })}
+        </p>
       </section>
     );
   }
@@ -84,11 +118,14 @@ export function BrowserCards({
   if (cards === null) {
     return (
       <section className="card browser-cards" data-testid="browser-cards">
-        <h3>Browser auf diesem Gerät</h3>
+        <h3>{t({ de: "Welche Browser sollen mit 4AllPass arbeiten?", en: "Which browsers should work with 4AllPass?" })}</h3>
         <p className="muted">
           {error
             ? error
-            : "Karten gibt es in der Desktop-App, nicht im Browser-Tab. / Cards are in the desktop app, not a browser tab."}
+            : t({
+                de: "Browser verbinden geht in der Desktop-App auf diesem Mac, nicht in einem normalen Tab.",
+                en: "Connecting browsers works in the desktop app on this Mac, not in a regular tab.",
+              })}
         </p>
       </section>
     );
@@ -97,13 +134,14 @@ export function BrowserCards({
   if (cards.length === 0) {
     return (
       <section className="card browser-cards" data-testid="browser-cards">
-        <h3>Browser auf diesem Gerät</h3>
-        <p className="muted">Keine Browser gefunden. / No browsers found.</p>
+        <h3>{t({ de: "Welche Browser sollen mit 4AllPass arbeiten?", en: "Which browsers should work with 4AllPass?" })}</h3>
+        <p className="muted">{t({ de: "Kein Browser gefunden.", en: "No browsers found." })}</p>
       </section>
     );
   }
 
   function toggleProfile(key: string): void {
+    if (!isImportable(key)) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -131,9 +169,7 @@ export function BrowserCards({
         if (split < 0) continue;
         const browserId = key.slice(0, split);
         const profileId = key.slice(split + 1);
-        if (browserId === "safari") {
-          continue;
-        }
+        if (!isImportable(key)) continue;
         const part = await importBrowserLogins(browserId, profileId);
         rows.push(...part);
       }
@@ -168,12 +204,17 @@ export function BrowserCards({
 
   return (
     <section className="card browser-cards" data-testid="browser-cards">
-      <h3>{t({ de: "Browser auf diesem Gerät", en: "Browsers on this device" })}</h3>
+      <h3>
+        {t({
+          de: "Welche Browser sollen mit 4AllPass arbeiten?",
+          en: "Which browsers should work with 4AllPass?",
+        })}
+      </h3>
       <p className="hint compact" data-testid="browser-sync-explainer">
         {t(
           {
-            de: "Grün = an (gemerkt). Neue Passwörter nur im Tresor. Die Erweiterung holt sie, wenn sie offen ist. Nicht in Chrome schreiben.",
-            en: "Green = on (remembered). New passwords stay in the vault. An unlocked add-on picks them up. We do not write into Chrome.",
+            de: "Chrome, Firefox, Safari. Autofill einschalten, Profile anhaken, Passwörter in den Tresor übernehmen. 4AllPass schreibt nicht zurück in den Browser.",
+            en: "Chrome, Firefox, Safari. Turn on autofill, tick profiles, bring passwords into the vault. 4AllPass does not write back into the browser.",
           },
           {
             de: "Kein bidirektionales Sync. Import rein, Autofill raus. Entsperrte Extension pollt die Snapshot-Revision.",
@@ -203,9 +244,7 @@ export function BrowserCards({
                 <BrowserIcon id={card.id} name={card.name} />
                 <span className="browser-card-label">
                   <strong>{card.name}</strong>
-                  <span className="muted">
-                    {picked}/{card.profiles.length}
-                  </span>
+                  <span className="muted browser-card-status">{cardStatus(t, on, picked)}</span>
                 </span>
                 {on ? <span className="browser-dot" aria-hidden /> : null}
               </button>
@@ -223,11 +262,14 @@ export function BrowserCards({
                 checked={wantExt.has(openCard.id)}
                 onChange={() => toggleExt(openCard.id)}
               />
-              {t({ de: "Extension", en: "Add-on" })}
+              {t({
+                de: `Autofill in ${openCard.name}`,
+                en: `Autofill in ${openCard.name}`,
+              })}
             </label>
             {wantExt.has(openCard.id) ? (
               <button type="button" onClick={() => void installExt(openCard.id)}>
-                {t({ de: "Laden", en: "Load" })}
+                {t({ de: "Erweiterung installieren", en: "Install add-on" })}
               </button>
             ) : null}
             <button
@@ -235,15 +277,33 @@ export function BrowserCards({
               data-testid={`open-autofill-demo-${openCard.id}`}
               onClick={() => void openDemo(openCard.id)}
             >
-              Demo
+              {t({ de: "Ausfüllen testen", en: "Test fill" })}
             </button>
           </div>
+          {openCard.id === "safari" ? (
+            <p className="hint compact">
+              {t({
+                de: "Safari-Passwörter importieren kommt später. Autofill kannst du schon einschalten.",
+                en: "Safari password import comes later. You can already turn on autofill.",
+              })}
+            </p>
+          ) : (
+            <p className="hint compact">
+              {t({
+                de: "Passwörter aus diesen Profilen übernehmen",
+                en: "Bring in passwords from these profiles",
+              })}
+            </p>
+          )}
           <ul className="browser-profiles">
             {openCard.profiles.length === 0 ? (
-              <li className="muted">Kein Profil gefunden. / No profile found.</li>
+              <li className="muted">
+                {t({ de: "Kein Profil gefunden.", en: "No profile found." })}
+              </li>
             ) : (
               openCard.profiles.map((profile) => {
                 const key = profileKey(openCard.id, profile.id);
+                const importable = isImportable(key);
                 return (
                   <li key={key}>
                     <label>
@@ -251,6 +311,7 @@ export function BrowserCards({
                         type="checkbox"
                         data-testid={`browser-profile-${key}`}
                         checked={selected.has(key)}
+                        disabled={!importable}
                         onChange={() => toggleProfile(key)}
                       />
                       {profile.name}
@@ -264,8 +325,8 @@ export function BrowserCards({
       ) : (
         <p className="muted compact-hint">
           {t({
-            de: "Karte antippen, Profile anhaken, unten holen.",
-            en: "Tap a card, tick profiles, fetch below.",
+            de: "Browser antippen, Autofill einschalten, Profile anhaken.",
+            en: "Tap a browser, turn on autofill, tick profiles.",
           })}
         </p>
       )}
@@ -273,20 +334,36 @@ export function BrowserCards({
         <button
           type="button"
           className="primary"
-          disabled={busy || selectedCount === 0}
+          disabled={busy || importableCount === 0}
           data-testid="fetch-browser-passwords"
           onClick={() => void fetchPasswords()}
         >
           {busy
-            ? "Keychain / lese Profile…"
-            : `Passwörter holen (${selectedCount}) / Fetch passwords`}
+            ? t({
+                de: "macOS fragt nach dem Anmeldepasswort…",
+                en: "macOS may ask for the login password…",
+              })
+            : t({
+                de: `Passwörter importieren (${importableCount})`,
+                en: `Import passwords (${importableCount})`,
+              })}
         </button>
       </div>
       <p className="muted">
         {t(
           {
-            de: `${activeCount} an, ${selectedCount} Profile zum Holen.`,
-            en: `${activeCount} on, ${selectedCount} profiles to fetch.`,
+            de:
+              importableCount > 0
+                ? `${importableCount} Profil${importableCount === 1 ? "" : "e"} ausgewählt. Import legt sie in den Tresor.`
+                : activeCount > 0
+                  ? `${activeCount} Browser mit Autofill. Profile anhaken, dann importieren.`
+                  : "Noch kein Browser ausgewählt.",
+            en:
+              importableCount > 0
+                ? `${importableCount} profile${importableCount === 1 ? "" : "s"} selected. Import puts them in the vault.`
+                : activeCount > 0
+                  ? `${activeCount} browser${activeCount === 1 ? "" : "s"} with autofill. Tick profiles, then import.`
+                  : "No browser chosen yet.",
           },
         )}
       </p>
@@ -294,31 +371,52 @@ export function BrowserCards({
       {hint ? (
         <div className="browser-install-hint" data-testid="extension-install-hint">
           <p>
-            <strong>{hint.appName}</strong> — {hint.page}
+            <strong>{hint.appName}</strong>
+            {" — "}
+            {t({
+              de: "einmal in diesem Browser erlauben.",
+              en: "allow it once in this browser.",
+            })}
           </p>
           {hint.flavor === "firefox" ? (
             <p>
-              about:debugging → Load Temporary Add-on → diese Datei / this file:
+              {t({
+                de: "about:debugging → Temporäres Add-on laden → diese Datei:",
+                en: "about:debugging → Load Temporary Add-on → this file:",
+              })}
               <code>{hint.bundlePath}/manifest.json</code>
             </p>
           ) : hint.flavor === "safari" ? (
             <p>
-              Xcode-Projekt öffnen, Run, dann Safari → Einstellungen → Erweiterungen. /
-              Open the Xcode project, Run, then Safari → Settings → Extensions.
+              {t({
+                de: "Xcode-Projekt öffnen, Run, dann Safari → Einstellungen → Erweiterungen.",
+                en: "Open the Xcode project, Run, then Safari → Settings → Extensions.",
+              })}
               <code>{hint.bundlePath}</code>
             </p>
           ) : (
             <p>
-              Developer mode → Load unpacked → diesen Ordner / this folder:
+              {t({
+                de: "Entwicklermodus → Entpackte Erweiterung laden → diesen Ordner:",
+                en: "Developer mode → Load unpacked → this folder:",
+              })}
               <code>{hint.bundlePath}</code>
             </p>
           )}
           <p>
-            Popup: nur Tresor-Passwort, API <code>http://127.0.0.1:8788</code>. / Popup: vault
-            password only.
+            {t(
+              {
+                de: "Die Erweiterung spricht nur mit 4AllPass auf diesem Mac.",
+                en: "The add-on talks only to 4AllPass on this Mac.",
+              },
+              {
+                de: "Popup: nur Tresor-Passwort, API http://127.0.0.1:8788.",
+                en: "Popup: vault password only, API http://127.0.0.1:8788.",
+              },
+            )}
           </p>
           <button type="button" data-testid="open-autofill-demo" onClick={() => void openDemo(hint.browserId)}>
-            Demo-Login öffnen / Open demo login
+            {t({ de: "Testseite öffnen", en: "Open test page" })}
           </button>
         </div>
       ) : null}

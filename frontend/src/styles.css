@@ -447,6 +447,16 @@ pre.mono {
   min-width: 0;
 }
 
+.browser-card-status {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.browser-area {
+  display: grid;
+  gap: 12px;
+}
+
 .browser-card-body {
   display: none;
 }

@@ -75,5 +75,6 @@ export const CREDENTIAL_ID_BYTES_MAX = 1023;
  * Random 96-bit nonces: the birthday bound for a single key. Above ~2^32 seals
  * under one key the collision probability stops being negligible, so the Vault
  * Key must be rotated well before this. Documented in crypto-protocol.md §3.3.
+ * Not a live counter: `encrypt()` does not persist a seal tally (F-25).
  */
 export const SEALS_PER_KEY_MAX = 2 ** 32;

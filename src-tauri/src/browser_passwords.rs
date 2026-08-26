@@ -1,6 +1,7 @@
 //! Read Chromium Login Data on this device. Never logs passwords. Never talks to FastAPI.
 
 use std::{
+    fmt,
     fs,
     path::{Path, PathBuf},
 };
@@ -15,10 +16,12 @@ use pbkdf2::pbkdf2_hmac;
 use rusqlite::Connection;
 use serde::Serialize;
 use sha1::Sha1;
+use zeroize::Zeroize;
 
 use crate::browsers::{chromium_profile_dir, firefox_profile_dir};
+use crate::secret_fs::{secret_temp_dir, shred_tree};
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct BrowserLogin {
     pub url: String,
@@ -26,6 +29,18 @@ pub struct BrowserLogin {
     pub password: String,
     pub title: String,
     pub source: String,
+}
+
+impl fmt::Debug for BrowserLogin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BrowserLogin")
+            .field("url", &self.url)
+            .field("username", &self.username)
+            .field("password", &"***")
+            .field("title", &self.title)
+            .field("source", &self.source)
+            .finish()
+    }
 }
 
 fn safe_storage(browser_id: &str) -> Option<(&'static str, &'static str)> {
@@ -53,10 +68,14 @@ pub fn decrypt_chrome_v10(key: &[u8; 16], blob: &[u8]) -> Result<String, String>
     }
     let iv = [0x20u8; 16];
     let mut buf = blob[3..].to_vec();
-    let plain = Decryptor::<Aes128>::new(key.into(), &iv.into())
-        .decrypt_padded_mut::<Pkcs7>(&mut buf)
-        .map_err(|_| "Chrome password decrypt failed".to_string())?;
-    String::from_utf8(plain.to_vec()).map_err(|_| "Chrome password was not UTF-8".into())
+    let result = (|| {
+        let plain = Decryptor::<Aes128>::new(key.into(), &iv.into())
+            .decrypt_padded_mut::<Pkcs7>(&mut buf)
+            .map_err(|_| "Chrome password decrypt failed".to_string())?;
+        String::from_utf8(plain.to_vec()).map_err(|_| "Chrome password was not UTF-8".into())
+    })();
+    buf.zeroize();
+    result
 }
 
 fn keychain_secret(service: &str, account: &str) -> Result<Vec<u8>, String> {
@@ -93,15 +112,7 @@ fn copy_login_db(profile_dir: &Path) -> Result<PathBuf, String> {
     if !src.is_file() {
         return Err(format!("no Login Data in {}", profile_dir.display()));
     }
-    let tmp = std::env::temp_dir().join(format!(
-        "4ap-login-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos()
-    ));
-    fs::create_dir_all(&tmp).map_err(|err| err.to_string())?;
+    let tmp = secret_temp_dir("4ap-login")?;
     fs::copy(&src, tmp.join("Login Data")).map_err(|err| err.to_string())?;
     for extra in ["Login Data-wal", "Login Data-shm", "Login Data-journal"] {
         let side = profile_dir.join(extra);
@@ -167,14 +178,16 @@ pub fn import_browser_logins(browser_id: String, profile_id: String) -> Result<V
         "Passwörter aus diesem Browser kommen als Nächstes. / Password import for this browser is next."
             .to_string()
     })?;
-    let secret = keychain_secret(service, account)?;
-    let key = derive_chrome_key(&secret);
+    let mut secret = keychain_secret(service, account)?;
+    let mut key = derive_chrome_key(&secret);
+    secret.zeroize();
     let home = crate::browsers::default_home();
     let profile_dir = chromium_profile_dir(&home, &browser_id, &profile_id)?;
     let tmp = copy_login_db(&profile_dir)?;
     let db = tmp.join("Login Data");
     let result = read_chromium_logins(&db, &key, &format!("{browser_id}:{profile_id}"));
-    let _ = fs::remove_dir_all(&tmp);
+    key.zeroize();
+    shred_tree(&tmp);
     result
 }
 
@@ -232,5 +245,19 @@ mod tests {
         assert_eq!(rows[0].password, "secret-pass");
         assert_eq!(rows[0].title, "example.com");
         fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn debug_redacts_password() {
+        let login = BrowserLogin {
+            url: "https://example.com".into(),
+            username: "ada".into(),
+            password: "secret-must-not-debug".into(),
+            title: "example.com".into(),
+            source: "chrome:Default".into(),
+        };
+        let shown = format!("{login:?}");
+        assert!(!shown.contains("secret-must-not-debug"));
+        assert!(shown.contains("***"));
     }
 }

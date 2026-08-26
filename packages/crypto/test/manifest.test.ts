@@ -87,6 +87,7 @@ describe("snapshot manifest", () => {
         vaultId: C.vault_id,
         revision: C.revision,
         vaultKeyVersion: VKV,
+        allowTestProfile: true,
       },
     );
     assert.equal(opened.revision, C.revision);
@@ -129,6 +130,7 @@ describe("snapshot manifest", () => {
       vaultKeyVersion: VKV,
       entries: [...entries, second],
       envelopes,
+      allowTestProfile: true,
     });
     const shuffled = {
       ...manifest,
@@ -152,6 +154,7 @@ describe("snapshot manifest", () => {
           vaultKeyVersion: VKV,
           entries: [broken],
           envelopes,
+          allowTestProfile: true,
         }),
       ProtocolError,
     );
@@ -168,10 +171,14 @@ describe("snapshot manifest", () => {
     });
     assert.throws(
       () =>
-        assertSnapshotMatchesManifest(fixtureSnapshot().manifest, {
-          entries: [...entries, foreign],
-          envelopes,
-        }),
+        assertSnapshotMatchesManifest(
+          fixtureSnapshot().manifest,
+          {
+            entries: [...entries, foreign],
+            envelopes,
+          },
+          true,
+        ),
       IntegrityError,
     );
   });
@@ -206,5 +213,20 @@ describe("snapshot manifest", () => {
     const { manifest } = fixtureSnapshot();
     const body = encodeManifest(manifest);
     assert.equal(bytesToHex(hexToBytes(aesSuite.manifest.body)), bytesToHex(body));
+  });
+
+  it("refuses a ci-profile master envelope on the production manifest path", () => {
+    const { entries, envelopes } = fixtureSnapshot();
+    assert.throws(
+      () =>
+        buildManifest({
+          vaultId: C.vault_id,
+          revision: C.revision,
+          vaultKeyVersion: VKV,
+          entries,
+          envelopes,
+        }),
+      ProtocolError,
+    );
   });
 });

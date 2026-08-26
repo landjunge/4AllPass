@@ -273,6 +273,15 @@ pins the server integers; after the first verified manifest that path is closed.
   “PRF exists” because `PublicKeyCredential` is present. JavaScript cannot
   securely zeroize strings. iOS Safari Web Extension and system Password
   AutoFill are not shipped.
+- Native browser import copies Login Data / key4.db into an owner-only temp
+  dir (`0700`), overwrites those files before unlink, and zeroizes Keychain /
+  Firefox key material after use. `BrowserLogin` Debug prints `***` for the
+  password. JavaScript still receives plaintext passwords over Tauri IPC for
+  the import-review UI (no password column in the list). SSD wear-leveling
+  means overwrite is best-effort.
+- AES-GCM nonce budget (`SEALS_PER_KEY_MAX` ≈ 2^32) is **policy**, not a
+  persistent per-VK counter. Human-scale edits are far below it. Automated
+  high-volume writers must rotate the Vault Key themselves (F-25).
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.

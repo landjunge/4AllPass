@@ -5,6 +5,7 @@ malicious server and a hostile local store, not as a reader of the specification
 **Date:** 2026-08-17
 **Companions:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`
 **Boundaries (extension / broker / CAS / WebAuthn / loopback):** [`adversarial-review-boundaries.md`](adversarial-review-boundaries.md) (2026-08-25)
+**External pass 01 (manifest KDF, nonce policy, native import):** [`adversarial-review-external-01.md`](adversarial-review-external-01.md) (2026-08-26)
 
 The method was deliberately not "read the spec and check the code against it".
 Every finding below was first **reproduced as a working attack** against the

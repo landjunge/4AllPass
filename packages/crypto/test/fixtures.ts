@@ -95,6 +95,7 @@ export function fixtureSnapshot(): {
     vaultKeyVersion: VKV,
     entries,
     envelopes,
+    allowTestProfile: true,
   });
   return { entry, master, device, recovery, entries, envelopes, manifest };
 }

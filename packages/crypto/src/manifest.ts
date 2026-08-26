@@ -44,6 +44,8 @@ export interface BuildManifestOptions {
   entries: readonly EncryptedEntry[];
   envelopes: readonly KeyEnvelope[];
   cryptoProtocolVersion?: number;
+  /** Same gate as unwrap: ci Argon2id only when tests opt in. */
+  allowTestProfile?: boolean;
 }
 
 export interface SealManifestOptions {
@@ -58,6 +60,8 @@ export interface OpenManifestOptions {
   revision: number;
   vaultKeyVersion: number;
   cryptoProtocolVersion?: number;
+  /** Same gate as unwrap. Default false — a weak-KDF master envelope is not digestable. */
+  allowTestProfile?: boolean;
 }
 
 export interface SnapshotContents {
@@ -138,7 +142,7 @@ function normalizeEntry(entry: EncryptedEntry): EncryptedEntry {
   };
 }
 
-function normalizeEnvelope(envelope: KeyEnvelope): KeyEnvelope {
+function normalizeEnvelope(envelope: KeyEnvelope, allowTestProfile: boolean): KeyEnvelope {
   const type = assertEnvelopeType(envelope.type);
   const record: KeyEnvelope = {
     version: assertVersion("envelope.version", envelope.version),
@@ -155,7 +159,7 @@ function normalizeEnvelope(envelope: KeyEnvelope): KeyEnvelope {
   const kdf = envelope.kdf;
   if (type === "master") {
     if (!kdf) throw new ProtocolError("master envelope requires kdf parameters");
-    record.kdf = assertKdfBlock(kdf, true);
+    record.kdf = assertKdfBlock(kdf, allowTestProfile);
   } else if (kdf) {
     throw new ProtocolError(`${type} envelope must not carry kdf parameters`);
   }
@@ -205,11 +209,14 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
     vaultKeyVersion: opts.vaultKeyVersion,
     cryptoProtocolVersion: opts.cryptoProtocolVersion ?? CRYPTO_PROTOCOL_VERSION,
   });
-  return describeSnapshot(header, normalizeSnapshotContents(opts));
+  return describeSnapshot(header, normalizeSnapshotContents(opts, opts.allowTestProfile === true));
 }
 
 /** Copy a snapshot into plain records, reading every field of every record once. */
-export function normalizeSnapshotContents(contents: SnapshotContents): {
+export function normalizeSnapshotContents(
+  contents: SnapshotContents,
+  allowTestProfile = false,
+): {
   entries: EncryptedEntry[];
   envelopes: KeyEnvelope[];
 } {
@@ -223,7 +230,7 @@ export function normalizeSnapshotContents(contents: SnapshotContents): {
   }
   return {
     entries: inputEntries.map(normalizeEntry),
-    envelopes: inputEnvelopes.map(normalizeEnvelope),
+    envelopes: inputEnvelopes.map((envelope) => normalizeEnvelope(envelope, allowTestProfile)),
   };
 }
 
@@ -593,6 +600,7 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
 export function assertSnapshotMatchesManifest(
   manifest: SnapshotManifest,
   contents: SnapshotContents,
+  allowTestProfile = false,
 ): { entries: EncryptedEntry[]; envelopes: KeyEnvelope[] } {
   const expected = validateManifest(manifest);
   // Everything in `contents` came from the server. A malformed record there is
@@ -601,7 +609,7 @@ export function assertSnapshotMatchesManifest(
   let normalized: { entries: EncryptedEntry[]; envelopes: KeyEnvelope[] };
   let observed: SnapshotManifest;
   try {
-    normalized = normalizeSnapshotContents(contents);
+    normalized = normalizeSnapshotContents(contents, allowTestProfile);
     observed = describeSnapshot(expected, normalized);
   } catch (cause) {
     if (cause instanceof IntegrityError) throw cause;
@@ -661,6 +669,10 @@ export function verifySnapshotManifest(
   opts: OpenManifestOptions,
 ): VerifiedSnapshot {
   const verified = openManifest(sealed, opts);
-  const normalized = assertSnapshotMatchesManifest(verified.manifest, contents);
+  const normalized = assertSnapshotMatchesManifest(
+    verified.manifest,
+    contents,
+    opts.allowTestProfile === true,
+  );
   return { ...verified, entries: normalized.entries, envelopes: normalized.envelopes };
 }

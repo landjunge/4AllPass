@@ -1,11 +1,14 @@
 # Agent access (4AllPass)
 
-**Status:** Architecture for later. **Not implemented** beyond today’s string + pairing token + human Allow.  
+**Status:** Proposed.  
+**Implemented today:** string `n8n` + pairing token + human Allow; grant `handoff: "raw_secret"`; TTL does not un-know a copy.  
+**Not implemented:** MAIP verify, mediated proxy, `vault.read_all` denial as a new engine (unknown app DENY already exists).  
+**Authoritative today:** [`../security-boundary.md`](../security-boundary.md) §7.  
 **Date:** 2026-08-26
 
 > Agents receive capabilities, not vault access.
 
-Companion: [`agent-identity.md`](agent-identity.md), [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md), [`../secret-access-layer.md`](../secret-access-layer.md) (egress module), [`../local-access-broker.md`](../local-access-broker.md) (what runs), [`../security-boundary.md`](../security-boundary.md) §7.
+Companion: [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md), [`../secret-access-layer.md`](../secret-access-layer.md) (egress module, **later**), [`../local-access-broker.md`](../local-access-broker.md) (what runs), [`../security-boundary.md`](../security-boundary.md) §7.
 
 MAIP does not change vault envelopes. Identity is a gate **in front of** credential policy.
 

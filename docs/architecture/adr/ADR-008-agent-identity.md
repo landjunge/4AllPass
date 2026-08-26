@@ -11,7 +11,7 @@ Microsoft Entra Agent ID and 1Password Unified Access exist as **enterprise/clou
 
 v1 agent = application string + pairing token + human Allow. Documented as spoofable.
 
-Later: MAIP v0.1 ([`../../specs/maip-v0.1.md`](../../specs/maip-v0.1.md)) — Ed25519 identity document + signed request. Broker verifies on the **unlocked client**, not as FastAPI minting a GitHub PAT. Identity ≠ authorization ([`../agent-identity.md`](../agent-identity.md)).
+Later: MAIP v0.1 ([`../../specs/maip-v0.1.md`](../../specs/maip-v0.1.md)) — Ed25519 identity document + signed request. Broker verifies on the **unlocked client**, not as FastAPI minting a GitHub PAT. Identity ≠ authorization.
 
 Do not implement MAIP, Connection, or Capability UI now.
 

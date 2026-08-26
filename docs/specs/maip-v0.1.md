@@ -1,19 +1,29 @@
 # MAIP v0.1 — Minimal Agent Identity Profile
 
-**Status:** Experimental draft. **Not implemented. Not a network protocol in this repo.**  
+**Status:** Experimental draft. **Not implemented.** Not a finished standard. Not an internet identity system.  
+**Implemented today:** nothing. 4AllPass v1 uses `application: "n8n"` + pairing token.  
+**Not implemented:** enrollment, registry, signatures, delegation, SPIFFE/OAuth adapters.  
+**Authoritative for “what runs”:** [`../security-boundary.md`](../security-boundary.md) §7.  
 **Date:** 2026-08-26  
 **Motto:** Identity, not authority.  
 **Design:** Small core, strict guarantees, optional extensions.
 
-MAIP answers only: who is the agent, can they prove it, who issued the identity, is it active or revoked, and is *this request* signed.
+MAIP answers only: who is the agent, can they prove it, who issued the identity, is it active or revoked **in this verifier’s registry**, and is *this request* signed.
 
-MAIP does **not** define tool rights, credential rights, billing, trust scores, orchestration, or global capabilities. Those stay in Gnom-Hub, Tollgate, 4AllPass, and MCP.
+MAIP does **not** define tool rights, credential rights, billing, trust scores, orchestration, or global capabilities.
 
-Not a replacement for OAuth, OIDC, SPIFFE, MCP, or IAM. Adapters later (`maip-ext-spiffe`, `maip-ext-oauth`). Not W3C VC / EUDI — those remain the public-identity path if we ever need them ([`../architecture/future-architecture.md`](../architecture/future-architecture.md)).
+| System | Uses MAIP for | Decides locally |
+|---|---|---|
+| Gnom-Hub | who the agent is | runtime, orchestration, delegation |
+| Tollgate | who the agent is | action / cost / tool-loop limits |
+| 4AllPass | who the agent is | which secrets may be used |
+| MCP / tools | who the agent is | which tools may run |
 
-Does **not** change `packages/crypto`, envelopes, or Vault Protocol v1.
+Gnom-Hub must not decide 4AllPass secrets. Identity never implies authorization.
 
-Companion: [`../architecture/agent-identity.md`](../architecture/agent-identity.md), [ADR-008](../architecture/adr/ADR-008-agent-identity.md), [`../capability-interface.md`](../capability-interface.md).
+Not a replacement for OAuth, OIDC, SPIFFE, MCP, or IAM. Adapters later. Not W3C VC / EUDI. Does **not** change `packages/crypto` or Vault Protocol v1.
+
+Companion: [ADR-008](../architecture/adr/ADR-008-agent-identity.md), [`../capability-interface.md`](../capability-interface.md), [`../architecture/agent-access.md`](../architecture/agent-access.md).
 
 ---
 
@@ -35,10 +45,12 @@ Ed25519, SHA-256, RFC 8785 JCS, identity document, signed request, timestamp, no
 **Agent ID**
 
 ```text
-maip:ed25519:<sha256-of-canonical-public-key>
+maip:ed25519:<hex-or-base64url SHA-256 of the raw 32-byte Ed25519 public key>
 ```
 
-Display name is a separate field. Never the id.
+RFC 8785 JCS applies to **signed JSON requests**, not to the public key bytes. Do not hash a “canonical JSON key.” Display name is a separate field. Never the id.
+
+`issuer` (e.g. `"gnom-hub-v1"`) is **metadata**. It has no security effect until enrollment (or a later attestation extension) binds it. A string issuer is not a proof.
 
 **Identity document**
 
@@ -77,7 +89,7 @@ Replay: accept timestamp only inside a small window; each nonce once per verifie
 
 **Verify, in order:** known? active? public key matches `id`? signature valid? timestamp ok? nonce unseen? **Then** the local system applies **its** policy (4AllPass secrets, Tollgate limits, MCP tools). MAIP never answers “allow.”
 
-**Registry** is local to the verifier (or a file the operator controls). No required cloud directory. FastAPI must not mint agent keys or vault unwrap.
+**Registry / revocation** is **per trust domain** (the verifier that enrolled the agent). There is no global revoke list. FastAPI must not mint agent keys or vault unwrap.
 
 **Test vectors:** none in this draft. The first library that implements verify must publish KATs (known document, request, signature, pass/fail). Do not invent unsigned examples that look like KATs.
 

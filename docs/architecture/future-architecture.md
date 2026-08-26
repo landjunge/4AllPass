@@ -13,10 +13,10 @@ Standing rules (docs, not a license to implement):
 
 1. The server stores the vault. The client owns the vault. ([`../vault-storage.md`](../vault-storage.md), [`../vault-protocol.md`](../vault-protocol.md))
 2. Agents receive capabilities, not the vault. ([`agent-access.md`](agent-access.md))
-3. Identity is shared. Authorization stays local. ([`agent-identity.md`](agent-identity.md), [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md))
+3. Identity is shared. Authorization stays local. ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md))
 4. Small core, strict guarantees, optional extensions.
 
-Map: [`trust-boundaries.md`](trust-boundaries.md). **Do not implement this file.** Code sequence remains [`../product-maturity.md`](../product-maturity.md) v3.
+Map: [`../security-boundary.md`](../security-boundary.md). **Do not implement this file.** Code sequence remains [`../product-maturity.md`](../product-maturity.md) v3. Index: [`../README.md`](../README.md).
 
 The password manager is the **entry**. It is also what we ship in 2026. A half-built fabric is worse than an excellent vault.
 
@@ -132,7 +132,7 @@ Do **not** replace it with a 12-type union in the autofill slice. Autofill and i
 
 NOW: string application, loopback broker, human Allow, TTL, no durable raw password. Pairing token ≠ identity.
 
-LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`agent-identity.md`](agent-identity.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
+LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
 
 ---
 

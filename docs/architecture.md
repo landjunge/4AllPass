@@ -1,6 +1,13 @@
 # Architektur – 4AllPass
 
-**Local-first Zero-Knowledge Passwort-Tresor** (2026-Einstieg). Desktop entschlüsselt; der Server ist Blob-Store, kein Passwortmanager. Wire: [`vault-protocol.md`](vault-protocol.md). Placement: [`vault-storage.md`](vault-storage.md). Agent identity (later): [`specs/maip-v0.1.md`](specs/maip-v0.1.md). Grenzen: [`architecture/trust-boundaries.md`](architecture/trust-boundaries.md). Langfristige Vision, nicht bauen: [`architecture/future-architecture.md`](architecture/future-architecture.md).
+**Status:** Shape of the product. What *runs* is [`security-boundary.md`](security-boundary.md).  
+**Date:** 2026-08-26
+
+**Der Server speichert den Tresor. Der Client besitzt den Tresor.**
+
+Desktop is the client. Self-hosting is where sealed snapshots may live. Managed hosting is **later**, same protocol, no Cloud Edition: [`vault-storage.md`](vault-storage.md), [`vault-protocol.md`](vault-protocol.md).
+
+Vision (do not implement from this paragraph): [`architecture/future-architecture.md`](architecture/future-architecture.md). Agents later: [`architecture/agent-access.md`](architecture/agent-access.md), [`specs/maip-v0.1.md`](specs/maip-v0.1.md). Index: [`README.md`](README.md).
 
 **Ziel**  
 Ein Tresor, der dem Nutzer gehört. Wo der *verschlüsselte* Tresor liegt, entscheidet der Nutzer (dieses Gerät, eigener Server, später optional Hosted). Zero-Knowledge bleibt: der Endpoint sieht keinen Klartext.

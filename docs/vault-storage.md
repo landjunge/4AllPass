@@ -1,6 +1,6 @@
 # Vault storage — Client, Vault Server, Hosting
 
-**Status:** Standing model. Protocol v1 unchanged.  
+**Status:** Standing model. Local-only Desktop and self-host FastAPI are **implemented**. Managed hosting / URL picker / Hosted SKU are **not**.  
 **Date:** 2026-08-26  
 **Not this document:** a Cloud Edition, S3/WebDAV/Nextcloud, a provider directory, a mobile app, or a live Hosted SKU.
 

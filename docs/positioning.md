@@ -12,7 +12,7 @@ Einstieg: Browser → Tresor → Autofill ([`browser-sync.md`](browser-sync.md))
 
 **Heute (Vault, ehrlich):**
 
-> Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Local-first. Sync optional. Server deiner Wahl. Zero-Knowledge, offenes Protokoll.
+> Deine Geräte besitzen den Vault — kryptografisch, nicht nur organisatorisch. Local-first. Sync optional. Server deiner Wahl. Kein verpflichtender Cloud-Dienst. Desktop = Client. Self-host = Ablage. Zero-Knowledge, offenes Protokoll.
 
 Die Chance ist beides: Device-Centric (PRF → DWK → DK → VK) **und** scoped/TTL access ohne dauerhaften Key beim Agenten. Der Server bleibt ein Blob-Store. 4AllPass hängt nicht an Tollgate.
 

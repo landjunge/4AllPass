@@ -1,6 +1,6 @@
 # Team roadmap — 4AllPass
 
-**Status:** Planning. Phase 1 is specified in [`team-mode.md`](team-mode.md) and **not implemented**.  
+**Status:** Planning. **Not implemented.** Review spec: [`team-mode.md`](team-mode.md). Must not become PAM.  
 **Date:** 2026-08-23 (rev. 2)
 
 One product. Solo local stays default. Team is an extra layer on the server profile.

@@ -259,7 +259,7 @@ Recovery:
 
 **Audit-Freeze auf `main` ([#123](https://github.com/landjunge/4AllPass/pull/123)).** Tester-Notiz: [`freeze.md`](freeze.md). Code P0–P1/P1b (ohne Shadow DOM) liegt. [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112), Dritt-Audit [#38](https://github.com/landjunge/4AllPass/issues/38). Später: Shadow DOM / Passkey-Store / Launch. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
 
-Kurzfassung des Rests: [`plan-rest.md`](plan-rest.md).
+Index: [`README.md`](README.md). Vision (not this sequence): [`architecture/future-architecture.md`](architecture/future-architecture.md).
 
 **Nicht jetzt:** Team Mode, 50 Provider, Safari-Import, Launch-Post, Passkey-Store, Multi-Step/Shadow-DOM/iframe.
 

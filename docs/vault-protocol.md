@@ -1,8 +1,9 @@
 # 4AllPass Vault Protocol v1
 
-**Status:** Named contract for storage/sync. Crypto is [`crypto-protocol.md`](crypto-protocol.md). Placement is [`vault-storage.md`](vault-storage.md).  
+**Status:** Named contract. Snapshot CAS `/api/v1` is **implemented**. Capabilities endpoint, URL picker, Hosted SKU are **not**.  
 **Date:** 2026-08-26  
-**Not this document:** a second Cloud Edition, `packages/vault-protocol` extraction, `GET /server/capabilities`, S3, a `.4allpass` file on disk, public-key device wrapping, or a provider directory.
+**Crypto:** [`crypto-protocol.md`](crypto-protocol.md). **Placement:** [`vault-storage.md`](vault-storage.md).  
+**Not this document:** a Cloud Edition, `packages/vault-protocol`, S3, or a provider directory.
 
 The running routes are FastAPI `/api/v1`. This file names that contract so hosting cannot become a second protocol.
 

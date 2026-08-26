@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+<title id="title">4AllPass</title><desc id="desc">Eine Elster mit goldenem Schlüssel sitzt auf dem Schriftzug 4AllPass.</desc>
+<defs><linearGradient id="petrol" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b8191"/><stop offset="1" stop-color="#075365"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4c64d"/><stop offset="1" stop-color="#b98213"/></linearGradient></defs>
+<g transform="translate(170 18)">
+<path d="M390 220c-44-28-71-74-61-119 10-46 55-79 105-76 47 3 82 33 96 73 10 28 7 62-9 89-19 32-53 54-91 56z" fill="#111514"/>
+<path d="M356 150c-92 3-177 35-244 91l-90 76 151-43c80-23 144-55 202-103z" fill="url(#petrol)" stroke="#111514" stroke-width="9" stroke-linejoin="round"/>
+<path d="M175 263 19 363l184-68 118-85c-44 23-91 41-146 53z" fill="#111514"/>
+<path d="m174 282-144 119 191-93 111-94c-46 28-98 51-158 68z" fill="url(#petrol)" stroke="#111514" stroke-width="8" stroke-linejoin="round"/>
+<path d="M354 129c24 42 66 64 119 57-27 54-103 76-154 36-26-21-31-61-13-88 12-18 29-27 48-5z" fill="#f7f5ed" stroke="#111514" stroke-width="8"/>
+<path d="M446 94c28-16 63-8 80 17l-66 11z" fill="#f7f5ed"/><circle cx="466" cy="67" r="13" fill="#f7f5ed"/><circle cx="470" cy="67" r="6" fill="#111514"/><path d="m517 107 67 18-67 20c8-13 8-25 0-38z" fill="#111514"/>
+<path d="M405 236c-2 23 1 48 12 72m54-81c4 24 13 46 29 66" fill="none" stroke="#111514" stroke-width="11" stroke-linecap="round"/><path d="m398 310 35 1m49-15 35 6" fill="none" stroke="#111514" stroke-width="9" stroke-linecap="round"/>
+<g transform="translate(574 117)" stroke="url(#gold)" stroke-width="13" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="28" cy="28" r="27"/><path d="m43 48 66 83m-16-21 21-16m-7 32 20-15"/></g>
+</g>
+<text x="202" y="455" font-family="Arial,Helvetica,sans-serif" font-size="190" font-weight="800" letter-spacing="-10"><tspan fill="#08758a">4</tspan><tspan fill="#111514">AllPass</tspan></text>
+</svg>

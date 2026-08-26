@@ -2,9 +2,9 @@
 
 **Status:** Standing model. Protocol v1 unchanged.  
 **Date:** 2026-08-26  
-**Not this document:** a second product, a cloud password manager, S3/WebDAV/Nextcloud, a mobile app, or a live 4AllPass Hosted SKU.
+**Not this document:** a Cloud Edition, S3/WebDAV/Nextcloud, a provider directory, a mobile app, or a live Hosted SKU.
 
-Companion: [`security-boundary.md`](security-boundary.md), [`architecture/adr/ADR-006-sync-protocol.md`](architecture/adr/ADR-006-sync-protocol.md), [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-009-mobile-client.md), [`product-philosophy.md`](product-philosophy.md).
+Companion: [`vault-protocol.md`](vault-protocol.md) (the named wire), [`security-boundary.md`](security-boundary.md), [`architecture/adr/ADR-006-sync-protocol.md`](architecture/adr/ADR-006-sync-protocol.md), [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-009-mobile-client.md), [`product-philosophy.md`](product-philosophy.md).
 
 ---
 
@@ -27,13 +27,16 @@ Do **not** call a future offering “Cloud Password Manager”. Name: **4AllPass
 
 ---
 
-## Three layers (never mix)
+## Four parts (hosting is not crypto)
 
-| Layer | What it is | What it is not |
+| Part | What it is | What it is not |
 |---|---|---|
-| **1. 4AllPass Client** | Desktop now. Browser extension now. Mobile later. Decrypts. Holds Master Key / Vault Key after unlock. Shows passwords. | A website that is the vault. |
-| **2. 4AllPass Vault Server** | Snapshot CAS. Ciphertext, revisions, device envelopes, metadata. Same API whether the process is local SQLite or Postgres. | A password manager. It has no Vault Key, no master password, no plaintext. |
-| **3. Hosting** | Where that server process runs: this Mac, the user’s VPS/NAS, or later a 4AllPass-operated instance. | A second protocol. |
+| **1. Clients** | Desktop now. Extension now. Mobile later. Decrypt, pin, recovery. | A website that is the vault. |
+| **2. Vault Protocol v1** | Auth, snapshots, revisions, envelopes, CAS. Same bytes everywhere. | A Hosted-only API. |
+| **3. Local storage** | Sealed copy on this device. Mode A; also the offline cache in B/C. | The trust anchor (the pin and VK still are). |
+| **4. Remote server** | Self-hosted, managed, or partner — **same process**. | A Cloud Edition. Not in the KDF. |
+
+> Der Hosting-Anbieter ersetzt nur den Speicher- und Synchronisationsort. Er wird niemals Bestandteil der Kryptografie oder des Vertrauensmodells.
 
 ```text
                   ┌──────────────┐
@@ -153,20 +156,13 @@ Only encrypted snapshots land there. Classic self-hosting.
 
 **Today:** FastAPI + Postgres exists (`docker-compose`, `profile=server`). The Desktop app does **not** yet expose a URL field. The PWA talks to the origin that serves it. Same snapshot API as local.
 
-### 3. 4AllPass Hosted Vault
-
-We run the same Vault Server. The user does not configure Docker, domain, or TLS.
-
-Same protocol:
+### 3. Managed hosting (Mode C)
 
 ```text
-Client
-  → encrypted snapshot
-4AllPass Hosted Vault
-  → encrypted blob
+Client → https://vault.example.org → 4AllPass Server
 ```
 
-Full server access still cannot read passwords.
+**Technically the same server as Mode B.** Operated by a partner, an MSP, or later 4AllPass. No separate “Cloud Edition.” If we operate it, the product name is **4AllPass Hosted Vault**, not “cloud password manager.”
 
 **Today:** not offered. Do not invent a live host name. Marketing site `4allpass.netzwerkpunkt.de` is **not** a vault endpoint and must never receive the vault.
 
@@ -188,8 +184,9 @@ Storage Mode
 ○ Own 4AllPass server
   https://vault.example.com
 
-○ 4AllPass Hosted Vault
-  (URL we publish later — same protocol)
+○ Managed host
+  https://vault.example.org
+  (same protocol; operator is not a client field)
 ```
 
 Underneath, always:
@@ -263,13 +260,17 @@ Do not start that SKU in this sequence.
 ## Sequence (storage only — does not replace autofill v3)
 
 ```text
-Phase 1  Local-only stable          ← product default now
-Phase 2  Own 4AllPass server optional  (compose exists; client URL field later)
-Phase 3  Two devices vs that self-hosted server (CAS 409 + pin + revoke)
-Phase 4  Same binary as Hosted Vault, only after 3 is real
+Phase 1  Architecture freeze          ← this spec
+Phase 2  Vault Protocol v1 named      ← docs/vault-protocol.md + running /api/v1
+Phase 3  Self-hosted Desktop ↔ one server, then a second device
+Phase 4  Multi-device (enrol, revoke, 409 reload, offline, pin)
+Phase 5  Server A → Server B (same VK, sealed copy) — proves no lock-in
+Phase 6  Managed providers / directory / one-click — only after 5
 ```
 
-Test the software you would later host. Do not skip to Phase 4.
+Do not skip to Phase 6. First: `Desktop ↔ one server ↔ second device`, watertight.
+
+A client **MUST** still decrypt that vault if the last host is gone.
 
 ---
 
@@ -278,15 +279,21 @@ Test the software you would later host. Do not skip to Phase 4.
 | Idea | Why not now |
 |---|---|
 | Storage-mode radio in Settings | Spec first. Default remains this-device. |
-| 4AllPass Hosted operations | Same API later. No SKU, no extra domain as vault host. |
-| S3 / WebDAV / Nextcloud / “NAS as protocol” | Extra backends. One Vault Server API first. |
+| 4AllPass Hosted operations / partner directory | Phase 6. Same protocol, not a Cloud Edition. |
+| `if provider == hetzner` in client or crypto | Endpoint URL only. |
+| ProviderEncryptionKey / hoster wrap of VK | Boundary defect. |
+| `packages/vault-protocol` / `mobile/` tree | Map, not a refactor now. |
+| `GET /server/capabilities` | Later advertisement of v1; routes already exist. |
+| `.4allpass` archive as new crypto | Same sealed snapshot; filename later. |
+| S3 / WebDAV / Nextcloud / Kubernetes operator | Extra backends. One protocol first. |
+| Public-key “laptop approves phone” | Needs wrapping to a foreign DK. Later. |
 | Calling Hosted a cloud password manager | Lies about who decrypts. |
 | Last-write-wins or silent 409 retry that replays local entries | Drops the other device’s edits. |
 | Automatic entry-level merge | Later, explicit. v1 = reload. |
 | E-mail / support vault reset | Recovery kit only. |
 | Mobile apps | v3 sequence: desktop + autofill. |
 | FastAPI minting secrets so Hosted “just works” | Boundary defect. |
-| Hosted SKU, DPA, multi-region | Phase 4. Ops product, same API. |
+| Hosted SKU, DPA, multi-region | Phase 6. Ops product, same API. |
 
 If a second storage backend ever exists, it still stores **opaque snapshots**. It does not become a password manager.
 

@@ -21,7 +21,7 @@ Do **not** implement that vision in the same PR as a password-manager fix.
 - [ ] Does this assume one vault?
 - [ ] Does this assume one device?
 - [ ] Does this assume online connectivity?
-- [ ] Does this assume one provider?
+- [ ] Does this assume one provider / one host (vault unusable if that host is gone)?
 - [ ] Does this hard-code an identity model (e-mail as crypto)?
 - [ ] Does this hard-code a crypto algorithm without `cryptoVersion`?
 - [ ] Does this prevent scoped capabilities?

@@ -1,6 +1,6 @@
 # Architektur – 4AllPass
 
-**Local-first Zero-Knowledge Passwort-Tresor** (2026-Einstieg). Desktop entschlüsselt; der Server ist Blob-Store, kein Passwortmanager. Drei Schichten und drei Betriebsarten: [`vault-storage.md`](vault-storage.md). Langfristige Vision, nicht bauen: [`architecture/future-architecture.md`](architecture/future-architecture.md).
+**Local-first Zero-Knowledge Passwort-Tresor** (2026-Einstieg). Desktop entschlüsselt; der Server ist Blob-Store, kein Passwortmanager. Wire: [`vault-protocol.md`](vault-protocol.md). Placement: [`vault-storage.md`](vault-storage.md). Langfristige Vision, nicht bauen: [`architecture/future-architecture.md`](architecture/future-architecture.md).
 
 **Ziel**  
 Ein Tresor, der dem Nutzer gehört. Wo der *verschlüsselte* Tresor liegt, entscheidet der Nutzer (dieses Gerät, eigener Server, später optional Hosted). Zero-Knowledge bleibt: der Endpoint sieht keinen Klartext.
@@ -13,7 +13,7 @@ Ein Tresor, der dem Nutzer gehört. Wo der *verschlüsselte* Tresor liegt, entsc
 
 Haltung (kein Businessplan): [`product-philosophy.md`](product-philosophy.md). Sicherheit und Eigentum werden nicht verkauft.
 
-- **Zero-Knowledge**: Der Vault-Endpoint sieht niemals Klartext-Passwörter oder das Master-Passwort. Hosting (lokal / self-host / später Hosted) ändert das Protokoll nicht ([`vault-storage.md`](vault-storage.md)).
+- **Zero-Knowledge**: Der Vault-Endpoint sieht niemals Klartext-Passwörter oder das Master-Passwort. Hosting ändert das Protokoll nicht. Ein Tresor darf technisch **nicht** von seinem Hoster abhängen ([`vault-protocol.md`](vault-protocol.md), [`vault-storage.md`](vault-storage.md)).
 - Das **Master-Passwort** ist die einzige Quelle für die Entschlüsselung (neben dem Recovery Key).
 - **Biometrie** und **Social-Login** sind reine Komfort-Funktionen und ersetzen das Master-Passwort nicht.
 - Gerätezugriff: Der Nutzer entscheidet pro Browser-Profil und Gerät, welche die Vault-Daten erhalten (kryptografisch über Device Envelopes).
@@ -96,7 +96,7 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 
 | Schicht          | Technologie                          |
 |------------------|--------------------------------------|
-| Vault Server     | FastAPI; local SQLite **or** Postgres+Redis — same `/api/v1` snapshot API ([`vault-storage.md`](vault-storage.md)) |
+| Vault Protocol v1 | FastAPI `/api/v1`; local SQLite **or** Postgres — same wire ([`vault-protocol.md`](vault-protocol.md)) |
 | Frontend         | React + TypeScript                   |
 | Crypto           | Gemeinsame Library (Web + Extensions)|
 | Extensions       | Chromium (Manifest V3) + Firefox     |

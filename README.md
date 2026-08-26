@@ -107,7 +107,7 @@ Weitere klare Beschreibungen:
 | | DE | EN |
 |---|---|---|
 | Produkt | Desktop (Tauri), SQLite, Loopback `:8788` | Desktop app, SQLite, loopback `:8788` |
-| Ablage | Local-first. Sync optional. Server deiner Wahl. Heute: dieses Gerät; eigener FastAPI-Server möglich; Hosted nicht angeboten ([`docs/vault-storage.md`](docs/vault-storage.md)) | Local-first. Sync optional. Server of your choice. Today: this device; own FastAPI server possible; Hosted not offered |
+| Ablage | Local-first. Sync optional. Server deiner Wahl. Wire: [`docs/vault-protocol.md`](docs/vault-protocol.md). Placement: [`docs/vault-storage.md`](docs/vault-storage.md) | Local-first. Sync optional. Server of your choice. Same protocol everywhere; Hosted not offered |
 | Tresor | Geräte besitzen den Vault kryptografisch. Unlock = Tresor-Passwort | Devices own the vault cryptographically. Unlock = vault password |
 | Import | Browser-Karten, Chrome/Firefox, Review **ohne** Passwort in der Liste | Browser cards, Chrome/Firefox, review **without** passwords in the list |
 | Autofill | Chromium + Firefox + Safari-Wrapper. Field Intelligence + Safe Fill. Demo-Login ohne Copy-Paste. Live `github.com/login` opt-in, kein Submit, kein CI | Chromium + Firefox + Safari wrapper. Field Intelligence + Safe Fill. Demo login without copy-paste. Live `github.com/login` opt-in, no submit, not CI |

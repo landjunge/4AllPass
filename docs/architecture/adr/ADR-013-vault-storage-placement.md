@@ -9,9 +9,9 @@
 
 ## Decision
 
-Three layers: **Client** (decrypts) · **Vault Server** (opaque snapshot CAS) · **Hosting** (where that process runs).
+Four parts: **Clients** · **Vault Protocol v1** · **local sealed storage** · **remote server** (self-hosted / managed / partner — same process). No Cloud Edition.
 
-Three placements, one protocol: this device only · own server · later 4AllPass Hosted Vault.
+A valid client **MUST** decrypt and use a vault without the host that last stored it. Wire: [`docs/vault-protocol.md`](../../vault-protocol.md).
 
 The server is never a password manager and never the trust anchor for secrets. Offline local copy is required when a remote placement is on. Conflicts are CAS 409, then reload — not last-write-wins. Recovery and exit from Hosted do not need us.
 
@@ -24,7 +24,8 @@ The running FastAPI already refuses VK / master password / plaintext. Local SQLi
 ## Alternatives
 
 - Desktop-only forever, call that “no cloud sync” — too small; multi-device is the same protocol.
-- Hosted as a decrypting cloud PM — BLOCK.
+- Hosted as a decrypting cloud PM / Cloud Edition — BLOCK.
+- `ProviderEncryptionKey` or `if provider == …` in crypto — BLOCK.
 - Per-backend client forks — BLOCK.
 
 ## Consequences

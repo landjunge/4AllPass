@@ -120,15 +120,30 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
   headers["X-Device-Id"] = deviceId();
-  const init: RequestInit = { method, headers, credentials: "omit" };
-  if (body !== undefined) init.body = JSON.stringify(body);
-  const response = await fetch(`${apiBase()}${path}`, init);
-  if (response.status === 204) return undefined as T;
-  const text = await response.text();
+  let status: number;
+  let text: string;
+  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{ status: number; body: string }>("sidecar_http", {
+      method,
+      path: `/api/v1${path}`,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : null,
+    });
+    status = result.status;
+    text = result.body;
+  } else {
+    const init: RequestInit = { method, headers, credentials: "omit" };
+    if (body !== undefined) init.body = JSON.stringify(body);
+    const response = await fetch(`${apiBase()}${path}`, init);
+    status = response.status;
+    text = await response.text();
+  }
+  if (status === 204) return undefined as T;
   const parsed: unknown = text ? JSON.parse(text) : {};
-  if (!response.ok) {
+  if (status < 200 || status >= 300) {
     throw new ApiError(
-      response.status,
+      status,
       typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : {},
     );
   }

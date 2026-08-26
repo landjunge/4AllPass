@@ -1159,3 +1159,11 @@ async def test_revoking_a_device_kills_its_other_sessions(client):
 
     owner_still = await client.get("/api/v1/auth/me", headers=_auth(owner))
     assert owner_still.status_code == 200
+
+
+async def test_snapshot_rejects_oversized_ciphertext(client):
+    _, alice = await _signup(client)
+    vault_id = await _vault(client, alice)
+    huge = "A" * 1_400_001
+    response = await _commit(client, alice, vault_id, envelopes=[_master_envelope(ciphertext=huge)])
+    assert response.status_code == 422

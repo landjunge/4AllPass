@@ -135,7 +135,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 
 Windows: `irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex`
 
-Ohne Pipe: Script speichern, lesen, `sh install.sh`. Der Installer nimmt den GitHub-Tag **`desktop`**, prüft SHA-256, startet die App. Vault-Ordner wird **nicht** gelöscht. Unlock = Tresor-Passwort. Noch nicht notariert: manuelles DMG → Rechtsklick → Öffnen.
+Ohne Pipe: Script speichern, lesen, `sh install.sh`. Der Installer nimmt den GitHub-Tag **`desktop`**, prüft SHA-256, startet die App. Vault-Ordner wird **nicht** gelöscht. Unlock = Tresor-Passwort. Noch nicht notariert: manuelles DMG → Rechtsklick → Öffnen. SHA-256 schützt vor kaputtem Download, **nicht** vor einem kompromittierten GitHub-Release (Hash und Binary aus derselben Quelle). Alpha.
 
 Download ohne Terminal: [Releases · desktop](https://github.com/landjunge/4AllPass/releases/tag/desktop).
 

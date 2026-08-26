@@ -16,14 +16,15 @@ use tauri_plugin_notification::NotificationExt;
 
 mod browser_passwords;
 mod browsers;
+mod core_bind;
 mod firefox_logins;
 mod secret_fs;
 mod sleep_stall;
+use core_bind::refuse_foreign_listener;
 use sleep_stall::{should_emit_desktop_lock, slept_through};
 
 const CORE_HOST: &str = "127.0.0.1";
 const CORE_PORT: u16 = 8788;
-const CORE_ORIGIN: &str = "http://127.0.0.1:8788";
 
 struct CoreProcess(Mutex<Option<Child>>);
 struct PromptState(Mutex<Option<String>>);
@@ -286,23 +287,18 @@ fn open_prompt_window(
     if let Ok(mut slot) = app.state::<PromptState>().0.lock() {
         *slot = Some(request_id.to_string());
     }
-    let url = format!(
-        "{CORE_ORIGIN}/access-prompt.html?id={}&application={}&provider={}&scope={}&ttl={}",
+    let path = format!(
+        "access-prompt.html?id={}&application={}&provider={}&scope={}&ttl={}",
         percent_encode(request_id),
         percent_encode(application),
         percent_encode(provider),
         percent_encode(scope),
         ttl_seconds
     );
-    let parsed = url.parse().map_err(|err| format!("prompt url: {err}"))?;
     if let Some(window) = app.get_webview_window("access-prompt") {
-        window.navigate(parsed).map_err(|err| err.to_string())?;
-        let _ = window.unminimize();
-        let _ = window.show();
-        let _ = window.set_focus();
-        return Ok(());
+        let _ = window.close();
     }
-    WebviewWindowBuilder::new(app, "access-prompt", WebviewUrl::External(parsed))
+    WebviewWindowBuilder::new(app, "access-prompt", WebviewUrl::App(path.into()))
         .title("4AllPass — Zugriff / Access")
         .inner_size(460.0, 360.0)
         .resizable(false)
@@ -392,23 +388,23 @@ pub fn run() {
                     let _ = window.hide();
                 }
             }
-            if !core_up() {
-                let child = spawn_core()?;
-                *app.state::<CoreProcess>()
-                    .0
-                    .lock()
-                    .map_err(|err| err.to_string())? = Some(child);
+            if refuse_foreign_listener(core_up()) {
+                return Err(
+                    "127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass"
+                        .into(),
+                );
             }
+            let child = spawn_core()?;
+            *app.state::<CoreProcess>()
+                .0
+                .lock()
+                .map_err(|err| err.to_string())? = Some(child);
             if !wait_core(Duration::from_secs(45)) {
                 return Err("4AllPass local core did not bind 127.0.0.1:8788".into());
             }
-            if let Some(window) = app.get_webview_window("main") {
-                let url = CORE_ORIGIN.parse()?;
-                window.navigate(url)?;
-                if start_hidden() {
-                    let _ = window.hide();
-                }
-            }
+            // UI stays on the bundled frontendDist. Never navigate the webview
+            // to the sidecar origin — that would grant Tauri IPC to whoever
+            // holds port 8788.
             let show = MenuItem::with_id(app, "show", "Anzeigen / Show", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Beenden / Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;

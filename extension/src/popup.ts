@@ -119,6 +119,9 @@ unlockForm.addEventListener("submit", (event) => {
     .then((result) => {
       if (!result.ok) showError(String(result.error ?? "unlock failed"));
       else void render();
+    })
+    .catch((error: unknown) => {
+      showError(error instanceof Error ? error.message : String(error));
     });
 });
 

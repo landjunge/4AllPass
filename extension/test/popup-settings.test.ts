@@ -11,6 +11,19 @@ test("empty API origin falls back to the desktop sidecar", () => {
   assert.equal(normalizeApiOrigin(""), DEFAULT_API_ORIGIN);
   assert.equal(normalizeApiOrigin("  "), DEFAULT_API_ORIGIN);
   assert.equal(normalizeApiOrigin("http://127.0.0.1:8788/"), "http://127.0.0.1:8788");
+  assert.equal(normalizeApiOrigin("http://localhost:8788"), "http://localhost:8788");
+  assert.equal(normalizeApiOrigin("https://vault.example"), "https://vault.example");
+});
+
+test("HTTP is refused for non-loopback API origins", () => {
+  assert.throws(() => normalizeApiOrigin("http://mein-server.example"), /HTTPS/);
+  assert.throws(() => normalizeApiOrigin("http://example.com:8788"), /HTTPS/);
+  assert.throws(() => normalizeApiOrigin("ftp://127.0.0.1"), /absolute http\(s\)|HTTPS|http/);
+});
+
+test("stored http remote origin is dropped, not reused", () => {
+  const parsed = parsePopupSettings({ apiOrigin: "http://evil.example", email: "a@b.c" });
+  assert.equal(parsed.apiOrigin, DEFAULT_API_ORIGIN);
 });
 
 test("stored settings never include a password field", () => {

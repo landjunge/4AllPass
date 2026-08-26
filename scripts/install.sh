@@ -75,7 +75,8 @@ suffix=$(asset_suffix)
 
 printf '%s\n' "4AllPass install"
 printf '%s\n' "Channel ${CHANNEL} · GitHub ${REPO}"
-printf '%s\n' "Not notarized. Vault folders are never deleted."
+printf '%s\n' "Alpha. Not notarized. SHA-256 is not GitHub-account security."
+printf '%s\n' "Vault folders are never deleted."
 
 json=$(curl -fsSL "$API") || die "Could not load GitHub release tag ${CHANNEL}."
 
@@ -126,6 +127,8 @@ if [ "$os" = Darwin ]; then
   rm -rf "${dest}/4AllPass.app"
   cp -R "$app" "${dest}/4AllPass.app"
   hdiutil detach "$mnt" >/dev/null 2>&1 || true
+  printf '%s\n' "Ad-hoc: removing macOS quarantine so the app can start."
+  printf '%s\n' "This is the tester path, not a production Gatekeeper bypass."
   xattr -cr "${dest}/4AllPass.app" 2>/dev/null || true
   printf '%s\n' "✓ 4AllPass installiert / installed"
   printf '%s\n' "  ${dest}/4AllPass.app"

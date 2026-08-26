@@ -112,7 +112,7 @@ export function demoSceneCopy(id: DemoSceneId): DemoSceneCopy {
       return {
         step: "1 / 4",
         title: "n8n will GitHub lesen / n8n asks GitHub repository.read",
-        body: "Erlauben gibt n8n für wenige Sekunden Zugang. Das eigentliche Passwort bleibt im Tresor. / Allow hands n8n a time-boxed credential. The long-lived secret stays in the unlocked vault.",
+        body: "Erlauben gibt n8n für wenige Sekunden das Roh-Secret (raw_secret_handoff). TTL stoppt nur weitere Lieferungen. / Allow hands n8n the raw secret for a few seconds (raw_secret_handoff). TTL only stops further deliveries.",
         action: `n8n asks GitHub repository.read (${DEMO_TTL_SECONDS}s)`,
       };
     case "delete":

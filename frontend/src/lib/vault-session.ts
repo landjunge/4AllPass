@@ -74,6 +74,7 @@ import {
   decodeEntryPlaintext,
   encodeEntryPlaintext,
   ENTRY_SCHEMA_VERSION,
+  wipeVaultEntry,
   type VaultEntry,
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
@@ -1062,7 +1063,6 @@ export function lock(vault: UnlockedVault | null): void {
   if (!vault) return;
   zeroize(vault.vaultKey);
   for (const entry of vault.entries) {
-    entry.password = "";
-    entry.notes = "";
+    wipeVaultEntry(entry);
   }
 }

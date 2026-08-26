@@ -136,8 +136,8 @@ export function AccessPanel({
               en: "A program cannot take passwords by itself. It asks here. You Allow or Deny. Unknown = no.",
             },
             {
-              de: "Policy in @4allpass/core. Unknown app DENY. Allow = menschlicher Klick, TTL-Grant, kein FastAPI-Token.",
-              en: "Policy in @4allpass/core. Unknown app DENY. Allow = human click, TTL grant, no FastAPI token.",
+              de: "Policy in @4allpass/core. Unknown app DENY. Allow = menschlicher Klick. Grant = raw_secret_handoff (TTL holt nichts zurück). Der Name „n8n“ ist kein kryptografischer Ausweis.",
+              en: "Policy in @4allpass/core. Unknown app DENY. Allow = human click. Grant = raw_secret_handoff (TTL cannot recall a copy). The string “n8n” is not a cryptographic identity.",
             },
           )}
         </p>

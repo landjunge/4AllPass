@@ -47,6 +47,7 @@ test("Allow n8n GitHub read → works → delete DENY → expire → unknown DEN
   const read = demoReadRequest();
   assert.equal(decideAccess(read, [entry]).status, "pending");
   const grant = issueGrant(read, entry, 1_000);
+  assert.equal(grant.handoff, "raw_secret");
   const live = readGrant(grant, 1_000);
   assert.ok("material" in live);
   if ("material" in live) assert.equal(live.material, DEMO_DUMMY_TOKEN);
@@ -106,7 +107,7 @@ test("scene copy is German first and keeps the English e2e phrases", () => {
   assert.match(setup.body, /Tresor|Gerät/);
   const read = demoSceneCopy("read");
   assert.match(read.title, /n8n asks GitHub repository.read/);
-  assert.match(read.body, /Tresor/);
+  assert.match(read.body, /raw_secret_handoff/);
   const grant = grantHandoffCopy("n8n", 12);
   assert.match(grant, /darf noch/);
 });

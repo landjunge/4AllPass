@@ -1,11 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main 4AllPass window. UI is the loopback sidecar, not a bundled asset:// page.",
+  "description": "Main 4AllPass window. UI is the bundled frontendDist, not the sidecar origin.",
   "windows": ["main", "access-prompt"],
-  "remote": {
-    "urls": ["http://127.0.0.1:8788/**"]
-  },
   "permissions": [
     "core:default",
     "notification:default",

@@ -11,6 +11,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from app.api.routes import auth, devices, health, local_meta, vaults, webauthn
 from app.broker import BrokerHub, router as broker_router
 from app.core.config import get_settings
+from app.core.limits import REQUEST_BODY_MAX
 
 
 def loopback_connect_origin(url: str) -> str:
@@ -40,6 +41,63 @@ def local_csp(origin: str) -> bytes:
         "base-uri 'self'; "
         "form-action 'self'"
     ).encode()
+
+
+class BodyLimitMiddleware:
+    """Reject oversized snapshot bodies before JSON parse."""
+
+    def __init__(self, app: ASGIApp, max_bytes: int = REQUEST_BODY_MAX) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        raw = headers.get("content-length")
+        if raw:
+            try:
+                if int(raw) > self.max_bytes:
+                    await send(
+                        {
+                            "type": "http.response.start",
+                            "status": 413,
+                            "headers": [(b"content-type", b"application/json")],
+                        }
+                    )
+                    await send({"type": "http.response.body", "body": b'{"detail":"payload too large"}'})
+                    return
+            except ValueError:
+                pass
+        await self.app(scope, receive, send)
+
+
+class LoopbackHostMiddleware:
+    """Local profile: refuse unexpected Host values (DNS rebinding)."""
+
+    allowed = {"127.0.0.1", "localhost", "::1"}
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        host = (headers.get("host") or "").split(":", 1)[0].strip("[]").lower()
+        if host and host not in self.allowed:
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 400,
+                    "headers": [(b"content-type", b"application/json")],
+                }
+            )
+            await send({"type": "http.response.body", "body": b'{"detail":"invalid host"}'})
+            return
+        await self.app(scope, receive, send)
 
 
 class SecurityHeadersMiddleware:
@@ -150,14 +208,21 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    cors_origins = list(settings.cors_origins)
+    if settings.is_local():
+        for extra in ("http://tauri.localhost", "https://tauri.localhost"):
+            if extra not in cors_origins:
+                cors_origins.append(extra)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(BodyLimitMiddleware)
     if settings.is_local():
+        app.add_middleware(LoopbackHostMiddleware)
         app.add_middleware(
             SecurityHeadersMiddleware,
             origin=settings.broker_url or "http://127.0.0.1:8788",

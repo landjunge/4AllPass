@@ -15,6 +15,7 @@ import {
 } from "@4allpass/crypto";
 
 import { defaultPinStore, type PinStore } from "./revision-pin.ts";
+import { normalizeApiOrigin } from "./popup-settings.ts";
 
 export interface VaultItem {
   id: string;
@@ -51,10 +52,11 @@ export async function apiRequest<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
+  const origin = normalizeApiOrigin(apiOrigin);
   const headers: Record<string, string> = { "X-Device-Id": deviceId };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  const response = await fetch(`${apiOrigin}/api/v1${path}`, {
+  const response = await fetch(`${origin}/api/v1${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),

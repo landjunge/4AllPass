@@ -101,7 +101,9 @@ def apply_runtime_to_env(runtime: LocalRuntime) -> None:
     os.environ["FOURALLPASS_LISTEN_HOST"] = runtime.host
     os.environ["FOURALLPASS_LISTEN_PORT"] = str(runtime.port)
     os.environ["FOURALLPASS_UI_DIST"] = str(runtime.ui_dist)
-    os.environ["FOURALLPASS_CORS_ORIGINS"] = f'["{runtime.origin}"]'
+    os.environ["FOURALLPASS_CORS_ORIGINS"] = (
+        f'["{runtime.origin}","http://tauri.localhost","https://tauri.localhost"]'
+    )
     os.environ["FOURALLPASS_DATA_DIR"] = str(runtime.data_dir)
     os.environ["FOURALLPASS_BROKER_TOKEN"] = runtime.broker_token
     os.environ["FOURALLPASS_BROKER_URL"] = runtime.origin

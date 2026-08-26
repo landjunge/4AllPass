@@ -86,3 +86,21 @@ Nicht als erledigt. Derselbe Entwickler-Mac zählt nicht. Wenn jemand mit einem 
 | Externes Audit | [#38](https://github.com/landjunge/4AllPass/issues/38) |
 
 Shadow DOM, Passkey-Store, Launch: später, gleicher Plan — nicht dieser Freeze.
+
+---
+
+## Security freeze #2 (2026-08-26)
+
+External static review of `01ba6b5`. Crypto core left alone. Hülle:
+
+| Item | Status |
+|---|---|
+| Tauri does not treat a pre-bound `:8788` as our UI | in this freeze |
+| `lock()` wipes `totpSecret` | in this freeze |
+| Agent grant is `raw_secret_handoff` (honest) | in this freeze |
+| Pairing token / `n8n` string is not agent identity | documented; crypto enrollment **not built** |
+| Extension HTTP only on loopback | in this freeze |
+| Snapshot/body ceilings on the server | in this freeze |
+| Nginx CSP + local Host check | in this freeze |
+| CI npm/pip audit blocking | in this freeze |
+| Installer: SHA-256 ≠ GitHub-account security | documented; Apple still paused |

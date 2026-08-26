@@ -208,16 +208,21 @@ export function VaultPage(): ReactNode {
 
   async function confirmImport(): Promise<void> {
     if (!importPending || !vault) return;
+    const fromBrowser = importPending.source === "browser";
     setBusy(true);
     try {
       const chosen = importPending.entries.filter((entry) => importPending.picked.includes(entry.id));
       if (chosen.length === 0) return;
-      const next =
-        importPending.source === "browser"
-          ? mergeImportedLogins(entries, chosen)
-          : [...entries, ...chosen];
+      const next = fromBrowser
+        ? mergeImportedLogins(entries, chosen)
+        : [...entries, ...chosen];
       await saveEntries(next);
       setImportPending(null);
+      if (fromBrowser && onboarding) {
+        markOnboardingDone(vault.vaultId);
+        setOnboarding(false);
+        setTab("entries");
+      }
     } catch {
       // banner
     } finally {
@@ -395,14 +400,7 @@ export function VaultPage(): ReactNode {
               }}
             />
           ) : (
-            <section className="card">
-              <h2>{t({ de: "Browser verbinden", en: "Connect browsers" })}</h2>
-              <p className="muted">
-                {t({
-                  de: "Chrome, Firefox, Safari. Passwörter holen, Erweiterung laden. Nicht der Tresor-Alltag.",
-                  en: "Chrome, Firefox, Safari. Import passwords, load the extension. Not everyday vault use.",
-                })}
-              </p>
+            <section className="browser-area" data-testid="browser-area">
               <BrowserCards
                 vaultId={vault.vaultId}
                 onLogins={(rows) => {
@@ -860,7 +858,7 @@ export function VaultPage(): ReactNode {
               {importPending.source === "share"
                 ? "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext."
                 : importPending.source === "browser"
-                  ? "Keychain hat freigegeben. Bestätigen verschlüsselt die Logins in deinen Tresor. Der Server sieht sie nicht. / Keychain granted. Confirm encrypts into your vault. The server never sees them."
+                  ? "macOS hat den Zugriff erlaubt. Bestätigen legt die Logins verschlüsselt in deinen Tresor. Der Server sieht sie nicht. / macOS granted access. Confirm encrypts into your vault. The server never sees them."
                   : plaintextImportWarning()}
             </p>
             <div className="import-review" data-testid="import-review">

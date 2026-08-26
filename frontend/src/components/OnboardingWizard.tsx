@@ -21,8 +21,8 @@ export function OnboardingWizard({
       <h2>{t({ de: "Willkommen in deinem Tresor", en: "Welcome to your vault" })}</h2>
       <p className="muted">
         {t({
-          de: "Installieren → Importieren → Autofill → fertig.",
-          en: "Install → Import → Autofill → done.",
+          de: "Zuerst: welche Browser sollen mit 4AllPass arbeiten? Dann importieren und Autofill einschalten.",
+          en: "First: which browsers should work with 4AllPass? Then import and turn on autofill.",
         })}
       </p>
       <ol className="onboarding-steps">
@@ -30,11 +30,11 @@ export function OnboardingWizard({
           <strong>1. {t({ de: "Tresor erstellt", en: "Vault created" })}</strong> ✓
         </li>
         <li className="active">
-          <strong>2. {t({ de: "Passwörter übernehmen", en: "Bring in passwords" })}</strong>
+          <strong>2. {t({ de: "Browser verbinden", en: "Connect browsers" })}</strong>
           <p className="hint">
             {t({
-              de: "Browser wählen, Profile anhaken, importieren. Passwörter siehst du in der Liste nicht.",
-              en: "Pick a browser, tick profiles, import. Passwords do not appear in the list.",
+              de: "Chrome, Firefox oder Safari. Autofill einschalten, Profile anhaken, importieren. Passwörter siehst du in der Liste nicht.",
+              en: "Chrome, Firefox, or Safari. Turn on autofill, tick profiles, import. Passwords do not appear in the list.",
             })}
           </p>
           <BrowserCards
@@ -47,8 +47,8 @@ export function OnboardingWizard({
           <strong>3. {t({ de: "Autofill aktivieren", en: "Turn on autofill" })}</strong>
           <p className="hint">
             {t({
-              de: "Unter Browser die Erweiterung laden. Danach füllt 4AllPass Logins auf der Seite.",
-              en: "Load the extension under Browser. Then 4AllPass fills logins on the page.",
+              de: "Erweiterung in dem Browser einmal erlauben. Danach füllt 4AllPass Logins auf der Seite.",
+              en: "Allow the add-on once in that browser. Then 4AllPass fills logins on the page.",
             })}
           </p>
         </li>

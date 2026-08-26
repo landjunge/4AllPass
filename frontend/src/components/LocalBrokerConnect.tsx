@@ -16,7 +16,7 @@ export function LocalBrokerConnect(): ReactNode {
 
   return (
     <section className="card" data-testid="local-broker">
-      <h3>Verbindung für Programme / Loopback broker</h3>
+      <h3>Verbindung für Programme / Program connection</h3>
       <p className="muted">
         Nur wenn ein Programm auf diesem Rechner fragen soll. Solange der Tresor offen ist, nimmt
         4AllPass die Frage entgegen. Der Server sieht kein Passwort. / Only if a program on this

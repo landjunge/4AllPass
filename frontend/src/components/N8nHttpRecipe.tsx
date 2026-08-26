@@ -29,7 +29,7 @@ export function N8nHttpRecipe(): ReactNode {
 
   return (
     <section className="card" data-testid="n8n-http">
-      <h3>Wenn du n8n nutzt / n8n HTTP Request</h3>
+      <h3>n8n auf diesem Rechner / n8n HTTP Request</h3>
       <p className="muted">
         Die meisten Nutzer brauchen das nicht. Nur wenn n8n auf diesem Rechner nach einem Login
         fragen soll: HTTP Request, POST, JSON-Body, kein Origin-Header. Kein Marketplace-Node. /

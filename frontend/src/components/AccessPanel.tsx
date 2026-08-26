@@ -128,12 +128,12 @@ export function AccessPanel({
   return (
     <div className="columns">
       <section className="card" data-testid="programs-intro">
-        <h3>{t({ de: "Zugriff", en: "Access" })}</h3>
+        <h3>{t({ de: "Welche App darf was benutzen?", en: "Which app may use what?" })}</h3>
         <p className="hint compact">
           {t(
             {
-              de: "Ein Programm darf Passwörter nicht einfach mitnehmen. Es fragt hier. Du sagst Erlauben oder Ablehnen. Unbekannt = nein.",
-              en: "A program cannot take passwords by itself. It asks here. You Allow or Deny. Unknown = no.",
+              de: "Ein Programm fragt hier. Du sagst Erlauben oder Ablehnen. Unbekannt = nein. Es bekommt nie den ganzen Tresor.",
+              en: "A program asks here. You Allow or Deny. Unknown = no. It never gets the whole vault.",
             },
             {
               de: "Policy in @4allpass/core. Unknown app DENY. Allow = menschlicher Klick. Grant = raw_secret_handoff (TTL holt nichts zurück). Der Name „n8n“ ist kein kryptografischer Ausweis.",
@@ -143,7 +143,7 @@ export function AccessPanel({
         </p>
       </section>
       <section className="card">
-        <h3>Üben / Practice</h3>
+        <h3>{t({ de: "Üben", en: "Practice" })}</h3>
         <p className="muted">
           Vier Schritte, ohne echtes GitHub. Dieselbe Regel wie bei einer echten Anfrage. / Four
           steps, no live GitHub. Same policy as a real request.
@@ -270,17 +270,35 @@ export function AccessPanel({
         </p>
       </section>
       <section className="card" data-testid="access-security-status">
-        <h3>Was gilt / Rules</h3>
+        <h3>{t({ de: "Was gilt", en: "Rules" })}</h3>
         <ul className="hint">
-          <li>Unbekanntes Programm = Ablehnen / Unknown application = DENY</li>
-          <li>Nur auf diesem Rechner (127.0.0.1). Eine Webseite kommt nicht durch. / Loopback only. Browser Origin on the grant path = 403</li>
-          <li>Der Server sieht kein Passwort und gibt keine Tokens aus. / FastAPI mints no tokens and never sees plaintext</li>
-          <li>Erlauben klickst du selbst. Nichts läuft automatisch. / Policy allow means human Allow, not auto-handoff</li>
-          <li>Nach Ablauf kein neuer Zugang. Schon rausgegebenes Material holst du nicht zurück. / TTL stops future handoffs. A copy already given is not un-known</li>
+          <li>{t({ de: "Unbekanntes Programm = Ablehnen", en: "Unknown application = DENY" })}</li>
+          <li>
+            {t({
+              de: "Nur auf diesem Rechner. Eine Webseite kommt nicht durch.",
+              en: "This computer only. A web page cannot get a grant.",
+            })}
+          </li>
+          <li>
+            {t({
+              de: "Der Server sieht kein Passwort und gibt keine Tokens aus.",
+              en: "The server never sees a password and mints no tokens.",
+            })}
+          </li>
+          <li>{t({ de: "Erlauben klickst du selbst. Nichts läuft automatisch.", en: "You click Allow. Nothing is automatic." })}</li>
+          <li>
+            {t({
+              de: "Nach Ablauf kein neuer Zugang. Schon rausgegebenes Material holst du nicht zurück.",
+              en: "After expiry, no new access. A copy already given is not un-known.",
+            })}
+          </li>
         </ul>
       </section>
-      <N8nHttpRecipe />
-      <LocalBrokerConnect />
+      <details className="more-options">
+        <summary>{t({ de: "Anschluss für Programme", en: "Connect a program" })}</summary>
+        <N8nHttpRecipe />
+        <LocalBrokerConnect />
+      </details>
       <section className="card">
         <h3>Protokoll / Audit</h3>
         <p className="hint">Kein Passwort in diesen Zeilen. / No secret is stored in these rows.</p>

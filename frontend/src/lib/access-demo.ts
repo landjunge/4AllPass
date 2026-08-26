@@ -112,7 +112,7 @@ export function demoSceneCopy(id: DemoSceneId): DemoSceneCopy {
       return {
         step: "1 / 4",
         title: "n8n will GitHub lesen / n8n asks GitHub repository.read",
-        body: "Erlauben gibt n8n für wenige Sekunden das Roh-Secret (raw_secret_handoff). TTL stoppt nur weitere Lieferungen. / Allow hands n8n the raw secret for a few seconds (raw_secret_handoff). TTL only stops further deliveries.",
+        body: "Erlauben gibt n8n kurz das Secret (raw_secret_handoff). Die Zeitbegrenzung holt eine Kopie nicht zurück. / Allow hands n8n the secret briefly (raw_secret_handoff). TTL cannot recall a copy.",
         action: `n8n asks GitHub repository.read (${DEMO_TTL_SECONDS}s)`,
       };
     case "delete":

@@ -350,7 +350,7 @@ not *this is n8n*. Treat it as the **local root-of-access for agents**
 stolen token plus the string `n8n` is still eligible for a human Allow. That
 is V1. Cryptographic agent keys are
 [`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)
-and are **not** built yet.
+and are **not** built yet. The later profile is [`specs/maip-v0.1.md`](specs/maip-v0.1.md) (experimental draft).
 
 **TTL is a 4AllPass grant clock, not a provider-token clock.** `ttl` /
 `expires_in` stop *later handoffs from this process*. After Allow, n8n already

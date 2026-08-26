@@ -5,7 +5,13 @@
 
 | File | What it is |
 |---|---|
-| [`future-architecture.md`](future-architecture.md) | Long-term trust-fabric vision, honest vs code, roadmap |
+| [`future-architecture.md`](future-architecture.md) | Long-term vision, honest vs code, architecture phases |
+| [`trust-boundaries.md`](trust-boundaries.md) | Who may see plaintext / VK / set policy |
+| [`agent-identity.md`](agent-identity.md) | Shared identity, local authorization |
+| [`agent-access.md`](agent-access.md) | 4AllPass credential use; capabilities not vault |
+| [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Experimental agent identity profile |
+| [`../vault-protocol.md`](../vault-protocol.md) | Client–server storage contract |
+| [`../vault-storage.md`](../vault-storage.md) | Local / self-host / managed placement |
 | [`future-compatibility-check.md`](future-compatibility-check.md) | PASS / WARNING / BLOCK for later agents |
 | [`adr/`](adr/) | Decisions. Status `accepted` only where the **running** code already holds |
 

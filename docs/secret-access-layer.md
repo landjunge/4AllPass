@@ -4,7 +4,7 @@
 **Date:** 2026-08-20  
 **Not this document:** a broker binary, MCP server, FastAPI grant API, env-var export, clipboard watcher, or an orchestrator.
 
-Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `capability-interface.md` (Tollgate = execution, not 4AllPass), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
+Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `capability-interface.md` (Tollgate = execution, not 4AllPass), `architecture/agent-access.md` (later flow), `specs/maip-v0.1.md` (identity ≠ allow), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
 Trackers: [#67](https://github.com/landjunge/4AllPass/issues/67) (this layer), [#65](https://github.com/landjunge/4AllPass/issues/65) (Provider / Account / Secret), [#70](https://github.com/landjunge/4AllPass/issues/70) (Capability × Tollgate), [#59](https://github.com/landjunge/4AllPass/issues/59) (clipboard *ingest*; MCP as a future *client*).
 
 ---

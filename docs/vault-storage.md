@@ -257,20 +257,11 @@ Do not start that SKU in this sequence.
 
 ---
 
-## Sequence (storage only — does not replace autofill v3)
+## Sequence
 
-```text
-Phase 1  Architecture freeze          ← this spec
-Phase 2  Vault Protocol v1 named      ← docs/vault-protocol.md + running /api/v1
-Phase 3  Self-hosted Desktop ↔ one server, then a second device
-Phase 4  Multi-device (enrol, revoke, 409 reload, offline, pin)
-Phase 5  Server A → Server B (same VK, sealed copy) — proves no lock-in
-Phase 6  Managed providers / directory / one-click — only after 5
-```
+Storage is phases 2–4 and 7–8 of [`architecture/future-architecture.md`](architecture/future-architecture.md). Do not skip to managed hosting. First: `Desktop ↔ one server ↔ second device`.
 
-Do not skip to Phase 6. First: `Desktop ↔ one server ↔ second device`, watertight.
-
-A client **MUST** still decrypt that vault if the last host is gone.
+A client **MUST** still decrypt that vault if the last host is gone. Agent identity (MAIP) is a **separate** later phase and does not change this protocol.
 
 ---
 

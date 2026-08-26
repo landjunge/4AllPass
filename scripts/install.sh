@@ -1,19 +1,20 @@
 #!/bin/sh
-# 4AllPass one-command install. POSIX sh.
+# 4AllPass one-command install. POSIX sh. Installs the app only — not Node,
+# Python, Docker, or Postgres. Does not touch the vault folder.
 #
 # curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
 #
-# Not notarized. Not SmartScreen-clean. xattr on macOS is the same trust as
-# right-click → Open, without the dialog. You trust this GitHub repo and the
-# release binary. Alternative: save this file, read it, then: sh install.sh
+# Channel: GitHub release tag `desktop` (override: FOURALLPASS_RELEASE=tag).
+# SHA-256 sidecar is required. Not notarized. Alternative: save this file,
+# read it, then: sh install.sh
 #
-# Does not touch the vault folder.
-# Unlock is still the vault password. No auto-allow. FastAPI mints no tokens.
+# Unlock is still the vault password. FastAPI mints no tokens.
 
 set -eu
 
 REPO="landjunge/4AllPass"
-API="https://api.github.com/repos/${REPO}/releases"
+CHANNEL="${FOURALLPASS_RELEASE:-desktop}"
+API="https://api.github.com/repos/${REPO}/releases/tags/${CHANNEL}"
 VAULT_MAC="${HOME}/Library/Application Support/4AllPass"
 VAULT_LINUX="${HOME}/.local/share/4allpass"
 
@@ -54,6 +55,11 @@ if [ "${1:-}" = "--suffix-only" ]; then
   exit 0
 fi
 
+if [ "${1:-}" = "--print-channel" ]; then
+  printf '%s\n' "$CHANNEL"
+  exit 0
+fi
+
 if [ "${1:-}" = "--pick-from-json" ]; then
   suffix=${2:-}
   file=${3:-}
@@ -68,16 +74,22 @@ fi
 suffix=$(asset_suffix)
 
 printf '%s\n' "4AllPass install"
-printf '%s\n' "Not notarized. You trust GitHub ${REPO}."
-printf '%s\n' "Vault folders are never deleted."
+printf '%s\n' "Channel ${CHANNEL} · GitHub ${REPO}"
+printf '%s\n' "Not notarized. Vault folders are never deleted."
 
-json=$(curl -fsSL "$API") || die "Could not list GitHub releases."
+json=$(curl -fsSL "$API") || die "Could not load GitHub release tag ${CHANNEL}."
 
 # Must end with the suffix so *.dmg.sha256 is not picked as the installer.
 url=$(pick_asset_url "$json" "$suffix")
-[ -n "$url" ] || die "No release asset matching *${suffix}. See https://github.com/${REPO}/releases"
+[ -n "$url" ] || die "No ${CHANNEL} asset matching *${suffix}. See https://github.com/${REPO}/releases/tag/${CHANNEL}"
+
+asset=$(printf '%s\n' "$url" | sed 's|.*/||')
+tag=$(printf '%s\n' "$json" | grep -o '"tag_name":[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*"\([^"]*\)".*/\1/')
+[ -n "$tag" ] || tag="$CHANNEL"
 
 if [ "${1:-}" = "--dry-run" ]; then
+  printf '%s\n' "tag ${tag}"
+  printf '%s\n' "asset ${asset}"
   printf '%s\n' "$url"
   exit 0
 fi
@@ -95,6 +107,8 @@ else
   got=$(shasum -a 256 "$tmp" | awk '{print $1}')
 fi
 [ "$got" = "$expect" ] || die "SHA-256 mismatch. Abort. Expected ${expect}, got ${got}."
+printf '%s\n' "tag ${tag} · ${asset}"
+printf '%s\n' "SHA-256 ${got}"
 printf '%s\n' "SHA-256 ok."
 
 if [ "$os" = Darwin ]; then
@@ -113,8 +127,10 @@ if [ "$os" = Darwin ]; then
   cp -R "$app" "${dest}/4AllPass.app"
   hdiutil detach "$mnt" >/dev/null 2>&1 || true
   xattr -cr "${dest}/4AllPass.app" 2>/dev/null || true
-  printf '%s\n' "Installed ${dest}/4AllPass.app"
-  printf '%s\n' "Vault stays in: ${VAULT_MAC}"
+  printf '%s\n' "✓ 4AllPass installiert / installed"
+  printf '%s\n' "  ${dest}/4AllPass.app"
+  printf '%s\n' "  Vault stays in: ${VAULT_MAC}"
+  printf '%s\n' "4AllPass wird gestartet... / Starting 4AllPass..."
   open -a "${dest}/4AllPass.app" || open -a 4AllPass
 elif [ "$os" = Linux ]; then
   bin="${HOME}/.local/bin"
@@ -122,7 +138,9 @@ elif [ "$os" = Linux ]; then
   install_path="${bin}/4allpass"
   cp "$tmp" "$install_path"
   chmod +x "$install_path"
-  printf '%s\n' "Installed ${install_path}"
-  printf '%s\n' "Vault stays in: ${VAULT_LINUX}"
+  printf '%s\n' "✓ 4AllPass installiert / installed"
+  printf '%s\n' "  ${install_path}"
+  printf '%s\n' "  Vault stays in: ${VAULT_LINUX}"
+  printf '%s\n' "4AllPass wird gestartet... / Starting 4AllPass..."
   "$install_path" >/dev/null 2>&1 &
 fi

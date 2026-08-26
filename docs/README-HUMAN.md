@@ -24,6 +24,14 @@ Du installierst sie, legst einen Tresor an, holst deine Passwörter aus dem Brow
 Installieren → Importieren → Autofill → fertig
 ```
 
+Installieren (ein Befehl, kein Node/Python/Docker):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
+```
+
+Seite: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/)
+
 Agenten (z. B. n8n) dürfen nur dann etwas, wenn du es explizit erlaubst – und nur für begrenzte Zeit.  
 Sie bekommen **nie** den ganzen Tresor.
 
@@ -65,6 +73,14 @@ You install it, create a vault, import your passwords from the browser, and from
 ```text
 Install → Import → Autofill → done
 ```
+
+Install (one command, no Node/Python/Docker):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
+```
+
+Site: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/)
 
 Agents (e.g. n8n) only get something when you explicitly allow it – and only for a limited time.  
 They **never** get the whole vault.

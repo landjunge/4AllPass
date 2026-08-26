@@ -1,0 +1,4 @@
+[advisories]
+# Transitive Linux GTK3 stack (wry → webkit2gtk 2.0 → gtk 0.18 → glib 0.18).
+# First patched glib is 0.20 (GTK4). See docs/desktop.md.
+ignore = ["RUSTSEC-2024-0429"]

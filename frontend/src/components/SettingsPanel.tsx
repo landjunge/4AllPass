@@ -34,7 +34,13 @@ export function SettingsPanel(): ReactNode {
 
   return (
     <section className="card" data-testid="settings-desktop">
-      <h3>{t({ de: "Einstellungen", en: "Settings" })}</h3>
+      <h3>{t({ de: "Wie ist mein Tresor geschützt?", en: "How is my vault protected?" })}</h3>
+      <p className="muted">
+        {t({
+          de: "Verschlüsselt auf diesem Gerät. Nur du öffnest ihn. Sperren und Ruhemodus, nicht die Bildschirmsperre.",
+          en: "Encrypted on this device. Only you open it. Lock and sleep, not the screen lock.",
+        })}
+      </p>
       <label className="checkbox">
         <input
           type="checkbox"

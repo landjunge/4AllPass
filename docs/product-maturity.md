@@ -1,6 +1,6 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-26. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` auf `main`.
+Stand: 2026-08-26. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` und Security Freeze #2 auf `main`. P0–P1 Code + UI-Hierarchie (Tresor · Browser · Zugriff · Einstellungen) auf `main`.
 
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
@@ -257,7 +257,15 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Audit-Freeze auf `main` ([#123](https://github.com/landjunge/4AllPass/pull/123)).** Tester-Notiz: [`freeze.md`](freeze.md). Code P0–P1/P1b (ohne Shadow DOM) liegt. [#121](https://github.com/landjunge/4AllPass/issues/121) Autofill-Härten gelandet. [#120](https://github.com/landjunge/4AllPass/issues/120) Fremder Mac übersprungen (kein zweiter Rechner). Offen: Apple-Geld [#112](https://github.com/landjunge/4AllPass/issues/112), Dritt-Audit [#38](https://github.com/landjunge/4AllPass/issues/38). Später: Shadow DOM / Passkey-Store / Launch. Passkey-Store, Launch-Posts, Connection/Capability und Team Mode nicht in dieser Reihenfolge.
+**Code dieser Reihenfolge ist auf `main`.** Install, Import-Review (CI), Autofill V1, Access Allow/Deny, TOTP, Freeze #2, UI eine Frage pro Screen.
+
+Was **kein Code** mehr ist:
+
+1. [#120](https://github.com/landjunge/4AllPass/issues/120) — Besucher mit **fremdem** Mac (übersprungen, nicht erledigt).
+2. [#112](https://github.com/landjunge/4AllPass/issues/112) — Apple ~99 USD/Jahr für Doppelklick / `v0.1.2`.
+3. [#38](https://github.com/landjunge/4AllPass/issues/38) — unabhängiges Dritt-Audit.
+
+Tester-Notiz: [`freeze.md`](freeze.md). Später im selben Plan, nicht jetzt: Shadow DOM, Passkey-Store, Launch-Posts, Connection/Capability, Team Mode, MAIP-Implementierung, Hosted-SKU.
 
 Index: [`README.md`](README.md). Vision (not this sequence): [`architecture/future-architecture.md`](architecture/future-architecture.md).
 

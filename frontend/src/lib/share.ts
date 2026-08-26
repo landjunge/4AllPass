@@ -51,7 +51,7 @@ export interface BuiltShare {
 const VAULT_KEY_VERSION = 1;
 
 export const SHARE_WARNING =
-  "This encrypts the chosen logins into a file plus a share key. 4AllPass never sees either. Anyone with both can read those logins. You cannot take a copy back.";
+  "Das verschlüsselt die gewählten Logins in eine Datei plus Share-Schlüssel. 4AllPass sieht keines von beiden. Wer beides hat, kann diese Logins lesen. Eine Kopie holst du nicht zurück. / This encrypts the chosen logins into a file plus a share key. 4AllPass never sees either. Anyone with both can read those logins. You cannot take a copy back.";
 
 export function shareWarning(): string {
   return SHARE_WARNING;

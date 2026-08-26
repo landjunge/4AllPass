@@ -31,8 +31,8 @@ export function AuthPage(): ReactNode {
             : "Konto anlegen, damit dieser Server den verschlüsselten Tresor lagern kann. Das Passwort hier ist nur die Anmeldung. / Create an account so this server can store your encrypted vault. This password is only for signing in."}
         </p>
         <label>
-          E-mail
-          <input
+          E-Mail / E-mail
+          <input>
             type="email"
             autoComplete="username"
             value={email}
@@ -59,7 +59,7 @@ export function AuthPage(): ReactNode {
         </p>
         <button type="submit" disabled={busy}>
           {busy
-            ? "Einen Moment…"
+            ? "Einen Moment… / One moment…"
             : mode === "sign-in"
               ? "Anmelden / Sign in"
               : "Konto anlegen / Create account"}

@@ -57,8 +57,11 @@ export function N8nHttpRecipe(): ReactNode {
       </div>
       {copied ? (
         <p className="hint" data-testid="n8n-copied">
-          {copied === "body" ? "JSON copied." : "curl copied (pairing token included)."} Clipboard
-          overwrite after 30s if it still matches.
+          {copied === "body"
+            ? "JSON kopiert. / JSON copied."
+            : "curl kopiert (inkl. Koppel-Code). / curl copied (pairing token included)."}{" "}
+          Zwischenablage nach 30s überschrieben, wenn sie noch passt. / Clipboard overwrite after
+          30s if it still matches.
         </p>
       ) : null}
       <p className="hint" data-testid="n8n-docker-note">

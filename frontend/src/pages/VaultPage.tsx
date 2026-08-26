@@ -174,7 +174,9 @@ export function VaultPage(): ReactNode {
         return;
       }
       const parsed = parsePlaintextExport(text);
-      if (parsed.entries.length === 0) throw new Error("no login entries in this file");
+      if (parsed.entries.length === 0) {
+        throw new Error("Keine Logins in dieser Datei. / no login entries in this file");
+      }
       setImportPending({
         count: parsed.entries.length,
         entries: parsed.entries,
@@ -199,7 +201,9 @@ export function VaultPage(): ReactNode {
     if (!shareImport) return;
     try {
       const opened = openSharePackage(shareImport.text, shareImport.key);
-      if (opened.length === 0) throw new Error("share file had no logins");
+      if (opened.length === 0) {
+        throw new Error("Share-Datei ohne Logins. / share file had no logins");
+      }
       setShareImport(null);
       setImportPending({
         count: opened.length,
@@ -613,7 +617,7 @@ export function VaultPage(): ReactNode {
                     className="link"
                     disabled={!draft.username}
                     data-testid="copy-username"
-                    onClick={() => copyField("Username", draft.username)}
+                    onClick={() => copyField(t({ de: "Benutzername", en: "Username" }), draft.username)}
                   >
                     {t({ de: "Benutzername kopieren", en: "Copy username" })}
                   </button>
@@ -646,7 +650,7 @@ export function VaultPage(): ReactNode {
                     className="link"
                     disabled={!draft.password}
                     data-testid="copy-password"
-                    onClick={() => copyField("Password", draft.password)}
+                    onClick={() => copyField(t({ de: "Passwort", en: "Password" }), draft.password)}
                   >
                     {t({ de: "Kopieren", en: "Copy" })}
                   </button>
@@ -662,8 +666,10 @@ export function VaultPage(): ReactNode {
                 </div>
                 {copied ? (
                   <p className="hint" data-testid="copied-note">
-                    {copied} copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000}{" "}
-                    seconds if it still holds this value.
+                    {t({
+                      de: `${copied} kopiert. Die Zwischenablage wird in ${CLIPBOARD_CLEAR_MS / 1000} Sekunden überschrieben, wenn sie den Wert noch hält.`,
+                      en: `${copied} copied. The clipboard is overwritten in ${CLIPBOARD_CLEAR_MS / 1000} seconds if it still holds this value.`,
+                    })}
                   </p>
                 ) : null}
                 <label>
@@ -736,8 +742,8 @@ export function VaultPage(): ReactNode {
                     ))}
                   </div>
                   <label>
-                    Custom template
-                    <textarea
+                    {t({ de: "Eigenes Template", en: "Custom template" })}
+                    <textarea>
                       rows={4}
                       value={customTemplate}
                       onChange={(event) => setCustomTemplate(event.target.value)}
@@ -755,25 +761,30 @@ export function VaultPage(): ReactNode {
                           ...applyTemplate(template, draft.account || "personal"),
                           password: draft.password || generatePassword(),
                         });
-                        setDetectedLabel(`Template ${template.name}. Save encrypts it. Access still needs Allow.`);
+                        setDetectedLabel(
+                          `Template ${template.name}. ${t({
+                            de: "Speichern legt es verschlüsselt ab. Programme brauchen weiterhin Erlauben.",
+                            en: "Save encrypts it. Access still needs Allow.",
+                          })}`,
+                        );
                       } catch (error) {
                         setDetectedLabel(error instanceof Error ? error.message : String(error));
                       }
                     }}
                   >
-                    Apply custom template
+                    {t({ de: "Template anwenden", en: "Apply custom template" })}
                   </button>
                   <label>
-                    Provider
-                    <input
+                    {t({ de: "Anbieter", en: "Provider" })}
+                    <input>
                       value={draft.provider}
                       onChange={(event) => setDraft({ ...draft, provider: event.target.value })}
                       data-testid="entry-provider"
                     />
                   </label>
                   <label>
-                    Account
-                    <input
+                    {t({ de: "Konto", en: "Account" })}
+                    <input>
                       value={draft.account}
                       onChange={(event) => setDraft({ ...draft, account: event.target.value })}
                       data-testid="entry-account"
@@ -781,8 +792,8 @@ export function VaultPage(): ReactNode {
                   </label>
                   {draft.kind === "api" ? (
                     <label>
-                      Capabilities
-                      <input
+                      {t({ de: "Rechte", en: "Capabilities" })}
+                      <input>
                         value={draft.capabilities}
                         onChange={(event) => setDraft({ ...draft, capabilities: event.target.value })}
                         data-testid="entry-capabilities"
@@ -791,8 +802,8 @@ export function VaultPage(): ReactNode {
                     </label>
                   ) : null}
                   <label>
-                    TOTP secret (Base32 / otpauth)
-                    <input
+                    {t({ de: "TOTP-Geheimnis (Base32 / otpauth)", en: "TOTP secret (Base32 / otpauth)" })}
+                    <input>
                       type="password"
                       value={draft.totpSecret}
                       onChange={(event) => {
@@ -815,7 +826,12 @@ export function VaultPage(): ReactNode {
                     />
                   </label>
                   {draft.totpSecret.startsWith("otpauth:") ? (
-                    <p className="hint">Paste into the box, then save.</p>
+                    <p className="hint">
+                      {t({
+                        de: "Hier einfügen, dann speichern.",
+                        en: "Paste into the box, then save.",
+                      })}
+                    </p>
                   ) : draft.totpSecret ? (
                     <TotpCode secret={draft.totpSecret} />
                   ) : null}
@@ -828,10 +844,12 @@ export function VaultPage(): ReactNode {
                     disabled={busy}
                     data-testid="save-entry"
                   >
-                    {busy ? "Committing…" : "Save"}
+                    {busy
+                      ? t({ de: "Wird gespeichert…", en: "Saving…" })
+                      : t({ de: "Speichern", en: "Save" })}
                   </button>
                   <button type="button" onClick={() => setDraft(null)} disabled={busy}>
-                    Cancel
+                    {t({ de: "Abbrechen", en: "Cancel" })}
                   </button>
                   {selected ? (
                     <>
@@ -841,7 +859,7 @@ export function VaultPage(): ReactNode {
                         onClick={startShare}
                         disabled={busy}
                       >
-                        Share
+                        {t({ de: "Teilen", en: "Share" })}
                       </button>
                       <button
                         type="button"
@@ -849,7 +867,7 @@ export function VaultPage(): ReactNode {
                         onClick={() => void remove(selected)}
                         disabled={busy}
                       >
-                        Delete
+                        {t({ de: "Löschen", en: "Delete" })}
                       </button>
                     </>
                   ) : null}
@@ -876,16 +894,25 @@ export function VaultPage(): ReactNode {
           <div className="card kit">
             <h2>
               {importPending.source === "share"
-                ? "Import shared logins"
+                ? t({ de: "Geteilte Logins übernehmen", en: "Import shared logins" })
                 : importPending.source === "browser"
-                  ? "Browser-Passwörter in den Tresor / Browser passwords into the vault"
-                  : "Import plaintext file"}
+                  ? t({
+                      de: "Browser-Passwörter in den Tresor",
+                      en: "Browser passwords into the vault",
+                    })
+                  : t({ de: "Klartextdatei übernehmen", en: "Import plaintext file" })}
             </h2>
             <p>
               {importPending.source === "share"
-                ? "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext."
+                ? t({
+                    de: "Die Share-Datei ist auf diesem Gerät schon entschlüsselt. Bestätigen legt die Logins verschlüsselt in deinen Tresor. Der Server sieht nur Chiffretext.",
+                    en: "The share file is already decrypted on this device. Confirming encrypts the logins into your vault. The server only stores ciphertext.",
+                  })
                 : importPending.source === "browser"
-                  ? "macOS hat den Zugriff erlaubt. Bestätigen legt die Logins verschlüsselt in deinen Tresor. Der Server sieht sie nicht. / macOS granted access. Confirm encrypts into your vault. The server never sees them."
+                  ? t({
+                      de: "macOS hat den Zugriff erlaubt. Bestätigen legt die Logins verschlüsselt in deinen Tresor. Der Server sieht sie nicht.",
+                      en: "macOS granted access. Confirm encrypts into your vault. The server never sees them.",
+                    })
                   : plaintextImportWarning()}
             </p>
             <div className="import-review" data-testid="import-review">
@@ -956,10 +983,10 @@ export function VaultPage(): ReactNode {
                 data-testid="confirm-import"
                 onClick={() => void confirmImport()}
               >
-                Encrypt and import
+                {t({ de: "Verschlüsseln und übernehmen", en: "Encrypt and import" })}
               </button>
               <button type="button" disabled={busy} onClick={() => setImportPending(null)}>
-                Cancel
+                {t({ de: "Abbrechen", en: "Cancel" })}
               </button>
             </div>
           </div>
@@ -968,9 +995,9 @@ export function VaultPage(): ReactNode {
       {share ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Share this login</h2>
+            <h2>{t({ de: "Diesen Login teilen", en: "Share this login" })}</h2>
             <p>{shareWarning()}</p>
-            <p className="muted small">Share key</p>
+            <p className="muted small">{t({ de: "Share-Schlüssel", en: "Share key" })}</p>
             <code className="mono block key" data-testid="share-key">
               {share.shareKey}
             </code>
@@ -981,27 +1008,29 @@ export function VaultPage(): ReactNode {
                 data-testid="download-share"
                 onClick={() => downloadShareFile(share)}
               >
-                Download encrypted file
+                {t({ de: "Verschlüsselte Datei herunterladen", en: "Download encrypted file" })}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   void copySecret(share.shareKey)
-                    .then(() => setCopied("Share key"))
+                    .then(() => setCopied(t({ de: "Share-Schlüssel", en: "Share key" })))
                     .catch(() => undefined);
                 }}
               >
-                Copy share key
+                {t({ de: "Share-Schlüssel kopieren", en: "Copy share key" })}
               </button>
             </div>
-            {copied === "Share key" ? (
+            {copied === t({ de: "Share-Schlüssel", en: "Share key" }) ? (
               <p className="hint">
-                Key copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000} seconds if it
-                still holds this value.
+                {t({
+                  de: `Schlüssel kopiert. Die Zwischenablage wird in ${CLIPBOARD_CLEAR_MS / 1000} Sekunden überschrieben, wenn sie ihn noch hält.`,
+                  en: `Key copied. The clipboard is overwritten in ${CLIPBOARD_CLEAR_MS / 1000} seconds if it still holds this value.`,
+                })}
               </p>
             ) : null}
             <button type="button" className="link" onClick={() => setShare(null)}>
-              Done
+              {t({ de: "Fertig", en: "Done" })}
             </button>
           </div>
         </div>
@@ -1009,10 +1038,15 @@ export function VaultPage(): ReactNode {
       {shareImport ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Open share file</h2>
-            <p>Enter the share key. Decryption stays on this device.</p>
+            <h2>{t({ de: "Share-Datei öffnen", en: "Open share file" })}</h2>
+            <p>
+              {t({
+                de: "Share-Schlüssel eingeben. Entschlüsseln bleibt auf diesem Gerät.",
+                en: "Enter the share key. Decryption stays on this device.",
+              })}
+            </p>
             <label>
-              Share key
+              {t({ de: "Share-Schlüssel", en: "Share key" })}
               <input
                 value={shareImport.key}
                 onChange={(event) => setShareImport({ ...shareImport, key: event.target.value })}
@@ -1028,10 +1062,10 @@ export function VaultPage(): ReactNode {
                 onClick={openShare}
                 disabled={!shareImport.key.trim()}
               >
-                Decrypt on this device
+                {t({ de: "Auf diesem Gerät entschlüsseln", en: "Decrypt on this device" })}
               </button>
               <button type="button" onClick={() => setShareImport(null)}>
-                Cancel
+                {t({ de: "Abbrechen", en: "Cancel" })}
               </button>
             </div>
           </div>

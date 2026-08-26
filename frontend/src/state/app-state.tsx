@@ -281,7 +281,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             setLockState("LOCKED");
             throw failure;
           }
-        }, "Vault created. Store the recovery key now.");
+        }, "Tresor angelegt. Recovery-Schlüssel jetzt sichern. / Vault created. Store the recovery key now.");
       },
 
       async restoreFromShare(fileText, shareKey, masterPassword) {
@@ -300,7 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             setLockState("LOCKED");
             throw failure;
           }
-        }, "Vault restored from share file. Store the new recovery key. The share key is not this key.");
+        }, "Tresor aus Share-Datei wiederhergestellt. Neuen Recovery-Schlüssel sichern. Der Share-Schlüssel ist das nicht. / Vault restored from share file. Store the new recovery key. The share key is not this key.");
       },
 
       async unlockWithPassword(masterPassword) {
@@ -351,7 +351,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         if (!current) throw new Error("vault is locked");
         await withStatus(async () => {
           setUnlocked(await commitEntries(current, entries));
-        }, "Saved.");
+        }, "Gespeichert. / Saved.");
       },
 
       async enableBiometrics() {
@@ -364,7 +364,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setDeviceUnlockAvailable(true);
           setDevices(await api.listDevices(current.vaultId));
           return result.mechanism;
-        }, "Device unlock enabled. The master password still works.");
+        }, "Geräte-Entsperren ist an. Das Tresor-Passwort gilt weiter. / Device unlock enabled. The vault password still works.");
       },
 
       async revoke(targetDeviceId) {
@@ -374,7 +374,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setUnlocked(await revokeDevice(current, targetDeviceId));
           setDevices(await api.listDevices(current.vaultId));
           if (targetDeviceId === deviceId()) setDeviceUnlockAvailable(false);
-        }, "Removed from the next sync. A device that already knows this vault key still knows it.");
+        }, "Aus dem nächsten Sync genommen. Ein Gerät, das diesen Tresor-Schlüssel schon kennt, kennt ihn weiter. / Removed from the next sync. A device that already knows this vault key still knows it.");
       },
 
       async hardRevoke(targetDeviceId, masterPassword, recoveryKeyText) {
@@ -396,7 +396,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
               setDeviceUnlockAvailable(false);
             }
           }
-        }, "Vault key rotated. Old snapshots stay readable only to holders of the previous key.");
+        }, "Tresor-Schlüssel gewechselt. Alte Stände lesbar nur für Inhaber des vorigen Schlüssels. / Vault key rotated. Old snapshots stay readable only to holders of the previous key.");
       },
 
       async replaceTrustedRecovery(oldRecoveryKeyText) {
@@ -406,7 +406,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           const next = await replaceTrustedRecoveryKey(current, oldRecoveryKeyText);
           setUnlocked(next.vault);
           setRecoveryKey(next.recoveryKey);
-        }, "New recovery key printed. The previous kit no longer opens this revision.");
+        }, "Neuer Recovery-Schlüssel gedruckt. Der alte öffnet diesen Stand nicht mehr. / New recovery key printed. The previous kit no longer opens this revision.");
       },
 
       async rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText) {
@@ -422,7 +422,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           if (!next.vault.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
             setDeviceUnlockAvailable(false);
           }
-        }, "Vault key rotated because the recovery kit may be stolen. Save the new kit.");
+        }, "Tresor-Schlüssel gewechselt, weil das Recovery-Kit gestohlen sein kann. Neuen Schlüssel sichern. / Vault key rotated because the recovery kit may be stolen. Save the new kit.");
       },
 
       refreshDevices,

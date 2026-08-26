@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 import {
   prfCapabilityState,
   probeWebviewWebauthn,
@@ -13,6 +14,7 @@ const MECHANISM_LABEL: Record<string, string> = {
 };
 
 export function DevicesPanel(): ReactNode {
+  const { t } = useCopy();
   const {
     devices,
     refreshDevices,
@@ -61,14 +63,22 @@ export function DevicesPanel(): ReactNode {
   return (
     <div className="columns">
       <section className="card">
-        <h3>This device</h3>
+        <h3>{t({ de: "Dieses Gerät", en: "This device" })}</h3>
         <p className="muted mono">{thisDeviceId}</p>
         {deviceUnlockAvailable ? (
           <p className="ok" data-testid="device-unlock-state">
-            Device unlock is enabled in this browser profile.
+            {t({
+              de: "Dieses Gerät kann den Tresor hier öffnen.",
+              en: "Device unlock is enabled in this browser profile.",
+            })}
           </p>
         ) : (
-          <p className="muted">Device unlock is not set up here yet.</p>
+          <p className="muted">
+            {t({
+              de: "Geräte-Entsperren ist hier noch nicht eingerichtet.",
+              en: "Device unlock is not set up here yet.",
+            })}
+          </p>
         )}
         <button
           type="button"
@@ -77,11 +87,14 @@ export function DevicesPanel(): ReactNode {
           disabled={busy}
           data-testid="enable-biometrics"
         >
-          {busy ? "Waiting for the authenticator…" : "Enable device unlock"}
+          {busy
+            ? t({ de: "Warten auf dieses Gerät…", en: "Waiting for the authenticator…" })
+            : t({ de: "Geräte-Entsperren einschalten", en: "Enable device unlock" })}
         </button>
         {mechanism ? (
           <p className="ok" data-testid="enabled-mechanism">
-            Enabled via {MECHANISM_LABEL[mechanism] ?? mechanism}
+            {t({ de: "Eingeschaltet über", en: "Enabled via" })}{" "}
+            {MECHANISM_LABEL[mechanism] ?? mechanism}
           </p>
         ) : null}
         {prfState && prfState !== "available" ? (
@@ -101,39 +114,73 @@ export function DevicesPanel(): ReactNode {
           </p>
         ) : null}
         <p className="hint">
-          WebAuthn unlocks a Device Wrapping Key, which unwraps a random Device Key, which unwraps
-          the Vault Key. The PRF output is never used as a key and is wiped straight after use. The
-          master password keeps working either way.
+          {t(
+            {
+              de: "Dieses Gerät merkt sich den Tresor. Das Tresor-Passwort gilt weiter.",
+              en: "This device can remember the vault. The vault password still works.",
+            },
+            {
+              de: "WebAuthn gibt einen Device-Wrapping-Key frei, der den Device Key und damit den Vault Key öffnet. PRF-Ausgabe ist nie der AES-Schlüssel und wird sofort gelöscht.",
+              en: "WebAuthn unlocks a Device Wrapping Key, which unwraps a random Device Key, which unwraps the Vault Key. The PRF output is never used as a key and is wiped straight after use. The master password keeps working either way.",
+            },
+          )}
         </p>
       </section>
 
       <section className="card">
-        <h3>Authorized devices</h3>
+        <h3>
+          {t({
+            de: "Welche Geräte dürfen diesen Tresor öffnen?",
+            en: "Which devices may open this vault?",
+          })}
+        </h3>
         {devices.length === 0 ? (
-          <p className="muted">No devices registered.</p>
+          <p className="muted">{t({ de: "Noch keine Geräte.", en: "No devices registered." })}</p>
         ) : (
           <ul className="devices">
             {devices.map((device) => (
               <li key={device.deviceId}>
                 <div>
                   <strong>{device.label}</strong>
-                  {device.deviceId === thisDeviceId ? <span className="badge">this device</span> : null}
+                  {device.deviceId === thisDeviceId ? (
+                    <span className="badge">{t({ de: "dieses Gerät", en: "this device" })}</span>
+                  ) : null}
                   <span className="muted mono small">{device.deviceId}</span>
                   <span className={device.hasDeviceEnvelope ? "ok small" : "muted small"}>
                     {device.hasDeviceEnvelope
-                      ? "device envelope in the active revision"
-                      : "no device envelope — cannot obtain the Vault Key"}
+                      ? t(
+                          {
+                            de: "kann diesen Tresor öffnen",
+                            en: "can open this vault",
+                          },
+                          {
+                            de: "Geräte-Umschlag in der aktiven Revision",
+                            en: "device envelope in the active revision",
+                          },
+                        )
+                      : t(
+                          {
+                            de: "kann den Tresor nicht öffnen",
+                            en: "cannot open this vault",
+                          },
+                          {
+                            de: "kein Geräte-Umschlag — Vault Key nicht erhältlich",
+                            en: "no device envelope — cannot obtain the Vault Key",
+                          },
+                        )}
                   </span>
                   {device.credentials.map((credential) => (
                     <span key={credential.id} className="muted small">
                       {MECHANISM_LABEL[credential.mechanism] ?? credential.mechanism}
-                      {credential.hasMirroredDeviceKeyEnvelope ? " · envelope mirrored" : ""}
-                      {credential.revokedAt ? " · revoked" : ""}
+                      {credential.hasMirroredDeviceKeyEnvelope
+                        ? t({ de: " · Umschlag gespiegelt", en: " · envelope mirrored" })
+                        : ""}
+                      {credential.revokedAt ? t({ de: " · entzogen", en: " · revoked" }) : ""}
                     </span>
                   ))}
                 </div>
                 {device.revokedAt ? (
-                  <span className="muted small">revoked</span>
+                  <span className="muted small">{t({ de: "entzogen", en: "revoked" })}</span>
                 ) : (
                   <div className="device-actions">
                     <button
@@ -142,7 +189,7 @@ export function DevicesPanel(): ReactNode {
                       onClick={() => void revoke(device.deviceId)}
                       disabled={busy}
                     >
-                      Remove from sync
+                      {t({ de: "Aus Sync nehmen", en: "Remove from sync" })}
                     </button>
                     <button
                       type="button"
@@ -151,7 +198,7 @@ export function DevicesPanel(): ReactNode {
                       onClick={() => setRotateTarget(device.deviceId)}
                       disabled={busy}
                     >
-                      Rotate vault key
+                      {t({ de: "Tresor-Schlüssel wechseln", en: "Rotate vault key" })}
                     </button>
                   </div>
                 )}
@@ -160,10 +207,16 @@ export function DevicesPanel(): ReactNode {
           </ul>
         )}
         <p className="hint">
-          “Remove from sync” drops the device envelope in the next revision. That is not cryptographic
-          erase — a device that already holds this vault key can still read snapshots sealed under it.
-          Suspected compromise needs “Rotate vault key”: new random vault key, re-encrypt, then
-          metadata revoke. Other devices re-enrol with the master password.
+          {t(
+            {
+              de: "„Aus Sync nehmen“ nimmt diesem Gerät den nächsten Stand. Ein Gerät, das den Schlüssel schon hat, kann alte Stände noch lesen. Bei Verdacht: Tresor-Schlüssel wechseln. Andere Geräte mit dem Tresor-Passwort neu anmelden.",
+              en: "“Remove from sync” drops this device from the next revision. A device that already holds this vault key can still read snapshots sealed under it. Suspected compromise needs “Rotate vault key”. Other devices re-enrol with the vault password.",
+            },
+            {
+              de: "Soft-Revoke löscht den Geräte-Umschlag in N+1. Das ist kein kryptografisches Löschen. Kompromissverdacht braucht vaultKeyVersion++.",
+              en: "“Remove from sync” drops the device envelope in the next revision. That is not cryptographic erase. Suspected compromise needs “Rotate vault key”: new random vault key, re-encrypt, then metadata revoke.",
+            },
+          )}
         </p>
         {rotateTarget ? (
           <form
@@ -181,10 +234,10 @@ export function DevicesPanel(): ReactNode {
                 .finally(() => setBusy(false));
             }}
           >
-            <h4>Rotate vault key</h4>
+            <h4>{t({ de: "Tresor-Schlüssel wechseln", en: "Rotate vault key" })}</h4>
             <p className="muted small mono">{rotateTarget}</p>
             <label>
-              Vault password
+              {t({ de: "Tresor-Passwort", en: "Vault password" })}
               <input
                 type="password"
                 autoComplete="current-password"
@@ -197,7 +250,7 @@ export function DevicesPanel(): ReactNode {
             </label>
             {needsRecoveryKey ? (
               <label>
-                Recovery key
+                {t({ de: "Recovery-Schlüssel", en: "Recovery key" })}
                 <textarea
                   value={recoveryKeyText}
                   onChange={(event) => setRecoveryKeyText(event.target.value)}
@@ -209,12 +262,16 @@ export function DevicesPanel(): ReactNode {
               </label>
             ) : null}
             <p className="hint">
-              Confirms you still know the unwrap secrets, then seals revision N+1 under a new vault
-              key. DELETE runs only after that commit succeeds.
+              {t({
+                de: "Bestätigt, dass du Passwort und Schlüssel noch kennst, und versiegelt den nächsten Stand unter einem neuen Schlüssel. Entziehen läuft erst danach.",
+                en: "Confirms you still know the unwrap secrets, then seals revision N+1 under a new vault key. DELETE runs only after that commit succeeds.",
+              })}
             </p>
             <div className="device-actions">
               <button type="submit" className="danger" disabled={busy} data-testid="confirm-rotate">
-                {busy ? "Rotating…" : "Confirm rotation"}
+                {busy
+                  ? t({ de: "Wird gewechselt…", en: "Rotating…" })
+                  : t({ de: "Wechsel bestätigen", en: "Confirm rotation" })}
               </button>
               <button
                 type="button"
@@ -226,7 +283,7 @@ export function DevicesPanel(): ReactNode {
                   setRecoveryKeyText("");
                 }}
               >
-                Cancel
+                {t({ de: "Abbrechen", en: "Cancel" })}
               </button>
             </div>
           </form>
@@ -289,7 +346,7 @@ export function DevicesPanel(): ReactNode {
                   {busy ? "…" : "Neuen Schlüssel erzeugen / Mint new kit"}
                 </button>
                 <button type="button" className="link" onClick={() => setKitAction("none")}>
-                  Cancel
+                  {t({ de: "Abbrechen", en: "Cancel" })}
                 </button>
               </div>
             </form>
@@ -310,8 +367,8 @@ export function DevicesPanel(): ReactNode {
               }}
             >
               <label>
-                Vault password
-                <input
+                {t({ de: "Tresor-Passwort", en: "Vault password" })}
+                <input>
                   type="password"
                   autoComplete="current-password"
                   value={compromisePassword}
@@ -336,10 +393,12 @@ export function DevicesPanel(): ReactNode {
               </p>
               <div className="device-actions">
                 <button type="submit" className="danger" disabled={busy} data-testid="confirm-compromised-recovery">
-                  {busy ? "Rotating…" : "Vault-Key rotieren / Rotate vault key"}
+                  {busy
+                    ? t({ de: "Wird gewechselt…", en: "Rotating…" })
+                    : t({ de: "Tresor-Schlüssel wechseln", en: "Rotate vault key" })}
                 </button>
                 <button type="button" className="link" onClick={() => setKitAction("none")}>
-                  Cancel
+                  {t({ de: "Abbrechen", en: "Cancel" })}
                 </button>
               </div>
             </form>

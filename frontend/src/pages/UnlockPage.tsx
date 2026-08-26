@@ -73,7 +73,7 @@ export function UnlockPage(): ReactNode {
                 not a hardware-bound PRF secret.
               </p>
             ) : null}
-            <div className="divider">or</div>
+            <div className="divider">oder / or</div>
           </>
         ) : null}
 
@@ -102,7 +102,7 @@ export function UnlockPage(): ReactNode {
           </label>
         )}
         <button type="submit" disabled={busy !== "none"} data-testid="unlock-submit">
-          {busy === "password" ? "Einen Moment…" : "Öffnen / Unlock"}
+          {busy === "password" ? "Einen Moment… / One moment…" : "Öffnen / Unlock"}
         </button>
         <button type="button" className="link" onClick={() => setUseRecovery(!useRecovery)}>
           {useRecovery ? "Tresor-Passwort / Use the vault password" : "Recovery-Schlüssel / Use the recovery key"}

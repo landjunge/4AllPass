@@ -49,11 +49,11 @@ export function App(): ReactNode {
               {lockState}
             </span>
             <span className="lock-pill" aria-hidden="true">
-              {lockState === "UNLOCKED" ? "🔓 Tresor geöffnet" : "🔒 Gesperrt"}
+              {lockState === "UNLOCKED" ? "🔓 Tresor geöffnet / Vault open" : "🔒 Gesperrt / Locked"}
             </span>
             {lockState === "UNLOCKED" ? (
               <button type="button" className="primary" onClick={lock} data-testid="lock">
-                Sperren
+                Sperren / Lock
               </button>
             ) : null}
             {localMode ? null : (

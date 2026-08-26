@@ -30,6 +30,8 @@ export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode 
         <p className="muted">
           Wähle ein Tresor-Passwort. Wenn du es vergisst, öffnet nur der Recovery-Schlüssel auf dem
           nächsten Schirm diesen Tresor. Niemand kann ihn zurücksetzen — auch dieser Rechner nicht.
+          / Choose a vault password. If you forget it, only the recovery key on the next screen
+          opens this vault. Nobody can reset it — not even this computer.
         </p>
         <label>
           Tresor-Passwort / Vault password
@@ -54,12 +56,17 @@ export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode 
             data-testid="vault-password-repeat"
           />
         </label>
-        {mismatch ? <p className="error-text">Die Passwörter stimmen nicht überein.</p> : null}
+        {mismatch ? (
+          <p className="error-text">
+            Die Passwörter stimmen nicht überein. / The passwords do not match.
+          </p>
+        ) : null}
         <p className="hint">
           Das Tresor-Passwort verlässt dieses Gerät nicht. Ein paar Sekunden Wartezeit sind Absicht.
+          / The vault password does not leave this device. A few seconds of waiting is intentional.
         </p>
         <button type="submit" disabled={busy || mismatch} data-testid="create-vault">
-          {busy ? "Tresor wird erzeugt…" : "Tresor anlegen / Create vault"}
+          {busy ? "Tresor wird erzeugt… / Creating vault…" : "Tresor anlegen / Create vault"}
         </button>
         {onBack ? (
           <button type="button" className="link" onClick={onBack} data-testid="create-back">

@@ -1,19 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 
 function kitText(vaultId: string, recoveryKey: string): string {
   return [
-    "4AllPass emergency kit",
+    "4AllPass Notfall-Schlüssel / emergency kit",
     "",
-    `Vault ID: ${vaultId}`,
+    `Tresor-ID / Vault ID: ${vaultId}`,
     "",
-    "Recovery key:",
+    "Recovery-Schlüssel / Recovery key:",
     recoveryKey,
     "",
     "Ohne diesen Schlüssel oder ein zweites Gerät gibt es kein Zurück.",
     "There is no e-mail reset. The server cannot recover the vault.",
-    "Store this offline. Do not screenshot it into a cloud album.",
+    "Offline aufbewahren. Nicht ins Cloud-Album fotografieren. / Store this offline. Do not screenshot it into a cloud album.",
     "",
   ].join("\n");
 }
@@ -57,6 +58,7 @@ function printKit(vaultId: string, recoveryKey: string): void {
 /** Emergency Kit (crypto-protocol.md §6). Shown once, never stored anywhere. */
 export function RecoveryKitDialog(): ReactNode {
   const { recoveryKey, activeVaultId, dismissRecoveryKey } = useApp();
+  const { t } = useCopy();
   const [confirmed, setConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
   if (!recoveryKey || !activeVaultId) return null;
@@ -64,23 +66,25 @@ export function RecoveryKitDialog(): ReactNode {
   return (
     <div className="overlay" role="dialog" aria-modal="true">
       <div className="card kit">
-        <h2>Save your recovery key</h2>
+        <h2>{t({ de: "Recovery-Schlüssel sichern", en: "Save your recovery key" })}</h2>
         <p>
-          Write this down or keep an offline copy. If you lose both the vault password and this
-          key, the vault cannot be opened. There is no e-mail recovery.
+          {t({
+            de: "Schreib ihn auf oder speichere ihn offline. Ohne Tresor-Passwort und ohne diesen Schlüssel bleibt der Tresor zu. Es gibt keine E-Mail-Wiederherstellung.",
+            en: "Write this down or keep an offline copy. If you lose both the vault password and this key, the vault cannot be opened. There is no e-mail recovery.",
+          })}
         </p>
-        <p className="muted small">Vault ID</p>
+        <p className="muted small">{t({ de: "Tresor-ID", en: "Vault ID" })}</p>
         <code className="mono block">{activeVaultId}</code>
-        <p className="muted small">Recovery key</p>
+        <p className="muted small">{t({ de: "Recovery-Schlüssel", en: "Recovery key" })}</p>
         <code className="mono block key" data-testid="recovery-key">
           {recoveryKey}
         </code>
         <div className="device-actions">
           <button type="button" onClick={() => downloadKit(activeVaultId, recoveryKey)}>
-            Download
+            {t({ de: "Herunterladen", en: "Download" })}
           </button>
           <button type="button" onClick={() => printKit(activeVaultId, recoveryKey)}>
-            Print
+            {t({ de: "Drucken", en: "Print" })}
           </button>
           <button
             type="button"
@@ -89,13 +93,15 @@ export function RecoveryKitDialog(): ReactNode {
               void copySecret(recoveryKey).then(() => setCopied(true));
             }}
           >
-            Copy key
+            {t({ de: "Schlüssel kopieren", en: "Copy key" })}
           </button>
         </div>
         {copied ? (
           <p className="hint">
-            Key copied. The clipboard is overwritten in {CLIPBOARD_CLEAR_MS / 1000} seconds if it
-            still holds this value. Prefer download or print for the offline kit.
+            {t({
+              de: `Schlüssel kopiert. Die Zwischenablage wird in ${CLIPBOARD_CLEAR_MS / 1000} Sekunden überschrieben, wenn sie ihn noch hält. Besser herunterladen oder drucken.`,
+              en: `Key copied. The clipboard is overwritten in ${CLIPBOARD_CLEAR_MS / 1000} seconds if it still holds this value. Prefer download or print for the offline kit.`,
+            })}
           </p>
         ) : null}
         <label className="checkbox">
@@ -105,7 +111,10 @@ export function RecoveryKitDialog(): ReactNode {
             onChange={(event) => setConfirmed(event.target.checked)}
             data-testid="confirm-kit-stored"
           />
-          I stored this recovery key offline.
+          {t({
+            de: "Ich habe den Schlüssel offline gespeichert.",
+            en: "I stored this recovery key offline.",
+          })}
         </label>
         <button
           type="button"
@@ -114,7 +123,7 @@ export function RecoveryKitDialog(): ReactNode {
           onClick={dismissRecoveryKey}
           data-testid="dismiss-kit"
         >
-          Continue
+          {t({ de: "Weiter", en: "Continue" })}
         </button>
       </div>
     </div>

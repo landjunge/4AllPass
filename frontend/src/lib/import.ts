@@ -11,7 +11,7 @@ export interface ImportResult {
 }
 
 const PLAINTEXT_WARNING =
-  "This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.";
+  "Diese Datei ist Klartext. Nach dem Bestätigen verschlüsselt 4AllPass die Einträge auf diesem Gerät; der Server speichert nur Chiffretext. Die Exportdatei danach löschen. / This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.";
 
 export function plaintextImportWarning(): string {
   return PLAINTEXT_WARNING;
@@ -404,13 +404,13 @@ function parseKeepassXml(text: string): ImportResult | null {
 export function parsePlaintextExport(text: string): ImportResult {
   if (text.startsWith("PK") || text.includes("\0")) {
     throw new Error(
-      "This file looks encrypted or zipped. Export 1Password as JSON (or unzip .1pux and import export.data). Export KeePass as XML or CSV, not .kdbx.",
+      "Diese Datei wirkt verschlüsselt oder gezippt. 1Password als JSON exportieren (oder .1pux entpacken und export.data importieren). KeePass als XML oder CSV, nicht .kdbx. / This file looks encrypted or zipped. Export 1Password as JSON (or unzip .1pux and import export.data). Export KeePass as XML or CSV, not .kdbx.",
     );
   }
   const trimmed = text.trim();
   if (looksLikeSharePackage(trimmed)) {
     throw new Error(
-      "This is a 4AllPass share file, not a plaintext export. Import it and enter the share key.",
+      "Das ist eine 4AllPass-Share-Datei, kein Klartext-Export. Über die Dateiauswahl importieren und den Share-Schlüssel eingeben. / This is a 4AllPass share file, not a plaintext export. Import it and enter the share key.",
     );
   }
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
@@ -419,7 +419,9 @@ export function parsePlaintextExport(text: string): ImportResult {
     if (bitwarden) return bitwarden;
     const onepassword = parse1PasswordJson(parsed);
     if (onepassword) return onepassword;
-    throw new Error("JSON is not a Bitwarden or 1Password item export");
+    throw new Error(
+      "JSON ist kein Bitwarden- oder 1Password-Export. / JSON is not a Bitwarden or 1Password item export",
+    );
   }
   const keepass = parseKeepassXml(trimmed);
   if (keepass) return keepass;

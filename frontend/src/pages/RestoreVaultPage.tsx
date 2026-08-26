@@ -40,7 +40,9 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
         <p className="muted">
           Öffne eine 4AllPass-Share-Datei plus Share-Schlüssel. Danach gilt ein neues
           Tresor-Passwort und ein neuer Recovery-Schlüssel. Der Share-Schlüssel ist nicht der
-          Recovery-Schlüssel. Ohne die Datei reicht der Recovery-Schlüssel allein nicht.
+          Recovery-Schlüssel. Ohne die Datei reicht der Recovery-Schlüssel allein nicht. / Open a
+          4AllPass share file plus share key. Then a new vault password and recovery key apply. The
+          share key is not the recovery key. The recovery key alone is not enough without the file.
         </p>
         <label>
           Share-Datei / Share file
@@ -56,7 +58,10 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
         </label>
         {fileName ? <p className="hint">{fileName}</p> : null}
         {notShare ? (
-          <p className="error-text">Das ist keine 4AllPass-Share-Datei (kind 4allpass-share-v1).</p>
+          <p className="error-text">
+            Das ist keine 4AllPass-Share-Datei (kind 4allpass-share-v1). / This is not a 4AllPass
+            share file.
+          </p>
         ) : null}
         <label>
           Share-Schlüssel / Share key
@@ -92,16 +97,21 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
             data-testid="vault-password-repeat"
           />
         </label>
-        {mismatch ? <p className="error-text">Die Passwörter stimmen nicht überein.</p> : null}
+        {mismatch ? (
+          <p className="error-text">
+            Die Passwörter stimmen nicht überein. / The passwords do not match.
+          </p>
+        ) : null}
         <p className="hint">
-          Die Datei bleibt auf diesem Gerät. Der Server sieht weder Datei noch Schlüssel.
+          Die Datei bleibt auf diesem Gerät. Der Server sieht weder Datei noch Schlüssel. / The
+          file stays on this device. The server sees neither the file nor the keys.
         </p>
         <button
           type="submit"
           disabled={busy || mismatch || notShare || !fileText}
           data-testid="restore-vault"
         >
-          {busy ? "Tresor wird erzeugt…" : "Wiederherstellen / Restore"}
+          {busy ? "Tresor wird erzeugt… / Creating vault…" : "Wiederherstellen / Restore"}
         </button>
         <button type="button" className="link" onClick={onBack} data-testid="restore-back">
           Zurück / Back

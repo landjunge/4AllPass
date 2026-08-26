@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Wall-clock stall (not Instant)
         run: rustc --edition 2021 --test src-tauri/src/sleep_stall.rs -o sleep-stall && ./sleep-stall
@@ -73,8 +73,8 @@ jobs:
       FOURALLPASS_SESSION_BACKEND: memory
       FOURALLPASS_SESSION_SECRET: ci-session-secret-not-for-production
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -108,8 +108,8 @@ jobs:
       FOURALLPASS_SESSION_BACKEND: memory
       FOURALLPASS_SESSION_SECRET: ci-session-secret-not-for-production
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

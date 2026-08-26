@@ -11,10 +11,9 @@ function uniqueEmail(): string {
 async function signUp(page: Page): Promise<string> {
   const email = uniqueEmail();
   await page.goto("/");
-  await page.getByRole("button", { name: "Need an account?" }).click();
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Account password").fill("account-password-1234");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByTestId("auth-submit").click();
   await expect(page.getByTestId("account-email")).toHaveText(email);
   return email;
 }
@@ -172,9 +171,10 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     const second = await browser.newContext();
     const secondPage = await second.newPage();
     await secondPage.goto("/");
+    await secondPage.getByTestId("auth-switch").click();
     await secondPage.getByLabel("E-mail").fill(email);
     await secondPage.getByLabel("Account password").fill("account-password-1234");
-    await secondPage.getByRole("button", { name: "Sign in", exact: true }).click();
+    await secondPage.getByTestId("auth-submit").click();
     await secondPage.getByTestId("master-password").fill(MASTER_PASSWORD);
     await secondPage.getByTestId("unlock-submit").click();
     await expect(secondPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
@@ -186,9 +186,10 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     // DELETE also drops sessions bound to that device id. Sign in again, then
     // device unlock must fail: the envelope is gone. Master still works.
     await firstPage.getByRole("button", { name: "Sign out" }).click();
+    await firstPage.getByTestId("auth-switch").click();
     await firstPage.getByLabel("E-mail").fill(email);
     await firstPage.getByLabel("Account password").fill("account-password-1234");
-    await firstPage.getByRole("button", { name: "Sign in", exact: true }).click();
+    await firstPage.getByTestId("auth-submit").click();
     await firstPage.getByTestId("unlock-biometrics").click();
     await expect(firstPage.getByTestId("error-banner")).toBeVisible();
     await expect(firstPage.getByTestId("lock-state")).toHaveText("LOCKED");
@@ -217,9 +218,10 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     const victimPage = await victim.newPage();
     await victimPage.goto("/");
     await addVirtualAuthenticator(victim, victimPage, { hasPrf: true, hasLargeBlob: true });
+    await victimPage.getByTestId("auth-switch").click();
     await victimPage.getByLabel("E-mail").fill(email);
     await victimPage.getByLabel("Account password").fill("account-password-1234");
-    await victimPage.getByRole("button", { name: "Sign in", exact: true }).click();
+    await victimPage.getByTestId("auth-submit").click();
     await victimPage.getByTestId("master-password").fill(MASTER_PASSWORD);
     await victimPage.getByTestId("unlock-submit").click();
     await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
@@ -255,9 +257,10 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     // Rotation DELETEs the victim device and drops its sessions. Re-auth, then
     // device unlock must fail; the vault password unwraps VK₂.
     await victimPage.getByRole("button", { name: "Sign out" }).click();
+    await victimPage.getByTestId("auth-switch").click();
     await victimPage.getByLabel("E-mail").fill(email);
     await victimPage.getByLabel("Account password").fill("account-password-1234");
-    await victimPage.getByRole("button", { name: "Sign in", exact: true }).click();
+    await victimPage.getByTestId("auth-submit").click();
     await victimPage.getByTestId("unlock-biometrics").click();
     await expect(victimPage.getByTestId("error-banner")).toBeVisible();
     await expect(victimPage.getByTestId("lock-state")).toHaveText("LOCKED");

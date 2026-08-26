@@ -23,10 +23,9 @@ export async function clickAndType(page: Page, locator: Locator, text: string): 
 export async function signUpWithMouse(page: Page): Promise<string> {
   const email = uniqueEmail();
   await page.goto("/");
-  await page.getByRole("button", { name: "Need an account?" }).click();
   await clickAndType(page, page.getByLabel("E-mail"), email);
   await clickAndType(page, page.getByLabel("Account password"), ACCOUNT_PASSWORD);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByTestId("auth-submit").click();
   const error = page.getByTestId("error-banner");
   await Promise.race([
     page.getByTestId("account-email").waitFor({ state: "visible" }),
@@ -41,9 +40,10 @@ export async function signUpWithMouse(page: Page): Promise<string> {
 
 export async function signInWithMouse(page: Page, email: string): Promise<void> {
   await page.goto("/");
+  await page.getByTestId("auth-switch").click();
   await clickAndType(page, page.getByLabel("E-mail"), email);
   await clickAndType(page, page.getByLabel("Account password"), ACCOUNT_PASSWORD);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByTestId("auth-submit").click();
 }
 
 export async function createVaultWithMouse(page: Page): Promise<string> {

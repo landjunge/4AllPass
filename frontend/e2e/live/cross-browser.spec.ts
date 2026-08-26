@@ -114,7 +114,6 @@ test("keyboard-only create-account and vault setup in Chrome", async () => {
   const page = await browser.newPage();
   try {
     await page.goto("/");
-    await page.getByRole("button", { name: "Need an account?" }).click();
     await page.getByLabel("E-mail").click();
     await page.keyboard.type(`kb_${Date.now()}@example.com`, { delay: 30 });
     await page.keyboard.press("Tab");

@@ -3,7 +3,7 @@ import { useApp } from "../state/app-state.tsx";
 
 export function AuthPage(): ReactNode {
   const { signIn, signUp } = useApp();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-up");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,10 +25,15 @@ export function AuthPage(): ReactNode {
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
         <img className="logo" src="/logo.png" alt="4AllPass" />
+        <h2>
+          {mode === "sign-up"
+            ? "Konto anlegen / Create account"
+            : "Anmelden / Sign in"}
+        </h2>
         <p className="muted">
           {mode === "sign-in"
             ? "Anmelden. Das öffnet den Tresor nicht. / Sign in. This does not open the vault."
-            : "Konto anlegen, damit dieser Server den verschlüsselten Tresor lagern kann. Das Passwort hier ist nur die Anmeldung. / Create an account so this server can store your encrypted vault. This password is only for signing in."}
+            : "Zuerst ein Konto, damit dieser Server den verschlüsselten Tresor lagern kann. Das Passwort hier ist nur die Anmeldung. / First an account, so this server can store your encrypted vault. This password is only for signing in."}
         </p>
         <label>
           E-Mail / E-mail
@@ -57,7 +62,7 @@ export function AuthPage(): ReactNode {
           Sign-in password and vault password are different. The sign-in password cannot open the
           vault. Nobody on this server can reset the vault password.
         </p>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} data-testid="auth-submit">
           {busy
             ? "Einen Moment… / One moment…"
             : mode === "sign-in"
@@ -67,6 +72,7 @@ export function AuthPage(): ReactNode {
         <button
           type="button"
           className="link"
+          data-testid="auth-switch"
           onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
         >
           {mode === "sign-in"

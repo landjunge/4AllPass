@@ -142,10 +142,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   useEffect(() => {
     void (async () => {
       try {
-        const health = await api.health();
+        const health = await api.waitForHealth();
         const local = health.profile === "local";
         setLocalMode(local);
-        if (local && !getToken()) {
+        // Browser on :8788 keeps the silent local session (e2e / npm run app).
+        // The desktop window shows Konto anlegen first — no auto-login.
+        if (local && !getToken() && !isTauriShell()) {
           const session = await api.localSession();
           setEmail(session.email);
           await loadVaults();

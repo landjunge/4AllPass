@@ -20,7 +20,8 @@
         "minWidth": 800,
         "minHeight": 560,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "useHttpsScheme": false
       }
     ],
     "security": {

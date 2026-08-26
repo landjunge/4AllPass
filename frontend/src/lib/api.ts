@@ -271,6 +271,30 @@ export const api = {
     return request("GET", "/health");
   },
 
+  /**
+   * Sidecar binds after the window paints. One failed fetch is not a hung
+   * server — retry until 8788 answers or the deadline.
+   */
+  async waitForHealth(timeoutMs = 20_000): Promise<{
+    status: string;
+    database: boolean;
+    redis: boolean;
+    webauthn_rp_id: string;
+    profile: string;
+  }> {
+    const started = Date.now();
+    let last: unknown;
+    while (Date.now() - started < timeoutMs) {
+      try {
+        return await api.health();
+      } catch (error) {
+        last = error;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+    throw last instanceof Error ? last : new Error("Load failed");
+  },
+
   async localSession(): Promise<AccountSession> {
     const session = await request<AccountSession>("POST", "/auth/local");
     setToken(session.token);

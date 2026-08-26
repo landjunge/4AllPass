@@ -122,42 +122,36 @@ Details: [`docs/comparison.md`](docs/comparison.md), [`docs/product-maturity.md`
 
 ---
 
-## Nutzen / Use
+## Install
 
-1. App starten (DMG ad-hoc oder `npm run app`).
-2. Tresor anlegen, Recovery-Kit bestätigen — 4AllPass kann ohne Kit / zweites Gerät **nicht** zurücksetzen.
-3. Browser-Karten: Profile anhaken, Passwörter holen, Review, Confirm. Nie still, nie in Chrome zurückschreiben.
-4. Extension laden (unpacked `extension/dist/chromium` oder Firefox-Pack). **Demo-Login öffnen.** Popup: nur Tresor-Passwort → **Diese Seite füllen / Fill this page**.
+**DE.** Ein Befehl. Kein Node, kein Python, kein Docker, kein Postgres.
+**EN.** One command. No Node, no Python, no Docker, no Postgres.
 
-Agent-Zugang: Access-Tab, nicht der Einstieg. n8n: [`docs/local-access-broker.md`](docs/local-access-broker.md).
-
----
-
-## Einrichten / Setup
-
-**App zuerst.** Kein Postgres, kein Redis, kein zweites Terminal. Konto-Passwort (Server-Profil) ≠ Tresor-Passwort. Logo inkl. Schriftzug.
-
-### Ein Befehl / One command
-
-Nicht notariert. Du vertraust diesem GitHub-Repo. `xattr` auf dem Mac ist dasselbe Vertrauenslevel wie Rechtsklick → Öffnen. Der Tresor-Ordner wird **nicht** gelöscht. Unlock bleibt das Tresor-Passwort.
+Seite / site: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/) · Hub: [netzwerkpunkt.de](https://netzwerkpunkt.de/)
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
 ```
 
-Ohne Pipe: Script speichern, lesen, `sh install.sh`. Windows: `irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex`.
+Windows: `irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex`
 
-### Desktop (DMG / Installer)
+Ohne Pipe: Script speichern, lesen, `sh install.sh`. Der Installer nimmt den GitHub-Tag **`desktop`**, prüft SHA-256, startet die App. Vault-Ordner wird **nicht** gelöscht. Unlock = Tresor-Passwort. Noch nicht notariert: manuelles DMG → Rechtsklick → Öffnen.
 
-Download: [Releases](https://github.com/landjunge/4AllPass/releases). Der One-Liner nutzt den rolling Prerelease-Tag **`desktop`** (Intel `*_x64.dmg` + SHA-256). Versionierte Tags bleiben `v*` — kein `v0.1.2` nur für Installer.
+Download ohne Terminal: [Releases · desktop](https://github.com/landjunge/4AllPass/releases/tag/desktop).
 
-- **Intel Mac:** `*_x64.dmg` (CI `macos-15-intel`). Apple-Silicon: `*_aarch64.dmg`.
-- **One-Liner:** Quarantäne per `xattr` weg, Fenster geht auf. Manuelles DMG: Rechtsklick → Öffnen.
-- **Notarisierung pausiert** (Apple Developer ~99 USD/Jahr) — [`docs/distribution.md`](docs/distribution.md), [#112](https://github.com/landjunge/4AllPass/issues/112).
+Danach / Then:
 
-Ohne Installer: `npm run app` → [http://127.0.0.1:8788](http://127.0.0.1:8788). Beim Anmelden starten entsperrt den Tresor **nicht**.
+1. Tresor anlegen, Recovery-Kit bestätigen.
+2. Browser-Karten: Import-Review **ohne** Passwort in der Liste → Confirm.
+3. Extension: Demo-Login füllen.
 
-Selbst bauen:
+Agent-Zugang: Access-Tab, nicht der Einstieg. Entwickeln: **Development** unten. Server/Postgres/Redis/Docker gehören **nicht** zur Installation.
+
+---
+
+## Development
+
+Node, Python, Git, Postgres, Redis und Docker sind **nur** für den Source-Build. Die Desktop-App braucht das nicht.
 
 ```sh
 git clone https://github.com/landjunge/4AllPass.git
@@ -167,55 +161,12 @@ cd backend && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 cd ..
 npm run build:extension
-npm run tauri:build
+npm run tauri:dev          # Fenster
+# npm run tauri:build      # DMG / AppImage / NSIS
+# npm run app              # Sidecar ohne Tauri: http://127.0.0.1:8788
 ```
 
-Windows-NSIS / Linux-AppImage: CI (`.github/workflows/desktop.yml`) oder `npm run tauri:build:windows` / `:linux` auf dem jeweiligen OS.
-
-Dev-Fenster: `npm run tauri:dev`.
-
-### Server (optional, mehrere Nutzer)
-
-Nur wenn die API auf einem Rechner für mehrere Clients läuft. Die lokale App braucht das nicht.
-
-```sh
-brew install postgresql@17 redis
-brew services start postgresql@17
-brew services start redis
-createuser fourallpass --pwprompt    # Passwort: fourallpass
-createdb fourallpass -O fourallpass
-```
-
-User, Passwort und Datenbank heißen `fourallpass` (`backend/.env.example`).
-
-```sh
-cd 4AllPass
-npm install
-cp -n backend/.env.example backend/.env
-# FOURALLPASS_SESSION_SECRET auf einen eigenen Wert setzen
-
-cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-alembic upgrade head
-FOURALLPASS_SESSION_SECRET=dev-local-not-for-production \
-  uvicorn app.main:app --host 127.0.0.1 --port 8010
-```
-
-Zweites Terminal:
-
-```sh
-cd 4AllPass/frontend
-API_ORIGIN=http://127.0.0.1:8010 npm run dev -- --host 127.0.0.1
-```
-
-PWA-Dev: [http://127.0.0.1:5173](http://127.0.0.1:5173). Extension gegen den Server: Popup → Server-Konto (E-mail + Konto-Passwort) + Tresor-Passwort.
-
-### Optional: Docker
-
-Nicht nötig. `docker compose up --build` → PWA `:8080`, API `:8000`. Nicht parallel zum Native-Pfad.
-
----
+Mehrere Nutzer auf einer API (optional): PostgreSQL + Redis, siehe [`backend/README.md`](backend/README.md). Docker: `docker compose up --build` — nicht parallel zum Native-Pfad. Notarisierung: [`docs/distribution.md`](docs/distribution.md), [#112](https://github.com/landjunge/4AllPass/issues/112).
 
 ## Aufbau
 

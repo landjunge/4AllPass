@@ -77,12 +77,8 @@ export function SettingsPanel(): ReactNode {
         <p className="hint" data-testid="settings-revision">
           {t(
             {
-              de: `Tresor-Stand ${vault.revision}`,
-              en: `vault revision ${vault.revision}`,
-            },
-            {
-              de: `revision ${vault.revision} · vault key v${vault.vaultKeyVersion}`,
-              en: `revision ${vault.revision} · vault key v${vault.vaultKeyVersion}`,
+              de: `Tresor-Stand ${vault.revision} · Vault Key Generation ${vault.vaultKeyVersion}`,
+              en: `vault revision ${vault.revision} · vault key generation ${vault.vaultKeyVersion}`,
             },
           )}
         </p>

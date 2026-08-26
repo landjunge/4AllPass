@@ -128,7 +128,7 @@ export function AccessPanel({
   return (
     <div className="columns">
       <section className="card" data-testid="programs-intro">
-        <h3>{t({ de: "Programme", en: "Apps" })}</h3>
+        <h3>{t({ de: "Zugriff", en: "Access" })}</h3>
         <p className="hint compact">
           {t(
             {

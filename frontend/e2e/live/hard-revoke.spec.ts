@@ -61,6 +61,7 @@ test("hard revoke: other browser cannot use the old vault key", async () => {
     expect(registered).toBe(true);
 
     await pageA.getByTestId("tab-entries").click();
+    await pageA.getByTestId("tab-settings").click();
     await pageA.getByTestId("tab-devices").click();
     await expect(pageA.getByText(victimId!)).toBeVisible();
     await pageA.getByTestId(`rotate-key-${victimId}`).click();

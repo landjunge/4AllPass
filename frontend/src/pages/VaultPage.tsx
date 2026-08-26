@@ -34,16 +34,23 @@ import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
 import { BrowserCards } from "../components/BrowserCards.tsx";
 import { DevicesPanel } from "../components/DevicesPanel.tsx";
+import { OnboardingWizard } from "../components/OnboardingWizard.tsx";
 import { SettingsPanel } from "../components/SettingsPanel.tsx";
+import { isOnboardingDone, markOnboardingDone } from "../lib/onboarding.ts";
 
 export function VaultPage(): ReactNode {
   const { vault, saveEntries } = useApp();
-  const { t, plain } = useCopy();
+  const { t } = useCopy();
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EntryDraft | null>(null);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"entries" | "devices" | "access" | "settings">("entries");
+  const [tab, setTab] = useState<"entries" | "browser" | "access" | "settings">("entries");
+  const [settingsPane, setSettingsPane] = useState<"general" | "devices" | "security">("general");
+  const [showMore, setShowMore] = useState(false);
+  const [onboarding, setOnboarding] = useState(() =>
+    vault ? !isOnboardingDone(vault.vaultId) : false,
+  );
   const [importPending, setImportPending] = useState<{
     count: number;
     entries: VaultEntry[];
@@ -62,6 +69,11 @@ export function VaultPage(): ReactNode {
     setRevealPassword(false);
     setCopied(null);
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!vault) return;
+    setOnboarding(!isOnboardingDone(vault.vaultId));
+  }, [vault?.vaultId]);
 
   const entries = vault?.entries ?? [];
   const filtered = useMemo(() => {
@@ -82,13 +94,15 @@ export function VaultPage(): ReactNode {
       .catch(() => setCopied(null));
   }
 
-  function startNew(): void {
+  function startNew(kind: "web" | "api" | "sftp" = "web"): void {
     setSelectedId(null);
-    setDraft({ ...emptyDraft("web"), password: generatePassword() });
+    setShowMore(kind !== "web");
+    setDraft({ ...emptyDraft(kind), password: generatePassword() });
   }
 
   function startEdit(entry: VaultEntry): void {
     setSelectedId(entry.id);
+    setShowMore(entry.kind !== "web" || Boolean(entry.totpSecret || entry.capabilities || entry.host));
     setDraft({
       kind: entry.kind,
       title: entry.title,
@@ -229,14 +243,22 @@ export function VaultPage(): ReactNode {
   return (
     <div className="vault">
       <AccessBrokerHost entries={entries} />
-      <nav className="tabs">
+      <nav className="tabs" aria-label={t({ de: "Hauptbereiche", en: "Main" })}>
         <button
           type="button"
           className={tab === "entries" ? "active" : ""}
           onClick={() => setTab("entries")}
           data-testid="tab-entries"
         >
-          {t({ de: "Einträge", en: "Entries" })} ({entries.length})
+          {t({ de: "Tresor", en: "Vault" })}
+        </button>
+        <button
+          type="button"
+          className={tab === "browser" ? "active" : ""}
+          onClick={() => setTab("browser")}
+          data-testid="tab-browser"
+        >
+          {t({ de: "Browser", en: "Browser" })}
         </button>
         <button
           type="button"
@@ -244,15 +266,7 @@ export function VaultPage(): ReactNode {
           onClick={() => setTab("access")}
           data-testid="tab-access"
         >
-          {t({ de: "Programme", en: "Apps" })}
-        </button>
-        <button
-          type="button"
-          className={tab === "devices" ? "active" : ""}
-          onClick={() => setTab("devices")}
-          data-testid="tab-devices"
-        >
-          {t({ de: "Geräte", en: "Devices" })}
+          {t({ de: "Zugriff", en: "Access" })}
         </button>
         <button
           type="button"
@@ -262,15 +276,68 @@ export function VaultPage(): ReactNode {
         >
           {t({ de: "Einstellungen", en: "Settings" })}
         </button>
-        <span className={plain ? "sr-only" : "revision"} data-testid="revision">
+        <span className="sr-only" data-testid="revision">
           revision {vault.revision} · vault key v{vault.vaultKeyVersion}
         </span>
       </nav>
 
       {tab === "settings" ? (
-        <SettingsPanel />
-      ) : tab === "devices" ? (
-        <DevicesPanel />
+        <div className="settings-stack">
+          <nav className="tabs subtabs" aria-label={t({ de: "Einstellungen", en: "Settings sections" })}>
+            <button
+              type="button"
+              className={settingsPane === "general" ? "active" : ""}
+              onClick={() => setSettingsPane("general")}
+            >
+              {t({ de: "Allgemein", en: "General" })}
+            </button>
+            <button
+              type="button"
+              className={settingsPane === "devices" ? "active" : ""}
+              onClick={() => setSettingsPane("devices")}
+              data-testid="tab-devices"
+            >
+              {t({ de: "Geräte", en: "Devices" })}
+            </button>
+            <button
+              type="button"
+              className={settingsPane === "security" ? "active" : ""}
+              onClick={() => setSettingsPane("security")}
+              data-testid="tab-security"
+            >
+              {t({ de: "Sicherheit", en: "Security" })}
+            </button>
+          </nav>
+          {settingsPane === "devices" ? (
+            <DevicesPanel />
+          ) : settingsPane === "security" ? (
+            <section className="card" data-testid="settings-security">
+              <h3>{t({ de: "Technische Details", en: "Technical details" })}</h3>
+              <p className="hint">
+                {t({
+                  de: "Nur zur Kontrolle. Für den Alltag brauchst du das nicht.",
+                  en: "For checking. Everyday use does not need this.",
+                })}
+              </p>
+              <dl className="tech-dl">
+                <div>
+                  <dt>AES-256-GCM</dt>
+                  <dd>{t({ de: "Verschlüsselung auf diesem Gerät", en: "Encryption on this device" })}</dd>
+                </div>
+                <div>
+                  <dt>{t({ de: "Tresor-Stand", en: "Vault revision" })}</dt>
+                  <dd>revision {vault.revision}</dd>
+                </div>
+                <div>
+                  <dt>Vault Key</dt>
+                  <dd>generation {vault.vaultKeyVersion}</dd>
+                </div>
+              </dl>
+            </section>
+          ) : (
+            <SettingsPanel />
+          )}
+        </div>
       ) : tab === "access" ? (
         <AccessPanel
           entries={entries}
@@ -294,47 +361,114 @@ export function VaultPage(): ReactNode {
         />
       ) : (
         <>
-        <BrowserCards
-          vaultId={vault.vaultId}
-          onLogins={(rows) => {
-            const incoming = entriesFromBrowserLogins(rows);
-            if (incoming.length === 0) {
-              window.alert("Keine Passwörter gelesen. / No passwords read.");
-              return;
-            }
-            setImportPending({
-              count: incoming.length,
-              entries: incoming,
-              source: "browser",
-              picked: incoming.map((entry) => entry.id),
-            });
-          }}
-          onEnsureDemoLogin={async () => {
-            if (entries.some(isAutofillDemoEntry)) return;
-            await saveEntries([
-              ...entries,
-              {
-                id: newEntryId(),
-                ...autofillDemoDraft(),
-                updatedAt: new Date().toISOString(),
-              },
-            ]);
-          }}
-        />
-        <div className="columns">
+        {tab === "browser" || (tab === "entries" && onboarding) ? (
+          tab === "entries" && onboarding ? (
+            <OnboardingWizard
+              vaultId={vault.vaultId}
+              onLogins={(rows) => {
+                const incoming = entriesFromBrowserLogins(rows);
+                if (incoming.length === 0) {
+                  window.alert("Keine Passwörter gelesen. / No passwords read.");
+                  return;
+                }
+                setImportPending({
+                  count: incoming.length,
+                  entries: incoming,
+                  source: "browser",
+                  picked: incoming.map((entry) => entry.id),
+                });
+              }}
+              onEnsureDemoLogin={async () => {
+                if (entries.some(isAutofillDemoEntry)) return;
+                await saveEntries([
+                  ...entries,
+                  {
+                    id: newEntryId(),
+                    ...autofillDemoDraft(),
+                    updatedAt: new Date().toISOString(),
+                  },
+                ]);
+              }}
+              onDone={() => {
+                markOnboardingDone(vault.vaultId);
+                setOnboarding(false);
+              }}
+            />
+          ) : (
+            <section className="card">
+              <h2>{t({ de: "Browser verbinden", en: "Connect browsers" })}</h2>
+              <p className="muted">
+                {t({
+                  de: "Chrome, Firefox, Safari. Passwörter holen, Erweiterung laden. Nicht der Tresor-Alltag.",
+                  en: "Chrome, Firefox, Safari. Import passwords, load the extension. Not everyday vault use.",
+                })}
+              </p>
+              <BrowserCards
+                vaultId={vault.vaultId}
+                onLogins={(rows) => {
+                  const incoming = entriesFromBrowserLogins(rows);
+                  if (incoming.length === 0) {
+                    window.alert("Keine Passwörter gelesen. / No passwords read.");
+                    return;
+                  }
+                  setImportPending({
+                    count: incoming.length,
+                    entries: incoming,
+                    source: "browser",
+                    picked: incoming.map((entry) => entry.id),
+                  });
+                }}
+                onEnsureDemoLogin={async () => {
+                  if (entries.some(isAutofillDemoEntry)) return;
+                  await saveEntries([
+                    ...entries,
+                    {
+                      id: newEntryId(),
+                      ...autofillDemoDraft(),
+                      updatedAt: new Date().toISOString(),
+                    },
+                  ]);
+                }}
+              />
+            </section>
+          )
+        ) : null}
+        {tab === "entries" && !onboarding ? (
+        <div className="columns vault-desk">
           <section className="card list">
+            <header className="vault-hero">
+              <h2>{t({ de: "Dein Tresor", en: "Your vault" })}</h2>
+              <p className="muted">
+                {t({
+                  de: `${entries.length} Logins · geschützt auf diesem Gerät`,
+                  en: `${entries.length} logins · protected on this device`,
+                })}
+              </p>
+            </header>
             <div className="list-header">
               <input
                 type="search"
-                placeholder="Search"
+                placeholder={t({ de: "Suchen", en: "Search" })}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                aria-label={t({ de: "Suchen", en: "Search" })}
               />
-              <button type="button" onClick={startNew} data-testid="new-entry">
-                New
-              </button>
+              <div className="add-split">
+                <button type="button" className="primary" onClick={() => startNew("web")} data-testid="new-entry">
+                  {t({ de: "+ Login hinzufügen", en: "+ Add login" })}
+                </button>
+                <details className="add-more">
+                  <summary aria-label={t({ de: "Weitere Arten", en: "More types" })}>+</summary>
+                  <button type="button" onClick={() => startNew("api")}>
+                    API-Key
+                  </button>
+                  <button type="button" onClick={() => startNew("sftp")}>
+                    {t({ de: "Server-Zugang", en: "Server login" })}
+                  </button>
+                </details>
+              </div>
               <label className="import-file">
-                Import
+                {t({ de: "Datei", en: "File" })}
                 <input
                   type="file"
                   accept=".json,.csv,.xml,.1pif,application/json,text/csv,application/xml,text/xml"
@@ -348,7 +482,7 @@ export function VaultPage(): ReactNode {
               </label>
             </div>
             {filtered.length === 0 ? (
-              <p className="muted empty">No entries yet.</p>
+              <p className="muted empty">{t({ de: "Noch keine Logins.", en: "No logins yet." })}</p>
             ) : (
               <ul>
                 {filtered.map((entry) => (
@@ -358,12 +492,8 @@ export function VaultPage(): ReactNode {
                       className={entry.id === selectedId ? "row active" : "row"}
                       onClick={() => startEdit(entry)}
                     >
-                      <strong>{entry.title || "(untitled)"}</strong>
-                      <span className="muted">
-                        {entry.provider || entry.kind}
-                        {entry.account ? ` / ${entry.account}` : ""}
-                        {entry.credentialType ? ` / ${entry.credentialType}` : ` / ${entry.kind}`}
-                      </span>
+                      <strong>{entry.title || entry.url || t({ de: "Ohne Titel", en: "Untitled" })}</strong>
+                      <span className="muted">{entry.username || entry.account || entry.host}</span>
                     </button>
                   </li>
                 ))}
@@ -374,134 +504,17 @@ export function VaultPage(): ReactNode {
           <section className="card detail">
             {draft ? (
               <>
-                <h3>{selectedId ? "Eintrag / Edit" : "Neuer Eintrag / New entry"}</h3>
-                <p className="hint">
-                  {t(
-                    {
-                      de: "Ein Klick liest die Zwischenablage einmal. Kein dauerndes Mitlesen. Speichern musst du selbst.",
-                      en: "One click reads the clipboard once. No background watch. You still save.",
-                    },
-                    {
-                      de: "Detect: ghp_/sk-/Stripe. Kein Clipboard-Watcher (#59). Prefill, kein Grant.",
-                      en: "Detect: ghp_/sk-/Stripe. Not a clipboard watcher. Prefill, never a grant.",
-                    },
-                  )}
-                </p>
+                <h3>
+                  {selectedId
+                    ? t({ de: "Login", en: "Login" })
+                    : draft.kind === "api"
+                      ? t({ de: "Neuer API-Key", en: "New API key" })
+                      : draft.kind === "sftp"
+                        ? t({ de: "Neuer Server-Zugang", en: "New server login" })
+                        : t({ de: "Neuer Login", en: "New login" })}
+                </h3>
                 <label>
-                  Einfügen / Paste
-                  <textarea
-                    rows={3}
-                    value={paste}
-                    onChange={(event) => setPaste(event.target.value)}
-                    data-testid="detect-paste"
-                    placeholder="ghp_… · sk-… · ftp.example.com · https://…"
-                  />
-                </label>
-                <div className="actions">
-                  <button
-                    type="button"
-                    className="primary"
-                    data-testid="detect-clipboard"
-                    onClick={() => {
-                      void readClipboardText()
-                        .then((text) => {
-                          setPaste(text);
-                          applyDetect(text);
-                        })
-                        .catch(() => {
-                          setDetectedLabel(
-                            "Zwischenablage nicht lesbar. Einfügen und Erkennen. / Clipboard blocked. Paste, then Detect.",
-                          );
-                        });
-                    }}
-                  >
-                    Zwischenablage einmal lesen / Read clipboard once
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="detect-apply"
-                    onClick={() => applyDetect(paste)}
-                  >
-                    Eingefügtes erkennen / Detect paste
-                  </button>
-                </div>
-                {detectedLabel ? (
-                  <p className="ok" data-testid="detect-label">
-                    {detectedLabel}
-                  </p>
-                ) : null}
-                <div className="tabs">
-                  {(["web", "api", "sftp"] as const).map((kind) => (
-                    <button
-                      key={kind}
-                      type="button"
-                      className={draft.kind === kind ? "active" : ""}
-                      data-testid={`kind-${kind}`}
-                      onClick={() =>
-                        setDraft({
-                          ...draft,
-                          kind,
-                          port: kind === "sftp" && !draft.port ? "22" : draft.port,
-                          protocol: kind === "sftp" && !draft.protocol ? "sftp" : draft.protocol,
-                          capabilities:
-                            kind === "api" && !draft.capabilities
-                              ? "repository.read"
-                              : draft.capabilities,
-                        })
-                      }
-                    >
-                      {kind === "web" ? "Web" : kind === "api" ? "API" : "SSH/SFTP"}
-                    </button>
-                  ))}
-                </div>
-                <p className="hint">Provider ≠ account ≠ credential. Templates stay on this device.</p>
-                <div className="tabs">
-                  {BUILTIN_TEMPLATES.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      data-testid={`template-${template.id}`}
-                      onClick={() =>
-                        setDraft({
-                          ...applyTemplate(template, draft.account || "personal"),
-                          password: draft.password || generatePassword(),
-                        })
-                      }
-                    >
-                      {template.name}
-                    </button>
-                  ))}
-                </div>
-                <label>
-                  Custom template
-                  <textarea
-                    rows={4}
-                    value={customTemplate}
-                    onChange={(event) => setCustomTemplate(event.target.value)}
-                    data-testid="custom-template"
-                    placeholder={"id: acme\nname: Acme\n  - widget.read"}
-                  />
-                </label>
-                <button
-                  type="button"
-                  data-testid="apply-custom-template"
-                  onClick={() => {
-                    try {
-                      const template = parseProviderTemplate(customTemplate);
-                      setDraft({
-                        ...applyTemplate(template, draft.account || "personal"),
-                        password: draft.password || generatePassword(),
-                      });
-                      setDetectedLabel(`Template ${template.name}. Save encrypts it. Access still needs Allow.`);
-                    } catch (error) {
-                      setDetectedLabel(error instanceof Error ? error.message : String(error));
-                    }
-                  }}
-                >
-                  Apply custom template
-                </button>
-                <label>
-                  Title
+                  {t({ de: "Name", en: "Name" })}
                   <input
                     value={draft.title}
                     onChange={(event) => setDraft({ ...draft, title: event.target.value })}
@@ -509,21 +522,11 @@ export function VaultPage(): ReactNode {
                   />
                 </label>
                 <label>
-                  Provider
+                  URL
                   <input
-                    value={draft.provider}
-                    onChange={(event) => setDraft({ ...draft, provider: event.target.value })}
-                    data-testid="entry-provider"
-                    placeholder={draft.kind === "api" ? "GitHub" : draft.kind === "sftp" ? "Production" : ""}
-                  />
-                </label>
-                <label>
-                  Account
-                  <input
-                    value={draft.account}
-                    onChange={(event) => setDraft({ ...draft, account: event.target.value })}
-                    data-testid="entry-account"
-                    placeholder="personal"
+                    value={draft.url}
+                    onChange={(event) => setDraft({ ...draft, url: event.target.value })}
+                    placeholder="https://"
                   />
                 </label>
                 {draft.kind === "sftp" ? (
@@ -552,19 +555,8 @@ export function VaultPage(): ReactNode {
                     </label>
                   </>
                 ) : null}
-                {draft.kind === "api" ? (
-                  <label>
-                    Capabilities
-                    <input
-                      value={draft.capabilities}
-                      onChange={(event) => setDraft({ ...draft, capabilities: event.target.value })}
-                      data-testid="entry-capabilities"
-                      placeholder="repository.read"
-                    />
-                  </label>
-                ) : null}
                 <label>
-                  Username
+                  {t({ de: "Benutzername", en: "Username" })}
                   <input
                     value={draft.username}
                     onChange={(event) => setDraft({ ...draft, username: event.target.value })}
@@ -626,49 +618,183 @@ export function VaultPage(): ReactNode {
                   </p>
                 ) : null}
                 <label>
-                  TOTP secret (Base32 / otpauth)
-                  <input
-                    type="password"
-                    value={draft.totpSecret}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      const parsed = parseOtpauth(value);
-                      if (parsed) {
-                        setDraft({
-                          ...draft,
-                          totpSecret: parsed.secret,
-                          title: draft.title || parsed.issuer || parsed.account,
-                          username: draft.username || parsed.account,
-                        });
-                        return;
-                      }
-                      setDraft({ ...draft, totpSecret: value });
-                    }}
-                    data-testid="entry-totp"
-                    autoComplete="off"
-                    placeholder="JBSWY… or otpauth://totp/…"
-                  />
-                </label>
-                {draft.totpSecret.startsWith("otpauth:") ? (
-                  <p className="hint">Paste into the box on the left of the vault, then save.</p>
-                ) : draft.totpSecret ? (
-                  <TotpCode secret={draft.totpSecret} />
-                ) : null}
-                <label>
-                  URL
-                  <input
-                    value={draft.url}
-                    onChange={(event) => setDraft({ ...draft, url: event.target.value })}
-                  />
-                </label>
-                <label>
-                  Notes
+                  {t({ de: "Notiz", en: "Note" })}
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={draft.notes}
                     onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
                   />
                 </label>
+                <details
+                  className="more-options"
+                  open={showMore}
+                  onToggle={(event) => setShowMore((event.target as HTMLDetailsElement).open)}
+                >
+                  <summary>{t({ de: "Weitere Optionen", en: "More options" })}</summary>
+                  <div className="tabs">
+                    {(["web", "api", "sftp"] as const).map((kind) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        className={draft.kind === kind ? "active" : ""}
+                        data-testid={`kind-${kind}`}
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            kind,
+                            port: kind === "sftp" && !draft.port ? "22" : draft.port,
+                            protocol: kind === "sftp" && !draft.protocol ? "sftp" : draft.protocol,
+                            capabilities:
+                              kind === "api" && !draft.capabilities
+                                ? "repository.read"
+                                : draft.capabilities,
+                          })
+                        }
+                      >
+                        {kind === "web" ? "Login" : kind === "api" ? "API-Key" : t({ de: "Server", en: "Server" })}
+                      </button>
+                    ))}
+                  </div>
+                  <label>
+                    {t({ de: "Einfügen", en: "Paste" })}
+                    <textarea
+                      rows={3}
+                      value={paste}
+                      onChange={(event) => setPaste(event.target.value)}
+                      data-testid="detect-paste"
+                      placeholder="ghp_… · sk-… · ftp.example.com · https://…"
+                    />
+                  </label>
+                  <div className="actions">
+                    <button
+                      type="button"
+                      data-testid="detect-clipboard"
+                      onClick={() => {
+                        void readClipboardText()
+                          .then((text) => {
+                            setPaste(text);
+                            applyDetect(text);
+                          })
+                          .catch(() => {
+                            setDetectedLabel(
+                              "Zwischenablage nicht lesbar. Einfügen und Erkennen. / Clipboard blocked. Paste, then Detect.",
+                            );
+                          });
+                      }}
+                    >
+                      {t({ de: "Zwischenablage einmal lesen", en: "Read clipboard once" })}
+                    </button>
+                    <button type="button" data-testid="detect-apply" onClick={() => applyDetect(paste)}>
+                      {t({ de: "Erkennen", en: "Detect" })}
+                    </button>
+                  </div>
+                  {detectedLabel ? (
+                    <p className="ok" data-testid="detect-label">
+                      {detectedLabel}
+                    </p>
+                  ) : null}
+                  <div className="tabs">
+                    {BUILTIN_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        data-testid={`template-${template.id}`}
+                        onClick={() =>
+                          setDraft({
+                            ...applyTemplate(template, draft.account || "personal"),
+                            password: draft.password || generatePassword(),
+                          })
+                        }
+                      >
+                        {template.name}
+                      </button>
+                    ))}
+                  </div>
+                  <label>
+                    Custom template
+                    <textarea
+                      rows={4}
+                      value={customTemplate}
+                      onChange={(event) => setCustomTemplate(event.target.value)}
+                      data-testid="custom-template"
+                      placeholder={"id: acme\nname: Acme\n  - widget.read"}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    data-testid="apply-custom-template"
+                    onClick={() => {
+                      try {
+                        const template = parseProviderTemplate(customTemplate);
+                        setDraft({
+                          ...applyTemplate(template, draft.account || "personal"),
+                          password: draft.password || generatePassword(),
+                        });
+                        setDetectedLabel(`Template ${template.name}. Save encrypts it. Access still needs Allow.`);
+                      } catch (error) {
+                        setDetectedLabel(error instanceof Error ? error.message : String(error));
+                      }
+                    }}
+                  >
+                    Apply custom template
+                  </button>
+                  <label>
+                    Provider
+                    <input
+                      value={draft.provider}
+                      onChange={(event) => setDraft({ ...draft, provider: event.target.value })}
+                      data-testid="entry-provider"
+                    />
+                  </label>
+                  <label>
+                    Account
+                    <input
+                      value={draft.account}
+                      onChange={(event) => setDraft({ ...draft, account: event.target.value })}
+                      data-testid="entry-account"
+                    />
+                  </label>
+                  {draft.kind === "api" ? (
+                    <label>
+                      Capabilities
+                      <input
+                        value={draft.capabilities}
+                        onChange={(event) => setDraft({ ...draft, capabilities: event.target.value })}
+                        data-testid="entry-capabilities"
+                        placeholder="repository.read"
+                      />
+                    </label>
+                  ) : null}
+                  <label>
+                    TOTP secret (Base32 / otpauth)
+                    <input
+                      type="password"
+                      value={draft.totpSecret}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const parsed = parseOtpauth(value);
+                        if (parsed) {
+                          setDraft({
+                            ...draft,
+                            totpSecret: parsed.secret,
+                            title: draft.title || parsed.issuer || parsed.account,
+                            username: draft.username || parsed.account,
+                          });
+                          return;
+                        }
+                        setDraft({ ...draft, totpSecret: value });
+                      }}
+                      data-testid="entry-totp"
+                      autoComplete="off"
+                      placeholder="JBSWY… or otpauth://totp/…"
+                    />
+                  </label>
+                  {draft.totpSecret.startsWith("otpauth:") ? (
+                    <p className="hint">Paste into the box, then save.</p>
+                  ) : draft.totpSecret ? (
+                    <TotpCode secret={draft.totpSecret} />
+                  ) : null}
+                </details>
                 <div className="actions">
                   <button
                     type="button"
@@ -706,16 +832,18 @@ export function VaultPage(): ReactNode {
               </>
             ) : (
               <div className="placeholder">
-                <h3>Dein Tresor / Your vault</h3>
+                <h3>{t({ de: "Wähle einen Login", en: "Pick a login" })}</h3>
                 <p className="muted">
-                  Oben die Browser-Karten: Profile anhaken, Passwörter holen, Extension laden, dann
-                  Demo-Login öffnen. Popup: nur Tresor-Passwort. Wenn ein Programm wie n8n Zugang
-                  will: Tab Programme. Nicht dieser Bildschirm.
+                  {t({
+                    de: "Links die Liste. Rechts die Details. Browser und Zugriff sind eigene Reiter.",
+                    en: "List on the left. Details on the right. Browser and Access are their own tabs.",
+                  })}
                 </p>
               </div>
             )}
           </section>
         </div>
+        ) : null}
         </>
       )}
       {importPending ? (

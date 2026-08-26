@@ -12,6 +12,8 @@ test("import review lists host and username, never the password", async ({ page 
   await page.getByTestId("confirm-kit-stored").click();
   await page.getByTestId("dismiss-kit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  const skip = page.getByTestId("onboarding-skip");
+  if (await skip.isVisible().catch(() => false)) await skip.click();
 
   const csv = `title,username,password,url\nmail.example,ada,${SECRET},https://mail.example/\n`;
   await page.getByTestId("import-file").setInputFiles({

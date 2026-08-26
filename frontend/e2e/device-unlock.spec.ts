@@ -33,6 +33,8 @@ async function createVault(page: Page): Promise<string> {
 }
 
 async function addEntry(page: Page): Promise<void> {
+  const skip = page.getByTestId("onboarding-skip");
+  if (await skip.isVisible().catch(() => false)) await skip.click();
   await page.getByTestId("new-entry").click();
   await page.getByTestId("entry-title").fill(ENTRY.title);
   await page.getByTestId("entry-username").fill(ENTRY.username);
@@ -43,6 +45,7 @@ async function addEntry(page: Page): Promise<void> {
 }
 
 async function enableDeviceUnlock(page: Page): Promise<string> {
+  await page.getByTestId("tab-settings").click();
   await page.getByTestId("tab-devices").click();
   await page.getByTestId("enable-biometrics").click();
   const enabled = page.getByTestId("enabled-mechanism");
@@ -56,6 +59,7 @@ async function enableDeviceUnlock(page: Page): Promise<string> {
     await page.getByTestId("master-password").fill(MASTER_PASSWORD);
     await page.getByTestId("unlock-submit").click();
     await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await page.getByTestId("tab-settings").click();
     await page.getByTestId("tab-devices").click();
     await page.getByTestId("enable-biometrics").click();
   }
@@ -174,6 +178,7 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await secondPage.getByTestId("master-password").fill(MASTER_PASSWORD);
     await secondPage.getByTestId("unlock-submit").click();
     await expect(secondPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await secondPage.getByTestId("tab-settings").click();
     await secondPage.getByTestId("tab-devices").click();
     await secondPage.getByRole("button", { name: "Remove from sync" }).click();
     await expect(secondPage.getByTestId("notice-banner")).toBeVisible();
@@ -235,6 +240,7 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await attackerPage.getByTestId("unlock-submit").click();
     await expect(attackerPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
 
+    await attackerPage.getByTestId("tab-settings").click();
     await attackerPage.getByTestId("tab-devices").click();
     await expect(attackerPage.getByText(victimId!)).toBeVisible();
     await attackerPage.getByTestId(`rotate-key-${victimId}`).click();

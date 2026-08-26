@@ -21,6 +21,8 @@ test("Welcome → vault → Access allow without showing the secret", async ({ p
   await expect(page.getByTestId("dismiss-kit")).toBeEnabled();
   await page.getByTestId("dismiss-kit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  const skip = page.getByTestId("onboarding-skip");
+  if (await skip.isVisible().catch(() => false)) await skip.click();
 
   await page.getByTestId("tab-settings").click();
   await expect(page.getByTestId("launch-at-login")).toBeDisabled();

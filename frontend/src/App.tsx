@@ -45,12 +45,15 @@ export function App(): ReactNode {
                 {email}
               </span>
             )}
-            <span className="state" data-testid="lock-state">
+            <span className="sr-only" data-testid="lock-state">
               {lockState}
             </span>
+            <span className="lock-pill" aria-hidden="true">
+              {lockState === "UNLOCKED" ? "🔓 Tresor geöffnet" : "🔒 Gesperrt"}
+            </span>
             {lockState === "UNLOCKED" ? (
-              <button type="button" onClick={lock} data-testid="lock">
-                Lock
+              <button type="button" className="primary" onClick={lock} data-testid="lock">
+                Sperren
               </button>
             ) : null}
             {localMode ? null : (

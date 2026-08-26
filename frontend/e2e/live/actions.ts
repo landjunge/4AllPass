@@ -64,10 +64,18 @@ export async function unlockWithVaultPassword(page: Page): Promise<void> {
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
 }
 
+export async function skipOnboardingIfPresent(page: Page): Promise<void> {
+  const skip = page.getByTestId("onboarding-skip");
+  if (await skip.isVisible().catch(() => false)) {
+    await skip.click();
+  }
+}
+
 export async function addEntryWithMouse(
   page: Page,
   entry: { title: string; username: string; password: string; url?: string },
 ): Promise<void> {
+  await skipOnboardingIfPresent(page);
   await page.getByTestId("new-entry").click();
   const title = page.getByTestId("entry-title");
   await expect(title).toBeVisible({ timeout: 30_000 });

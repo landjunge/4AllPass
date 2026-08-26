@@ -24,6 +24,10 @@ function apiBase(): string {
 }
 const TOKEN_KEY = "4allpass.session";
 
+function tokenStore(): Storage {
+  return "__TAURI_INTERNALS__" in window ? localStorage : sessionStorage;
+}
+
 export interface AccountSession {
   token: string;
   expiresIn: number;
@@ -103,16 +107,23 @@ export class ApiError extends Error {
   }
 }
 
-let token: string | null = sessionStorage.getItem(TOKEN_KEY);
+let token: string | null = null;
 
 export function getToken(): string | null {
+  if (token) return token;
+  try {
+    token = tokenStore().getItem(TOKEN_KEY);
+  } catch {
+    token = null;
+  }
   return token;
 }
 
 export function setToken(value: string | null): void {
   token = value;
-  if (value) sessionStorage.setItem(TOKEN_KEY, value);
-  else sessionStorage.removeItem(TOKEN_KEY);
+  const store = tokenStore();
+  if (value) store.setItem(TOKEN_KEY, value);
+  else store.removeItem(TOKEN_KEY);
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

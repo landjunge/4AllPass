@@ -8,12 +8,10 @@ import {
   SLEEP_LOCK_HINT,
   UNINSTALL_HINT,
 } from "../lib/desktop-settings.ts";
-import { useApp } from "../state/app-state.tsx";
 import { useCopy } from "../state/copy-mode.tsx";
 
 export function SettingsPanel(): ReactNode {
   const desktop = isTauriShell();
-  const { vault } = useApp();
   const { plain, setPlain, t } = useCopy();
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,16 +71,6 @@ export function SettingsPanel(): ReactNode {
       <p className="hint" data-testid="uninstall-hint">
         {UNINSTALL_HINT}
       </p>
-      {vault ? (
-        <p className="hint" data-testid="settings-revision">
-          {t(
-            {
-              de: `Tresor-Stand ${vault.revision} · Vault Key Generation ${vault.vaultKeyVersion}`,
-              en: `vault revision ${vault.revision} · vault key generation ${vault.vaultKeyVersion}`,
-            },
-          )}
-        </p>
-      ) : null}
     </section>
   );
 }

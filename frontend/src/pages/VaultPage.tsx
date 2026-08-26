@@ -94,15 +94,21 @@ export function VaultPage(): ReactNode {
       .catch(() => setCopied(null));
   }
 
+  function kindLabel(kind: "web" | "api" | "sftp"): string {
+    if (kind === "api") return t({ de: "API-Key", en: "API key" });
+    if (kind === "sftp") return t({ de: "Server-Zugang", en: "Server login" });
+    return t({ de: "Login", en: "Login" });
+  }
+
   function startNew(kind: "web" | "api" | "sftp" = "web"): void {
     setSelectedId(null);
-    setShowMore(kind !== "web");
+    setShowMore(false);
     setDraft({ ...emptyDraft(kind), password: generatePassword() });
   }
 
   function startEdit(entry: VaultEntry): void {
     setSelectedId(entry.id);
-    setShowMore(entry.kind !== "web" || Boolean(entry.totpSecret || entry.capabilities || entry.host));
+    setShowMore(Boolean(entry.totpSecret || entry.capabilities || entry.provider || entry.account));
     setDraft({
       kind: entry.kind,
       title: entry.title,
@@ -437,9 +443,12 @@ export function VaultPage(): ReactNode {
             <header className="vault-hero">
               <h2>{t({ de: "Dein Tresor", en: "Your vault" })}</h2>
               <p className="muted">
+                {t({ de: "Welchen Zugang suche ich?", en: "Which login am I looking for?" })}
+              </p>
+              <p className="muted">
                 {t({
-                  de: `${entries.length} Logins · geschützt auf diesem Gerät`,
-                  en: `${entries.length} logins · protected on this device`,
+                  de: `${entries.length} Einträge · geschützt auf diesem Gerät`,
+                  en: `${entries.length} entries · protected on this device`,
                 })}
               </p>
             </header>
@@ -480,7 +489,7 @@ export function VaultPage(): ReactNode {
               </label>
             </div>
             {filtered.length === 0 ? (
-              <p className="muted empty">{t({ de: "Noch keine Logins.", en: "No logins yet." })}</p>
+              <p className="muted empty">{t({ de: "Noch keine Zugänge.", en: "No logins yet." })}</p>
             ) : (
               <ul>
                 {filtered.map((entry) => (
@@ -490,8 +499,13 @@ export function VaultPage(): ReactNode {
                       className={entry.id === selectedId ? "row active" : "row"}
                       onClick={() => startEdit(entry)}
                     >
-                      <strong>{entry.title || entry.url || t({ de: "Ohne Titel", en: "Untitled" })}</strong>
-                      <span className="muted">{entry.username || entry.account || entry.host}</span>
+                      <strong>{entry.title || entry.url || entry.host || t({ de: "Ohne Titel", en: "Untitled" })}</strong>
+                      <span className="muted">
+                        {kindLabel(entry.kind)}
+                        {entry.username || entry.account || entry.host
+                          ? ` · ${entry.username || entry.account || entry.host}`
+                          : ""}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -504,13 +518,40 @@ export function VaultPage(): ReactNode {
               <>
                 <h3>
                   {selectedId
-                    ? t({ de: "Login", en: "Login" })
-                    : draft.kind === "api"
-                      ? t({ de: "Neuer API-Key", en: "New API key" })
-                      : draft.kind === "sftp"
-                        ? t({ de: "Neuer Server-Zugang", en: "New server login" })
-                        : t({ de: "Neuer Login", en: "New login" })}
+                    ? kindLabel(draft.kind)
+                    : t(
+                        draft.kind === "api"
+                          ? { de: "Neuer API-Key", en: "New API key" }
+                          : draft.kind === "sftp"
+                            ? { de: "Neuer Server-Zugang", en: "New server login" }
+                            : { de: "Neuer Login", en: "New login" },
+                      )}
                 </h3>
+                <div className="tabs" role="tablist" aria-label={t({ de: "Art des Zugangs", en: "Entry type" })}>
+                  {(["web", "api", "sftp"] as const).map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      className={draft.kind === kind ? "active" : ""}
+                      data-testid={`kind-${kind}`}
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          kind,
+                          port: kind === "sftp" && !draft.port ? "22" : draft.port,
+                          protocol: kind === "sftp" && !draft.protocol ? "sftp" : draft.protocol,
+                          capabilities:
+                            kind === "api" && !draft.capabilities
+                              ? "repository.read"
+                              : draft.capabilities,
+                          credentialType: kind === "api" ? "api_key" : "password",
+                        })
+                      }
+                    >
+                      {kindLabel(kind)}
+                    </button>
+                  ))}
+                </div>
                 <label>
                   {t({ de: "Name", en: "Name" })}
                   <input
@@ -519,14 +560,16 @@ export function VaultPage(): ReactNode {
                     data-testid="entry-title"
                   />
                 </label>
-                <label>
-                  URL
-                  <input
-                    value={draft.url}
-                    onChange={(event) => setDraft({ ...draft, url: event.target.value })}
-                    placeholder="https://"
-                  />
-                </label>
+                {draft.kind === "web" ? (
+                  <label>
+                    URL
+                    <input
+                      value={draft.url}
+                      onChange={(event) => setDraft({ ...draft, url: event.target.value })}
+                      placeholder="https://"
+                    />
+                  </label>
+                ) : null}
                 {draft.kind === "sftp" ? (
                   <>
                     <label>
@@ -538,7 +581,7 @@ export function VaultPage(): ReactNode {
                       />
                     </label>
                     <label>
-                      Protocol
+                      {t({ de: "Protokoll", en: "Protocol" })}
                       <input
                         value={draft.protocol}
                         onChange={(event) => setDraft({ ...draft, protocol: event.target.value })}
@@ -554,7 +597,9 @@ export function VaultPage(): ReactNode {
                   </>
                 ) : null}
                 <label>
-                  {t({ de: "Benutzername", en: "Username" })}
+                  {draft.kind === "api"
+                    ? t({ de: "Kennung (optional)", en: "Id (optional)" })
+                    : t({ de: "Benutzername", en: "Username" })}
                   <input
                     value={draft.username}
                     onChange={(event) => setDraft({ ...draft, username: event.target.value })}
@@ -570,11 +615,13 @@ export function VaultPage(): ReactNode {
                     data-testid="copy-username"
                     onClick={() => copyField("Username", draft.username)}
                   >
-                    Copy username
+                    {t({ de: "Benutzername kopieren", en: "Copy username" })}
                   </button>
                 </div>
                 <label>
-                  {draft.kind === "api" ? "API key / token" : "Password"}
+                  {draft.kind === "api"
+                    ? t({ de: "API-Key / Token", en: "API key / token" })
+                    : t({ de: "Passwort", en: "Password" })}
                   <input
                     type={revealPassword ? "text" : "password"}
                     value={draft.password}
@@ -590,7 +637,9 @@ export function VaultPage(): ReactNode {
                     onClick={() => setRevealPassword((open) => !open)}
                     data-testid="reveal-password"
                   >
-                    {revealPassword ? "Hide password" : "Show password"}
+                    {revealPassword
+                      ? t({ de: "Verbergen", en: "Hide" })
+                      : t({ de: "Anzeigen", en: "Show" })}
                   </button>
                   <button
                     type="button"
@@ -599,15 +648,17 @@ export function VaultPage(): ReactNode {
                     data-testid="copy-password"
                     onClick={() => copyField("Password", draft.password)}
                   >
-                    Copy password
+                    {t({ de: "Kopieren", en: "Copy" })}
                   </button>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => setDraft({ ...draft, password: generatePassword() })}
-                  >
-                    Generate password
-                  </button>
+                  {draft.kind !== "api" ? (
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => setDraft({ ...draft, password: generatePassword() })}
+                    >
+                      {t({ de: "Passwort erzeugen", en: "Generate password" })}
+                    </button>
+                  ) : null}
                 </div>
                 {copied ? (
                   <p className="hint" data-testid="copied-note">
@@ -629,30 +680,6 @@ export function VaultPage(): ReactNode {
                   onToggle={(event) => setShowMore((event.target as HTMLDetailsElement).open)}
                 >
                   <summary>{t({ de: "Weitere Optionen", en: "More options" })}</summary>
-                  <div className="tabs">
-                    {(["web", "api", "sftp"] as const).map((kind) => (
-                      <button
-                        key={kind}
-                        type="button"
-                        className={draft.kind === kind ? "active" : ""}
-                        data-testid={`kind-${kind}`}
-                        onClick={() =>
-                          setDraft({
-                            ...draft,
-                            kind,
-                            port: kind === "sftp" && !draft.port ? "22" : draft.port,
-                            protocol: kind === "sftp" && !draft.protocol ? "sftp" : draft.protocol,
-                            capabilities:
-                              kind === "api" && !draft.capabilities
-                                ? "repository.read"
-                                : draft.capabilities,
-                          })
-                        }
-                      >
-                        {kind === "web" ? "Login" : kind === "api" ? "API-Key" : t({ de: "Server", en: "Server" })}
-                      </button>
-                    ))}
-                  </div>
                   <label>
                     {t({ de: "Einfügen", en: "Paste" })}
                     <textarea
@@ -830,11 +857,11 @@ export function VaultPage(): ReactNode {
               </>
             ) : (
               <div className="placeholder">
-                <h3>{t({ de: "Wähle einen Login", en: "Pick a login" })}</h3>
+                <h3>{t({ de: "Welchen Zugang suche ich?", en: "Which login am I looking for?" })}</h3>
                 <p className="muted">
                   {t({
-                    de: "Links die Liste. Rechts die Details. Browser und Zugriff sind eigene Reiter.",
-                    en: "List on the left. Details on the right. Browser and Access are their own tabs.",
+                    de: "Links die Liste. Login, API-Key oder Server-Zugang rechts öffnen.",
+                    en: "List on the left. Open a login, API key, or server login on the right.",
                   })}
                 </p>
               </div>

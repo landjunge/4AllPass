@@ -35,7 +35,6 @@ jobs:
         run: npm run verify:reproducible
       - name: npm audit (high+)
         run: npm audit --audit-level=high
-        continue-on-error: true
 
   desktop-stall:
     name: Desktop sleep stall
@@ -46,6 +45,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Wall-clock stall (not Instant)
         run: rustc --edition 2021 --test src-tauri/src/sleep_stall.rs -o sleep-stall && ./sleep-stall
+      - name: Sidecar bind is not foreign-port trust
+        run: rustc --edition 2021 --test src-tauri/src/core_bind.rs -o core-bind && ./core-bind
 
   python:
     name: Backend tests
@@ -98,7 +99,6 @@ jobs:
         run: python3 scripts/verify-argon2id-vectors.py
       - name: pip-audit
         run: pip install pip-audit && pip-audit -r backend/requirements.txt
-        continue-on-error: true
 
   python-sqlite:
     name: Backend tests (SQLite)

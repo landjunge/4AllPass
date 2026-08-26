@@ -14,7 +14,14 @@ import type {
 
 import { deviceId } from "./device-identity.ts";
 
-const API_BASE = "/api/v1";
+const SIDECAR_API = "http://127.0.0.1:8788/api/v1";
+
+function apiBase(): string {
+  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+    return SIDECAR_API;
+  }
+  return "/api/v1";
+}
 const TOKEN_KEY = "4allpass.session";
 
 export interface AccountSession {
@@ -113,9 +120,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
   headers["X-Device-Id"] = deviceId();
-  const init: RequestInit = { method, headers, credentials: "same-origin" };
+  const init: RequestInit = { method, headers, credentials: "omit" };
   if (body !== undefined) init.body = JSON.stringify(body);
-  const response = await fetch(`${API_BASE}${path}`, init);
+  const response = await fetch(`${apiBase()}${path}`, init);
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   const parsed: unknown = text ? JSON.parse(text) : {};

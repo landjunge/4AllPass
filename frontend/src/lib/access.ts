@@ -55,7 +55,11 @@ export interface AccessWireReply {
   body: AccessApiResponse;
 }
 
-/** UI/broker grant. material is the handoff secret — not part of @4allpass/core. */
+/**
+ * UI/broker grant. This is a **raw_secret_handoff**: `material` is the entry
+ * password. TTL only stops *future* deliveries. A copy already given is not
+ * un-known. Not a delegated capability. Not part of @4allpass/core.
+ */
 export interface AccessGrant {
   id: string;
   application: string;
@@ -64,6 +68,7 @@ export interface AccessGrant {
   scope: string[];
   expiresAt: number;
   material: string;
+  handoff: "raw_secret";
 }
 
 export function capabilitiesOf(entry: VaultEntry): string[] {
@@ -98,6 +103,7 @@ export function issueGrant(request: AccessRequest, entry: VaultEntry, now = Date
     scope: meta.scope,
     expiresAt: meta.expiresAt,
     material: entry.password,
+    handoff: "raw_secret",
   };
 }
 

@@ -6,8 +6,10 @@ import {
   emptyDraft,
   encodeEntryPlaintext,
   newEntryId,
+  wipeVaultEntry,
   type VaultEntry,
 } from "./entries.ts";
+import { lock } from "./vault-session.ts";
 
 test("old plaintext without kind still unlocks as web", () => {
   const id = newEntryId();
@@ -27,6 +29,49 @@ test("old plaintext without kind still unlocks as web", () => {
   assert.equal(entry.password, "s3cret");
   assert.equal(entry.provider, "");
   assert.equal(entry.totpSecret, "");
+});
+
+test("wipeVaultEntry clears every secret class including totpSecret", () => {
+  const entry: VaultEntry = {
+    id: newEntryId(),
+    ...emptyDraft("web"),
+    title: "GitHub",
+    username: "ada",
+    password: "s3cret",
+    notes: "private note",
+    totpSecret: "JBSWY3DPEHPK3PXP",
+  };
+  wipeVaultEntry(entry);
+  assert.equal(entry.password, "");
+  assert.equal(entry.notes, "");
+  assert.equal(entry.totpSecret, "");
+  assert.equal(entry.username, "ada");
+  assert.equal(entry.title, "GitHub");
+});
+
+test("lock() via wipeVaultEntry leaves no TOTP secret on a stale entry ref", () => {
+  const entry: VaultEntry = {
+    id: newEntryId(),
+    ...emptyDraft("web"),
+    password: "s3cret",
+    notes: "n",
+    totpSecret: "JBSWY3DPEHPK3PXP",
+  };
+  const vaultKey = new Uint8Array(32);
+  vaultKey.fill(7);
+  lock({
+    vaultId: "vault_test",
+    revision: 1,
+    vaultKeyVersion: 1,
+    vaultKey,
+    envelopes: [],
+    entries: [entry],
+    unlockedWith: "master_password",
+  });
+  assert.equal(entry.totpSecret, "");
+  assert.equal(entry.password, "");
+  assert.equal(entry.notes, "");
+  assert.deepEqual(Array.from(vaultKey), new Array(32).fill(0));
 });
 
 test("totpSecret round-trips in entry plaintext", () => {

@@ -132,6 +132,9 @@ async def test_local_app_serves_ui_and_api_same_origin(local_runtime):
         assert "password" not in str(body).lower()
         assert "secret" not in str(body).lower()
 
+        foreign = await client.get("/api/v1/health", headers={"Host": "evil.example"})
+        assert foreign.status_code == 400
+
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_local_bootstrap_mints_session_without_register(local_runtime):

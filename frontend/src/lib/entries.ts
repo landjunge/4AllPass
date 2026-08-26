@@ -89,6 +89,16 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
   return new TextEncoder().encode(JSON.stringify(payload));
 }
 
+/**
+ * Clear every secret class on an unlocked entry. Call from `lock()`.
+ * Username/title stay; they are not vault secrets.
+ */
+export function wipeVaultEntry(entry: VaultEntry): void {
+  entry.password = "";
+  entry.notes = "";
+  entry.totpSecret = "";
+}
+
 export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEntry {
   const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as Partial<VaultEntry> & {
     kind?: unknown;

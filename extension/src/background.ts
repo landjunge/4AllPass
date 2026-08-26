@@ -18,6 +18,7 @@ import {
   unlockVault,
 } from "./unlock.ts";
 import { defaultPinStore } from "./revision-pin.ts";
+import { normalizeApiOrigin } from "./popup-settings.ts";
 
 interface SessionState {
   apiOrigin: string;
@@ -438,7 +439,7 @@ async function handle(
       await lockVault();
       return { ok: true };
     case "unlock": {
-      const apiOrigin = String(message.apiOrigin ?? "http://127.0.0.1:8788").replace(/\/$/, "");
+      const apiOrigin = normalizeApiOrigin(String(message.apiOrigin ?? "http://127.0.0.1:8788"));
       await ensureApiOrigin(apiOrigin);
       const id = await deviceId();
       const unlocked = await unlockVault({

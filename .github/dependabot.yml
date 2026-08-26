@@ -45,3 +45,15 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      cargo-patch-and-minor:
+        update-types:
+          - minor
+          - patch

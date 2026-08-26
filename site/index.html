@@ -1,172 +1,45 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>4AllPass — Digitaler Tresor, der wirklich dir gehört</title>
-  <meta name="description" content="Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge: der Server sieht keinen Klartext. Desktop-App zuerst. Agenten nur nach Allow/Deny + TTL." />
-  <meta name="robots" content="index, follow, max-image-preview:large" />
-  <meta name="author" content="Daniel Filipek (landjunge)" />
-  <meta name="keywords" content="Passwortmanager, Zero-Knowledge, Desktop, Autofill, Passkeys, lokaler Tresor, Agent Access, 4AllPass" />
-  <link rel="canonical" href="https://4allpass.netzwerkpunkt.de/" />
-  <link rel="alternate" hreflang="de" href="https://4allpass.netzwerkpunkt.de/" />
-  <link rel="alternate" hreflang="en" href="https://4allpass.netzwerkpunkt.de/#en" />
-  <link rel="alternate" hreflang="de" href="https://landjunge.github.io/4AllPass/" />
-  <link rel="alternate" hreflang="en" href="https://landjunge.github.io/4AllPass/#en" />
-  <link rel="alternate" hreflang="x-default" href="https://4allpass.netzwerkpunkt.de/" />
-  <meta property="og:locale" content="de_DE" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="4AllPass" />
-  <meta property="og:title" content="4AllPass — Digitaler Tresor, der wirklich dir gehört" />
-  <meta property="og:description" content="Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge. Desktop-App zuerst. Agenten nur nach Allow/Deny." />
-  <meta property="og:url" content="https://landjunge.github.io/4AllPass/" />
-  <meta property="og:image" content="https://netzwerkpunkt.de/og.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="4AllPass — Digitaler Tresor, der wirklich dir gehört" />
-  <meta name="twitter:description" content="Lokaler Passwort-Tresor. Autofill. Zero-Knowledge. Agenten nur nach Allow/Deny." />
-  <meta name="theme-color" content="#0a0b0a" />
-  <link rel="icon" href="https://netzwerkpunkt.de/favicon.svg" type="image/svg+xml" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "4AllPass",
-    "applicationCategory": "SecurityApplication",
-    "operatingSystem": "macOS, Windows, Linux",
-    "description": "Lokaler Passwort-Tresor mit zuverlässigem Autofill. Zero-Knowledge: der Server sieht keinen Klartext. Desktop-App zuerst. Agenten nur nach Allow/Deny + TTL.",
-    "url": "https://4allpass.netzwerkpunkt.de/",
-    "downloadUrl": "https://github.com/landjunge/4AllPass/releases/tag/desktop",
-    "softwareVersion": "desktop",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-    "author": { "@type": "Person", "name": "Daniel Filipek", "alternateName": "landjunge", "url": "https://github.com/landjunge" },
-    "sameAs": [
-      "https://github.com/landjunge/4AllPass",
-      "https://landjunge.github.io/4AllPass/",
-      "https://4allpass.netzwerkpunkt.de/",
-      "https://netzwerkpunkt.de/4allpass"
-    ]
-  }
-  </script>
-  <style>
-:root{--bg:#0a0b0a;--fg:#eceae4;--muted:#9a9d96;--subtle:#6d716c;--line:rgba(236,234,228,.12);--accent:#d7dbd4;--accent-fg:#0a0b0a}
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",sans-serif}
-body{min-height:100dvh;display:flex;flex-direction:column}
-a{color:inherit}header,main,footer{width:min(1120px,100%);margin:0 auto;padding:0 20px}
-header{display:flex;justify-content:space-between;align-items:center;min-height:64px;border-bottom:1px solid var(--line);gap:1rem;flex-wrap:wrap}
-.k{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--subtle)}
-nav.top a{margin-left:1rem;text-decoration:none;font-size:.9rem;color:var(--muted)}
-nav.top a:hover{color:var(--fg)}
-h1{font-family:Georgia,"Iowan Old Style",serif;font-weight:500;font-size:clamp(2.2rem,6vw,4rem);line-height:1.05;letter-spacing:-.03em;margin:20px 0 0}
-h2{font-family:Georgia,"Iowan Old Style",serif;font-weight:500;font-size:1.35rem;margin:0}
-.claim{max-width:38rem;font-size:1.12rem;line-height:1.55;color:var(--muted);margin-top:1.1rem}
-.hero{padding:4rem 0 2.5rem}
-.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:2rem}
-.cta a{min-height:44px;display:inline-flex;align-items:center;padding:0 18px;border-radius:4px;text-decoration:none;font-size:.95rem}
-.cta .p{background:var(--accent);color:var(--accent-fg)}
-.cta .g{border:1px solid var(--line)}
-.flow{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.5rem 0 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;color:var(--subtle)}
-.flow span{border:1px solid var(--line);padding:.35rem .7rem;border-radius:4px}
-.grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 3rem}
-@media(min-width:720px){.grid{grid-template-columns:repeat(3,1fr)}}
-.grid article{background:var(--bg);padding:1.5rem 1.25rem}
-.grid p{color:var(--muted);line-height:1.55;font-size:.95rem;margin:.7rem 0 0}
-.split{display:grid;gap:2.5rem;padding-bottom:3rem}
-@media(min-width:800px){.split{grid-template-columns:1.15fr .85fr}}
-dl{border-top:1px solid var(--line);margin:1rem 0 0}
-dl div{display:grid;grid-template-columns:7.5rem 1fr;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--line)}
-dt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle)}
-dd{margin:0;color:var(--muted)}
-pre{background:#121412;border:1px solid var(--line);padding:1rem 1.1rem;overflow:auto;font-size:.85rem;border-radius:8px;color:var(--muted)}
-.links{display:grid;gap:.6rem;margin-top:1rem}
-.links a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-.links a:hover{color:var(--fg)}
-.note{font-size:.9rem;color:var(--subtle);margin-top:1rem;max-width:38rem;line-height:1.5}
-footer{border-top:1px solid var(--line);padding:1.6rem 20px 2.4rem;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;justify-content:space-between}
-  </style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>4AllPass — Ein digitaler Tresor, der wirklich dir gehört. | Netzwerkpunkt</title>
+  <meta name="description" content="Passwörter, Passkeys und Zugangsdaten in einem Tresor, den der Anbieter nicht lesen kann. Local-first und Zero-Knowledge."><meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://4allpass.netzwerkpunkt.de/"><meta name="theme-color" content="#0a0c0b">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://4allpass.netzwerkpunkt.de/">
+  <meta property="og:title" content="4AllPass — Ein digitaler Tresor, der wirklich dir gehört."><meta property="og:description" content="Passwörter, Passkeys und Zugangsdaten in einem Tresor, den der Anbieter nicht lesen kann. Local-first und Zero-Knowledge.">
+  <meta property="og:site_name" content="Netzwerkpunkt"><meta property="og:locale" content="de_DE">
+  <link rel="icon" href="https://netzwerkpunkt.de/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://netzwerkpunkt.de/hub.css?v=20260826-products">
 </head>
-<body>
-  <header>
-    <a class="k" href="https://netzwerkpunkt.de/">netzwerkpunkt.de · landjunge</a>
-    <nav class="top" aria-label="Hauptnavigation">
-      <a href="https://4allpass.netzwerkpunkt.de/">Produkt</a>
-      <a href="https://github.com/landjunge/4AllPass">GitHub</a>
-      <a href="https://github.com/landjunge/4AllPass/releases/tag/desktop">Download</a>
-      <a href="https://github.com/landjunge/4AllPass/blob/main/docs/README.md">Docs</a>
-    </nav>
-  </header>
-  <main>
-    <section class="hero">
-      <p class="k">Passwort-Tresor · Zero-Knowledge · Desktop first</p>
-      <h1>Ein digitaler Tresor, der wirklich dir gehört.</h1>
-      <p class="claim">Bei den meisten Passwort-Apps speichert eine Firma deine Daten in der Cloud. Bei 4AllPass kann der Server deine Passwörter <strong>nicht lesen</strong>. Alles Wichtige liegt bei dir auf dem Gerät.</p>
-      <p class="claim" lang="en" id="en">With most password apps a company stores your data in the cloud. With 4AllPass the server <strong>cannot read</strong> your passwords. What matters stays on your device.</p>
-      <p class="claim">Das Produkt ist die <strong>Desktop-App</strong>. Du installierst sie, legst einen Tresor an, importierst Passwörter aus dem Browser — und ab dann erledigt 4AllPass den Login.</p>
-      <p class="claim" lang="en">The product is the <strong>desktop app</strong>. Install it, create a vault, import from the browser — then 4AllPass handles the login.</p>
-      <p class="flow" aria-label="Produktfluss">
-        <span>Installieren</span><span>→</span><span>Importieren</span><span>→</span><span>Autofill</span><span>→</span><span>fertig</span>
-      </p>
-      <div class="cta">
-        <a class="p" href="https://github.com/landjunge/4AllPass/releases/tag/desktop">Desktop laden</a>
-        <a class="g" href="https://github.com/landjunge/4AllPass">Quellcode</a>
-        <a class="g" href="https://4allpass.netzwerkpunkt.de/">Produktseite</a>
-      </div>
-      <p class="note">macOS-Builds sind derzeit ad-hoc (nicht notariert): Rechtsklick → Öffnen, oder der One-Liner unten. Unlock = Tresor-Passwort. Ohne Recovery-Kit kein Zurücksetzen.</p>
-      <p class="note" lang="en">macOS builds are ad-hoc (not notarized): right-click → Open, or the one-liner below. Unlock = vault password. No recovery kit means no reset.</p>
-    </section>
-
-    <section class="grid" aria-label="Säulen">
-      <article>
-        <h2>Zuverlässiges Autofill</h2>
-        <p>Das, was du wirklich willst: Seite öffnen, Login erledigt. Field Intelligence + Safe Fill. Browser-Import mit Review — Passwörter erscheinen nie in der Liste.</p>
-      </article>
-      <article>
-        <h2>Zero-Knowledge</h2>
-        <p>Argon2id, AES-256-GCM. Vault Key ist pure random, nie aus dem Master-Passwort abgeleitet. FastAPI mintet keine Tokens. Der Server ist Blob-Store.</p>
-      </article>
-      <article>
-        <h2>Agenten unter Kontrolle</h2>
-        <p>n8n und KI-Tools bekommen Zugang nur nach explizitem Allow/Deny + TTL — nie als ersten Bildschirm, nie den ganzen Tresor. Loopback-Broker.</p>
-      </article>
-    </section>
-
-    <section class="split">
-      <div>
-        <p class="k">Was wir bewusst nicht machen</p>
-        <h2>Fundament zuerst</h2>
-        <p class="claim">Kein Blockchain, keine eigene digitale Identität, keine 20 Zukunftsfeatures auf einmal. Zuerst muss 4AllPass im Alltag einfach und vertrauenswürdig sein. Dann kann daraus mehr werden — genau so, wie die Produktvision von Daniel Filipek (landjunge) vorsieht.</p>
-        <pre><code>curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh</code></pre>
-        <p class="note">Installer pinnt GitHub-Tag <code>desktop</code> und prüft SHA-256. Vault-Ordner bleibt. Ohne Pipe: Script speichern, lesen, <code>sh install.sh</code>. Windows: <code>irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex</code>.</p>
-        <p class="note" lang="en">The installer pins GitHub tag <code>desktop</code> and checks SHA-256. The vault folder is never deleted. Without a pipe: save, read, <code>sh install.sh</code>.</p>
-      </div>
-      <div>
-        <p class="k">Fakten</p>
-        <dl>
-          <div><dt>Produkt</dt><dd>Desktop (Tauri) · SQLite · Loopback :8788</dd></div>
-          <div><dt>Crypto</dt><dd>Argon2id · AES-256-GCM · Hard-Revoke</dd></div>
-          <div><dt>Hosting</dt><dd>Local-first · Sync optional · Server nur Blob-Store</dd></div>
-          <div><dt>Agent</dt><dd>Allow/Deny + TTL · nie Roh-Secret dauerhaft</dd></div>
-          <div><dt>Audit</dt><dd>Noch kein unabhängiges Drittaudit</dd></div>
-        </dl>
-        <p class="k" style="margin-top:2rem">Weiterlesen</p>
-        <div class="links">
-          <a href="https://github.com/landjunge/4AllPass/blob/main/docs/README.md">Docs</a>
-          <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">Security Boundary</a>
-          <a href="https://github.com/landjunge/4AllPass/blob/main/docs/product-maturity.md">Produktreife</a>
-          <a href="https://github.com/landjunge/4AllPass/blob/main/docs/security-boundary.md">Security Boundary</a>
-          <a href="https://github.com/landjunge/4AllPass/blob/main/docs/product-maturity.md">Produktreife</a>
-          <a href="https://netzwerkpunkt.de/">Netzwerkpunkt — alle Produkte</a>
-        </div>
-      </div>
-    </section>
-  </main>
-  <footer>
-    <span>4AllPass · Daniel Filipek (landjunge) · Teil von Netzwerkpunkt</span>
-    <span>
-      <a href="impressum.html">Impressum</a> ·
-      <a href="datenschutz.html">Datenschutz</a> ·
-      <a href="https://4allpass.netzwerkpunkt.de/">4allpass.netzwerkpunkt.de</a> ·
-      <a href="llms.txt">llms.txt</a>
-    </span>
-  </footer>
+<body class="product-page vault-page">
+<header class="topbar">
+  <a class="brand" href="https://netzwerkpunkt.de/" aria-label="Zur Netzwerkpunkt-Startseite"><img src="https://netzwerkpunkt.de/favicon.svg" width="25" height="25" alt=""><span>Netzwerkpunkt</span></a>
+  <nav aria-label="Seitennavigation"><a href="#funktionen">Funktionen</a><a href="#details">Details</a><a href="#projekte">Projekte</a><a class="nav-cta" href="https://netzwerkpunkt.de/">Alle Produkte ↗</a></nav>
+</header>
+<main>
+<section class="product-hero">
+  <div>
+    <p class="eyebrow"><span class="pulse"></span>CREDENTIALS · ACTIVE</p>
+    <h1>4AllPass</h1>
+    <p class="intro">Ein digitaler Tresor, der wirklich dir gehört.</p>
+    <p class="product-question">Darf ich zugreifen?</p>
+    <div class="actions"><a class="button primary" href="https://github.com/landjunge/4AllPass/releases/tag/desktop">Download <span>↗</span></a><a class="button secondary" href="https://github.com/landjunge/4AllPass">GitHub <span>↗</span></a></div>
+  </div>
+  <div class="product-mark" aria-hidden="true"><span class="product-mark-label">NETZWERKPUNKT / PRODUKT</span><div class="product-mark-core">4<br>ALL<br>PASS</div></div>
+</section>
+<section class="proofbar" aria-label="Grundsätze">
+  <div><strong>01</strong><span>KLARE<br>GRENZEN</span></div><div><strong>02</strong><span>LOKAL<br>GEDACHT</span></div><div><strong>03</strong><span>DU<br>ENTSCHEIDEST</span></div>
+</section>
+<section class="feature-section" id="funktionen">
+  <div class="section-head compact"><p class="eyebrow">WAS ES LEISTET</p><h2>Drei klare<br><em>Bausteine.</em></h2></div>
+  <div class="feature-grid"><article><span>01 · EIGENTUM</span><h2>Dein Tresor</h2><p>Verschlüsselung beim Benutzer. Der Anbieter soll deine Geheimnisse nicht lesen können.</p></article><article><span>02 · ALLTAG</span><h2>Alltag zuerst</h2><p>Zuverlässiges Autofill, Passkeys und Desktop — bevor Zukunftsfeatures.</p></article><article><span>03 · ZUKUNFT</span><h2>Wachstumsfähig</h2><p>Gebaut so, dass Geräte, Agenten und Vertrauen später hineinwachsen können.</p></article></div>
+</section>
+<section class="detail-section" id="details">
+  <div class="detail-copy"><p class="eyebrow">EINORDNUNG</p><h2>Werkzeug mit<br><em>klarer Aufgabe.</em></h2><h3>Was ist es?</h3><p>4AllPass ist ein local-first Passwort- und Zugangs-Tresor für den Desktop. Passwörter, Passkeys, API-Keys und 2FA-Codes gehören dir — nicht dem Backend.</p><h3>Warum?</h3><p>Normale Cloud-Manager betreiben die Infrastruktur und könnten theoretisch zugreifen. Hier ist das Prinzip anders: speichern und synchronisieren ja — deine Geheimnisse lesen nein.</p><h3>Als Nächstes</h3><p>Fundament sauber machen: Autofill, Passkeys, Browser-Erweiterung und verständliches Backup. Keine Überversprechen.</p><h3>Installation</h3><p>Der Installer verwendet den GitHub-Tag <code>desktop</code> und prüft SHA-256.</p><pre><code>curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh</code></pre></div>
+  <div><p class="eyebrow">FAKTEN</p><dl class="facts"><div class="fact-row"><dt>Stack</dt><dd>Tauri · SQLite · Desktop first</dd></div><div class="fact-row"><dt>Prinzip</dt><dd>Local-first · Zero-Knowledge</dd></div><div class="fact-row"><dt>Status</dt><dd>Aktive Entwicklung</dd></div><div class="fact-row"><dt>Adresse</dt><dd>4allpass.netzwerkpunkt.de</dd></div></dl></div>
+</section>
+<section class="other-products" id="projekte"><div class="section-head compact"><p class="eyebrow">NETZWERKPUNKT</p><h2>Die anderen<br><em>Werkzeuge.</em></h2></div><div class="other-grid"><a href="https://tollgate.netzwerkpunkt.de/"><strong>Tollgate</strong><span>Kontrollschicht zwischen Agents und Internet.</span></a><a href="https://gnom-hub-v1.netzwerkpunkt.de/"><strong>gnom-hub-v1</strong><span>Brainstorm frei. Execute nur auf Absicht.</span></a><a href="https://threaddesk.netzwerkpunkt.de/"><strong>ThreadDesk</strong><span>Kontext behalten. Nichts heimlich starten.</span></a><a href="https://agent-x-files.netzwerkpunkt.de/"><strong>Agent-X-Files</strong><span>Detektivspiel mit KI-Partnerin.</span></a></div></section>
+</main>
+<footer><p><strong>Netzwerkpunkt</strong><br>Daniel Filipek (landjunge) · Berlin</p><p>Werkzeuge unter deiner Kontrolle.<br>Local-first · offen · bewusst ausführbar.</p><div><a href="https://netzwerkpunkt.de/impressum">Impressum</a><a href="https://netzwerkpunkt.de/datenschutz">Datenschutz</a></div></footer>
 </body>
 </html>

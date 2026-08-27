@@ -3,7 +3,7 @@
 **Audience:** an independent auditor (e.g. Cure53, Radically Open Security).  
 **Not in scope for this document:** performing the audit.  
 **Date:** 2026-08-26  
-**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `adversarial-review-external-01.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`, `supply-chain-security.md`, `reproducible-builds.md`.
+**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `adversarial-review-external-01.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`, `supply-chain-security.md`, `reproducible-builds.md`, `grok-build-plan.md`.
 
 This is a map of what to review, what the running system actually enforces, and where honesty gaps remain. Specs in `docs/` win over comments. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -99,6 +99,7 @@ zeroized; `BrowserLogin` Debug redacts `password`.
 - Is an SBOM produced per release?
 - Does `packages/crypto` stay free of network/UI dependencies?
 - Any unpinned or unscoped dependencies with generic names?
+- **Grok Build entry:** `docs/grok-build-plan.md` — executable plan, phases 1–3, definition of done.
 
 ---
 

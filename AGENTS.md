@@ -19,3 +19,4 @@ und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 - Keine neuen Dependencies, keine Crypto-Änderungen.
 - Typecheck + Tests im frontend-Workspace vor dem Commit.
 - Keine Secrets im Diff.
+- Immer committen und auf den aktuellen Branch pushen. Nicht auf Nachfrage warten.

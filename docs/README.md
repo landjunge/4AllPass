@@ -21,10 +21,10 @@ A new reader should need **this page plus five links**, not twenty files.
 | Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
 | Gesamtstatus / Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
 | How did we get here? | [entstehungslinie.md](entstehungslinie.md) |
-| Where do we position ourselves? | [positioning.md](positioning.md) (today), [positioning-target.md](positioning-target.md) (far later) |
+| Where do we position ourselves? | [positioning.md](positioning.md) (today + far-later target) |
 | How do we look on GitHub? | [github-sichtbarkeit.md](github-sichtbarkeit.md) |
 | How do we ship signed builds? | [distribution.md](distribution.md) |
-| Team mode (not now)? | [team-mode.md](team-mode.md), [team-roadmap.md](team-roadmap.md) |
+| Team mode (not now)? | [team-mode.md](team-mode.md) (spec + roadmap) |
 | Post-quantum? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
 
 ---
@@ -79,7 +79,7 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 
 Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`, `secret-access-layer.md`.
 
-Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
+Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md` (now includes roadmap), `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
 
 **Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Redundante Pointer-Dateien wurden entfernt (2026-08-28).
 
@@ -93,5 +93,7 @@ Far-later concepts stay as **one file each**, marked not implemented: `team-mode
 | `plan-rest.md` | Stub – Status in `ROADMAP.md` §1/§5 |
 | `roadmap.md` | Stub – lebende Roadmap ist `../ROADMAP.md` |
 | `README-HUMAN.md` | Stub – Inhalt in `../README.md` |
+| `positioning-target.md` | Stub – Inhalt in `positioning.md` (Far later) |
+| `team-roadmap.md` | Stub – Inhalt in `team-mode.md` (Roadmap) |
 
-Diese vier sind bewusst **nicht gelöscht**, damit alte Links nicht 404en. Neu: nicht mehr verlinken, nicht mehr pflegen.
+Diese sechs sind bewusst **nicht gelöscht**, damit alte Links nicht 404en. Neu: nicht mehr verlinken, nicht mehr pflegen.

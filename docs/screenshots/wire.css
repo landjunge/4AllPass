@@ -57,6 +57,7 @@ h1 { font-size: 1rem; font-weight: 600; color: var(--gold-hi); margin: 0 0 12px;
   border-top: 1px solid var(--line);
 }
 .star { color: var(--gold); }
+a { color: var(--gold-hi); }
 .btn {
   display: inline-block;
   margin-top: 8px;

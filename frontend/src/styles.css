@@ -633,6 +633,11 @@ pre.mono {
     flex-shrink: 0;
     min-height: 32px;
   }
+
+  .auth button.primary,
+  .auth button[type="submit"] {
+    min-height: 44px;
+  }
 }
 
 .list-header {

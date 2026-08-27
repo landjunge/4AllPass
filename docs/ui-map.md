@@ -3,7 +3,7 @@
 **Status:** Flächenkarte für Grok Build. Keine Spec.  
 **Shape:** [`architecture.md`](architecture.md). **Was läuft:** [`security-boundary.md`](security-boundary.md).
 
-Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen (Magpie, nummeriert). Foto optional daneben.
+Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen (Magpie, nummeriert): [screenshots/index.html](screenshots/index.html).
 
 ---
 
@@ -24,7 +24,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 3 | `error` / `notice`. Schließen räumt die Meldung. |
 | 4 | Eine der Views V1–V8. |
 
-> Screenshot: `docs/screenshots/v0-chrome.png`
+> Wireframe: [v0-chrome.html](screenshots/v0-chrome.html)
 
 ---
 
@@ -46,7 +46,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 4 | `auth-submit`. 409 → Anmelden. |
 | 5 | Wechselt den Modus. |
 
-> Screenshot: `docs/screenshots/v1-auth.png`
+> Wireframe: [v1-auth.html](screenshots/v1-auth.html)
 
 ---
 
@@ -66,7 +66,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 2 | Bleibt auf dem Gerät. Mismatch blockt Submit. |
 | 3 | Anlegen → Recovery-Kit. Link → Restore-Datei + Share-Key. |
 
-> Screenshot: `docs/screenshots/v2-create.png`
+> Wireframe: [v2-create.html](screenshots/v2-create.html)
 
 ---
 
@@ -86,7 +86,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 2 | Master oder Recovery-Key. Nie an den Server. |
 | 3 | Entschlüsselt Snapshot → VaultPage. |
 
-> Screenshot: `docs/screenshots/v3-unlock.png`
+> Wireframe: [v3-unlock.html](screenshots/v3-unlock.html)
 
 ---
 
@@ -138,7 +138,7 @@ Handy: Spalten unter 820 px untereinander.
 | 2 | Welche Profile. Kein Autofill-Grant. |
 | 3 | Import-Review: Host + User, **kein** Passwort in der Liste. |
 
-> Screenshot: `docs/screenshots/v5-browser.png`
+> Wireframe: [v5-browser.html](screenshots/v5-browser.html)
 
 ---
 
@@ -157,7 +157,7 @@ Handy: Spalten unter 820 px untereinander.
 | 1 | Demo + echte Broker-Anfrage. Kein Roh-Passwort ohne Allow. |
 | 2 | Mensch entscheidet. TTL holt eine Kopie nicht zurück. |
 
-> Screenshot: `docs/screenshots/v6-access.png`
+> Wireframe: [v6-access.html](screenshots/v6-access.html)
 
 ---
 
@@ -176,7 +176,7 @@ Handy: Spalten unter 820 px untereinander.
 | 1 | Untertabs. Geräte = Biometrie + Revoke (DELETE = metadata_only). |
 | 2 | Sicherheit = Revision nur zur Kontrolle, nicht Alltag. |
 
-> Screenshot: `docs/screenshots/v7-settings.png`
+> Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 
 ---
 
@@ -186,7 +186,7 @@ Import-Review · Share-Datei · Share öffnen · Recovery-Kit.
 
 Jeweils: Titel, Warnung, eine primäre Aktion, Abbrechen. Server sieht keinen Klartext.
 
-> Screenshot: `docs/screenshots/v8-import.png`
+> Wireframe: [v8-import.html](screenshots/v8-import.html)
 
 ---
 

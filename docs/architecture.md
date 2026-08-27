@@ -1,7 +1,7 @@
 # Architektur – 4AllPass
 
 **Status:** Shape of the product. What *runs* is [`security-boundary.md`](security-boundary.md).  
-**Date:** 2026-08-26
+**Date:** 2026-08-28
 
 **Der Server speichert den Tresor. Der Client besitzt den Tresor.**
 
@@ -92,10 +92,17 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 
 ## 5. Mobile-Strategie
 
-1. Progressive Web App (PWA) als erster Weg
-2. Geräte erscheinen als Karten und können selektiv freigeschaltet werden
-3. Biometrie über WebAuthn
-4. Später optional native Apps
+**Regel:** Mobile ist ein Gerät des *gleichen* Vaults — kein zweites Protokoll, kein Fork von `packages/crypto`. Crypto und Snapshots bleiben plattformneutral.
+
+1. **PWA zuerst** — der erste Weg auf dem Handy. Biometrie über WebAuthn, Geräte erscheinen als Karten und können selektiv freigeschaltet werden.
+2. **Native Apps später, optional** — erst wenn PWA-Autofill nicht reicht. Gleiche Vault-API, gleiche Envelopes.
+3. **Android vor iOS** — Android hat keinen Entitlement-Flaschenhals; iOS braucht Apple-Entitlement + Review.
+4. **Skelette existieren nur als Vorbereitung**, nicht als Startschuss:  
+   - Android: [`android-skeleton-grok-build.md`](android-skeleton-grok-build.md)  
+   - iOS: [`ios-skeleton-grok-build.md`](ios-skeleton-grok-build.md)  
+   Diese Docs sind *Prompt-Vorlagen* für Grok Build. Sie ersetzen **nicht** die PWA-Strategie und sind **kein** Freifahrtschein, native Apps vor PWA zu bauen.
+
+Siehe auch: [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-009-mobile-client.md).
 
 ---
 
@@ -131,10 +138,10 @@ Details: crypto-protocol.md §7 and [`docs/security-boundary.md`](security-bound
 - Audit-Logs
 - Passwort-Generator
 - Shamir Secret Sharing als erweiterte Recovery-Option
-- **Team Mode** — spezifiziert, nicht gebaut: [`team-mode.md`](team-mode.md), [`team-roadmap.md`](team-roadmap.md). Organisation ist eine Grenze, kein PAM. Trusted Recovery = XOR-Split des **bestehenden** Recovery Key (nicht VK, nicht Shamir in MVP). Nicht implementieren, bis das Review angenommen ist.
+- **Team Mode** — spezifiziert, nicht gebaut: [`team-mode.md`](team-mode.md). Organisation ist eine Grenze, kein PAM. Trusted Recovery = XOR-Split des **bestehenden** Recovery Key (nicht VK, nicht Shamir in MVP). Nicht implementieren, bis das Review angenommen ist.
 
 ---
 
-**Stand:** 18. August 2026  
+**Stand:** 28. August 2026  
 **Crypto Protocol:** v1 (siehe crypto-protocol.md)  
 **Backend security boundary:** account session + vault ownership + race-safe snapshot CAS + honest device/WebAuthn semantics (`docs/security-boundary.md`)

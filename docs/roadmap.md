@@ -12,3 +12,5 @@
 Public line: **Local-first. Sync optional. Server deiner Wahl.** Desktop = client. Self-host = placement.
 
 Do not implement [architecture/future-architecture.md](architecture/future-architecture.md) on “weiter”. Do not start MAIP, managed hosting, S3, CRDT, or Team Mode until an explicit decision.
+
+> **Archived 2026-08-28.** Die lebende Roadmap ist `../ROADMAP.md`. Diese Datei ist nur noch ein Stub – nicht mehr pflegen.

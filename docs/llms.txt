@@ -7,3 +7,6 @@ GitHub: https://github.com/landjunge/4AllPass
 Pages: https://landjunge.github.io/4AllPass/
 Impressum: https://netzwerkpunkt.de/impressum
 Datenschutz: https://netzwerkpunkt.de/datenschutz
+
+Supply-chain rules: docs/supply-chain-security.md (pinning, provenance, SBOM, crypto-core minimalism)
+Future readiness: docs/future-readiness.md (exit strategy, crypto-agility, legal)

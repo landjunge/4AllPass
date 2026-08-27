@@ -26,6 +26,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | How do we ship signed builds? | [distribution.md](distribution.md) |
 | Team mode (not now)? | [team-mode.md](team-mode.md) (spec + roadmap) |
 | Post-quantum? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
+| Mobile (PWA first, native later)? | [architecture.md](architecture.md) §5, [android-skeleton-grok-build.md](android-skeleton-grok-build.md), [ios-skeleton-grok-build.md](ios-skeleton-grok-build.md) |
 
 ---
 
@@ -58,7 +59,7 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 
 ## Implemented vs later
 
-| Topic | Today | Later (do not build on “weiter”) |
+| Topic | Today | Later (do not build on „weiter“) |
 |---|---|---|
 | Vault crypto | Client AES-GCM, envelopes | Unchanged |
 | Desktop | Tauri + local SQLite | Same client, optional remote URL |
@@ -69,13 +70,13 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 | Agent identity | **Not cryptographic** | [MAIP v0.1](specs/maip-v0.1.md) experimental |
 | Grant | `handoff: "raw_secret"`; TTL does not un-know a copy | Mediated proxy ([secret-access-layer.md](secret-access-layer.md)) |
 | Multi-device sync | Snapshot CAS, 409, pin | No CRDT; 409 → reload |
-| Mobile apps | 0 % | Same vault protocol |
+| Mobile apps | 0 % (PWA first) | Same vault protocol; native Android/iOS skeletons are prep only |
 | Team Mode | Spec only | Not PAM |
 | Supply chain | Lockfiles exist; audit/SBOM not yet enforced in CI | [supply-chain-security.md](supply-chain-security.md) |
 
 ---
 
-## Keep (do not “consolidate away”)
+## Keep (do not „consolidate away“)
 
 Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`, `secret-access-layer.md`.
 

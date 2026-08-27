@@ -1,10 +1,49 @@
 # Supply-Chain-Sicherheit
 
-> Status: offen. Diese Regeln gelten für **alle** neuen und bestehenden Abhängigkeiten – Rust (Cargo), JavaScript (npm), Python (backend), Tauri, Mobile (Kotlin/Swift).
+> Status: **offen – jetzt umsetzen.** Diese Regeln gelten für **alle** neuen und bestehenden Abhängigkeiten – Rust (Cargo), JavaScript (npm), Python (backend), Tauri, Mobile (Kotlin/Swift).
 >
 > **Warum das hier steht:** 4AllPass ist ein Tresor. Jede Bibliothek, die du einziehst, ist ein Angriffsvektor. Ein kompromittierter Maintainer, ein Dependency-Confusion-Angriff, ein bösartiger Transitive-Dep – und fremder Code läuft in deinem Vault. Das ist kein theoretisches Risiko, das ist die häufigste Angriffsform der letzten Jahre.
 >
 > **Höhere Autorität:** `security-boundary.md` (was der Code erzwingt) und `threat-model.md` (wer angreift). Dieses Dokument definiert die *Regeln für die Lieferkette*. Wenn hier was steht, das über die Security-Boundary hinausgeht, ist das ein Defekt – nicht umgekehrt.
+>
+> **Ausführungsmodus:** Dieses Dokument ist ein **ausführbarer Plan für Grok Build**. Lies es von oben nach unten und setze jeden Schritt um. Keine Diskussion, kein „optional“, kein „später“. Wenn ein Schritt blockiert (fehlende Datei, unklare Dep), dokumentiere das als Finding und geh weiter.
+
+---
+
+## 0. Grok-Build-Anweisung (Pflicht, zuerst lesen)
+
+Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort umsetzen.**
+
+**Arbeitsreihenfolge (strikt):**
+
+1. Lies `docs/supply-chain-security.md` (dieses Dokument) komplett.
+2. Lies `docs/security-boundary.md` §§ zu Crypto-Kern und Trust-Boundaries.
+3. Lies `docs/audit-scope.md` Modul M6.
+4. Inventarisiere den aktuellen Stand:
+   - `Cargo.lock`, `package-lock.json`, `requirements*.txt`, `libs.versions.toml` (falls vorhanden)
+   - `.github/workflows/ci.yml` (oder äquivalent)
+   - `packages/crypto` Dependency-Baum
+5. Setze **Phase 1** um (Pinning + CI-Audits). Ein Commit pro logischer Einheit.
+6. Setze **Phase 2** um (Crypto-Kern-Audit + Minimalismus).
+7. Setze **Phase 3** um (SBOM + Incident-Runbook).
+8. Aktualisiere die Checkliste in §6 dieses Dokuments: ☐ → ☑ mit Datum und kurzer Notiz.
+9. Öffne **keinen** PR, der die CI rot macht. Wenn ein Audit-Finding die CI blockiert: fixen oder als `allow`-Eintrag mit Begründung dokumentieren.
+
+**Definition of Done für diesen Plan:**
+
+- [ ] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
+- [ ] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
+- [ ] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
+- [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
+- [ ] Checkliste §6 ist aktuell.
+- [ ] Ein kurzer Eintrag in `docs/reviews/attack-vectors.md` (oder neu angelegt), falls Findings aufgetaucht sind.
+
+**Nicht tun:**
+
+- Keine großen Refactors außerhalb der Supply-Chain.
+- Keine neuen Features.
+- Keine Secrets committen.
+- Keine „while we're at it“-Aufräumarbeiten, die den Scope sprengen.
 
 ---
 
@@ -129,11 +168,12 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 - `security-boundary.md` – was der Code erzwingt
 - `threat-model.md` – wer angreift
-- `audit-scope.md` – was ein Auditor prüft
+- `audit-scope.md` – was ein Auditor prüft (M6)
 - `reproducible-builds.md` – Build-Determinismus (ergänzt diese Regeln)
 - `future-readiness.md` – Exit, Crypto-Agility, Rechtliches
 - `adversarial-review*.md` – konkrete Angriffsvektoren
+- `android-skeleton-grok-build.md` / `ios-skeleton-grok-build.md` – Mobile-Pläne (ebenfalls Grok-Build-ausführbar)
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-28*
+*Zuletzt aktualisiert: 2026-08-28 – umgewandelt in ausführbaren Grok-Build-Plan.*

@@ -26,6 +26,13 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
                  → Sichtbarkeit nur nach P0+P1
 ```
 
+**Konkrete nächste Schritte (Code vor Docs):**
+
+1. **Tresor** – Vault anlegen, Passwörter rein, speichern, wieder abrufen. Der Kern, den jeder Nutzer als Erstes testet.
+2. **Broker (Loopback)** – Agent fragt an, du sagst ja oder nein, TTL läuft ab. Zettel-Türsteher, kein Ausweis.
+3. **PWA** – Login, Homescreen-Icon, offline-fähig. Kein App Store, kein Review.
+4. **Schauen, was fehlt** – erst dann entscheiden, ob Autofill / native Apps überhaupt noch nötig sind.
+
 | Baustein | Status |
 |---|---|
 | Tresor, Crypto, Hard-Revoke, CAS | auf `main` – nicht anfassen |

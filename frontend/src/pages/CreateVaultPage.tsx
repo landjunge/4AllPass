@@ -1,8 +1,14 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 
-export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode {
+export function CreateVaultPage({
+  onRestore,
+}: {
+  onRestore?: () => void;
+}): ReactNode {
   const { createNewVault } = useApp();
+  const { t } = useCopy();
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [busy, setBusy] = useState(false);
@@ -26,15 +32,15 @@ export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode 
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <h2>Tresor anlegen / Create your vault</h2>
+        <h2>{t({ de: "Tresor anlegen", en: "Create your vault" })}</h2>
         <p className="muted">
-          Wähle ein Tresor-Passwort. Wenn du es vergisst, öffnet nur der Recovery-Schlüssel auf dem
-          nächsten Schirm diesen Tresor. Niemand kann ihn zurücksetzen — auch dieser Rechner nicht.
-          / Choose a vault password. If you forget it, only the recovery key on the next screen
-          opens this vault. Nobody can reset it — not even this computer.
+          {t({
+            de: "Wenn du das vergisst, hilft nur der Recovery-Schlüssel. Niemand setzt es zurück.",
+            en: "If you forget this, only the recovery key helps. Nobody can reset it.",
+          })}
         </p>
         <label>
-          Tresor-Passwort / Vault password
+          {t({ de: "Tresor-Passwort", en: "Vault password" })}
           <input
             type="password"
             autoComplete="new-password"
@@ -46,7 +52,7 @@ export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode 
           />
         </label>
         <label>
-          Wiederholen / Repeat
+          {t({ de: "Wiederholen", en: "Repeat" })}
           <input
             type="password"
             autoComplete="new-password"
@@ -58,19 +64,23 @@ export function CreateVaultPage({ onBack }: { onBack?: () => void }): ReactNode 
         </label>
         {mismatch ? (
           <p className="error-text">
-            Die Passwörter stimmen nicht überein. / The passwords do not match.
+            {t({ de: "Die Passwörter stimmen nicht überein.", en: "The passwords do not match." })}
           </p>
         ) : null}
         <p className="hint">
-          Das Tresor-Passwort verlässt dieses Gerät nicht. Ein paar Sekunden Wartezeit sind Absicht.
-          / The vault password does not leave this device. A few seconds of waiting is intentional.
+          {t({
+            de: "Verlässt dieses Gerät nicht. Ein paar Sekunden Wartezeit sind Absicht.",
+            en: "Does not leave this device. A few seconds of waiting is intentional.",
+          })}
         </p>
-        <button type="submit" disabled={busy || mismatch} data-testid="create-vault">
-          {busy ? "Tresor wird erzeugt… / Creating vault…" : "Tresor anlegen / Create vault"}
+        <button type="submit" className="primary" disabled={busy || mismatch} data-testid="create-vault">
+          {busy
+            ? t({ de: "Tresor wird erzeugt…", en: "Creating vault…" })
+            : t({ de: "Tresor anlegen", en: "Create vault" })}
         </button>
-        {onBack ? (
-          <button type="button" className="link" onClick={onBack} data-testid="create-back">
-            Zurück / Back
+        {onRestore ? (
+          <button type="button" className="link" onClick={onRestore} data-testid="create-back">
+            {t({ de: "Ich habe einen Tresor", en: "I have a vault" })}
           </button>
         ) : null}
       </form>

@@ -30,7 +30,7 @@ Do not stack “also I refactored the PWA” onto a crypto PR.
 - Snapshot writes stay race-safe (`FOR UPDATE` + CAS + unique revision).
 - Device DELETE remains honest: `revocation: "metadata_only"`. Cryptographic erase is `hardRevokeDevice` on the client, not DELETE.
 - Alembic migration in the same PR as the model change.
-- Tests: `backend/tests/test_security_hardening.py`, `test_security_unit.py`, `test_ownership.py`, `test_auth.py`.
+- Tests: `backend/tests/security/` (auth, IDOR, devices, snapshot CAS), `test_security_unit.py`, `test_ownership.py`, `test_auth.py`.
 
 ## Frontend
 

@@ -5,7 +5,6 @@ import { CreateVaultPage } from "./pages/CreateVaultPage.tsx";
 import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
-import { WelcomePage } from "./pages/WelcomePage.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
 
 export function App(): ReactNode {
@@ -22,7 +21,7 @@ export function App(): ReactNode {
     lock,
     signOut,
   } = useApp();
-  const [welcomeMode, setWelcomeMode] = useState<"home" | "create" | "restore">("home");
+  const [emptyMode, setEmptyMode] = useState<"create" | "restore">("create");
 
   if (!ready) {
     return (
@@ -48,9 +47,13 @@ export function App(): ReactNode {
             <span className="sr-only" data-testid="lock-state">
               {lockState}
             </span>
-            <span className="lock-pill" aria-hidden="true">
-              {lockState === "UNLOCKED" ? "🔓 Tresor geöffnet / Vault open" : "🔒 Gesperrt / Locked"}
-            </span>
+            {vaults.length > 0 ? (
+              <span className="lock-pill" aria-hidden="true">
+                {lockState === "UNLOCKED"
+                  ? "🔓 Tresor geöffnet / Vault open"
+                  : "🔒 Gesperrt / Locked"}
+              </span>
+            ) : null}
             {lockState === "UNLOCKED" ? (
               <button type="button" className="primary" onClick={lock} data-testid="lock">
                 Sperren / Lock
@@ -85,17 +88,10 @@ export function App(): ReactNode {
       <main>
         {!email ? (
           <AuthPage />
-        ) : vaults.length === 0 && localMode && welcomeMode === "home" ? (
-          <WelcomePage
-            onCreate={() => setWelcomeMode("create")}
-            onRestore={() => setWelcomeMode("restore")}
-          />
-        ) : vaults.length === 0 && localMode && welcomeMode === "restore" ? (
-          <RestoreVaultPage onBack={() => setWelcomeMode("home")} />
-        ) : vaults.length === 0 && localMode ? (
-          <CreateVaultPage onBack={() => setWelcomeMode("home")} />
+        ) : vaults.length === 0 && emptyMode === "restore" ? (
+          <RestoreVaultPage onBack={() => setEmptyMode("create")} />
         ) : vaults.length === 0 ? (
-          <CreateVaultPage />
+          <CreateVaultPage onRestore={() => setEmptyMode("restore")} />
         ) : lockState === "UNLOCKED" ? (
           <VaultPage />
         ) : (

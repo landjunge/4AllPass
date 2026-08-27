@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ApiError } from "../lib/api.ts";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 
 const LAST_EMAIL_KEY = "4allpass.last-email";
 
@@ -22,11 +23,13 @@ function rememberEmail(value: string): void {
 
 export function AuthPage(): ReactNode {
   const { signIn, signUp } = useApp();
+  const { t } = useCopy();
   const remembered = readLastEmail();
   const [mode, setMode] = useState<"sign-in" | "sign-up">(remembered ? "sign-in" : "sign-up");
   const [email, setEmail] = useState(remembered);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [already, setAlready] = useState(Boolean(remembered));
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -38,6 +41,7 @@ export function AuthPage(): ReactNode {
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
         rememberEmail(email);
+        setAlready(true);
         setMode("sign-in");
       }
     } finally {
@@ -48,19 +52,32 @@ export function AuthPage(): ReactNode {
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <img className="logo" src="/logo.png" alt="4AllPass" />
         <h2>
           {mode === "sign-up"
-            ? "Konto anlegen / Create account"
-            : "Anmelden / Sign in"}
+            ? t({ de: "Konto anlegen", en: "Create account" })
+            : t({ de: "Anmelden", en: "Sign in" })}
         </h2>
         <p className="muted">
           {mode === "sign-in"
-            ? "Anmelden. Das öffnet den Tresor nicht. / Sign in. This does not open the vault."
-            : "Zuerst ein Konto, damit dieser Server den verschlüsselten Tresor lagern kann. Das Passwort hier ist nur die Anmeldung. / First an account, so this server can store your encrypted vault. This password is only for signing in."}
+            ? t({
+                de: "Öffnet den Tresor nicht.",
+                en: "This does not open the vault.",
+              })
+            : t({
+                de: "Nur die Anmeldung. Der Tresor kommt als Nächstes.",
+                en: "Sign-in only. The vault is next.",
+              })}
         </p>
+        {already && mode === "sign-in" ? (
+          <p className="error-text">
+            {t({
+              de: "Diese E-Mail gibt es schon. Anmelden — oder Konto erst löschen.",
+              en: "This e-mail is already registered. Sign in, or delete the account first.",
+            })}
+          </p>
+        ) : null}
         <label>
-          E-Mail / E-mail
+          {t({ de: "E-Mail", en: "E-mail" })}
           <input
             type="email"
             autoComplete="username"
@@ -70,7 +87,7 @@ export function AuthPage(): ReactNode {
           />
         </label>
         <label>
-          Konto-Passwort / Account password
+          {t({ de: "Konto-Passwort", en: "Account password" })}
           <input
             type="password"
             autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
@@ -81,12 +98,12 @@ export function AuthPage(): ReactNode {
           />
         </label>
         <p className="hint">
-          Anmelde-Passwort und Tresor-Passwort sind verschieden. Das Anmelde-Passwort öffnet den
-          Tresor nicht. Niemand auf diesem Server kann das Tresor-Passwort zurücksetzen. /
-          Sign-in password and vault password are different. The sign-in password cannot open the
-          vault. Nobody on this server can reset the vault password.
+          {t({
+            de: "Nicht das Tresor-Passwort.",
+            en: "Not the vault password.",
+          })}
         </p>
-        <button type="submit" disabled={busy} data-testid="auth-submit">
+        <button type="submit" className="primary" disabled={busy} data-testid="auth-submit">
           {busy
             ? "Einen Moment… / One moment…"
             : mode === "sign-in"

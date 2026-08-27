@@ -64,6 +64,6 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 
 ## Keep (do not “consolidate away”)
 
-Crypto and security records stay: `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md`, `audit-scope.md`, `test-vectors*`, `architecture/adr/`.
+Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`.
 
 Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.

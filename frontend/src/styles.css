@@ -546,6 +546,8 @@ pre.mono {
 
 .list-header {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -722,6 +724,73 @@ pre.mono {
   align-items: flex-start;
   gap: 8px;
   cursor: pointer;
+}
+
+.search-field {
+  display: block;
+  flex: 1 1 180px;
+  min-width: 140px;
+  color: inherit;
+  font-size: inherit;
+}
+
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tip {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: help;
+}
+
+.entry-count {
+  cursor: help;
+}
+
+.row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kind-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.vault-empty {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0 8px;
+  justify-items: start;
+}
+
+.vault-empty .empty {
+  margin: 0;
+  font-size: 14px;
+}
+
+.vault-detail-empty .empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .kit .key {

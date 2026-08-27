@@ -10,7 +10,7 @@ function entry(partial: Partial<VaultEntry>): VaultEntry {
 
 test("filterVaultEntries is a no-op for blank query", () => {
   const entries = [entry({ title: "GitHub" })];
-  assert.equal(filterVaultEntries(entries, "  "), entries);
+  assert.deepEqual(filterVaultEntries(entries, "  "), entries);
 });
 
 test("filterVaultEntries matches title username url provider host", () => {
@@ -20,4 +20,12 @@ test("filterVaultEntries matches title username url provider host", () => {
   assert.deepEqual(filterVaultEntries(entries, "ADA"), [github]);
   assert.deepEqual(filterVaultEntries(entries, "ftp.example"), [ftp]);
   assert.deepEqual(filterVaultEntries(entries, "nope"), []);
+});
+
+test("filterVaultEntries can restrict by kind or short secrets", () => {
+  const github = entry({ title: "GitHub", password: "Abcdefghijklmn1!" });
+  const ftp = entry({ kind: "sftp", title: "Backup", host: "ftp.example.com", password: "short" });
+  const entries = [github, ftp];
+  assert.deepEqual(filterVaultEntries(entries, "", "sftp"), [ftp]);
+  assert.deepEqual(filterVaultEntries(entries, "", "weak"), [ftp]);
 });

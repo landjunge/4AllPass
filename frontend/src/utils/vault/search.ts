@@ -1,11 +1,21 @@
-import type { VaultEntry } from "../../types/vault.ts";
+import type { VaultEntry, VaultListFilter } from "../../types/vault.ts";
+import { isWeakPassword } from "./strength.ts";
 
-export function filterVaultEntries(entries: VaultEntry[], query: string): VaultEntry[] {
+export function filterVaultEntries(
+  entries: VaultEntry[],
+  query: string,
+  kind: VaultListFilter = "all",
+): VaultEntry[] {
   const needle = query.trim().toLowerCase();
-  if (!needle) return entries;
-  return entries.filter((entry) =>
-    [entry.title, entry.username, entry.url, entry.provider, entry.host].some((field) =>
+  return entries.filter((entry) => {
+    if (kind === "weak") {
+      if (!isWeakPassword(entry.password)) return false;
+    } else if (kind !== "all" && entry.kind !== kind) {
+      return false;
+    }
+    if (!needle) return true;
+    return [entry.title, entry.username, entry.url, entry.provider, entry.host].some((field) =>
       field.toLowerCase().includes(needle),
-    ),
-  );
+    );
+  });
 }

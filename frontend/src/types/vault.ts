@@ -11,6 +11,7 @@ export type { BuiltShare, EntryDraft, EntryKind, VaultEntry };
 export type Translate = (plain: Line, expert?: Line) => string;
 
 export type VaultTab = "entries" | "browser" | "access" | "settings";
+export type VaultListFilter = "all" | EntryKind | "weak";
 export type SettingsPane = "general" | "devices" | "security";
 export type ImportSource = "plaintext" | "share" | "browser";
 

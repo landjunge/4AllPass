@@ -1,15 +1,27 @@
 import type { ReactNode } from "react";
 import { useCopy } from "../../state/copy-mode.tsx";
-import type { EntryKind } from "../../types/vault.ts";
+import type { EntryKind, VaultListFilter } from "../../types/vault.ts";
+
+const FILTERS: Array<{ id: VaultListFilter; de: string; en: string }> = [
+  { id: "all", de: "Alle", en: "All" },
+  { id: "web", de: "Logins", en: "Logins" },
+  { id: "api", de: "API-Keys", en: "API keys" },
+  { id: "sftp", de: "Server", en: "Servers" },
+  { id: "weak", de: "Kurz", en: "Short" },
+];
 
 export function VaultSearchAndFilters({
   query,
+  kind,
   onQueryChange,
+  onKindChange,
   onAdd,
   onImportFile,
 }: {
   query: string;
+  kind: VaultListFilter;
   onQueryChange: (query: string) => void;
+  onKindChange: (kind: VaultListFilter) => void;
   onAdd: (kind?: EntryKind) => void;
   onImportFile: (file: File) => void;
 }): ReactNode {
@@ -27,67 +39,79 @@ export function VaultSearchAndFilters({
     en: "Bitwarden, 1Password, KeePass, CSV, or a 4AllPass share file. The file stays on this device.",
   });
   return (
-    <div className="list-header">
-      <label className="search-field">
-        <span className="sr-only">{t({ de: "Suchen", en: "Search" })}</span>
-        <input
-          type="search"
-          placeholder={t({ de: "Name, URL oder Benutzername", en: "Name, URL, or username" })}
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          aria-label={t({ de: "Suchen", en: "Search" })}
-          title={searchTip}
-        />
-      </label>
-      <div className="add-split">
-        <button
-          type="button"
-          className="primary"
-          onClick={() => onAdd("web")}
-          data-testid="new-entry"
-          title={addTip}
-        >
-          {t({ de: "+ Login hinzufügen", en: "+ Add login" })}
-        </button>
-        <details className="add-more">
-          <summary
-            aria-label={t({ de: "Weitere Arten", en: "More types" })}
-            title={t({
-              de: "API-Key oder Server-Zugang statt Website-Login",
-              en: "API key or server login instead of a website login",
-            })}
-          >
-            +
-          </summary>
-          <button type="button" onClick={() => onAdd("api")} title={t({ de: "Token oder API-Key", en: "Token or API key" })}>
-            API-Key
-          </button>
+    <div className="list-sticky">
+      <div className="list-header">
+        <label className="search-field">
+          <span className="sr-only">{t({ de: "Suchen", en: "Search" })}</span>
+          <input
+            type="search"
+            placeholder={t({ de: "Name, URL oder Benutzername", en: "Name, URL, or username" })}
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            aria-label={t({ de: "Suchen", en: "Search" })}
+            title={searchTip}
+          />
+        </label>
+        <div className="add-split">
           <button
             type="button"
-            onClick={() => onAdd("sftp")}
-            title={t({ de: "SSH, SFTP oder FTP-Zugang", en: "SSH, SFTP, or FTP login" })}
+            className="primary"
+            onClick={() => onAdd("web")}
+            data-testid="new-entry"
+            title={addTip}
           >
-            {t({ de: "Server-Zugang", en: "Server login" })}
+            {t({ de: "+ Login hinzufügen", en: "+ Add login" })}
           </button>
-        </details>
+          <details className="add-more">
+            <summary
+              aria-label={t({ de: "Weitere Arten", en: "More types" })}
+              title={t({
+                de: "API-Key oder Server-Zugang statt Website-Login",
+                en: "API key or server login instead of a website login",
+              })}
+            >
+              +
+            </summary>
+            <button type="button" onClick={() => onAdd("api")} title={t({ de: "Token oder API-Key", en: "Token or API key" })}>
+              API-Key
+            </button>
+            <button
+              type="button"
+              onClick={() => onAdd("sftp")}
+              title={t({ de: "SSH, SFTP oder FTP-Zugang", en: "SSH, SFTP, or FTP login" })}
+            >
+              {t({ de: "Server-Zugang", en: "Server login" })}
+            </button>
+          </details>
+        </div>
+        <label className="import-file" title={importTip}>
+          {t({ de: "Datei importieren", en: "Import file" })}
+          <input
+            type="file"
+            accept=".json,.csv,.xml,.1pif,application/json,text/csv,application/xml,text/xml"
+            data-testid="import-file"
+            aria-label={t({ de: "Datei importieren", en: "Import file" })}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void onImportFile(file);
+            }}
+          />
+        </label>
       </div>
-      <label
-        className="import-file"
-        title={importTip}
-      >
-        {t({ de: "Datei importieren", en: "Import file" })}
-        <input
-          type="file"
-          accept=".json,.csv,.xml,.1pif,application/json,text/csv,application/xml,text/xml"
-          data-testid="import-file"
-          aria-label={t({ de: "Datei importieren", en: "Import file" })}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (file) void onImportFile(file);
-          }}
-        />
-      </label>
+      <div className="kind-filters" role="toolbar" aria-label={t({ de: "Filter", en: "Filters" })}>
+        {FILTERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={kind === item.id ? "chip active" : "chip"}
+            aria-pressed={kind === item.id}
+            onClick={() => onKindChange(item.id)}
+          >
+            {t({ de: item.de, en: item.en })}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

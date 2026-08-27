@@ -45,6 +45,12 @@ function hostFromUrl(url: string): string {
   }
 }
 
+export function formatUpdatedAt(iso: string): string {
+  const stamp = Date.parse(iso);
+  if (Number.isNaN(stamp)) return iso;
+  return new Date(stamp).toISOString().slice(0, 10);
+}
+
 export function newEntryHeading(kind: EntryKind, t: Translate): string {
   if (kind === "api") return t({ de: "Neuer API-Key", en: "New API key" });
   if (kind === "sftp") return t({ de: "Neuer Server-Zugang", en: "New server login" });

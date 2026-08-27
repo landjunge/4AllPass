@@ -4,7 +4,8 @@ import { BUILTIN_TEMPLATES } from "../../lib/providers.ts";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { EntryDraft, EntryKind, Translate, VaultEntry } from "../../types/vault.ts";
 import { applyKindToDraft, applyTotpInput } from "../../utils/vault/drafts.ts";
-import { kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
+import { formatUpdatedAt, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
+import { passwordStrength } from "../../utils/vault/strength.ts";
 
 function FieldLabel({ text, tip }: { text: string; tip: string }): ReactNode {
   return (
@@ -129,9 +130,19 @@ export function VaultEntryForm({
   onGeneratePassword: () => void;
 }): ReactNode {
   const { t } = useCopy();
+  const strength = passwordStrength(draft.password);
   return (
     <>
       <h3>{selectedId ? kindLabel(draft.kind, t) : newEntryHeading(draft.kind, t)}</h3>
+      {selected ? (
+        <p className="muted small">
+          {t({
+            de: `Zuletzt geändert ${formatUpdatedAt(selected.updatedAt)}`,
+            en: `Last changed ${formatUpdatedAt(selected.updatedAt)}`,
+          })}
+        </p>
+      ) : null}
+      <p className="form-step">{t({ de: "1. Was für ein Zugang?", en: "1. What kind of login?" })}</p>
       <div className="tabs" role="tablist" aria-label={t({ de: "Art des Zugangs", en: "Entry type" })}>
         {(["web", "api", "sftp"] as const).map((kind) => (
           <button
@@ -146,6 +157,7 @@ export function VaultEntryForm({
           </button>
         ))}
       </div>
+      <p className="form-step">{t({ de: "2. Wie heißt er?", en: "2. What is it called?" })}</p>
       <label>
         <FieldLabel
           text={t({ de: "Name", en: "Name" })}
@@ -214,6 +226,7 @@ export function VaultEntryForm({
           </label>
         </>
       ) : null}
+      <p className="form-step">{t({ de: "3. Zugang", en: "3. Sign-in" })}</p>
       <label>
         <FieldLabel
           text={
@@ -226,30 +239,30 @@ export function VaultEntryForm({
               : t({ de: "Benutzername oder E-Mail für diesen Login.", en: "Username or email for this login." })
           }
         />
-        <input
-          value={draft.username}
-          onChange={(event) => onChange({ ...draft, username: event.target.value })}
-          data-testid="entry-username"
-          autoComplete="off"
-          placeholder={
-            draft.kind === "api"
-              ? t({ de: "optional", en: "optional" })
-              : "ada@example.com"
-          }
-        />
+        <span className="copy-field">
+          <input
+            value={draft.username}
+            onChange={(event) => onChange({ ...draft, username: event.target.value })}
+            data-testid="entry-username"
+            autoComplete="off"
+            placeholder={
+              draft.kind === "api"
+                ? t({ de: "optional", en: "optional" })
+                : "ada@example.com"
+            }
+          />
+          <button
+            type="button"
+            className="copy-btn"
+            disabled={!draft.username}
+            data-testid="copy-username"
+            title={t({ de: "Benutzername in die Zwischenablage. Wird nach 30 s überschrieben.", en: "Copy username. Clipboard is overwritten after 30s." })}
+            onClick={() => onCopyField(t({ de: "Benutzername", en: "Username" }), draft.username)}
+          >
+            {t({ de: "Kopieren", en: "Copy" })}
+          </button>
+        </span>
       </label>
-      <div className="field-actions">
-        <button
-          type="button"
-          className="link"
-          disabled={!draft.username}
-          data-testid="copy-username"
-          title={t({ de: "Benutzername in die Zwischenablage. Wird nach 30 s überschrieben.", en: "Copy username. Clipboard is overwritten after 30s." })}
-          onClick={() => onCopyField(t({ de: "Benutzername", en: "Username" }), draft.username)}
-        >
-          {t({ de: "Benutzername kopieren", en: "Copy username" })}
-        </button>
-      </div>
       <label>
         <FieldLabel
           text={
@@ -261,19 +274,43 @@ export function VaultEntryForm({
             en: "Secret. Stays on this device until you lock the vault.",
           })}
         />
-        <input
-          type={revealPassword ? "text" : "password"}
-          value={draft.password}
-          onChange={(event) => onChange({ ...draft, password: event.target.value })}
-          data-testid="entry-password"
-          autoComplete="off"
-          placeholder={
-            draft.kind === "api"
-              ? t({ de: "Token einfügen", en: "Paste token" })
-              : t({ de: "Passwort oder erzeugen", en: "Password or generate" })
-          }
-        />
+        <span className="copy-field">
+          <input
+            type={revealPassword ? "text" : "password"}
+            value={draft.password}
+            onChange={(event) => onChange({ ...draft, password: event.target.value })}
+            data-testid="entry-password"
+            autoComplete="off"
+            placeholder={
+              draft.kind === "api"
+                ? t({ de: "Token einfügen", en: "Paste token" })
+                : t({ de: "Passwort oder erzeugen", en: "Password or generate" })
+            }
+          />
+          <button
+            type="button"
+            className="copy-btn"
+            disabled={!draft.password}
+            data-testid="copy-password"
+            title={t({
+              de: "Kopiert das Geheimnis. Die Zwischenablage wird überschrieben, wenn sie den Wert noch hält.",
+              en: "Copies the secret. The clipboard is overwritten if it still holds this value.",
+            })}
+            onClick={() => onCopyField(t({ de: "Passwort", en: "Password" }), draft.password)}
+          >
+            {t({ de: "Kopieren", en: "Copy" })}
+          </button>
+        </span>
       </label>
+      {strength !== "empty" ? (
+        <p className={`strength strength-${strength}`} role="status">
+          {strength === "weak"
+            ? t({ de: "Kurz — Länge oder Zeichenklassen.", en: "Short — length or character classes." })
+            : strength === "strong"
+              ? t({ de: "Lang und gemischt.", en: "Long and mixed." })
+              : t({ de: "In Ordnung.", en: "Okay." })}
+        </p>
+      ) : null}
       <div className="field-actions">
         <button
           type="button"
@@ -289,19 +326,6 @@ export function VaultEntryForm({
           {revealPassword
             ? t({ de: "Verbergen", en: "Hide" })
             : t({ de: "Anzeigen", en: "Show" })}
-        </button>
-        <button
-          type="button"
-          className="link"
-          disabled={!draft.password}
-          data-testid="copy-password"
-          title={t({
-            de: "Kopiert das Geheimnis. Die Zwischenablage wird überschrieben, wenn sie den Wert noch hält.",
-            en: "Copies the secret. The clipboard is overwritten if it still holds this value.",
-          })}
-          onClick={() => onCopyField(t({ de: "Passwort", en: "Password" }), draft.password)}
-        >
-          {t({ de: "Kopieren", en: "Copy" })}
         </button>
         {draft.kind !== "api" ? (
           <button
@@ -322,6 +346,7 @@ export function VaultEntryForm({
           })}
         </p>
       ) : null}
+      <p className="form-step">{t({ de: "Optional", en: "Optional" })}</p>
       <label>
         <FieldLabel
           text={t({ de: "Notiz", en: "Note" })}

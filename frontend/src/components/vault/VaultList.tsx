@@ -3,6 +3,7 @@ import { BrowserIcon } from "../BrowserIcon.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { VaultEntry } from "../../types/vault.ts";
 import { entryDisplayTitle, entryIconName, entryMetaLine, kindLabel } from "../../utils/vault/labels.ts";
+import { isWeakPassword } from "../../utils/vault/strength.ts";
 
 export function VaultList({
   entries,
@@ -25,6 +26,7 @@ export function VaultList({
   if (filtered.length === 0 && entries.length === 0) {
     return (
       <div className="vault-empty" data-testid="vault-empty">
+        <div className="empty-mark" aria-hidden="true" />
         <p className="muted empty">{t({ de: "Noch keine Zugänge.", en: "No logins yet." })}</p>
         <p className="hint">
           {t({
@@ -43,10 +45,15 @@ export function VaultList({
     return (
       <div className="vault-empty" data-testid="vault-search-empty">
         <p className="muted empty">
-          {t({
-            de: `Keine Treffer für „${query.trim()}“.`,
-            en: `No matches for “${query.trim()}”.`,
-          })}
+          {query.trim()
+            ? t({
+                de: `Keine Treffer für „${query.trim()}“.`,
+                en: `No matches for “${query.trim()}”.`,
+              })
+            : t({
+                de: "Keine Einträge dieser Art.",
+                en: "No entries of this kind.",
+              })}
         </p>
         <p className="hint">
           {t({
@@ -63,6 +70,7 @@ export function VaultList({
       {filtered.map((entry) => {
         const kind = kindLabel(entry.kind, t);
         const iconName = entryIconName(entry);
+        const weak = isWeakPassword(entry.password);
         return (
           <li key={entry.id}>
             <button
@@ -77,7 +85,18 @@ export function VaultList({
               <span className="row-body">
                 <span className="row-top">
                   <strong>{entryDisplayTitle(entry, untitled)}</strong>
-                  <span className={`kind-badge kind-${entry.kind}`}>{kind}</span>
+                  <span className="row-flags">
+                    {weak ? (
+                      <span
+                        className="weak-dot"
+                        title={t({
+                          de: "Kurzes Passwort — nur Länge und Zeichenklassen, auf diesem Gerät.",
+                          en: "Short password — length and character classes on this device only.",
+                        })}
+                      />
+                    ) : null}
+                    <span className={`kind-badge kind-${entry.kind}`}>{kind}</span>
+                  </span>
                 </span>
                 <span className="row-meta muted">{entryMetaLine(entry, kind)}</span>
               </span>

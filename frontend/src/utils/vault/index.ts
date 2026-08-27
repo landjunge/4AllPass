@@ -10,7 +10,9 @@ export {
   entryIconName,
   entryMetaLine,
   entrySecondaryLine,
+  formatUpdatedAt,
   kindLabel,
   newEntryHeading,
 } from "./labels.ts";
 export { filterVaultEntries } from "./search.ts";
+export { countWeakSecrets, isWeakPassword, passwordStrength } from "./strength.ts";

@@ -65,10 +65,16 @@ export function VaultPage(): ReactNode {
           {vault.tab === "entries" && !vault.onboarding ? (
             <div className="columns vault-desk">
               <section className="card list">
-                <VaultHeader count={vault.entries.length} />
+                <VaultHeader
+                  count={vault.entries.length}
+                  weakCount={search.weakCount}
+                  onShowWeak={() => search.setKind("weak")}
+                />
                 <VaultSearchAndFilters
                   query={search.query}
+                  kind={search.kind}
                   onQueryChange={search.setQuery}
+                  onKindChange={search.setKind}
                   onAdd={vault.startNew}
                   onImportFile={(file) => void vault.onImportFile(file)}
                 />

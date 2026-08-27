@@ -547,6 +547,29 @@ pre.mono {
   min-height: 28rem;
 }
 
+.vault-desk .list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 9rem);
+  overflow: hidden;
+}
+
+.list-sticky {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+  padding-bottom: 8px;
+}
+
+.vault-desk .list ul {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 2px;
+}
+
 @media (max-width: 820px) {
   .columns {
     grid-template-columns: 1fr;
@@ -857,6 +880,89 @@ pre.mono {
 
 .kind-badge.kind-sftp {
   color: var(--text);
+}
+
+.row-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.weak-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.kind-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.chip {
+  min-height: 26px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.chip.active {
+  border-color: var(--accent);
+  color: var(--accent-hi);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
+}
+
+.vault-health {
+  margin: 6px 0 0;
+}
+
+.health-weak {
+  color: var(--warn);
+}
+
+.form-step {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent-hi);
+}
+
+.copy-field {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.copy-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.strength {
+  margin: -4px 0 0;
+  font-size: 12px;
+}
+
+.strength-weak {
+  color: var(--warn);
+}
+
+.strength-ok {
+  color: var(--muted);
+}
+
+.strength-strong {
+  color: var(--ok);
 }
 
 .vault-empty {

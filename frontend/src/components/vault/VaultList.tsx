@@ -160,6 +160,7 @@ function renderRow(
           type="button"
           className={entry.favorite ? "fav-star on" : "fav-star"}
           aria-pressed={entry.favorite}
+          data-testid={`fav-star-${entry.id}`}
           aria-label={opts.t({ de: "Favorit", en: "Favorite" })}
           title={opts.t({ de: "Favorit umschalten", en: "Toggle favorite" })}
           onClick={() => opts.onToggleFavorite(entry)}

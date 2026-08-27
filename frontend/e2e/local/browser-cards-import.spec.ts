@@ -70,7 +70,6 @@ async function stubDesktopShell(page: Page): Promise<void> {
 test("browser-card import review lists host and username, never the password", async ({ page }) => {
   await stubDesktopShell(page);
   await page.goto("/");
-  await page.getByTestId("welcome-create").click();
   await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
   await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);
   await page.getByTestId("create-vault").click();

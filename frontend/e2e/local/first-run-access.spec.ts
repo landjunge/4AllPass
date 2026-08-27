@@ -5,10 +5,9 @@ const DEMO_SECRET = "ghp_demo-not-a-real-key";
 
 test("Welcome → vault → Access allow without showing the secret", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page.getByTestId("welcome-create")).toBeVisible();
-  await expect(page.getByTestId("welcome-restore")).toBeVisible();
+  await expect(page.getByTestId("create-vault")).toBeVisible();
+  await expect(page.getByTestId("create-back")).toBeVisible();
   await expect(page.getByTestId("account-email")).toHaveCount(0);
-  await page.getByTestId("welcome-create").click();
 
   await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
   await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);

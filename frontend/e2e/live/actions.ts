@@ -46,7 +46,15 @@ export async function signInWithMouse(page: Page, email: string): Promise<void> 
   await page.getByTestId("auth-submit").click();
 }
 
+/** Local-first: CreateVaultPage is the empty screen. Welcome is gone. */
+export async function beginCreateVault(page: Page): Promise<void> {
+  const welcome = page.getByTestId("welcome-create");
+  if (await welcome.isVisible().catch(() => false)) await welcome.click();
+  await expect(page.getByTestId("vault-password")).toBeVisible({ timeout: 60_000 });
+}
+
 export async function createVaultWithMouse(page: Page): Promise<string> {
+  await beginCreateVault(page);
   await clickAndType(page, page.getByLabel("Vault password"), VAULT_PASSWORD);
   await clickAndType(page, page.getByLabel("Repeat"), VAULT_PASSWORD);
   await page.getByRole("button", { name: "Create vault" }).click();

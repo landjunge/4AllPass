@@ -1,7 +1,7 @@
 # Grok Build – Ausführungsplan
 
 > **Status:** aktiv. Dieses Dokument ist der **Einstiegspunkt für Grok Build**.
-> Lies es zuerst, dann `docs/supply-chain-security.md`, dann die Phasen unten.
+> Lies es zuerst, dann `docs/supply-chain-security.md`, dann `ROADMAP.md` für den Gesamtstatus, dann die Phasen unten.
 
 ---
 
@@ -9,23 +9,24 @@
 
 Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
-**Supply-Chain-Sicherheit sofort umsetzen** – kein Warten, kein „später", keine Diskussion.
+**Supply-Chain-Sicherheit sofort umsetzen** – kein Warten, kein „später‘, keine Diskussion.
 
 **Arbeitsreihenfolge (strikt):**
 
 1. Lies `docs/grok-build-plan.md` (dieses Dokument).
-2. Lies `docs/supply-chain-security.md` komplett – das ist der ausführbare Plan mit Phasen 1–3.
-3. Lies `docs/security-boundary.md` (Trust-Boundaries, Crypto-Kern).
-4. Lies `docs/audit-scope.md` Modul **M6**.
-5. Inventarisiere den aktuellen Stand:
+2. Lies `ROADMAP.md` – lebende Roadmap, eine Datei, Status hier pflegen.
+3. Lies `docs/supply-chain-security.md` komplett – das ist der ausführbare Plan mit Phasen 1–3.
+4. Lies `docs/security-boundary.md` (Trust-Boundaries, Crypto-Kern).
+5. Lies `docs/audit-scope.md` Modul **M6**.
+6. Inventarisiere den aktuellen Stand:
    - `Cargo.lock`, `package-lock.json`, `requirements*.txt`, `libs.versions.toml`
    - `.github/workflows/ci.yml`
    - `packages/crypto` Dependency-Baum
-6. Setze **Phase 1** um: Pinning + CI-Audits. Ein Commit pro logischer Einheit.
-7. Setze **Phase 2** um: Crypto-Kern-Audit + Minimalismus.
-8. Setze **Phase 3** um: SBOM + Incident-Runbook.
-9. Aktualisiere die Checkliste in `docs/supply-chain-security.md` §6: ☐ → ☑ mit Datum und Notiz.
-10. Öffne **keinen** PR, der die CI rot macht. Finding blockiert CI → fixen oder als `allow` mit Begründung dokumentieren.
+7. Setze **Phase 1** um: Pinning + CI-Audits. Ein Commit pro logischer Einheit.
+8. Setze **Phase 2** um: Crypto-Kern-Audit + Minimalismus.
+9. Setze **Phase 3** um: SBOM + Incident-Runbook.
+10. Aktualisiere die Checkliste in `docs/supply-chain-security.md` §6: ☐ → ☑ mit Datum und Notiz.
+11. Öffne **keinen** PR, der die CI rot macht. Finding blockiert CI → fixen oder als `allow` mit Begründung dokumentieren.
 
 **Definition of Done:**
 
@@ -42,6 +43,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 - Keine neuen Features.
 - Keine Secrets committen.
 - Keine „while we're at it“-Aufräumarbeiten.
+- **Keine neuen Plan- oder Roadmap-Dateien anlegen.** Alles in `ROADMAP.md` oder bestehende Specs.
 
 ---
 
@@ -54,6 +56,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit |
 | Future Readiness | `docs/future-readiness.md` | offen |
+| Lebende Roadmap | `ROADMAP.md` | Status hier pflegen |
 
 **Reihenfolge:** Supply-Chain zuerst, dann **Phase 4 (Secret Access Layer)**, dann Mobile (Android vor iOS).
 
@@ -91,7 +94,7 @@ Agent
 1. **Phase A – Auto-Detection:** Erkenne, was der User einrichtet (n8n→OpenAI, github.com→GitHub). Frage, fülle nie still.
 2. **Phase B – Browser Secret Fill:** Extension schlägt vor, User klickt. Kein Auto-Submit.
 3. **Phase C – Local Secret Broker:** Loopback-Request → Policy-Anzeige → in-memory Handoff. Kein Env-Export als Happy Path.
-4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow".
+4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow“.
 5. **Phase E – Capabilities:** Grant-Records (App × Provider × Credential × Purpose × Expiry), lokal, ciphertext.
 6. **Phase F – Agent Secrets:** Agent bekommt Capability, nie den ganzen Vault. Expiry = keine weiteren Handoffs.
 
@@ -134,6 +137,8 @@ supply-chain-security.md      Regeln für die Lieferkette (ausführbar)
 secret-access-layer.md        Zielbild Agent-Zugriff (ausführbar, Phase 4)
         ↓
 dieses Dokument               Einstieg für Grok Build
+        ↓
+ROADMAP.md                    lebende Roadmap (eine Datei)
 ```
 
 Wenn hier was steht, das über `security-boundary.md` hinausgeht: Defekt. Nicht umgekehrt.

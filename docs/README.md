@@ -4,6 +4,8 @@
 
 A new reader should need **this page plus five links**, not twenty files.
 
+**Lebende Roadmap (eine Datei, Status hier pflegen):** [../ROADMAP.md](../ROADMAP.md) – Grok Build liest zuerst `grok-build-plan.md`, dann die Roadmap.
+
 | Question | Read |
 |---|---|
 | What is 4AllPass **today**? | [../README.md](../README.md) |
@@ -17,6 +19,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | Are our **dependencies** safe? | [supply-chain-security.md](supply-chain-security.md) — pinning, provenance, SBOM, crypto-core rules |
 | **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md, then Phase 4 (Secret Access Layer) |
 | Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
+| Gesamtstatus / Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
 
 ---
 
@@ -71,3 +74,5 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`, `secret-access-layer.md`.
 
 Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
+
+**Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Pointer-Dateien (`development-plan.md`, `plan-rest.md`, `zukunftsplan.md`, `roadmap.md`) bleiben Pointers – keine zweiten Wahrheiten.

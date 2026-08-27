@@ -8,7 +8,7 @@
 >
 > **Ausführungsmodus:** Dieses Dokument ist ein **ausführbarer Plan für Grok Build**. Lies es von oben nach unten und setze jeden Schritt um. Keine Diskussion, kein „optional“, kein „später“. Wenn ein Schritt blockiert (fehlende Datei, unklare Dep), dokumentiere das als Finding und geh weiter.
 >
-> **Einstieg:** Starte über `docs/grok-build-plan.md` – das ist der offizielle Einstiegspunkt für Grok Build.
+> **Einstieg:** Starte über `docs/grok-build-plan.md` – das ist der offizielle Einstiegspunkt für Grok Build. Gesamtstatus: `ROADMAP.md`.
 
 ---
 
@@ -19,18 +19,19 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 **Arbeitsreihenfolge (strikt):**
 
 1. Lies `docs/grok-build-plan.md` (Einstiegspunkt).
-2. Lies `docs/supply-chain-security.md` (dieses Dokument) komplett.
-3. Lies `docs/security-boundary.md` §§ zu Crypto-Kern und Trust-Boundaries.
-4. Lies `docs/audit-scope.md` Modul M6.
-5. Inventarisiere den aktuellen Stand:
+2. Lies `ROADMAP.md` (lebende Roadmap).
+3. Lies `docs/supply-chain-security.md` (dieses Dokument) komplett.
+4. Lies `docs/security-boundary.md` §§ zu Crypto-Kern und Trust-Boundaries.
+5. Lies `docs/audit-scope.md` Modul M6.
+6. Inventarisiere den aktuellen Stand:
    - `Cargo.lock`, `package-lock.json`, `requirements*.txt`, `libs.versions.toml` (falls vorhanden)
    - `.github/workflows/ci.yml` (oder äquivalent)
    - `packages/crypto` Dependency-Baum
-6. Setze **Phase 1** um (Pinning + CI-Audits). Ein Commit pro logischer Einheit.
-7. Setze **Phase 2** um (Crypto-Kern-Audit + Minimalismus).
-8. Setze **Phase 3** um (SBOM + Incident-Runbook).
-9. Aktualisiere die Checkliste in §6 dieses Dokuments: ☐ → ☑ mit Datum und kurzer Notiz.
-10. Öffne **keinen** PR, der die CI rot macht. Wenn ein Audit-Finding die CI blockiert: fixen oder als `allow`-Eintrag mit Begründung dokumentieren.
+7. Setze **Phase 1** um (Pinning + CI-Audits). Ein Commit pro logischer Einheit.
+8. Setze **Phase 2** um (Crypto-Kern-Audit + Minimalismus).
+9. Setze **Phase 3** um (SBOM + Incident-Runbook).
+10. Aktualisiere die Checkliste in §6 dieses Dokuments: ☐ → ☑ mit Datum und kurzer Notiz.
+11. Öffne **keinen** PR, der die CI rot macht. Wenn ein Audit-Finding die CI blockiert: fixen oder als `allow`-Eintrag mit Begründung dokumentieren.
 
 **Definition of Done für diesen Plan:**
 
@@ -47,6 +48,7 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 - Keine neuen Features.
 - Keine Secrets committen.
 - Keine „while we're at it“-Aufräumarbeiten, die den Scope sprengen.
+- **Keine neuen Plan-Dateien.** Status in `ROADMAP.md`.
 
 ---
 
@@ -169,6 +171,7 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 ## Verwandte Docs
 
+- `ROADMAP.md` – **lebende Roadmap** (eine Datei, Status hier pflegen)
 - `grok-build-plan.md` – **Einstiegspunkt für Grok Build** (lies zuerst)
 - `security-boundary.md` – was der Code erzwingt
 - `threat-model.md` – wer angreift
@@ -180,4 +183,4 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-28 – Einstiegspunkt `grok-build-plan.md` verlinkt.*
+*Zuletzt aktualisiert: 2026-08-28 – verlinkt auf lebende `ROADMAP.md`, keine neuen Plan-Dateien.*

@@ -82,3 +82,16 @@ Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `
 Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
 
 **Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Redundante Pointer-Dateien wurden entfernt (2026-08-28).
+
+---
+
+## Aufräum-Status (2026-08-28)
+
+| Datei | Aktion |
+|---|---|
+| `eight-week-agent-access.md` | Stub – Inhalt in `local-access-broker.md` + `secret-access-layer.md` |
+| `plan-rest.md` | Stub – Status in `ROADMAP.md` §1/§5 |
+| `roadmap.md` | Stub – lebende Roadmap ist `../ROADMAP.md` |
+| `README-HUMAN.md` | Stub – Inhalt in `../README.md` |
+
+Diese vier sind bewusst **nicht gelöscht**, damit alte Links nicht 404en. Neu: nicht mehr verlinken, nicht mehr pflegen.

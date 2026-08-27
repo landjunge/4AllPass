@@ -1,6 +1,8 @@
 # Future Readiness Checklist
 
 > Status: offen. Diese Punkte gehören in die Docs, *bevor* der erste Nutzer echte Passwörter reinschiebt. Nicht weil es schick ist – sondern weil du sonst der Lock-in wirst, den du bei OpenAI kritisiert hast.
+>
+> Gesamtstatus: `ROADMAP.md` §3. Keine parallelen Plan-Dateien.
 
 ---
 
@@ -70,6 +72,8 @@ Sobald ein Mensch außer dir seine Passwörter reinschiebt, bist du kein Hobby-P
 | Rechtliches / DSGVO-Antworten | ☐ offen | In Datenschutzerklärung aufnehmen |
 | Rechtliches / AGB | ☐ offen | |
 | Rechtliches / Support-Kanal | ☐ offen | |
+
+Siehe auch `ROADMAP.md` §3.
 
 ---
 

@@ -20,6 +20,12 @@ A new reader should need **this page plus five links**, not twenty files.
 | **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md, then Phase 4 (Secret Access Layer) |
 | Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
 | Gesamtstatus / Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
+| How did we get here? | [entstehungslinie.md](entstehungslinie.md) |
+| Where do we position ourselves? | [positioning.md](positioning.md) (today), [positioning-target.md](positioning-target.md) (far later) |
+| How do we look on GitHub? | [github-sichtbarkeit.md](github-sichtbarkeit.md) |
+| How do we ship signed builds? | [distribution.md](distribution.md) |
+| Team mode (not now)? | [team-mode.md](team-mode.md), [team-roadmap.md](team-roadmap.md) |
+| Post-quantum? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
 
 ---
 
@@ -75,4 +81,4 @@ Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `
 
 Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
 
-**Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Pointer-Dateien (`development-plan.md`, `plan-rest.md`, `zukunftsplan.md`, `roadmap.md`) bleiben Pointers – keine zweiten Wahrheiten.
+**Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Redundante Pointer-Dateien wurden entfernt (2026-08-28).

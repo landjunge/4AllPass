@@ -2,6 +2,10 @@
 
 > Prompt-ready spec for generating the first Android client of 4AllPass.
 > Goal: a clean, modern Kotlin/Compose skeleton that reuses the existing crypto core and can grow into a real AutofillService without becoming throwaway code.
+>
+> **Status:** Vorbereitung / Prompt-Vorlage. **Nicht** vor der PWA bauen.
+> Mobile-Strategie: PWA zuerst, native Apps später — siehe `docs/architecture.md` §5 und `docs/architecture/adr/ADR-009-mobile-client.md`.
+> Dieses Dokument ist ein *Skelett-Prompt* für Grok Build, falls/wenn native Android jemals ansteht. Es ist **kein** Freifahrtschein, die PWA zu überspringen.
 
 ## 1. Stack (non-negotiable)
 
@@ -86,11 +90,14 @@
 - iOS / Apple Keychain entitlements.
 - Cloud sync, multi-device.
 - Agent-access broker on mobile (desktop-only for now).
+- **Starting before the PWA ships and is tested on real phones.**
 
 ## 6. Reference docs in this repo
 
+- `docs/architecture.md` §5 (Mobile-Strategie: PWA first)
 - `docs/architecture/adr/ADR-009-mobile-client.md`
 - `docs/autofill-v1.md`
 - `docs/crypto/key-derivation.md`, `docs/crypto/envelopes.md`
 - `docs/security-boundary.md`
 - `docs/threat-model.md`
+- `docs/ios-skeleton-grok-build.md` (sibling spec — keep the two consistent)

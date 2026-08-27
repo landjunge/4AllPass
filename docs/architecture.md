@@ -56,7 +56,7 @@ Abhängigkeiten fließen **UI → session → crypto**. Store kennt nur Cipherte
 7. Speichern → AES-GCM + Manifest, CAS `expectedRevision`.  
 8. Sperren → VK und Klartext zeroizen.
 
-Autofill zählt **nicht** als „zuletzt verwendet“. Stempel = `updatedAt` beim Speichern.
+Autofill zählt **nicht** als „zuletzt verwendet". Stempel = `updatedAt` beim Speichern.
 
 ---
 
@@ -150,7 +150,7 @@ Siehe auch: [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-0
 
 ## 9. Modul-Grenzen
 
-Ein Modul = eine Verantwortlichkeit. Faustregel: erklärbar in einem Satz ohne „und“. Test: Modul löschbar, ohne dass der Rest bricht.
+Ein Modul = eine Verantwortlichkeit. Faustregel: ein Satz ohne „und". Test: löschbar, ohne dass der Rest bricht.
 
 ## 10. Später (nicht bauen ohne Auftrag)
 

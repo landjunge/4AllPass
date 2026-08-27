@@ -7,6 +7,8 @@
 > **Höhere Autorität:** `security-boundary.md` (was der Code erzwingt) und `threat-model.md` (wer angreift). Dieses Dokument definiert die *Regeln für die Lieferkette*. Wenn hier was steht, das über die Security-Boundary hinausgeht, ist das ein Defekt – nicht umgekehrt.
 >
 > **Ausführungsmodus:** Dieses Dokument ist ein **ausführbarer Plan für Grok Build**. Lies es von oben nach unten und setze jeden Schritt um. Keine Diskussion, kein „optional“, kein „später“. Wenn ein Schritt blockiert (fehlende Datei, unklare Dep), dokumentiere das als Finding und geh weiter.
+>
+> **Einstieg:** Starte über `docs/grok-build-plan.md` – das ist der offizielle Einstiegspunkt für Grok Build.
 
 ---
 
@@ -16,18 +18,19 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 
 **Arbeitsreihenfolge (strikt):**
 
-1. Lies `docs/supply-chain-security.md` (dieses Dokument) komplett.
-2. Lies `docs/security-boundary.md` §§ zu Crypto-Kern und Trust-Boundaries.
-3. Lies `docs/audit-scope.md` Modul M6.
-4. Inventarisiere den aktuellen Stand:
+1. Lies `docs/grok-build-plan.md` (Einstiegspunkt).
+2. Lies `docs/supply-chain-security.md` (dieses Dokument) komplett.
+3. Lies `docs/security-boundary.md` §§ zu Crypto-Kern und Trust-Boundaries.
+4. Lies `docs/audit-scope.md` Modul M6.
+5. Inventarisiere den aktuellen Stand:
    - `Cargo.lock`, `package-lock.json`, `requirements*.txt`, `libs.versions.toml` (falls vorhanden)
    - `.github/workflows/ci.yml` (oder äquivalent)
    - `packages/crypto` Dependency-Baum
-5. Setze **Phase 1** um (Pinning + CI-Audits). Ein Commit pro logischer Einheit.
-6. Setze **Phase 2** um (Crypto-Kern-Audit + Minimalismus).
-7. Setze **Phase 3** um (SBOM + Incident-Runbook).
-8. Aktualisiere die Checkliste in §6 dieses Dokuments: ☐ → ☑ mit Datum und kurzer Notiz.
-9. Öffne **keinen** PR, der die CI rot macht. Wenn ein Audit-Finding die CI blockiert: fixen oder als `allow`-Eintrag mit Begründung dokumentieren.
+6. Setze **Phase 1** um (Pinning + CI-Audits). Ein Commit pro logischer Einheit.
+7. Setze **Phase 2** um (Crypto-Kern-Audit + Minimalismus).
+8. Setze **Phase 3** um (SBOM + Incident-Runbook).
+9. Aktualisiere die Checkliste in §6 dieses Dokuments: ☐ → ☑ mit Datum und kurzer Notiz.
+10. Öffne **keinen** PR, der die CI rot macht. Wenn ein Audit-Finding die CI blockiert: fixen oder als `allow`-Eintrag mit Begründung dokumentieren.
 
 **Definition of Done für diesen Plan:**
 
@@ -166,6 +169,7 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 ## Verwandte Docs
 
+- `grok-build-plan.md` – **Einstiegspunkt für Grok Build** (lies zuerst)
 - `security-boundary.md` – was der Code erzwingt
 - `threat-model.md` – wer angreift
 - `audit-scope.md` – was ein Auditor prüft (M6)
@@ -176,4 +180,4 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-28 – umgewandelt in ausführbaren Grok-Build-Plan.*
+*Zuletzt aktualisiert: 2026-08-28 – Einstiegspunkt `grok-build-plan.md` verlinkt.*

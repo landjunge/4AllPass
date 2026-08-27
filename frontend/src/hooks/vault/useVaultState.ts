@@ -160,6 +160,22 @@ export function useVaultState() {
     }
   }
 
+  async function toggleFavorite(entry: VaultEntry): Promise<void> {
+    const nextFlag = !entry.favorite;
+    try {
+      await saveEntries(
+        entries.map((candidate) =>
+          candidate.id === entry.id
+            ? { ...candidate, favorite: nextFlag, updatedAt: new Date().toISOString() }
+            : candidate,
+        ),
+      );
+      if (draft && selectedId === entry.id) setDraft({ ...draft, favorite: nextFlag });
+    } catch {
+      // The banner shows the reason.
+    }
+  }
+
   async function remove(entry: VaultEntry): Promise<void> {
     setBusy(true);
     try {
@@ -293,6 +309,7 @@ export function useVaultState() {
     copyField,
     startNew,
     startEdit,
+    toggleFavorite,
     save,
     onImportFile,
     startShare,

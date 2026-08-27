@@ -307,6 +307,10 @@ pins the server integers; after the first verified manifest that path is closed.
 - Copied passwords and recovery keys go to the OS clipboard. The PWA overwrites
   that clipboard after 30s and on lock **if** it still matches. Other apps may
   already have read it. No clipboard-read permission → no overwrite.
+- After unlock, the vault desk may check passwords against Have I Been Pwned
+  range API: only the first 5 hex chars of SHA-1(password), with `Add-Padding`.
+  The 4AllPass server never receives the password or the hash. Offline, the
+  “leaked” category is skipped. This is not a cryptographic proof.
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See

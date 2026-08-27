@@ -29,6 +29,8 @@ export interface VaultEntry {
   providerId: string;
   providerConfidence: number;
   providerMatchType: string;
+  /** Client UI flag. Encrypted with the entry; not a separate store. */
+  favorite: boolean;
 }
 
 export type EntryDraft = Omit<VaultEntry, "id" | "updatedAt">;
@@ -57,6 +59,7 @@ export function emptyDraft(kind: EntryKind = "web"): EntryDraft {
     providerId: "",
     providerConfidence: 0,
     providerMatchType: "",
+    favorite: false,
   };
 }
 
@@ -85,6 +88,7 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     providerId: entry.providerId,
     providerConfidence: entry.providerConfidence,
     providerMatchType: entry.providerMatchType,
+    favorite: entry.favorite,
   };
   return new TextEncoder().encode(JSON.stringify(payload));
 }
@@ -124,6 +128,7 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     providerId: parsed.providerId ?? "",
     providerConfidence: parsed.providerConfidence ?? 0,
     providerMatchType: parsed.providerMatchType ?? "",
+    favorite: parsed.favorite === true,
   };
 }
 

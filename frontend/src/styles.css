@@ -564,8 +564,6 @@ pre.mono {
 }
 
 .vault-desk .list ul {
-  overflow: auto;
-  flex: 1;
   min-height: 0;
   padding-right: 2px;
 }
@@ -615,15 +613,16 @@ pre.mono {
   width: 100%;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 10px 12px;
-  align-items: center;
+  gap: 4px 4px;
+  align-items: stretch;
   text-align: left;
-  padding: 10px 12px;
+  padding: 4px 4px 4px 2px;
   border-radius: var(--radius-md);
   background: var(--bg-panel);
+  border: 1px solid var(--line);
 }
 
-.row:hover:not(:disabled) {
+.row:hover {
   background: var(--bg-elev);
   border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
 }
@@ -632,6 +631,46 @@ pre.mono {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
   box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.row-main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 12px;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  padding: 8px 10px 8px 4px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.row-main:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+}
+
+.fav-star {
+  width: 32px;
+  min-height: 32px;
+  margin: 4px 0 4px 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.fav-star.on {
+  color: var(--accent);
+}
+
+.fav-star:hover:not(:disabled) {
+  color: var(--accent-hi);
+  background: transparent;
+  border-color: transparent;
 }
 
 .detail {
@@ -920,7 +959,60 @@ pre.mono {
   margin: 6px 0 0;
 }
 
+.health-score {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel));
+}
+
+.health-number {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  color: var(--accent-hi);
+}
+
+.health-number span {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 .health-weak {
+  color: var(--warn);
+}
+
+.vault-sections {
+  display: grid;
+  gap: 14px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.list-section-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-hi);
+}
+
+.issue-pill {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+.issue-pill.leaked {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.issue-pill.reused {
+  border-color: var(--warn);
   color: var(--warn);
 }
 

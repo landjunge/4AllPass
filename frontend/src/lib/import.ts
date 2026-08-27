@@ -46,6 +46,7 @@ function asEntry(partial: {
     providerId: resolved.providerId ?? "",
     providerConfidence: resolved.confidence,
     providerMatchType: resolved.matchType,
+    favorite: false,
   };
 }
 

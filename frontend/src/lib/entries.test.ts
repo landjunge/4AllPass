@@ -30,6 +30,20 @@ test("old plaintext without kind still unlocks as web", () => {
   assert.equal(entry.password, "s3cret");
   assert.equal(entry.provider, "");
   assert.equal(entry.totpSecret, "");
+  assert.equal(entry.favorite, false);
+});
+
+test("favorite round-trips in entry plaintext and defaults off", () => {
+  const id = newEntryId();
+  const starred: VaultEntry = {
+    id,
+    ...emptyDraft("web"),
+    title: "Mail",
+    favorite: true,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
+  const again = decodeEntryPlaintext(id, encodeEntryPlaintext(starred));
+  assert.equal(again.favorite, true);
 });
 
 test("wipeVaultEntry clears every secret class including totpSecret", () => {

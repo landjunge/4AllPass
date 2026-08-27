@@ -15,11 +15,12 @@ import {
   VaultShareImportDialog,
   VaultTabs,
 } from "../components/vault/index.ts";
-import { useVaultSearch, useVaultState } from "../hooks/vault/index.ts";
+import { useVaultHealth, useVaultSearch, useVaultState } from "../hooks/vault/index.ts";
 
 export function VaultPage(): ReactNode {
   const vault = useVaultState();
   const search = useVaultSearch(vault.entries);
+  const health = useVaultHealth(vault.entries);
 
   if (!vault.vault) return null;
 
@@ -67,7 +68,9 @@ export function VaultPage(): ReactNode {
               <section className="card list">
                 <VaultHeader
                   count={vault.entries.length}
-                  weakCount={search.weakCount}
+                  score={health.score}
+                  health={health.health}
+                  entries={vault.entries}
                   onShowWeak={() => search.setKind("weak")}
                 />
                 <VaultSearchAndFilters
@@ -81,10 +84,12 @@ export function VaultPage(): ReactNode {
                 <VaultList
                   entries={vault.entries}
                   filtered={search.filtered}
+                  health={health.health}
                   selectedId={vault.selectedId}
                   query={search.query}
                   onSelect={vault.startEdit}
                   onAdd={() => vault.startNew("web")}
+                  onToggleFavorite={(entry) => void vault.toggleFavorite(entry)}
                 />
               </section>
               <section className="card detail">

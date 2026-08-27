@@ -8,6 +8,7 @@ import {
   entryIconName,
   entryMetaLine,
   entrySecondaryLine,
+  formatRelativeChanged,
   kindLabel,
   newEntryHeading,
 } from "./labels.ts";
@@ -59,5 +60,14 @@ test("entryMetaLine is username and host without repeating the kind when a perso
       "Login",
     ),
     "ada · mail.example",
+  );
+});
+
+test("formatRelativeChanged uses hours before falling back to a date", () => {
+  const t: Translate = (plain) => `${plain.de} / ${plain.en}`;
+  const now = Date.parse("2026-08-27T12:00:00.000Z");
+  assert.equal(
+    formatRelativeChanged("2026-08-27T10:00:00.000Z", now, t),
+    "vor 2 Stunden / 2 hours ago",
   );
 });

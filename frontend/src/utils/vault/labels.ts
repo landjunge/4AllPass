@@ -51,6 +51,21 @@ export function formatUpdatedAt(iso: string): string {
   return new Date(stamp).toISOString().slice(0, 10);
 }
 
+export function formatRelativeChanged(iso: string, nowMs: number, t: Translate): string {
+  const stamp = Date.parse(iso);
+  if (Number.isNaN(stamp)) return iso;
+  const minutes = Math.max(0, Math.floor((nowMs - stamp) / 60_000));
+  if (minutes < 1) return t({ de: "gerade eben", en: "just now" });
+  if (minutes < 60) {
+    return t({ de: `vor ${minutes} Minuten`, en: `${minutes} minutes ago` });
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t({ de: `vor ${hours} Stunden`, en: `${hours} hours ago` });
+  const days = Math.floor(hours / 24);
+  if (days < 30) return t({ de: `vor ${days} Tagen`, en: `${days} days ago` });
+  return formatUpdatedAt(iso);
+}
+
 export function newEntryHeading(kind: EntryKind, t: Translate): string {
   if (kind === "api") return t({ de: "Neuer API-Key", en: "New API key" });
   if (kind === "sftp") return t({ de: "Neuer Server-Zugang", en: "New server login" });

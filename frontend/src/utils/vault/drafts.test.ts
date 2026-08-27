@@ -37,5 +37,6 @@ test("draftFromEntry round-trips visible fields", () => {
   assert.equal(draft.title, "Mail");
   assert.equal(draft.username, "ada");
   assert.equal(draft.password, "secret");
+  assert.equal(draft.favorite, false);
   assert.equal(draftHasAdvancedFields(entry), false);
 });

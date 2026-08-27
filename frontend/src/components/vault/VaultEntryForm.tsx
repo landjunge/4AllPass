@@ -4,7 +4,7 @@ import { BUILTIN_TEMPLATES } from "../../lib/providers.ts";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { EntryDraft, EntryKind, Translate, VaultEntry } from "../../types/vault.ts";
 import { applyKindToDraft, applyTotpInput } from "../../utils/vault/drafts.ts";
-import { formatUpdatedAt, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
+import { formatRelativeChanged, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
 import { passwordStrength } from "../../utils/vault/strength.ts";
 
 function FieldLabel({ text, tip }: { text: string; tip: string }): ReactNode {
@@ -137,8 +137,8 @@ export function VaultEntryForm({
       {selected ? (
         <p className="muted small">
           {t({
-            de: `Zuletzt geändert ${formatUpdatedAt(selected.updatedAt)}`,
-            en: `Last changed ${formatUpdatedAt(selected.updatedAt)}`,
+            de: `Zuletzt geändert: ${formatRelativeChanged(selected.updatedAt, Date.now(), t)}`,
+            en: `Last changed: ${formatRelativeChanged(selected.updatedAt, Date.now(), t)}`,
           })}
         </p>
       ) : null}

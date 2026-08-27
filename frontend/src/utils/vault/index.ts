@@ -10,6 +10,7 @@ export {
   entryIconName,
   entryMetaLine,
   entrySecondaryLine,
+  formatRelativeChanged,
   formatUpdatedAt,
   kindLabel,
   newEntryHeading,

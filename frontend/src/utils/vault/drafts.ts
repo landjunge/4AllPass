@@ -25,6 +25,7 @@ export function draftFromEntry(entry: VaultEntry): EntryDraft {
     providerId: entry.providerId,
     providerConfidence: entry.providerConfidence,
     providerMatchType: entry.providerMatchType,
+    favorite: entry.favorite,
   };
 }
 

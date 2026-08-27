@@ -1,5 +1,5 @@
 import type { VaultEntry, VaultListFilter } from "../../types/vault.ts";
-import { isWeakPassword } from "./strength.ts";
+import { isZxcvbnWeak } from "./health.ts";
 
 export function filterVaultEntries(
   entries: VaultEntry[],
@@ -9,7 +9,7 @@ export function filterVaultEntries(
   const needle = query.trim().toLowerCase();
   return entries.filter((entry) => {
     if (kind === "weak") {
-      if (!isWeakPassword(entry.password)) return false;
+      if (!isZxcvbnWeak(entry.password)) return false;
     } else if (kind !== "all" && entry.kind !== kind) {
       return false;
     }

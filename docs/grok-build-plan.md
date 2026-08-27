@@ -44,6 +44,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 - Keine Secrets committen.
 - Keine „while we're at it“-Aufräumarbeiten.
 - **Keine neuen Plan- oder Roadmap-Dateien anlegen.** Alles in `ROADMAP.md` oder bestehende Specs.
+- **Keine nativen Mobile-Apps bauen**, bevor die PWA steht. Die Skelette in `android-skeleton-grok-build.md` / `ios-skeleton-grok-build.md` sind nur Prompt-Vorlagen.
 
 ---
 
@@ -53,12 +54,12 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 |---|---|---|
 | Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | offen – umsetzen |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | offen – nach Supply-Chain, vor Mobile |
-| Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit |
-| iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit |
+| Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
+| iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 | Lebende Roadmap | `ROADMAP.md` | Status hier pflegen |
 
-**Reihenfolge:** Supply-Chain zuerst, dann **Phase 4 (Secret Access Layer)**, dann Mobile (Android vor iOS).
+**Reihenfolge:** Supply-Chain zuerst, dann **Phase 4 (Secret Access Layer)**, dann Mobile (PWA → Android → iOS).
 
 ---
 

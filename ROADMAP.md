@@ -45,17 +45,34 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 
 ---
 
+## 1b. Code-Hygiene (nach Supply-Chain, vor Phase 4)
+
+> Quelle: Code-Review 2026-08-28. Nicht neu erfinden – hier pflegen.
+
+1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module. Heute ein Monolith, schwer zu testen.
+2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`. Eigene Supply-Chain-Regel gilt zuerst für das eigene Projekt.
+3. **`ps`- / `lsof`-Aufrufe abstrahieren** – hinter eine Plattform-Schicht, damit der Sidecar nicht nur auf Unix läuft.
+
+| Punkt | Status |
+|---|---|
+| `lib.rs` Modularisierung | ☐ offen |
+| `Cargo.toml` Pinning | ☐ offen |
+| Plattform-Abstraktion (ps/lsof) | ☐ offen |
+
+---
+
 ## 2. Grok-Build-Pläne (ausführbar)
 
 | Plan | Datei | Status |
 |---|---|---|
 | Supply-Chain | `docs/supply-chain-security.md` | offen – jetzt |
+| Code-Hygiene | dieses Dokument §1b | offen – nach Supply-Chain |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` | offen – nach Supply-Chain |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 
-**Reihenfolge:** Supply-Chain → Phase 4 → Mobile (PWA → Android → iOS).
+**Reihenfolge:** Supply-Chain → Code-Hygiene → Phase 4 → Mobile (PWA → Android → iOS).
 
 ---
 

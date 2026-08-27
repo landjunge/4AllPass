@@ -9,7 +9,7 @@
 
 Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
-**Supply-Chain-Sicherheit sofort umsetzen** – kein Warten, kein „später‘, keine Diskussion.
+**Supply-Chain-Sicherheit sofort umsetzen** – kein Warten, kein „später", keine Diskussion.
 
 **Arbeitsreihenfolge (strikt):**
 
@@ -42,7 +42,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 - Keine großen Refactors außerhalb der Supply-Chain.
 - Keine neuen Features.
 - Keine Secrets committen.
-- Keine „while we're at it“-Aufräumarbeiten.
+- Keine „while we're at it"-Aufräumarbeiten.
 - **Keine neuen Plan- oder Roadmap-Dateien anlegen.** Alles in `ROADMAP.md` oder bestehende Specs.
 - **Keine nativen Mobile-Apps bauen**, bevor die PWA steht. Die Skelette in `android-skeleton-grok-build.md` / `ios-skeleton-grok-build.md` sind nur Prompt-Vorlagen.
 
@@ -53,17 +53,35 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 | Plan | Datei | Status |
 |---|---|---|
 | Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | offen – umsetzen |
+| Code-Hygiene | `ROADMAP.md` §1b | offen – nach Supply-Chain, vor Phase 4 |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | offen – nach Supply-Chain, vor Mobile |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 | Lebende Roadmap | `ROADMAP.md` | Status hier pflegen |
 
-**Reihenfolge:** Supply-Chain zuerst, dann **Phase 4 (Secret Access Layer)**, dann Mobile (PWA → Android → iOS).
+**Reihenfolge:** Supply-Chain zuerst, dann **Code-Hygiene**, dann **Phase 4 (Secret Access Layer)**, dann Mobile (PWA → Android → iOS).
 
 ---
 
-## 1b. Produkt-Reihenfolge (Code vor Docs)
+## 1b. Code-Hygiene (nach Supply-Chain, vor Phase 4)
+
+> Quelle: Code-Review 2026-08-28. Details und Status: `ROADMAP.md` §1b.
+
+1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module. Heute ein Monolith.
+2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`.
+3. **`ps`- / `lsof`-Aufrufe abstrahieren** – Plattform-Schicht, nicht unix-spezifisch.
+
+**Definition of Done:**
+
+- [ ] `lib.rs` ist in Module zerlegt (Prozess, Sleep, Prompts, Tray, Proxy).
+- [ ] `Cargo.toml` pinnt exakte Versionen; CI enforced `--locked`.
+- [ ] Sidecar-Prozess-Erkennung läuft plattformneutral (kein roher `ps`/`lsof`-Aufruf im Hot Path).
+- [ ] Kein PR, der die CI rot macht.
+
+---
+
+## 1c. Produkt-Reihenfolge (Code vor Docs)
 
 > Nach Supply-Chain und Phase 4: **Tresor → Broker → PWA → schauen, was fehlt.**
 > Keine neuen Docs, solange nicht mindestens eine Datei im `src/`-Ordner dazukommt.
@@ -107,7 +125,7 @@ Agent
 1. **Phase A – Auto-Detection:** Erkenne, was der User einrichtet (n8n→OpenAI, github.com→GitHub). Frage, fülle nie still.
 2. **Phase B – Browser Secret Fill:** Extension schlägt vor, User klickt. Kein Auto-Submit.
 3. **Phase C – Local Secret Broker:** Loopback-Request → Policy-Anzeige → in-memory Handoff. Kein Env-Export als Happy Path.
-4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow“.
+4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow".
 5. **Phase E – Capabilities:** Grant-Records (App × Provider × Credential × Purpose × Expiry), lokal, ciphertext.
 6. **Phase F – Agent Secrets:** Agent bekommt Capability, nie den ganzen Vault. Expiry = keine weiteren Handoffs.
 

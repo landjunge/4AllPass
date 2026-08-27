@@ -64,7 +64,7 @@ Adversarial Review des Crypto-Cores: → **[docs/adversarial-review.md](adversar
 - Session: revocable Bearer-Token (Redis; Token wird gehasht gespeichert).
   Bearer is retained on purpose — see [`docs/security-boundary.md`](security-boundary.md).
 - Jede Vault-/Device-/Snapshot-Route prüft Ownership (`get_owned_vault` → 404)
-- Optional später: Google-Login und „Sign in with Apple“
+- Optional später: Google-Login und „Sign in with Apple"
 - Social-Login hat **keinen Einfluss** auf die Verschlüsselung
 - Authentication ≠ vault decryption. The account session never unwraps VK.
 
@@ -132,7 +132,19 @@ Siehe auch: [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-0
 
 ---
 
-## 8. Offene / spätere Punkte
+## 8. Code-Hygiene (Soll-Zustand)
+
+> Beobachtet im Code-Review 2026-08-28. Status und Aufgaben: `ROADMAP.md` §1b.
+
+- **`src-tauri/src/lib.rs`** ist heute ein Monolith (Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy). Soll in Module zerlegt werden – prozess, sleep, prompts, tray, proxy.
+- **`Cargo.toml`** pinnt nicht streng (`tauri = { version = "2" }`). Soll exakte Versionen, konsistent mit `docs/supply-chain-security.md`.
+- **Sidecar-Prozess-Erkennung** nutzt rohe `ps`- / `lsof`-Aufrufe (unix-spezifisch, fragil). Soll hinter eine Plattform-Abstraktion.
+
+Keine neuen Docs für Hygiene – alles lebt in `ROADMAP.md` §1b.
+
+---
+
+## 9. Offene / spätere Punkte
 
 - Import/Export (encrypted backup + optional plaintext mit Warnung)
 - Audit-Logs

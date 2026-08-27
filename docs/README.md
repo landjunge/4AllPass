@@ -17,7 +17,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | What do we build next? | [product-maturity.md](product-maturity.md) (v3) — code sequence done; remaining humans: stranger Mac, Apple, audit. **Later in that file:** own VPS as cloud simulation, then mobile as same-vault device. |
 | What is vision, not code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
 | Are our **dependencies** safe? | [supply-chain-security.md](supply-chain-security.md) — pinning, provenance, SBOM, crypto-core rules |
-| **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md, then Phase 4 (Secret Access Layer) |
+| **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md, then Code-Hygiene, then Phase 4 (Secret Access Layer) |
 | Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
 | Gesamtstatus / Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
 | How did we get here? | [entstehungslinie.md](entstehungslinie.md) |
@@ -27,6 +27,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | Team mode (not now)? | [team-mode.md](team-mode.md) (spec + roadmap) |
 | Post-quantum? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
 | Mobile (PWA first, native later)? | [architecture.md](architecture.md) §5, [android-skeleton-grok-build.md](android-skeleton-grok-build.md), [ios-skeleton-grok-build.md](ios-skeleton-grok-build.md) |
+| Code hygiene (lib.rs, pinning, ps/lsof)? | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
 
 ---
 
@@ -59,7 +60,7 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 
 ## Implemented vs later
 
-| Topic | Today | Later (do not build on „weiter“) |
+| Topic | Today | Later (do not build on „weiter") |
 |---|---|---|
 | Vault crypto | Client AES-GCM, envelopes | Unchanged |
 | Desktop | Tauri + local SQLite | Same client, optional remote URL |
@@ -73,6 +74,7 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 | Mobile apps | 0 % (PWA first) | Same vault protocol; native Android/iOS skeletons are prep only |
 | Team Mode | Spec only | Not PAM |
 | Supply chain | Lockfiles exist; audit/SBOM not yet enforced in CI | [supply-chain-security.md](supply-chain-security.md) |
+| Code hygiene | `lib.rs` monolith, loose Cargo pinning, raw ps/lsof | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
 
 ---
 

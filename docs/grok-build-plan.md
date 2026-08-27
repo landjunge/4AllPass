@@ -63,6 +63,18 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 ---
 
+## 1b. Produkt-Reihenfolge (Code vor Docs)
+
+> Nach Supply-Chain und Phase 4: **Tresor → Broker → PWA → schauen, was fehlt.**
+> Keine neuen Docs, solange nicht mindestens eine Datei im `src/`-Ordner dazukommt.
+
+1. **Tresor** – Vault anlegen, Passwörter rein, speichern, wieder abrufen. Kern, den jeder Nutzer zuerst testet.
+2. **Broker (Loopback)** – Agent fragt an → Allow/Deny → TTL läuft ab. Zettel-Türsteher, kein Ausweis.
+3. **PWA** – Login, Homescreen-Icon, offline-fähig. Kein App Store.
+4. **Schauen, was fehlt** – erst dann Autofill / native Apps entscheiden.
+
+---
+
 ## 2. Phase 4 — Secret Access Layer (Zielbild)
 
 > **Status heute:** Loopback-Broker mit String-Identität + Pairing-Token + human Allow.

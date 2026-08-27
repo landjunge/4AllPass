@@ -10,8 +10,9 @@ running backend and PWA actually enforce.
 ## 4AllPass Tresor-UI
 
 Vor jeder Änderung am Tresor: lies `.grok/skills/4allpass/SKILL.md`
-(oder `.cursor/skills/4allpass/SKILL.md`), `DESIGN.md` und die
-bestehenden Komponenten unter `frontend/src/components/vault/`.
+(oder `.cursor/skills/4allpass/SKILL.md`), `DESIGN.md`,
+[`docs/architecture.md`](docs/architecture.md), [`docs/ui-map.md`](docs/ui-map.md)
+und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 
 - Wiederverwenden statt neu erfinden.
 - Golden-Magpie-Palette aus DESIGN.md, nicht die Gnom-Hub-Tokens.

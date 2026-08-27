@@ -1,7 +1,7 @@
-# Grok Build – Ausführungsplan (Supply-Chain)
+# Grok Build – Ausführungsplan
 
 > **Status:** aktiv. Dieses Dokument ist der **Einstiegspunkt für Grok Build**.
-> Lies es zuerst, dann `docs/supply-chain-security.md`.
+> Lies es zuerst, dann `docs/supply-chain-security.md`, dann die Phasen unten.
 
 ---
 
@@ -50,22 +50,90 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 | Plan | Datei | Status |
 |---|---|---|
 | Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | offen – umsetzen |
+| Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | offen – nach Supply-Chain, vor Mobile |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit |
 | Future Readiness | `docs/future-readiness.md` | offen |
 
-**Reihenfolge:** Supply-Chain zuerst, dann Mobile (Android vor iOS).
+**Reihenfolge:** Supply-Chain zuerst, dann **Phase 4 (Secret Access Layer)**, dann Mobile (Android vor iOS).
 
 ---
 
-## 2. Autorität
+## 2. Phase 4 — Secret Access Layer (Zielbild)
+
+> **Status heute:** Loopback-Broker mit String-Identität + Pairing-Token + human Allow.
+> Pairing-Token ≠ Agent-Identität. Grant-Handoff ist `raw_secret`; TTL stoppt nur *zukünftige* Handoffs, nicht bereits kopierte Secrets.
+> **Ziel:** signierte Tokens, kryptografische Agent-Identität, Provider-Templates. Default off, device-local, FastAPI sieht nie Grants oder Klartext.
+
+**Autoritative Specs (lies alle vor dem Bau):**
+
+- `docs/secret-access-layer.md` – das Modul, Phasen A–F, Zero-Knowledge-Regeln
+- `docs/architecture/agent-access.md` – Ziel-Flow, Access-Klassen, Enrollment
+- `docs/local-access-broker.md` – was heute wirklich läuft (ehrliche Limits)
+- `docs/provider-service-vision.md` – Provider / Account / Secret Templates
+- `docs/specs/maip-v0.1.md` – kryptografische Identität (experimentell)
+- `docs/security-boundary.md` §7 – was der laufende Code erzwingt
+- `docs/capability-interface.md` – Tollgate = Execution, nicht 4AllPass
+
+**Ziel-Architektur (nicht bauen, bis Supply-Chain grün ist):**
 
 ```text
-security-boundary.md     was der Code erzwingt
+Agent
+  → Ed25519-Identität (MAIP) verifiziert
+  → 4AllPass Policy (Allow/Deny, Capability, TTL)
+  → signiertes, zeitlich begrenztes Token
+  → Provider-Template (Gmail / GitHub / Stripe / …) sagt, WIE zugegriffen wird
+  → mediated proxy bevorzugt; raw_secret nur als expliziter Fallback
+```
+
+**Phasen (strikt in dieser Reihenfolge, keine Sprünge):**
+
+1. **Phase A – Auto-Detection:** Erkenne, was der User einrichtet (n8n→OpenAI, github.com→GitHub). Frage, fülle nie still.
+2. **Phase B – Browser Secret Fill:** Extension schlägt vor, User klickt. Kein Auto-Submit.
+3. **Phase C – Local Secret Broker:** Loopback-Request → Policy-Anzeige → in-memory Handoff. Kein Env-Export als Happy Path.
+4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow".
+5. **Phase E – Capabilities:** Grant-Records (App × Provider × Credential × Purpose × Expiry), lokal, ciphertext.
+6. **Phase F – Agent Secrets:** Agent bekommt Capability, nie den ganzen Vault. Expiry = keine weiteren Handoffs.
+
+**Harte Regeln (non-negotiable):**
+
+- Device-local only. FastAPI sieht nie Grants, App-Identität, Purpose, Expiry oder Secret.
+- Default off. Uninstalliert = heutiges ZK-Modell.
+- Unlock required. Locked vault → Broker verweigert.
+- Unknown = DENY. Prozessname ist keine Identität.
+- Kein offenes localhost-HTTP ohne Auth. Kein CORS-offenes Grant-Endpoint.
+- `packages/crypto` bleibt unverändert – keine neuen Envelope-Typen für dieses Modul.
+- Kein Orchestrator, keine Execution-Policy. Tollgate bleibt getrennt.
+
+**Definition of Done (Phase 4):**
+
+- [ ] Mindestens Phase A+B als Extension-UX auf bestehendem Host-Fill.
+- [ ] Phase C als Loopback-Broker mit Policy-Overlay, in-memory Handoff, kein Env-Default.
+- [ ] Phase D: OS-Identität (code signature / bundle id) als first-class Objekt; unknown DENY erzwungen.
+- [ ] Phase E: Grant-Records lokal + ciphertext, lesbar in der UI.
+- [ ] Tests: Unknown-Agent-Deny, TTL-Expiry, Locked-Vault-Deny, Origin-403 auf Grant-Path.
+- [ ] Docs aktualisiert: `local-access-broker.md`, `architecture/agent-access.md`, `security-boundary.md` §7 spiegeln den neuen Stand.
+- [ ] Kein PR, der die CI rot macht.
+
+**Nicht tun in Phase 4:**
+
+- Keine Server-seitige Grant-API, kein FastAPI-Token-Minting.
+- Keine MCP-als-Sicherheit.
+- Kein Auto-Submit, kein Clipboard-Watcher als Egress.
+- Keine Zusammenführung mit Tollgate / Capability-Interface.
+
+---
+
+## 3. Autorität
+
+```text
+security-boundary.md          was der Code erzwingt
         ↓
-supply-chain-security.md  Regeln für die Lieferkette (ausführbar)
+supply-chain-security.md      Regeln für die Lieferkette (ausführbar)
         ↓
-dieses Dokument          Einstieg für Grok Build
+secret-access-layer.md        Zielbild Agent-Zugriff (ausführbar, Phase 4)
+        ↓
+dieses Dokument               Einstieg für Grok Build
 ```
 
 Wenn hier was steht, das über `security-boundary.md` hinausgeht: Defekt. Nicht umgekehrt.

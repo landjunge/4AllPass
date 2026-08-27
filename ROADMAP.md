@@ -9,7 +9,7 @@
 
 1. **Supply-Chain** – `docs/supply-chain-security.md` Phasen 1–3. Pinning, CI-Audits, SBOM. Kein PR, der CI rot macht.
 2. **Phase 4 – Secret Access Layer** – `docs/secret-access-layer.md` + `docs/architecture/agent-access.md`. Signierte Tokens, kryptografische Agent-Identität, Provider-Templates. Erst nach grüner Supply-Chain.
-3. **Mobile** – Android zuerst (`docs/android-skeleton-grok-build.md`), dann iOS (`docs/ios-skeleton-grok-build.md`).
+3. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
 
 ---
 
@@ -44,11 +44,11 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 |---|---|---|
 | Supply-Chain | `docs/supply-chain-security.md` | offen – jetzt |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` | offen – nach Supply-Chain |
-| Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit |
-| iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit |
+| Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
+| iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 
-**Reihenfolge:** Supply-Chain → Phase 4 → Mobile (Android vor iOS).
+**Reihenfolge:** Supply-Chain → Phase 4 → Mobile (PWA → Android → iOS).
 
 ---
 
@@ -76,6 +76,7 @@ Empfohlene Reihenfolge: Exit → Rechtliches → Crypto-Agility.
 - Shadow DOM / Multi-Step / iframe (nach stabilem Password-Autofill)
 - Passkey-Store, Launch-Posts, Connection/Capability-UI
 - Kein Core-Rewrite, kein zweites Tauri, kein zweites Crypto
+- **Keine nativen Mobile-Apps vor der PWA** (Skelette sind nur Vorbereitung)
 
 Vision (nicht implementieren): `docs/architecture/future-architecture.md`.
 

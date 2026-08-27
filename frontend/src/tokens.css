@@ -1,25 +1,25 @@
 /**
- * Shared desk chrome — always Gnom-Hub-V1.
- * Source: gnom-hub-v1/src/gnom_hub/ui/static/app.css `:root`
- * Published: https://netzwerkpunkt.de/assets/desk-tokens.css
+ * 4AllPass brand — Golden Magpie (DESIGN.md).
+ * Radius, shadow, and focus-ring keep the shared desk chrome.
+ * Gnom-Hub-V1 greys are desk chrome on other products, not this brand.
  */
 :root {
-  --bg: #121316;
-  --bg-panel: #1a1b1f;
-  --bg-card: #1e1f24;
-  --bg-elev: #24262d;
-  --text: #e2e4e9;
-  --text-muted: #8b909a;
-  --border: #2e3138;
-  --accent: #6b7280;
-  --accent-hi: #a1a8b3;
-  --ok: #3d9b6a;
+  --bg: #0a0e1a;
+  --bg-panel: #0e1424;
+  --bg-card: #12182b;
+  --bg-elev: #1a2238;
+  --text: #f8f4ec;
+  --text-muted: #a89f8c;
+  --border: #2a3348;
+  --accent: #c9a227;
+  --accent-hi: #d4af37;
+  --ok: #3ddc97;
   --warn: #c9a227;
-  --err: #c45c5c;
+  --err: #ff7a90;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.38);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
 
   --panel: var(--bg-card);

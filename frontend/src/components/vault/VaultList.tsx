@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { BrowserIcon } from "../BrowserIcon.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { VaultEntry } from "../../types/vault.ts";
-import { entryDisplayTitle, kindLabel } from "../../utils/vault/labels.ts";
+import { entryDisplayTitle, entryIconName, entryMetaLine, kindLabel } from "../../utils/vault/labels.ts";
 
 export function VaultList({
   entries,
@@ -59,28 +60,31 @@ export function VaultList({
 
   return (
     <ul>
-      {filtered.map((entry) => (
-        <li key={entry.id}>
-          <button
-            type="button"
-            className={entry.id === selectedId ? "row active" : "row"}
-            onClick={() => onSelect(entry)}
-            title={t({ de: "Eintrag öffnen und bearbeiten", en: "Open and edit this entry" })}
-          >
-            <span className="row-top">
-              <strong>{entryDisplayTitle(entry, untitled)}</strong>
-              <span className={`kind-badge kind-${entry.kind}`}>{kindLabel(entry.kind, t)}</span>
-            </span>
-            {entry.username || entry.account || entry.host ? (
-              <span className="muted">
-                {entry.username || entry.account || entry.host}
+      {filtered.map((entry) => {
+        const kind = kindLabel(entry.kind, t);
+        const iconName = entryIconName(entry);
+        return (
+          <li key={entry.id}>
+            <button
+              type="button"
+              className={entry.id === selectedId ? "row active" : "row"}
+              onClick={() => onSelect(entry)}
+              title={t({ de: "Eintrag öffnen und bearbeiten", en: "Open and edit this entry" })}
+            >
+              <span className="row-icon" aria-hidden="true">
+                <BrowserIcon id={iconName} name={iconName} />
               </span>
-            ) : (
-              <span className="muted">{kindLabel(entry.kind, t)}</span>
-            )}
-          </button>
-        </li>
-      ))}
+              <span className="row-body">
+                <span className="row-top">
+                  <strong>{entryDisplayTitle(entry, untitled)}</strong>
+                  <span className={`kind-badge kind-${entry.kind}`}>{kind}</span>
+                </span>
+                <span className="row-meta muted">{entryMetaLine(entry, kind)}</span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

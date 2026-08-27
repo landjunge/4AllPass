@@ -21,6 +21,7 @@ export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void 
   const { t } = useCopy();
   return (
     <div className="placeholder vault-detail-empty" data-testid="vault-detail-empty">
+      <div className="empty-mark" aria-hidden="true" />
       <h3>{t({ de: "Welchen Zugang suche ich?", en: "Which login am I looking for?" })}</h3>
       <p className="muted">
         {t({
@@ -35,18 +36,37 @@ export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void 
         })}
       </p>
       <div className="empty-actions">
-        <button type="button" className="primary" onClick={() => onAdd("web")}>
-          {t({ de: "Login", en: "Login" })}
-        </button>
-        <button type="button" onClick={() => onAdd("api")} title={t({ de: "Token oder API-Key", en: "Token or API key" })}>
-          {t({ de: "API-Key", en: "API key" })}
+        <button
+          type="button"
+          className="empty-action primary"
+          onClick={() => onAdd("web")}
+          title={t({ de: "Website-Login mit Benutzername und Passwort", en: "Website login with username and password" })}
+        >
+          <strong>{t({ de: "Login", en: "Login" })}</strong>
+          <span>
+            {t({
+              de: "Website mit Benutzername und Passwort",
+              en: "Website with username and password",
+            })}
+          </span>
         </button>
         <button
           type="button"
+          className="empty-action"
+          onClick={() => onAdd("api")}
+          title={t({ de: "Token oder API-Key", en: "Token or API key" })}
+        >
+          <strong>{t({ de: "API-Key", en: "API key" })}</strong>
+          <span>{t({ de: "Token für Programme. Erlauben bleibt nötig.", en: "Token for programs. Allow is still required." })}</span>
+        </button>
+        <button
+          type="button"
+          className="empty-action"
           onClick={() => onAdd("sftp")}
           title={t({ de: "SSH, SFTP oder FTP", en: "SSH, SFTP, or FTP" })}
         >
-          {t({ de: "Server-Zugang", en: "Server login" })}
+          <strong>{t({ de: "Server-Zugang", en: "Server login" })}</strong>
+          <span>{t({ de: "Host, Protokoll und Port", en: "Host, protocol, and port" })}</span>
         </button>
       </div>
     </div>

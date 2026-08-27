@@ -5,5 +5,12 @@ export {
   draftFromEntry,
   draftHasAdvancedFields,
 } from "./drafts.ts";
-export { entryDisplayTitle, entrySecondaryLine, kindLabel, newEntryHeading } from "./labels.ts";
+export {
+  entryDisplayTitle,
+  entryIconName,
+  entryMetaLine,
+  entrySecondaryLine,
+  kindLabel,
+  newEntryHeading,
+} from "./labels.ts";
 export { filterVaultEntries } from "./search.ts";

@@ -29,7 +29,7 @@ cbc = { version = "0.1", features = ["alloc"] }
 pbkdf2 = "0.12"
 sha1 = "0.10"
 sha2 = "0.10"
-base64 = "0.22"
+base64 = "0.23"
 zeroize = "1"
 ureq = { version = "2.12.1", default-features = false }
 

@@ -8,5 +8,6 @@ Pages: https://landjunge.github.io/4AllPass/
 Impressum: https://netzwerkpunkt.de/impressum
 Datenschutz: https://netzwerkpunkt.de/datenschutz
 
-Supply-chain rules: docs/supply-chain-security.md (pinning, provenance, SBOM, crypto-core minimalism)
+Supply-chain rules (EXECUTABLE PLAN for Grok Build): docs/supply-chain-security.md — §0 = instructions, phases 1–3, definition of done. Pinning, provenance, SBOM, crypto-core minimalism.
 Future readiness: docs/future-readiness.md (exit strategy, crypto-agility, legal)
+Mobile skeletons (Grok Build): docs/android-skeleton-grok-build.md, docs/ios-skeleton-grok-build.md

@@ -1,8 +1,9 @@
 # Secret Access Layer
 
-**Status:** Concept only. Far later. Protocol v1 is unchanged.  
-**Date:** 2026-08-20  
+**Status:** Concept + **Phase 4 im Grok-Build-Plan**. Protocol v1 is unchanged.  
+**Date:** 2026-08-20 (Status-Update 2026-08-28)  
 **Not this document:** a broker binary, MCP server, FastAPI grant API, env-var export, clipboard watcher, or an orchestrator.
+**Grok Build:** Nach Supply-Chain (Phasen 1–3) kommt **Phase 4** – dieses Modul. Einstieg: `docs/grok-build-plan.md` §2.
 
 Companion: `provider-service-vision.md` (vault *shape*), `positioning-target.md` (category *if this ships*), `capability-interface.md` (Tollgate = execution, not 4AllPass), `architecture/agent-access.md` (later flow), `specs/maip-v0.1.md` (identity ≠ allow), `security-boundary.md`, `autofill-extension.md`, `.cursor/skills/4allpass/references/improve.md`.  
 Trackers: [#67](https://github.com/landjunge/4AllPass/issues/67) (this layer), [#65](https://github.com/landjunge/4AllPass/issues/65) (Provider / Account / Secret), [#70](https://github.com/landjunge/4AllPass/issues/70) (Capability × Tollgate), [#59](https://github.com/landjunge/4AllPass/issues/59) (clipboard *ingest*; MCP as a future *client*).
@@ -215,6 +216,6 @@ If this is ever implemented:
 - Explicit request to implement the **Secret Access Layer** (not “weiter”, not “API keys”, not “MCP”, not “n8n”).
 - Phase B only: a small extension UX on top of existing host fill, still click-to-fill — still not a broker.
 
-Until then the honest line is: **v1 autofill is host-match after unlock in the extension; there is no local broker, no grant matrix, and no agent capability.** Public positioning stays `positioning.md`; the “personal secret access control” story is `positioning-target.md` and must not leak onto the README.
+**Status 2026-08-28:** Trigger „explicit request“ ist gesetzt – Phase 4 steht im `grok-build-plan.md`. Bis Supply-Chain (Phasen 1–3) grün ist, kein Code für A–F. Danach streng in Reihenfolge A→F, keine Sprünge.
 
 No code in this repository implements a Secret Broker, application identity, or grant records.

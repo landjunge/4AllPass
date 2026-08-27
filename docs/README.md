@@ -15,6 +15,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | What do we build next? | [product-maturity.md](product-maturity.md) (v3) — code sequence done; remaining humans: stranger Mac, Apple, audit. **Later in that file:** own VPS as cloud simulation, then mobile as same-vault device. |
 | What is vision, not code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
 | Are our **dependencies** safe? | [supply-chain-security.md](supply-chain-security.md) — pinning, provenance, SBOM, crypto-core rules |
+| **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md |
 | Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
 
 ---
@@ -67,6 +68,6 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 
 ## Keep (do not “consolidate away”)
 
-Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`.
+Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`.
 
 Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md`, `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.

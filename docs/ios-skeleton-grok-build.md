@@ -2,6 +2,10 @@
 
 > Prompt-ready spec for generating the first iOS client of 4AllPass.
 > Goal: a clean, modern SwiftUI skeleton that reuses the existing crypto core and can grow into a real CredentialProvider / AutoFill extension without becoming throwaway code.
+>
+> **Status:** Vorbereitung / Prompt-Vorlage. **Nicht** vor der PWA bauen.
+> Mobile-Strategie: PWA zuerst, native Apps später — siehe `docs/architecture.md` §5 und `docs/architecture/adr/ADR-009-mobile-client.md`.
+> Dieses Dokument ist ein *Skelett-Prompt* für Grok Build, falls/wenn native iOS jemals ansteht. Es ist **kein** Freifahrtschein, die PWA zu überspringen oder die Apple-Entitlement-Anfrage vorzeitig zu stellen.
 
 ## 1. Stack (non-negotiable)
 
@@ -101,9 +105,11 @@
 - Cloud sync, multi-device, iCloud Keychain.
 - Agent-access broker on mobile (desktop-only for now).
 - Widgets, watchOS, macOS (Catalyst) clients.
+- **Starting before the PWA ships and is tested on real phones.**
 
 ## 7. Reference docs in this repo
 
+- `docs/architecture.md` §5 (Mobile-Strategie: PWA first)
 - `docs/architecture/adr/ADR-009-mobile-client.md`
 - `docs/autofill-v1.md`
 - `docs/crypto/key-derivation.md`, `docs/crypto/envelopes.md`

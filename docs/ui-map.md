@@ -3,7 +3,7 @@
 **Status:** Flächenkarte für Grok Build. Keine Spec.  
 **Shape:** [`architecture.md`](architecture.md). **Was läuft:** [`security-boundary.md`](security-boundary.md).
 
-Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. Screenshot darunter kleben.
+Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen (Magpie, nummeriert). Foto optional daneben.
 
 ---
 
@@ -117,9 +117,8 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. Screenshot darunter kl
 
 Handy: Spalten unter 820 px untereinander.
 
-> Screenshot: `docs/screenshots/v4-desk.png`  
-> Screenshot: `docs/screenshots/v4-desk-empty.png`  
-> Screenshot: `docs/screenshots/v4-desk-phone.png`
+> Wireframe: [v4-desk.html](screenshots/v4-desk.html) · [v4-desk-empty.html](screenshots/v4-desk-empty.html) · [v4-desk-phone.html](screenshots/v4-desk-phone.html)  
+> Foto optional: `docs/screenshots/v4-desk.png`
 
 ---
 

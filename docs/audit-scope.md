@@ -3,7 +3,7 @@
 **Audience:** an independent auditor (e.g. Cure53, Radically Open Security).  
 **Not in scope for this document:** performing the audit.  
 **Date:** 2026-08-26  
-**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `adversarial-review-external-01.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`.
+**Companion:** `crypto-protocol.md`, `webauthn-prf.md`, `vault-revision.md`, `threat-model.md`, `adversarial-review.md`, `adversarial-review-boundaries.md`, `adversarial-review-external-01.md`, `security-boundary.md`, `freeze.md`, `test-vectors.md`, `test-vectors-argon2id.md`, `supply-chain-security.md`, `reproducible-builds.md`.
 
 This is a map of what to review, what the running system actually enforces, and where honesty gaps remain. Specs in `docs/` win over comments. If code and `packages/crypto` disagree, the library and its tests win.
 
@@ -22,6 +22,7 @@ This is a map of what to review, what the running system actually enforces, and 
 | Independent KATs | `docs/test-vectors/`, `scripts/` | AES-GCM, Argon2id, device-PRF, recovery vectors |
 | Client artifacts | `frontend/dist`, `extension/dist` | Tree hash via `scripts/hash-dist.mjs`. Two-build check: `npm run verify:reproducible`. Same-toolchain only (`docs/reproducible-builds.md`) |
 | Native import (Tauri/Rust) | `src-tauri/src/browser_passwords.rs`, `firefox_logins.rs` | Chromium Safe Storage + Firefox key4.db. First adversarial pass: `adversarial-review-external-01.md`. |
+| Supply chain | `Cargo.lock`, `package-lock.json`, `requirements*.txt`, CI workflows | Pinning, `cargo audit`/`cargo deny`/`npm audit`/`pip-audit`, SBOM, crypto-core minimalism — see `docs/supply-chain-security.md` |
 
 Out of scope until they exist in tree: native apps, org/team **implementation** (spec only: `docs/team-mode.md`), public-key wrapping to a foreign device. Item-share files are in tree (`docs/sharing.md`).
 
@@ -91,6 +92,14 @@ zeroized; `BrowserLogin` Debug redacts `password`.
 - Unlock copy must not say the server verified a passkey.
 - Device panel must not say DELETE erased the key.
 
+### M6 — Supply chain (`docs/supply-chain-security.md`)
+
+- Are `Cargo.lock` / `package-lock.json` committed and enforced (`--locked`, `npm ci`)?
+- Do CI jobs run `cargo audit`, `cargo deny`, `npm audit`, `pip-audit` and fail the build on high/critical?
+- Is an SBOM produced per release?
+- Does `packages/crypto` stay free of network/UI dependencies?
+- Any unpinned or unscoped dependencies with generic names?
+
 ---
 
 ## 4. Honest gaps (pre-declared)
@@ -104,6 +113,7 @@ From `docs/security-boundary.md` §6 — treat as known, not surprises:
 5. Chromium + Firefox + macOS Safari autofill; no iOS/Android Password AutoFill. Item-share is a file (`docs/sharing.md`), not wrap-to-foreign-device.
 6. `cose_verified` is ceremony integrity (`fmt=none` + assertion). It is not hardware attestation and not PRF.
 7. No post-quantum KEM in v1. Vault wrapping is AES-256-GCM. See `docs/post-quantum-roadmap.md`.
+8. Supply-chain tooling (audit + SBOM in CI) is **specified but not yet enforced** — see `docs/supply-chain-security.md` checklist.
 
 ---
 

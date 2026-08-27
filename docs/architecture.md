@@ -148,7 +148,11 @@ Siehe auch: [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-0
 - `Cargo.toml` streng pinnen (`docs/supply-chain-security.md`).
 - Sidecar-Erkennung nicht roh `ps`/`lsof`.
 
-## 9. Später (nicht bauen ohne Auftrag)
+## 9. Modul-Grenzen
+
+Ein Modul = eine Verantwortlichkeit. Faustregel: erklärbar in einem Satz ohne „und“. Test: Modul löschbar, ohne dass der Rest bricht.
+
+## 10. Später (nicht bauen ohne Auftrag)
 
 - Shamir als optionale Recovery
 - **Team Mode** — Spec: [`team-mode.md`](team-mode.md). Kein PAM.

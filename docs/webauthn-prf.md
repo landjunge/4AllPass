@@ -299,7 +299,7 @@ v1 **must** keep Master Password unlock available on every device.
 PRF support is uneven. Treat absence as fallback, not as a hard error.  
 `PublicKeyCredential` / `navigator.credentials` existing is **not** a PRF
 proof. The PWA probes `getClientCapabilities` (`probeWebviewWebauthn`);
-desktop WKWebView typically reports `prf: null`. Devices and Welcome must
+desktop WKWebView typically reports `prf: null`. Devices and Create/Unlock must
 not hide the fallback hint on API presence alone.  
 Always send `userVerification: "required"`.  
 `rpId` must stay stable for the life of the vault’s device credentials.

@@ -257,7 +257,7 @@ Installation (Apple, wenn leistbar):
 
 Recovery:
 
-- [x] Copy: ohne Kit / zweites Gerät kein Zurück (Welcome, Create, Unlock, Emergency Kit, Settings). Kein Server-Reset.
+- [x] Copy: ohne Kit / zweites Gerät kein Zurück (Create, Unlock, Emergency Kit, Settings). Kein Server-Reset.
 
 ---
 

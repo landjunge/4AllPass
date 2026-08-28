@@ -52,7 +52,7 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 | Pairing token | Required on every call. Printed at start; not on the public API. |
 | Bind | `127.0.0.1` only. |
 | Browser grant path | `Origin: http(s)://…` or `Origin: null` on `POST /v1/access/request` is **403**. n8n/Node typically send no Origin. |
-| PWA poll | CORS for the local app (`:8788`) and Vite (`:5173` / `:4173`). |
+| PWA poll | CORS for the local app (`:8788`) and Vite (`:5173` / `:4173`). Disconnect → 204; that waiter must not take the next grant. |
 | Vault locked | No PWA poller → `denied` / `vault_locked`. No secret. |
 | Policy | Still in the PWA (`decideAccess`). Unknown app = DENY. |
 | Identity | **PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata, not authentication. The token proves the caller knows the secret, not that the process is n8n. Treat the pairing token as the local root-of-access for agents. Cryptographic agent keys are not V1 (ADR-008). |

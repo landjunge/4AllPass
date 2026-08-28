@@ -145,7 +145,7 @@ Dedup: gleicher Host + Username → ein Eintrag, neueres Passwort gewinnt. Quell
 | 2 | Native: gewähltes Chrome-Profil lesen → `VaultEntry[]` → `saveEntries` | **im Code:** `import_browser_logins`, Keychain, Bestätigen in der Vault-UI |
 | 3 | Firefox dasselbe | **im Code:** `key4.db` + `logins.json`, leeres Master-Passwort |
 | 4 | Brave/Edge/Arc (Chromium-Pfade, gleicher Decrypt) | Weitere Karten ohne neuen Crypto-Pfad |
-| 5 | Welcome/Vault: Karten **zuerst**, Access nicht als Einstieg; zwei Haken (Extension / Passwörter) | Erster Test ohne Erklärung |
+| 5 | First-run/Vault: Karten **zuerst**, Access nicht als Einstieg; zwei Haken (Extension / Passwörter) | Erster Test ohne Erklärung |
 | 6 | Extension nur für **angehakte** Browser (Browser-Dialog, kein stilles Install) | Ausfüllen auf einer Testseite |
 | 7 | Safari lesen | extra, nach 2–6 |
 | 8 | Zurückschreiben in Browser-DBs | nur wenn 2–6 sitzen; darf scheitern und dann ehrlich „geht nicht, Extension nutzen“ |

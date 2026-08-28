@@ -25,14 +25,21 @@ The SQLite file holds opaque envelopes. `session.secret` is account-auth only.
 
 If port 8788 is taken by a **foreign** process: the window exits with “127.0.0.1:8788 is already bound… refusing to treat it as 4AllPass” (no SIGABRT). A leftover `fourallpass-core` after a crash is killed, then a new core is spawned. A living 4AllPass instance prints “4AllPass läuft schon / already running.” Dock / `open -a` re-shows the window (`RunEvent::Reopen`). The webview never navigates to whoever holds `:8788`.
 
-First run (local profile): Welcome → **Tresor anlegen** or **Ich habe einen Tresor**.
-Create: Tresor-Passwort → Recovery-Kit. Restore: `4allpass-share-v1` file + share
-key → new vault password → **new** recovery key (the share key is not that key).
-A recovery key without the share file cannot rebuild the blobs. No e-mail, no
-account password. `POST /api/v1/auth/local` is storage auth only.
+First run:
+
+- **Desktop window (Tauri):** Auth first (Konto anlegen). `__TAURI_INTERNALS__`
+  skips silent `/auth/local`. Then Tresor-Passwort or **Ich habe einen Tresor**.
+- **Browser on this origin** (`npm run app` without the shell): silent
+  `POST /api/v1/auth/local` (storage session only, address not shown), then
+  Create vault.
+
+There is no Welcome screen. Create: Tresor-Passwort → Recovery-Kit. Restore:
+`4allpass-share-v1` file + share key → new vault password → **new** recovery key
+(the share key is not that key). A recovery key without the share file cannot
+rebuild the blobs. Account password still cannot unwrap the Vault Key.
 
 Proof (Playwright, no Vite): `npm run test:e2e:local -w @4allpass/frontend` —
-Welcome → vault → Access Allow; UI never shows the secret; a Node-like
+Create or Unlock → vault → Access Allow; UI never shows the secret; a Node-like
 `POST /v1/access/request` (no Origin) gets `approved` after Allow.
 
 ## Origins
@@ -56,7 +63,7 @@ Measured in this app’s WKWebView (`GET /api/v1/local/webview-caps`):
 | platform authenticator (UVPAA) | **false** |
 | `prf` extension | **null** (not reported) |
 
-That is not a PRF ceremony. Unlock with the vault password. The Welcome screen says so. No second wrap protocol.
+That is not a PRF ceremony. Unlock with the vault password. Create/Unlock copy says so. No second wrap protocol.
 
 ## Sidecar
 

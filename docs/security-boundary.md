@@ -104,11 +104,15 @@ to the sidecar. UI is the bundled `frontendDist`. Tauri IPC is not granted to
 refuses to start (foreign process). The sidecar is the local API only. Local
 Host headers must be loopback (`127.0.0.1` / `localhost` / `::1`).
 
-Local first-run skips email and account password. `POST /api/v1/auth/local`
-mints a storage session for a singleton row (`local@127.0.0.1`, no account
-password hash). That is **authentication for the blob store**, not vault
-unlock. The UI never shows that address. Server profile returns 404 for this
-route. Access-grant UI shows application / provider / TTL only — not the
+Local first-run in a **normal browser** skips email and account password.
+`POST /api/v1/auth/local` mints a storage session for a singleton row
+(`local@127.0.0.1`, no account password hash). That is **authentication for the
+blob store**, not vault unlock. The UI never shows that address. Server profile
+returns 404 for this route. The **desktop window** does not call that route
+(`isTauriShell`): Auth is first, then Create or Unlock. Account password still
+cannot unwrap a Vault Key. There is no Welcome screen. Empty vault →
+CreateVaultPage (`Ich habe einen Tresor` → restore). Existing vault →
+UnlockPage. Access-grant UI shows application / provider / TTL only — not the
 secret or a prefix of it.
 
 **I have a vault** on first-run opens a `4allpass-share-v1` file with its share
@@ -361,6 +365,8 @@ profile also serves the **same relay** on this process
 queue, not a token mint: the server never decrypts, never invents a GitHub
 secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
 Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing token required.
+`GET /v1/broker/poll` returns 204 if the UI disconnects. A closed tab must not
+dequeue the next grant. The unlocked UI aborts its poll fetch on unmount.
 `GET /api/v1/local/broker` returns that pairing token only after local storage
 auth. The **server** profile does not mount these routes. Grants live in page
 memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):

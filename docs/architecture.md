@@ -98,6 +98,19 @@ Radius/Schatten bleiben Desk-Chrome. Gnom-Hub-Grau ist nicht die Marke.
 
 ---
 
+## 4. First-run
+
+Kein Welcome-Screen. `WelcomePage.tsx` ist unbenutzt.
+
+| Oberfläche | Leer | Tresor existiert |
+|---|---|---|
+| Browser auf dem Local-Origin | stille `POST /auth/local` → CreateVaultPage | UnlockPage |
+| Desktop-Fenster (Tauri) | AuthPage, dann Create | Auth, dann Unlock |
+
+**Ich habe einen Tresor** → Restore (`4allpass-share-v1` + Share-Key). Account-Passwort öffnet den Tresor nicht.
+
+---
+
 ## 5. Mobile-Strategie
 
 **Regel:** Mobile ist ein Gerät des *gleichen* Vaults — kein zweites Protokoll, kein Fork von `packages/crypto`. Crypto und Snapshots bleiben plattformneutral.

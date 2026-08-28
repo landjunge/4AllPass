@@ -55,9 +55,9 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 
 | Punkt | Status |
 |---|---|
-| `lib.rs` Modularisierung | ☐ offen |
+| `lib.rs` Modularisierung | ☑ 2026-08-28 | process, loopback, sleep, prompts, tray, sidecar_http |
 | `Cargo.toml` Pinning | ☑ 2026-08-28 | `=x.y.z` + `cargo fetch --locked` in CI |
-| Plattform-Abstraktion (ps/lsof) | ☐ offen |
+| Plattform-Abstraktion (ps/lsof) | ☑ 2026-08-28 | `process_inspect.rs`: `/proc` + lsof/ps, Windows netstat |
 
 ---
 

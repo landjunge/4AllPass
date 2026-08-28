@@ -76,7 +76,7 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 | Mobile apps | 0 % (PWA first) | Same vault protocol; native Android/iOS skeletons are prep only |
 | Team Mode | Spec only | Not PAM |
 | Supply chain | Lockfiles exist; audit/SBOM not yet enforced in CI | [supply-chain-security.md](supply-chain-security.md) |
-| Code hygiene | `lib.rs` monolith, loose Cargo pinning, raw ps/lsof | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
+| Code hygiene | Modules + pinned Cargo + `process_inspect` (2026-08-28) | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
 
 ---
 

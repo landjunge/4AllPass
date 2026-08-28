@@ -96,6 +96,8 @@ jobs:
         run: rustc --edition 2021 --test src-tauri/src/sleep_stall.rs -o sleep-stall && ./sleep-stall
       - name: Sidecar bind is not foreign-port trust
         run: rustc --edition 2021 --test src-tauri/src/core_bind.rs -o core-bind && ./core-bind
+      - name: Loopback process inspect parsers
+        run: rustc --edition 2021 --test src-tauri/src/process_inspect.rs -o process-inspect && ./process-inspect
 
   python:
     name: Backend tests

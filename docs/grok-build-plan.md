@@ -68,16 +68,16 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 > Quelle: Code-Review 2026-08-28. Details und Status: `ROADMAP.md` §1b.
 
-1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module. Heute ein Monolith.
-2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`.
-3. **`ps`- / `lsof`-Aufrufe abstrahieren** – Plattform-Schicht, nicht unix-spezifisch.
+1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module. **Getan** 2026-08-28.
+2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`. **Getan** 2026-08-28.
+3. **`ps`- / `lsof`-Aufrufe abstrahieren** – Plattform-Schicht, nicht unix-spezifisch. **Getan** 2026-08-28 (`process_inspect.rs`).
 
 **Definition of Done:**
 
-- [ ] `lib.rs` ist in Module zerlegt (Prozess, Sleep, Prompts, Tray, Proxy).
-- [ ] `Cargo.toml` pinnt exakte Versionen; CI enforced `--locked`.
-- [ ] Sidecar-Prozess-Erkennung läuft plattformneutral (kein roher `ps`/`lsof`-Aufruf im Hot Path).
-- [ ] Kein PR, der die CI rot macht.
+- [x] `lib.rs` ist in Module zerlegt (Prozess, Sleep, Prompts, Tray, Proxy).
+- [x] `Cargo.toml` pinnt exakte Versionen; CI enforced `--locked`.
+- [x] Sidecar-Prozess-Erkennung läuft plattformneutral (kein roher `ps`/`lsof`-Aufruf im Hot Path).
+- [x] Kein PR, der die CI rot macht.
 
 ---
 

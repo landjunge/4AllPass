@@ -157,9 +157,9 @@ Siehe auch: [`architecture/adr/ADR-009-mobile-client.md`](architecture/adr/ADR-0
 
 > Beobachtet im Code-Review 2026-08-28. Status: `ROADMAP.md` §1b.
 
-- `src-tauri/src/lib.rs` zerlegen (prozess, sleep, prompts, tray, proxy).
-- `Cargo.toml` streng pinnen (`docs/supply-chain-security.md`).
-- Sidecar-Erkennung nicht roh `ps`/`lsof`.
+- `src-tauri/src/lib.rs` zerlegt: process, loopback, sleep, prompts, tray, sidecar_http.
+- `Cargo.toml` streng gepinnt (`docs/supply-chain-security.md`).
+- Sidecar-Erkennung: `process_inspect.rs` (Linux `/proc`, sonst lsof/ps; Windows netstat).
 
 ## 9. Modul-Grenzen
 

@@ -57,7 +57,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Ablage | Local-first; Synchronisierung optional; kein angebotener Hosted-Dienst |
 | Import | Chrome und Firefox; Prüfung ohne sichtbare Passwörter in der Liste |
 | Autofill | Chromium, Firefox und Safari-Wrapper; kein automatisches Absenden |
-| Zugriffsfreigabe | Erlauben oder Ablehnen auf diesem Rechner; zeitlich begrenzte Freigaben |
+| Zugriffsfreigabe | Zugriffe müssen lokal bestätigt werden |
 | Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
 | WebAuthn PRF | Im Protokoll beschrieben; in der Desktop-Webview noch nicht bewiesen |
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |

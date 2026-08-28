@@ -8,8 +8,11 @@
 ## 0. Sofort (Grok Build, kein Warten)
 
 1. **Supply-Chain** – Phasen 1–3 auf `main` (2026-08-28). Pinning, CI-Audits, Crypto-Allowlist, SBOM. Private Registry bleibt offen.
-2. **Phase 4 – Secret Access Layer** – `docs/secret-access-layer.md` + `docs/architecture/agent-access.md`. Signierte Tokens, kryptografische Agent-Identität, Provider-Templates. Erst nach grüner Supply-Chain.
-3. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
+2. **Code-Hygiene** – completed 2026-08-28. Nicht mehr in der offenen Reihenfolge.
+3. **Secret Access Layer vorbereiten** (jetzt, nicht MAIP) – raw-secret semantics, mediated access interface, policy boundary. Spec: `docs/secret-access-layer.md`. Was heute läuft: `docs/security-boundary.md` §7 und `docs/local-access-broker.md`.
+4. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
+
+**Später (nicht jetzt):** MAIP-Implementierung – kryptografische Agent-Identität, Enrollment, signierte Requests, Revocation. Spec: `docs/specs/maip-v0.1.md` (Experimental Draft). `docs/architecture/agent-access.md` bleibt Proposed.
 
 ---
 
@@ -18,13 +21,14 @@
 Quelle der Wahrheit für Code-Prioritäten: `docs/product-maturity.md` (v3).
 
 ```text
-P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
- → P1  Reliable Autofill                  (nächster Code, Spec: autofill-v1.md)
-     → P1b Diagnostics / Assisted
-         → P2  Agent UX (Why, Simulator)   (Code existiert, nicht First Screen)
-             → P3  Passkeys / OTP
-                 → Sichtbarkeit nur nach P0+P1
+P0/P1 implementation substantially complete
+ → external usability validation (Fremder Mac, #120)
+ → remaining edge cases only after evidence
+     P2  Agent UX — Code existiert, nicht First Screen
+     P3  Passkeys / OTP — TOTP auf main; Passkey-Store später
 ```
+
+Autofill V1 nicht weiter auf Verdacht ausbauen. Spec bleibt `docs/autofill-v1.md`.
 
 **Konkrete nächste Schritte (Code vor Docs):**
 
@@ -45,13 +49,13 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 
 ---
 
-## 1b. Code-Hygiene (nach Supply-Chain, vor Phase 4)
+## 1b. Code-Hygiene — completed 2026-08-28
 
-> Quelle: Code-Review 2026-08-28. Nicht neu erfinden – hier pflegen.
+> Quelle: Code-Review 2026-08-28. Erledigt. Nicht neu erfinden.
 
-1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module. Heute ein Monolith, schwer zu testen.
-2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`. Eigene Supply-Chain-Regel gilt zuerst für das eigene Projekt.
-3. **`ps`- / `lsof`-Aufrufe abstrahieren** – hinter eine Plattform-Schicht, damit der Sidecar nicht nur auf Unix läuft.
+1. **`src-tauri/src/lib.rs` aufteilen** – Prozess-Management, Sleep-Detection, Access-Prompts, Tray, HTTP-Proxy in eigene Module.
+2. **`Cargo.toml` streng pinnen** – exakte Versionen statt `"2"`.
+3. **`ps`- / `lsof`-Aufrufe abstrahieren** – Plattform-Schicht (`process_inspect.rs`).
 
 | Punkt | Status |
 |---|---|
@@ -66,13 +70,13 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 | Plan | Datei | Status |
 |---|---|---|
 | Supply-Chain | `docs/supply-chain-security.md` | Phasen 1–3 auf `main` 2026-08-28. Private Registry bleibt offen. |
-| Code-Hygiene | dieses Dokument §1b | offen – nach Supply-Chain |
-| Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` | offen – nach Supply-Chain |
+| Code-Hygiene | dieses Dokument §1b | ☑ 2026-08-28 |
+| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` | raw-secret / mediated interface / policy; MAIP später |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 
-**Reihenfolge:** Supply-Chain → Code-Hygiene → Phase 4 → Mobile (PWA → Android → iOS).
+**Reihenfolge:** Supply-Chain (done) → Code-Hygiene (done) → Secret Access Layer vorbereiten → Mobile (PWA → Android → iOS). MAIP nicht in dieser Sequenz.
 
 ---
 
@@ -96,7 +100,7 @@ Empfohlene Reihenfolge: Exit → Rechtliches → Crypto-Agility.
 
 ## 4. Bewusst nicht (bis explizite Entscheidung)
 
-- Team Mode, MAIP-Implementierung, Managed Hosting, S3/WebDAV-Picker
+- Team Mode, **MAIP-Implementierung** (Identität ≠ Vorbereitung der Access-Schicht), Managed Hosting, S3/WebDAV-Picker
 - Shadow DOM / Multi-Step / iframe (nach stabilem Password-Autofill)
 - Passkey-Store, Launch-Posts, Connection/Capability-UI
 - Kein Core-Rewrite, kein zweites Tauri, kein zweites Crypto

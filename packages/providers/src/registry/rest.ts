@@ -1,6 +1,12 @@
-import type { ProviderDefinition } from "../types.ts";
+import type { CredentialKind, ProviderDefinition } from "../types.ts";
 
-function web(id: string, name: string, hosts: string[], extra: DomainRuleLike[] = []): ProviderDefinition {
+function web(
+  id: string,
+  name: string,
+  hosts: string[],
+  extra: DomainRuleLike[] = [],
+  kinds: CredentialKind[] = ["web-login"],
+): ProviderDefinition {
   const domains: ProviderDefinition["domains"] = [];
   for (const host of hosts) {
     domains.push({ host, match: "exact" }, { host, match: "subdomain" });
@@ -10,7 +16,7 @@ function web(id: string, name: string, hosts: string[], extra: DomainRuleLike[] 
     id,
     name,
     category: "other",
-    credentialKinds: ["web-login"],
+    credentialKinds: kinds,
     domains,
   };
 }
@@ -30,10 +36,10 @@ export const rest: ProviderDefinition[] = [
   web("paypal", "PayPal", ["paypal.com"]),
   web("netflix", "Netflix", ["netflix.com"]),
   web("spotify", "Spotify", ["spotify.com"]),
-  web("cloudflare", "Cloudflare", ["cloudflare.com"]),
+  web("cloudflare", "Cloudflare", ["cloudflare.com"], [], ["web-login", "api"]),
   web("digitalocean", "DigitalOcean", ["digitalocean.com"]),
-  web("openai", "OpenAI", ["openai.com", "chatgpt.com"]),
-  web("stripe", "Stripe", ["stripe.com"]),
+  web("openai", "OpenAI", ["openai.com", "chatgpt.com"], [], ["web-login", "api"]),
+  web("stripe", "Stripe", ["stripe.com"], [], ["web-login", "api"]),
   web("bitwarden", "Bitwarden", ["bitwarden.com"]),
   {
     id: "1password",

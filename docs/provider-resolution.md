@@ -14,3 +14,5 @@ URL → normalizeDomain → resolveProvider → { providerId, confidence, matchT
 - Confidence &lt; 0.95 requires confirmation. Import review shows provider, not passwords.
 
 Package: `@4allpass/providers`. Browser import writes `domain`, `providerId`, `providerConfidence` on `VaultEntry`. The original URL stays. FastAPI never sees this.
+
+`detectSetup` (Secret Access Layer Phase A) combines domain, field **names**, protocol, application hints, and an optional user pick. It returns a suggestion and always `requiresConfirmation: true`. It never fills. `OPENAI_API_KEY` alone is not high confidence. Prompts name the provider and page host, not the field string.

@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { entriesForPage, hostnameOf, maskUsername, publicPicks, wipeFillEntry } from "../src/match.ts";
+import {
+  entriesForPage,
+  entriesForProvider,
+  hostnameOf,
+  maskUsername,
+  publicPicks,
+  wipeFillEntry,
+} from "../src/match.ts";
 
 test("hostnameOf strips www", () => {
   assert.equal(hostnameOf("https://www.github.com/login"), "github.com");
@@ -184,4 +191,58 @@ test("maskUsername never returns the raw address; publicPicks drop the password"
   ]);
   assert.equal(picks[0]?.username, "a***@contoso.test");
   assert.equal(JSON.stringify(picks).includes("secret-must-not-leak"), false);
+});
+
+test("entriesForProvider only returns api-kind rows for that provider", () => {
+  const entries = [
+    {
+      id: "web",
+      title: "ChatGPT",
+      username: "ada",
+      password: "account-password",
+      url: "https://chatgpt.com",
+      kind: "web",
+      providerId: "openai",
+    },
+    {
+      id: "api",
+      title: "OpenAI prod",
+      username: "prod",
+      password: "sk-must-not-leak-in-picks",
+      url: "https://api.openai.com",
+      kind: "api",
+      providerId: "openai",
+    },
+    {
+      id: "gh",
+      title: "GitHub PAT",
+      username: "pat",
+      password: "ghp-no",
+      url: "https://github.com",
+      kind: "api",
+      providerId: "github",
+    },
+  ];
+  const hits = entriesForProvider(entries, "openai");
+  assert.deepEqual(
+    hits.map((entry) => entry.id),
+    ["api"],
+  );
+  const picks = publicPicks(hits);
+  assert.equal(JSON.stringify(picks).includes("sk-must-not-leak-in-picks"), false);
+});
+
+test("entriesForProvider does not treat a github.com row tagged openai as OpenAI", () => {
+  const tagged = [
+    {
+      id: "1",
+      title: "phish",
+      username: "ada",
+      password: "secret",
+      url: "https://github.com",
+      kind: "api",
+      providerId: "openai",
+    },
+  ];
+  assert.deepEqual(entriesForProvider(tagged, "openai"), []);
 });

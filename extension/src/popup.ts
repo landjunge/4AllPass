@@ -4,7 +4,12 @@ import { POPUP_SETTINGS_KEY, parsePopupSettings, popupSettingsForStore } from ".
 import { isHttpUrl, pickFillTab } from "./tab-target.ts";
 
 const assistBtn = document.getElementById("assist") as HTMLButtonElement;
+const suggestBox = document.getElementById("suggest-box") as HTMLDivElement;
+const suggestEl = document.getElementById("suggest") as HTMLParagraphElement;
+const suggestAccept = document.getElementById("suggest-accept") as HTMLButtonElement;
+const suggestDeny = document.getElementById("suggest-deny") as HTMLButtonElement;
 let lastEntryId: string | undefined;
+let pickMode: "fill" | "suggest" = "fill";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
@@ -57,7 +62,8 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
     button.type = "button";
     button.textContent = `${entry.title || entry.username}`;
     button.addEventListener("click", () => {
-      void send({ type: "fill-tab", entryId: entry.id }).then((filled) => {
+      const type = pickMode === "suggest" ? "accept-suggestion" : "fill-tab";
+      void send({ type, entryId: entry.id }).then((filled) => {
         if (!filled.ok) showFillMiss(filled);
         else {
           statusEl.textContent = formatFillSuccess({
@@ -89,8 +95,26 @@ async function rememberSettings(): Promise<void> {
   await ext.storage.local.set({ [POPUP_SETTINGS_KEY]: popupSettingsForStore(apiOrigin, email) });
 }
 
+function hideSuggest(): void {
+  suggestBox.hidden = true;
+  suggestEl.textContent = "";
+}
+
+async function showSuggest(): Promise<void> {
+  hideSuggest();
+  const result = await send({ type: "suggest-active" });
+  const suggestion = result.suggestion as
+    | { promptDe?: string; promptEn?: string }
+    | null
+    | undefined;
+  if (!suggestion?.promptDe) return;
+  suggestEl.textContent = `${suggestion.promptDe} / ${suggestion.promptEn ?? ""}`.trim();
+  suggestBox.hidden = false;
+}
+
 async function render(): Promise<void> {
   assistBtn.hidden = true;
+  hideSuggest();
   const status = await send({ type: "status" });
   const unlocked = status.unlocked === true;
   unlockForm.hidden = unlocked;
@@ -103,8 +127,12 @@ async function render(): Promise<void> {
   const candidates = await send({ type: "candidates-active" });
   if (candidates.ok && Array.isArray(candidates.entries)) {
     const entries = candidates.entries as Array<{ id: string; title: string; username: string }>;
-    if (entries.length > 1) renderPicks(entries);
+    if (entries.length > 1) {
+      pickMode = "fill";
+      renderPicks(entries);
+    }
   }
+  await showSuggest();
 }
 
 unlockForm.addEventListener("submit", (event) => {
@@ -163,6 +191,7 @@ document.getElementById("fill")?.addEventListener("click", () => {
       return;
     }
     if (result.needsPick && Array.isArray(result.entries)) {
+      pickMode = "fill";
       renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
       return;
     }
@@ -173,6 +202,36 @@ document.getElementById("fill")?.addEventListener("click", () => {
     });
     showAssist(result);
   });
+});
+
+suggestAccept.addEventListener("click", () => {
+  clearError();
+  void fillTargetTab()
+    .then(async (tab) => {
+      await requestTabOrigin(tab);
+      return send({ type: "accept-suggestion", tabId: tab?.id });
+    })
+    .then((result) => {
+      if (!result.ok) {
+        showFillMiss(result);
+        return;
+      }
+      if (result.needsPick && Array.isArray(result.entries)) {
+        pickMode = "suggest";
+        renderPicks(result.entries as Array<{ id: string; title: string; username: string }>);
+        return;
+      }
+      hideSuggest();
+      statusEl.textContent = formatFillSuccess({
+        fields: Array.isArray(result.fields) ? (result.fields as Array<"username" | "password">) : undefined,
+        mode: result.mode as FillMode | undefined,
+        confidence: typeof result.confidence === "number" ? result.confidence : undefined,
+      });
+    });
+});
+
+suggestDeny.addEventListener("click", () => {
+  hideSuggest();
 });
 
 assistBtn.addEventListener("click", () => {

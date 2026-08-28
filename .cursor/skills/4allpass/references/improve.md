@@ -37,7 +37,7 @@ Parked on purpose (2026-08-20). Do not build on “weiter” / “improve”. Re
 
 - Clipboard capture / watcher (never in the PWA as a fake background watch; never default on) — *ingest*, `#59`
 - **Provider & service management** (vault *shape*, not an API gateway): `docs/provider-service-vision.md`, `#65`
-- **Secret Access Layer** (vault *egress*): `docs/secret-access-layer.md`, `#67`. Auto-detection + click-to-approve fill + optional local broker + application identity + capabilities. Unifies “API-key management”, MCP/n8n/IDE agent, and auto-suggest. **Not** “apps get passwords automatically.” Unknown app = DENY. FastAPI is not the broker. Default off. Target *category* if that ships: `docs/positioning.md` (Far later section) — do not put those scores on the README.
+- **Secret Access Layer** (vault *egress*): `docs/secret-access-layer.md`, `#67`. Phase A+B are in code (`detectSetup`, extension asks, fill only after click). Still later: local broker identity, grant records, capabilities (C–F). **Not** “apps get passwords automatically.” Unknown app = DENY. FastAPI is not the broker. Default off. Target *category* if C–F ships: `docs/positioning.md` (Far later section) — do not put those scores on the README.
 - **Capability interface** (4AllPass × Tollgate × Gnom-Hub): `docs/capability-interface.md` + contract `docs/capability-contract-v1.md` (4AP-CAP-1), `#70`. Issue/Verify/Inspect/Revoke only. Not a super-protocol. MCP is not the security boundary. 4AllPass knows no Tollgate policies; Tollgate knows no vault contents; Gnom-Hub knows no secrets.
 - Auto-categorize hosting / Plesk / mail / IP from clipboard (ingest helper; still `#59`)
 - A paid or “Plus” edition that is extra modules, not a second protocol

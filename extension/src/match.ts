@@ -6,6 +6,7 @@ export interface FillEntry {
   username: string;
   password: string;
   url: string;
+  kind?: string;
   providerId?: string;
   totpSecret?: string;
 }
@@ -107,6 +108,22 @@ export function entriesForPage(entries: FillEntry[], pageUrl: string): FillEntry
     if (!pageSchemeAllowsFill(pageUrl, entry.url)) return false;
     if (entry.url && hostMatch(pageHost, entry.url)) return true;
     return providerMatch(pageUrl, entry);
+  });
+}
+
+/**
+ * API-key suggestion: only `kind: "api"` rows whose stored URL (or tag)
+ * resolves to this provider. A GitHub login password is not an OpenAI key.
+ */
+export function entriesForProvider(entries: FillEntry[], providerId: string): FillEntry[] {
+  if (!providerId) return [];
+  return entries.filter((entry) => {
+    if (entry.kind !== "api") return false;
+    if (entry.url) {
+      const stored = resolveProvider(entry.url);
+      return stored.providerId === providerId && stored.confidence >= PROVIDER_FILL_MIN;
+    }
+    return Boolean(entry.providerId && entry.providerId === providerId);
   });
 }
 

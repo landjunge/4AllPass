@@ -9,7 +9,7 @@
 
 1. **Supply-Chain** – Phasen 1–3 auf `main` (2026-08-28). Pinning, CI-Audits, Crypto-Allowlist, SBOM. Private Registry bleibt offen.
 2. **Code-Hygiene** – completed 2026-08-28. Nicht mehr in der offenen Reihenfolge.
-3. **Secret Access Layer vorbereiten** (jetzt, nicht MAIP) – raw-secret semantics, mediated access interface, policy boundary. Spec: `docs/secret-access-layer.md`. Was heute läuft: `docs/security-boundary.md` §7 und `docs/local-access-broker.md`.
+3. **Secret Access Layer vorbereiten** (jetzt, nicht MAIP) – A+B im Code: `detectSetup` fragt, Extension füllt nur nach Klick. Raw-secret semantics, mediated interface, policy. C–F (Broker-Identität, Capabilities) offen. Spec: `docs/secret-access-layer.md`. Was heute läuft: `docs/security-boundary.md` §7 und `docs/local-access-broker.md`.
 4. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
 
 **Später (nicht jetzt):** MAIP-Implementierung – kryptografische Agent-Identität, Enrollment, signierte Requests, Revocation. Spec: `docs/specs/maip-v0.1.md` (Experimental Draft). `docs/architecture/agent-access.md` bleibt Proposed.
@@ -71,7 +71,7 @@ Autofill V1 nicht weiter auf Verdacht ausbauen. Spec bleibt `docs/autofill-v1.md
 |---|---|---|
 | Supply-Chain | `docs/supply-chain-security.md` | Phasen 1–3 auf `main` 2026-08-28. Private Registry bleibt offen. |
 | Code-Hygiene | dieses Dokument §1b | ☑ 2026-08-28 |
-| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` | raw-secret / mediated interface / policy; MAIP später |
+| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` | A+B detect/ask 2026-08-28; mediated/policy; MAIP später |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |

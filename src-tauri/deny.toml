@@ -1,0 +1,48 @@
+# Supply-chain Phase 1. Authority: docs/supply-chain-security.md.
+# Unmaintained gtk3-rs is the current Tauri 2 Linux webview, not a vault crate.
+
+[graph]
+all-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+# gtk3-rs + rust-unic are unmaintained transitives of Tauri 2's Linux webview
+# and urlpattern. cargo audit reports them as warnings. Not vault crates.
+unmaintained = "workspace"
+# glib RUSTSEC-2024-0429 is ignored in .cargo/audit.toml (not currently in the
+# advisory db match for this lockfile). When it returns, cargo audit stays green.
+
+[licenses]
+version = 2
+confidence-threshold = 0.8
+unused-allowed-license = "allow"
+private = { ignore = true }
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "OpenSSL",
+    "CC0-1.0",
+    "BSL-1.0",
+    "0BSD",
+    "MIT-0",
+    "Unlicense",
+    "NCSA",
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

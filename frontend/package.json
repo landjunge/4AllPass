@@ -22,11 +22,11 @@
     "@4allpass/crypto": "*",
     "@4allpass/providers": "*",
     "@4allpass/webauthn": "*",
-    "@tauri-apps/api": "^2.9.0",
-    "@tauri-apps/plugin-autostart": "^2.5.1",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "zxcvbn": "^4.4.2"
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/plugin-autostart": "2.5.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zxcvbn": "4.4.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

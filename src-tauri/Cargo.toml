@@ -5,33 +5,34 @@ description = "4AllPass desktop shell — UI is this webview, not a browser tab"
 authors = ["landjunge"]
 edition = "2021"
 license = "UNLICENSED"
+publish = false
 
 [lib]
 name = "fourallpass_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "=2.6.3", features = [] }
 
 # Linux webview (wry → webkit2gtk 2.0 → gtk 0.18 → glib 0.18.5) cannot take
 # glib 0.20 (GHSA-wrw7-89jp-8q8g / RUSTSEC-2024-0429) until Tauri leaves GTK3.
 # We do not call VariantStrIter. macOS/Windows do not link this crate.
 # Track: docs/desktop.md
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
-tauri-plugin-notification = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tauri-plugin-autostart = "2"
-rusqlite = { version = "0.32", features = ["bundled"] }
-aes = "0.8"
-cbc = { version = "0.1", features = ["alloc"] }
-pbkdf2 = "0.12"
-sha1 = "0.10"
-sha2 = "0.10"
-base64 = "0.22"
-zeroize = "1"
-ureq = { version = "2.12.1", default-features = false }
+tauri = { version = "=2.11.5", features = ["tray-icon"] }
+tauri-plugin-notification = "=2.3.3"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+tauri-plugin-autostart = "=2.5.1"
+rusqlite = { version = "=0.32.1", features = ["bundled"] }
+aes = "=0.8.4"
+cbc = { version = "=0.1.2", features = ["alloc"] }
+pbkdf2 = "=0.12.2"
+sha1 = "=0.10.7"
+sha2 = "=0.10.9"
+base64 = "=0.22.1"
+zeroize = "=1.8.2"
+ureq = { version = "=2.12.1", default-features = false }
 
 [profile.release]
 codegen-units = 1

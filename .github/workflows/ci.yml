@@ -36,6 +36,29 @@ jobs:
       - name: npm audit (high+)
         run: npm audit --audit-level=high
 
+  rust-supply-chain:
+    name: Cargo lock + audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
+      - name: Lockfile matches Cargo.toml
+        run: cargo fetch --locked
+      - name: cargo audit
+        run: cargo audit
+      - name: cargo deny
+        run: cargo deny check
+
   desktop-stall:
     name: Desktop sleep stall
     runs-on: ubuntu-latest

@@ -35,8 +35,8 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 
 **Definition of Done für diesen Plan:**
 
-- [ ] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
-- [ ] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
+- [x] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
+- [x] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
 - [ ] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
 - [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
 - [ ] Checkliste §6 ist aktuell.
@@ -155,17 +155,17 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 | Regel | Status | Notiz |
 |---|---|---|
-| Cargo.lock committed + `--locked` in CI | ☐ offen | |
-| package-lock.json + `npm ci` | ☐ offen | |
-| Python-Requirements gepinnt | ☐ offen | |
-| `cargo audit` / `cargo deny` in CI | ☐ offen | |
-| `npm audit` in CI | ☐ offen | |
-| `pip-audit` in CI | ☐ offen | |
-| SBOM bei jedem Release | ☐ offen | |
-| Crypto-Kern: keine Netzwerk-/UI-Deps | ☐ prüfen | `packages/crypto` auditieren |
-| Vendoring für kritischste Deps | ☐ offen | Argon2? |
+| Cargo.lock committed + `--locked` in CI | ☑ 2026-08-28 | `cargo fetch --locked` in `ci.yml` + `desktop.yml`. Direct deps in `src-tauri/Cargo.toml` are `=x.y.z`. |
+| package-lock.json + `npm ci` | ☑ 2026-08-28 | CI already `npm ci`. Runtime deps exact (no `^`/`~`). Workspace `*` stays internal. |
+| Python-Requirements gepinnt | ☑ 2026-08-28 | `backend/requirements.txt` and `requirements-dev.txt` use `==`. |
+| `cargo audit` / `cargo deny` in CI | ☑ 2026-08-28 | Job `Cargo lock + audit`. Unmaintained gtk3-rs / rust-unic are Tauri 2 transitives (warnings, not CI-fail). |
+| `npm audit` in CI | ☑ 2026-08-28 | `npm audit --audit-level=high` already on Node job. 0 high+ today. |
+| `pip-audit` in CI | ☑ 2026-08-28 | `pip-audit -r backend/requirements.txt` already on Python job. |
+| SBOM bei jedem Release | ☐ offen | Phase 3 |
+| Crypto-Kern: keine Netzwerk-/UI-Deps | ☐ prüfen | Phase 2: `packages/crypto` auditieren |
+| Vendoring für kritischste Deps | ☐ offen | Argon2? Phase 2 |
 | Private Registry für eigene Pakete | ☐ offen | |
-| Incident-Response-Runbook | ☐ offen | |
+| Incident-Response-Runbook | ☐ offen | Phase 3 |
 
 ---
 

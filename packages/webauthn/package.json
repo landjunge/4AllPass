@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@4allpass/crypto": "*",
-    "@noble/hashes": "^2.3.0"
+    "@noble/hashes": "2.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

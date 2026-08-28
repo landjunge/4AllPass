@@ -372,6 +372,14 @@ a duplicate-entry injection as a sync glitch. Everything reached through
   counts live inside the sealed plaintext — but that is exactly the invariant a v2 could
   break by accident, so it is now written down in `crypto-protocol.md` §8.2.
 
+### F-24 — Unmaintained GTK3 / rust-unic transitives · **info** · accepted
+
+`cargo audit` lists 16 **unmaintained** warnings (gtk-rs 0.18, `proc-macro-error`,
+`unic-*`). They come from Tauri 2's Linux webview and `urlpattern`, not from
+`packages/crypto`. No safe bump exists until Tauri leaves GTK3. CI fails on
+yanked/vulnerability, not on those warnings. See `docs/desktop.md` (glib) and
+`src-tauri/deny.toml`.
+
 What that pass probed and found sound is worth recording too: nonce uniqueness over
 20 000 seals, prefix-freedom of all eleven AAD builders, the manifest parser against
 length-field overflow, unbounded counts, truncation, invalid and overlong UTF-8, and a

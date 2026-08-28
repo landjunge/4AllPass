@@ -45,6 +45,9 @@ jobs:
         with:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
+      - name: Lockfile matches Cargo.toml
+        run: cargo fetch --locked
+        working-directory: src-tauri
       - name: Linux WebKit
         if: runner.os == 'Linux'
         run: |

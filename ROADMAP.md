@@ -56,7 +56,7 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 | Punkt | Status |
 |---|---|
 | `lib.rs` Modularisierung | ☐ offen |
-| `Cargo.toml` Pinning | ☐ offen |
+| `Cargo.toml` Pinning | ☑ 2026-08-28 | `=x.y.z` + `cargo fetch --locked` in CI |
 | Plattform-Abstraktion (ps/lsof) | ☐ offen |
 
 ---
@@ -65,7 +65,7 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 
 | Plan | Datei | Status |
 |---|---|---|
-| Supply-Chain | `docs/supply-chain-security.md` | offen – jetzt |
+| Supply-Chain | `docs/supply-chain-security.md` | Phase 1 auf `main` 2026-08-28 (pin + CI audits). Phase 2–3 offen |
 | Code-Hygiene | dieses Dokument §1b | offen – nach Supply-Chain |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` | offen – nach Supply-Chain |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |

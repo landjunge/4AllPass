@@ -287,7 +287,7 @@ Dasselbe wie heute Self-host: FastAPI lagert **nur Chiffretext**. Client verschl
 | `4allpass.netzwerkpunkt.de` (oder ein Pfad darauf) als Storage-URL | 4allpass.net |
 | Beweis: zweites Gerät öffnet denselben Tresor | S3-Picker, Managed-SKU, Website = Vault |
 
-Reihenfolge: Desktop A lokal ist auf `main`. Mode B: Client-Feld **Eigener Server** + `deploy/` für `vault.netzwerkpunkt.de`. Landing `4allpass.netzwerkpunkt.de` bleibt ohne Tresor. DNS/SSH auf dem VPS sind noch Host-Arbeit. Kein Hosted-Billing, kein `ProviderEncryptionKey`.
+Reihenfolge: Desktop A lokal ist auf `main`. Mode B: Client-Feld **Eigener Server** + `deploy/LAYOUT.md` (`vault.4allpass.netzwerkpunkt.de`, nicht die Landing). DNS/SSH auf dem VPS sind noch Host-Arbeit. Kein Hosted-Billing, kein `ProviderEncryptionKey`.
 
 ### Mobile (nach VServer-Sync)
 

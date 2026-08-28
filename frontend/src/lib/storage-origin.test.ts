@@ -4,7 +4,10 @@ import { normalizeStorageOrigin } from "./storage-origin.ts";
 
 describe("normalizeStorageOrigin", () => {
   it("accepts https hosts without a path", () => {
-    assert.equal(normalizeStorageOrigin("https://vault.netzwerkpunkt.de/"), "https://vault.netzwerkpunkt.de");
+    assert.equal(
+      normalizeStorageOrigin("https://vault.4allpass.netzwerkpunkt.de/"),
+      "https://vault.4allpass.netzwerkpunkt.de",
+    );
   });
 
   it("allows http only on loopback", () => {

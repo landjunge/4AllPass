@@ -13,8 +13,9 @@ netzwerkpunkt.de              ← Marke, Portfolio, Hub
   ├── /gnom-hub-v1
   └── …
 
-4allpass.netzwerkpunkt.de     ← Produkt-Landing (Subdomain)
-tollgate.netzwerkpunkt.de     ← analog
+4allpass.netzwerkpunkt.de          ← Produkt-Landing (static, no /api)
+vault.4allpass.netzwerkpunkt.de    ← Vault endpoint (ciphertext only)
+tollgate.netzwerkpunkt.de          ← analog; own tree under /srv/netzwerkpunkt/tollgate
 …
 
 github.com/landjunge/…        ← Source
@@ -30,6 +31,7 @@ github.com/landjunge/…        ← Source
 | **Marke / Portfolio** | `https://netzwerkpunkt.de/` |
 | **Hub-Eintrag** | `https://netzwerkpunkt.de/4allpass` |
 | **Produkt-Landing** | `https://4allpass.netzwerkpunkt.de/` |
+| **Vault endpoint** | `https://vault.4allpass.netzwerkpunkt.de/` — not the landing origin |
 | Doku-Spiegel | `https://landjunge.github.io/4AllPass/` |
 | Source / Releases | `https://github.com/landjunge/4AllPass` |
 

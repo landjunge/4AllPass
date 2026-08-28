@@ -13,6 +13,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | Where is each surface on screen? | [ui-map.md](ui-map.md) |
 | What does the running software **enforce**? | [security-boundary.md](security-boundary.md) |
 | How is the vault stored and synced? | [vault-protocol.md](vault-protocol.md), [vault-storage.md](vault-storage.md) |
+| How are tools isolated on the VPS? | [../deploy/LAYOUT.md](../deploy/LAYOUT.md) |
 | How do agents access secrets **today**? | [security-boundary.md](security-boundary.md) §7, [local-access-broker.md](local-access-broker.md) |
 | How should agents access secrets **later**? | [architecture/agent-access.md](architecture/agent-access.md), [secret-access-layer.md](secret-access-layer.md) |
 | What is MAIP? | [specs/maip-v0.1.md](specs/maip-v0.1.md) — experimental draft, **not implemented** |

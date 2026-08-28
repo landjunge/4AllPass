@@ -103,7 +103,7 @@ export function SettingsPanel(): ReactNode {
           <input
             type="url"
             autoComplete="off"
-            placeholder="https://vault.netzwerkpunkt.de"
+            placeholder="https://vault.4allpass.netzwerkpunkt.de"
             value={originDraft}
             onChange={(event) => setOriginDraft(event.target.value)}
             data-testid="storage-origin"

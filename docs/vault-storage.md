@@ -156,7 +156,7 @@ Only encrypted snapshots land there. Classic self-hosting.
 
 **Today:** FastAPI + Postgres exists (`docker-compose`, `profile=server`). The PWA/Desktop can set **Eigener Server** (`4allpass.storage-origin`) to an HTTPS host. Same `/api/v1`. Two browser profiles against that host is the second-device proof (`frontend/e2e/two-device.spec.ts`).
 
-VPS layout: marketing stays `https://4allpass.netzwerkpunkt.de/` (no `/api`). Vault endpoint is a **separate origin** `https://vault.netzwerkpunkt.de` — compose + nginx in `deploy/`. Needs DNS A to the VPS and SSH on the host (this repo has no deploy key).
+VPS layout: [`deploy/LAYOUT.md`](../deploy/LAYOUT.md). Landing `https://4allpass.netzwerkpunkt.de/` is static and returns 404 for `/api`. Vault is `https://vault.4allpass.netzwerkpunkt.de` (own compose project, own ports). Tollgate / Gnom-Hub get sibling trees under `/srv/netzwerkpunkt/`, not this compose. Needs DNS + SSH on the host.
 
 ### 3. Managed hosting (Mode C)
 

@@ -1,6 +1,9 @@
-# Vault endpoint (Mode B). Not the marketing site.
+# Vault endpoint (Mode B). Project name: 4allpass-vault
+# Lives under /srv/netzwerkpunkt/4allpass/vault — not the landing tree.
 # Bind only loopback; TLS stays on the host nginx.
-# Copy deploy/env.example to deploy/.env and set a real session secret.
+# Copy deploy/env.example to .env and set a real session secret.
+
+name: 4allpass-vault
 
 services:
   postgres:
@@ -39,8 +42,8 @@ services:
       FOURALLPASS_REDIS_URL: redis://redis:6379/0
       FOURALLPASS_SESSION_SECRET: ${FOURALLPASS_SESSION_SECRET}
       FOURALLPASS_SESSION_BACKEND: redis
-      FOURALLPASS_WEBAUTHN_RP_ID: ${FOURALLPASS_WEBAUTHN_RP_ID:-vault.netzwerkpunkt.de}
-      FOURALLPASS_CORS_ORIGINS: ${FOURALLPASS_CORS_ORIGINS:-["https://vault.netzwerkpunkt.de","https://tauri.localhost","http://tauri.localhost"]}
+      FOURALLPASS_WEBAUTHN_RP_ID: ${FOURALLPASS_WEBAUTHN_RP_ID:-vault.4allpass.netzwerkpunkt.de}
+      FOURALLPASS_CORS_ORIGINS: ${FOURALLPASS_CORS_ORIGINS:-["https://vault.4allpass.netzwerkpunkt.de","https://tauri.localhost","http://tauri.localhost"]}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

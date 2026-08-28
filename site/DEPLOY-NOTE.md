@@ -8,9 +8,11 @@
 
 ## Subdomain `4allpass.netzwerkpunkt.de` (VPS)
 
-- Datei: `hub-4allpass.html` → als Document-Root `index.html`
+- Datei: `hub-4allpass.html` → `/srv/netzwerkpunkt/4allpass/landing/index.html`
+- nginx: `deploy/nginx-landing.conf` — **kein** `/api`
 - Gleicher Inhalt kann `netzwerkpunkt.de/4allpass` bedienen
 - **Canonical:** `https://4allpass.netzwerkpunkt.de/`
+- Vault is a **different** origin: `vault.4allpass.netzwerkpunkt.de` — [`../deploy/LAYOUT.md`](../deploy/LAYOUT.md)
 
 ## Domain später
 

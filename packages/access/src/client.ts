@@ -23,6 +23,8 @@ export interface AccessRequestInput {
   capabilities?: readonly string[];
   credential?: string;
   application?: string;
+  /** Omitted = v1 raw_secret. `mediated` is sent as asked; policy denies until a proxy exists. */
+  handoff?: "raw_secret" | "mediated";
 }
 
 export type AccessResult =
@@ -114,13 +116,14 @@ export function fourAllPass(options: ClientOptions = {}): FourAllPassClient {
     if (!provider) throw new AccessClientError("malformed_request", "provider is required");
     const scope = scopeOf(input);
     const app = (input.application ?? application).trim();
-    const body = {
+    const body: Record<string, unknown> = {
       application: app,
       provider,
       credential: (input.credential ?? "personal").trim() || "personal",
       scope,
       ttl: input.ttl,
     };
+    if (input.handoff) body.handoff = input.handoff;
     let response: Response;
     try {
       response = await fetchImpl(`${base}/v1/access/request`, {

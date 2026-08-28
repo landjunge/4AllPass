@@ -133,6 +133,8 @@ Purpose: workflow execution
 
 Only Allow releases bytes, in-memory.
 
+**v1 interface (2026-08-28):** the request may name `handoff: "raw_secret" | "mediated"`. Omitted = `raw_secret`. `mediated` is denied (`handoff_unavailable`) until a proxy exists. No silent fallback. No env export. No FastAPI grant path. The broker still copies a raw secret after human Allow.
+
 ### Phase D — Application identity
 
 Name the caller as a first-class object: n8n, Claude Code, Gnom-Hub, Terminal, unknown.

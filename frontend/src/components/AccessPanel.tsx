@@ -88,7 +88,7 @@ export function AccessPanel({
     setPending(null);
     setFlash("Erlaubt / ACCESS GRANTED");
     setWhy(
-      "Allow erteilt einen zeitlich begrenzten Grant. Das Passwort bleibt im Tresor. / Allow issues a time-boxed grant. The password stays in the vault.",
+      "Allow übergibt das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück. / Allow hands over the secret (raw_secret). TTL cannot recall a copy.",
     );
     setNowTick(Date.now());
     window.setTimeout(() => setNowTick(Date.now()), (DEMO_TTL_SECONDS + 1) * 1000);
@@ -325,9 +325,10 @@ export function AccessPanel({
             <h2>Ein Programm fragt / Access request</h2>
             <p>
               <strong>{pending.application}</strong> möchte <strong>{pending.provider}</strong>{" "}
-              <code>{pending.scope.join(", ")}</code> für {pending.ttlSeconds} Sekunden. Das
-              Passwort bleibt im Tresor. / requests {pending.provider} for {pending.ttlSeconds}{" "}
-              seconds. The password stays in the vault.
+              <code>{pending.scope.join(", ")}</code> für {pending.ttlSeconds} Sekunden. Nach
+              Erlauben bekommt das Programm das Secret (raw_secret). Die Zeitbegrenzung holt eine
+              Kopie nicht zurück. / requests {pending.provider} for {pending.ttlSeconds} seconds.
+              After Allow the program receives the secret (raw_secret). TTL cannot recall a copy.
             </p>
             <p className="hint" data-testid="access-why-pending">
               Warum / Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}

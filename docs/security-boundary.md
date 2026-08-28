@@ -376,10 +376,12 @@ dequeue the next grant. The unlocked UI aborts its poll fetch on unmount.
 `GET /api/v1/local/broker` returns that pairing token only after local storage
 auth. The **server** profile does not mount these routes. Grants live in page
 memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):
-unknown app DENY, missing scope DENY. `decision: "allow"` means the request is
-eligible for a **human** Allow — it is not auto-handoff. Core grants have no
-secret; the unlocked UI still attaches `material` for the existing broker
-response. Unknown applications are denied. Audit rows omit the secret.
+unknown app DENY, missing scope DENY. `handoff: "mediated"` is **denied**
+(`handoff_unavailable`) — v1 has no proxy that uses the secret on the agent's
+behalf. Omitted or `raw_secret` stays the n8n path. `decision: "allow"` means
+the request is eligible for a **human** Allow — it is not auto-handoff. Core
+grants have no secret; the unlocked UI still attaches `material` for the
+existing broker response. Unknown applications are denied. Audit rows omit the secret.
 **PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata,
 not authentication. The pairing token proves *this process knows the secret*,
 not *this is n8n*. Treat it as the **local root-of-access for agents**

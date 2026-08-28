@@ -178,7 +178,9 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
               <strong>{pending.request.application}</strong> möchte{" "}
               <strong>{pending.request.provider}</strong>{" "}
               <code>{pending.request.scope.join(", ")}</code> für {pending.request.ttlSeconds}{" "}
-              Sekunden. Das Passwort bleibt im Tresor.
+              Sekunden. Nach Erlauben bekommt das Programm das Secret (raw_secret). Die
+              Zeitbegrenzung holt eine Kopie nicht zurück. / After Allow the program receives the
+              secret (raw_secret). TTL cannot recall a copy.
             </p>
             <p className="hint">
               Anfrage auf diesem Rechner, nicht über den Server. / Request on this computer, not

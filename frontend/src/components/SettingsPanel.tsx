@@ -9,12 +9,17 @@ import {
   UNINSTALL_HINT,
 } from "../lib/desktop-settings.ts";
 import { useCopy } from "../state/copy-mode.tsx";
+import { useApp } from "../state/app-state.tsx";
+import { readStorageOrigin, writeStorageOrigin } from "../lib/storage-origin.ts";
 
 export function SettingsPanel(): ReactNode {
   const desktop = isTauriShell();
+  const { signOut } = useApp();
   const { plain, setPlain, t } = useCopy();
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [originDraft, setOriginDraft] = useState(() => readStorageOrigin() ?? "");
+  const [originError, setOriginError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!desktop) return;
@@ -77,6 +82,44 @@ export function SettingsPanel(): ReactNode {
       <p className="hint" data-testid="uninstall-hint">
         {UNINSTALL_HINT}
       </p>
+      <form
+        className="stack-actions"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setOriginError(null);
+          try {
+            const origin = writeStorageOrigin(originDraft.trim() || null);
+            void origin;
+            void signOut().finally(() => {
+              window.location.reload();
+            });
+          } catch (error) {
+            setOriginError(error instanceof Error ? error.message : String(error));
+          }
+        }}
+      >
+        <label>
+          {t({ de: "Eigener Server (nur Chiffretext)", en: "Your server (ciphertext only)" })}
+          <input
+            type="url"
+            autoComplete="off"
+            placeholder="https://vault.netzwerkpunkt.de"
+            value={originDraft}
+            onChange={(event) => setOriginDraft(event.target.value)}
+            data-testid="storage-origin"
+          />
+        </label>
+        <p className="hint" data-testid="storage-origin-hint">
+          {t({
+            de: "Leer = dieser Ursprung. Die Produktseite 4allpass.netzwerkpunkt.de ist kein Tresor.",
+            en: "Blank = this origin. The product page 4allpass.netzwerkpunkt.de is not a vault.",
+          })}
+        </p>
+        {originError ? <p className="error-text">{originError}</p> : null}
+        <button type="submit" data-testid="storage-origin-save">
+          {t({ de: "Server merken", en: "Save server" })}
+        </button>
+      </form>
     </section>
   );
 }

@@ -16,6 +16,7 @@ import {
   type ReactNode,
 } from "react";
 import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
+import { readStorageOrigin } from "../lib/storage-origin.ts";
 import { clearCopiedSecret } from "../lib/clipboard.ts";
 import { openSharePackage } from "../lib/share.ts";
 import { deviceId } from "../lib/device-identity.ts";
@@ -147,7 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         setLocalMode(local);
         // Browser on :8788 keeps the silent local session (e2e / npm run app).
         // The desktop window shows Konto anlegen first — no auto-login.
-        if (local && !getToken() && !isTauriShell()) {
+        if (local && !getToken() && !isTauriShell() && !readStorageOrigin()) {
           const session = await api.localSession();
           setEmail(session.email);
           await loadVaults();

@@ -154,7 +154,9 @@ https://vault.example.com
 
 Only encrypted snapshots land there. Classic self-hosting.
 
-**Today:** FastAPI + Postgres exists (`docker-compose`, `profile=server`). The Desktop app does **not** yet expose a URL field. The PWA talks to the origin that serves it. Same snapshot API as local.
+**Today:** FastAPI + Postgres exists (`docker-compose`, `profile=server`). The PWA/Desktop can set **Eigener Server** (`4allpass.storage-origin`) to an HTTPS host. Same `/api/v1`. Two browser profiles against that host is the second-device proof (`frontend/e2e/two-device.spec.ts`).
+
+VPS layout: marketing stays `https://4allpass.netzwerkpunkt.de/` (no `/api`). Vault endpoint is a **separate origin** `https://vault.netzwerkpunkt.de` — compose + nginx in `deploy/`. Needs DNS A to the VPS and SSH on the host (this repo has no deploy key).
 
 ### 3. Managed hosting (Mode C)
 
@@ -193,7 +195,7 @@ Underneath, always:
 
 > Der Server erhält ausschließlich verschlüsselte Daten. / The server receives encrypted data only.
 
-That picker is **not built**. Do not add it in a drive-by UI PR.
+This-device vs own-server is in Settings. Managed-host SKU is still not offered.
 
 ---
 

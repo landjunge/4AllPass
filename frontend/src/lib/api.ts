@@ -13,14 +13,25 @@ import type {
 } from "@4allpass/crypto";
 
 import { deviceId } from "./device-identity.ts";
+import { readStorageOrigin } from "./storage-origin.ts";
 
 const SIDECAR_API = "http://127.0.0.1:8788/api/v1";
 
 function apiBase(): string {
+  const remote = typeof window !== "undefined" ? readStorageOrigin() : null;
+  if (remote) return `${remote}/api/v1`;
   if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
     return SIDECAR_API;
   }
   return "/api/v1";
+}
+
+function useSidecarHttp(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "__TAURI_INTERNALS__" in window &&
+    !readStorageOrigin()
+  );
 }
 const TOKEN_KEY = "4allpass.session";
 
@@ -133,7 +144,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   headers["X-Device-Id"] = deviceId();
   let status: number;
   let text: string;
-  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+  if (useSidecarHttp()) {
     const { invoke } = await import("@tauri-apps/api/core");
     const result = await invoke<{ status: number; body: string }>("sidecar_http", {
       method,

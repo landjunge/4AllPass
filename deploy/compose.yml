@@ -1,0 +1,64 @@
+# Vault endpoint (Mode B). Not the marketing site.
+# Bind only loopback; TLS stays on the host nginx.
+# Copy deploy/env.example to deploy/.env and set a real session secret.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fourallpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fourallpass
+    expose:
+      - "5432"
+    volumes:
+      - fourallpass-vault-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fourallpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      FOURALLPASS_PROFILE: server
+      FOURALLPASS_ENVIRONMENT: production
+      FOURALLPASS_DATABASE_URL: postgresql+asyncpg://fourallpass:${POSTGRES_PASSWORD}@postgres:5432/fourallpass
+      FOURALLPASS_REDIS_URL: redis://redis:6379/0
+      FOURALLPASS_SESSION_SECRET: ${FOURALLPASS_SESSION_SECRET}
+      FOURALLPASS_SESSION_BACKEND: redis
+      FOURALLPASS_WEBAUTHN_RP_ID: ${FOURALLPASS_WEBAUTHN_RP_ID:-vault.netzwerkpunkt.de}
+      FOURALLPASS_CORS_ORIGINS: ${FOURALLPASS_CORS_ORIGINS:-["https://vault.netzwerkpunkt.de","https://tauri.localhost","http://tauri.localhost"]}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  fourallpass-vault-pg:

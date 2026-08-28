@@ -20,3 +20,11 @@ und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 - Typecheck + Tests im frontend-Workspace vor dem Commit.
 - Keine Secrets im Diff.
 - Immer committen und auf den aktuellen Branch pushen. Nicht auf Nachfrage warten.
+
+## Websites (dieser Worktree)
+
+Landing, Hub, HTML/CSS, PWA-Chrome: zuerst
+`.grok/skills/frontend-design/SKILL.md`, dann
+`.grok/skills/web-design-guidelines/SKILL.md`.
+React/PWA: `.grok/skills/vercel-react-best-practices/SKILL.md`.
+Produktgrenzen: `.grok/skills/netzwerkpunkt-web/SKILL.md` und `deploy/LAYOUT.md`.

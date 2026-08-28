@@ -114,7 +114,7 @@ From `docs/security-boundary.md` §6 — treat as known, not surprises:
 5. Chromium + Firefox + macOS Safari autofill; no iOS/Android Password AutoFill. Item-share is a file (`docs/sharing.md`), not wrap-to-foreign-device.
 6. `cose_verified` is ceremony integrity (`fmt=none` + assertion). It is not hardware attestation and not PRF.
 7. No post-quantum KEM in v1. Vault wrapping is AES-256-GCM. See `docs/post-quantum-roadmap.md`.
-8. Supply-chain Phase 1–2 are on `main` (pin, `npm ci`/`--locked`, audits, crypto allowlist). SBOM per release is still Phase 3 — see `docs/supply-chain-security.md` checklist.
+8. Supply-chain Phases 1–3 are on `main` (pin, audits, crypto allowlist, CycloneDX SBOM on CI + `v*` releases). See `docs/supply-chain-security.md` checklist.
 
 ---
 

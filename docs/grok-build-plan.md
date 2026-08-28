@@ -33,9 +33,9 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 - [x] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
 - [x] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
 - [x] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
-- [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
-- [ ] Checkliste §6 ist aktuell.
-- [ ] Findings (falls vorhanden) in `docs/reviews/attack-vectors.md` dokumentiert.
+- [x] SBOM-Erzeugung ist im Release-Workflow vorhanden.
+- [x] Checkliste §6 ist aktuell.
+- [x] Findings (falls vorhanden) in `docs/reviews/attack-vectors.md` dokumentiert.
 
 **Nicht tun:**
 
@@ -52,7 +52,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 | Plan | Datei | Status |
 |---|---|---|
-| Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | Phase 1 auf `main`; Phase 2–3 offen |
+| Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | Phasen 1–3 auf `main`; Private Registry offen |
 | Code-Hygiene | `ROADMAP.md` §1b | offen – nach Supply-Chain, vor Phase 4 |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | offen – nach Supply-Chain, vor Mobile |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |

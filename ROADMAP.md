@@ -7,7 +7,7 @@
 
 ## 0. Sofort (Grok Build, kein Warten)
 
-1. **Supply-Chain** – `docs/supply-chain-security.md` Phasen 1–3. Pinning, CI-Audits, SBOM. Kein PR, der CI rot macht.
+1. **Supply-Chain** – Phasen 1–3 auf `main` (2026-08-28). Pinning, CI-Audits, Crypto-Allowlist, SBOM. Private Registry bleibt offen.
 2. **Phase 4 – Secret Access Layer** – `docs/secret-access-layer.md` + `docs/architecture/agent-access.md`. Signierte Tokens, kryptografische Agent-Identität, Provider-Templates. Erst nach grüner Supply-Chain.
 3. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
 
@@ -65,7 +65,7 @@ P0  Install + Import + Provider          (Code auf main; Fremden-Mac-Test offen)
 
 | Plan | Datei | Status |
 |---|---|---|
-| Supply-Chain | `docs/supply-chain-security.md` | Phase 1 auf `main` 2026-08-28 (pin + CI audits). Phase 2–3 offen |
+| Supply-Chain | `docs/supply-chain-security.md` | Phasen 1–3 auf `main` 2026-08-28. Private Registry bleibt offen. |
 | Code-Hygiene | dieses Dokument §1b | offen – nach Supply-Chain |
 | Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` | offen – nach Supply-Chain |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |

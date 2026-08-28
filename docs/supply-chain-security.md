@@ -1,6 +1,6 @@
 # Supply-Chain-Sicherheit
 
-> Status: **offen – jetzt umsetzen.** Diese Regeln gelten für **alle** neuen und bestehenden Abhängigkeiten – Rust (Cargo), JavaScript (npm), Python (backend), Tauri, Mobile (Kotlin/Swift).
+> Status: **Phasen 1–3 auf `main` (2026-08-28).** Diese Regeln gelten für **alle** neuen und bestehenden Abhängigkeiten – Rust (Cargo), JavaScript (npm), Python (backend), Tauri, Mobile (Kotlin/Swift).
 >
 > **Warum das hier steht:** 4AllPass ist ein Tresor. Jede Bibliothek, die du einziehst, ist ein Angriffsvektor. Ein kompromittierter Maintainer, ein Dependency-Confusion-Angriff, ein bösartiger Transitive-Dep – und fremder Code läuft in deinem Vault. Das ist kein theoretisches Risiko, das ist die häufigste Angriffsform der letzten Jahre.
 >
@@ -38,9 +38,9 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 - [x] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
 - [x] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
 - [x] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
-- [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
-- [ ] Checkliste §6 ist aktuell.
-- [ ] Ein kurzer Eintrag in `docs/reviews/attack-vectors.md` (oder neu angelegt), falls Findings aufgetaucht sind.
+- [x] SBOM-Erzeugung ist im Release-Workflow vorhanden.
+- [x] Checkliste §6 ist aktuell.
+- [x] Ein kurzer Eintrag in `docs/reviews/attack-vectors.md` (oder neu angelegt), falls Findings aufgetaucht sind.
 
 **Nicht tun:**
 
@@ -141,6 +141,11 @@ SBOM-Artefakte werden als Build-Artefakt hochgeladen, nicht committed (sie ände
 
 ## 5. Incident-Response für kompromittierte Deps
 
+SBOMs: CI-Artefakt `sbom` auf jedem Push/PR (`sbom-npm.cdx.json`, `sbom-cargo.cdx.json`,
+`sbom-python.cdx.json`). Dieselben Dateien hängen an GitHub Releases (`v*`). Lokal:
+`bash scripts/generate-sbom.sh sbom` (braucht `cargo cyclonedx` und `pip-audit` für
+Cargo/Python). Nicht committen.
+
 Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 1. **Sofort:** CI rot schalten für dieses Paket (Pin auf letzte gute Version).
@@ -161,11 +166,11 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 | `cargo audit` / `cargo deny` in CI | ☑ 2026-08-28 | Job `Cargo lock + audit`. Unmaintained gtk3-rs / rust-unic are Tauri 2 transitives (warnings, not CI-fail). |
 | `npm audit` in CI | ☑ 2026-08-28 | `npm audit --audit-level=high` already on Node job. 0 high+ today. |
 | `pip-audit` in CI | ☑ 2026-08-28 | `pip-audit -r backend/requirements.txt` already on Python job. |
-| SBOM bei jedem Release | ☐ offen | Phase 3 |
+| SBOM bei jedem Release | ☑ 2026-08-28 | CI-Artefakt + `desktop.yml` Release. `scripts/generate-sbom.sh`. |
 | Crypto-Kern: keine Netzwerk-/UI-Deps | ☑ 2026-08-28 | Allowlist `@noble/ciphers` + `@noble/hashes`. Test + ADR-014. |
 | Vendoring für kritischste Deps | ☑ 2026-08-28 | Nicht jetzt. Noble ist leaf. ADR-014. |
 | Private Registry für eigene Pakete | ☐ offen | |
-| Incident-Response-Runbook | ☐ offen | Phase 3 |
+| Incident-Response-Runbook | ☑ 2026-08-28 | Dieses Dokument §5. |
 
 ---
 

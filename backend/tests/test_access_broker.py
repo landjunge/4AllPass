@@ -92,6 +92,57 @@ async def test_wrong_pairing_token_is_401(local_app):
         assert res.status_code == 401
 
 
+async def test_abandoned_poller_does_not_eat_the_next_grant(local_app):
+    """A closed tab must not dequeue the next POST /v1/access/request."""
+    runtime, app = local_app
+    await _create_schema()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=runtime.origin) as client:
+        auth = {"Authorization": f"Bearer {runtime.broker_token}"}
+        stale = asyncio.create_task(
+            client.get("/v1/broker/poll", headers={**auth, "Origin": UI_ORIGIN}),
+        )
+        await asyncio.sleep(0.1)
+        stale.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await stale
+        await asyncio.sleep(0.15)
+
+        async def poll():
+            return await client.get("/v1/broker/poll", headers={**auth, "Origin": UI_ORIGIN})
+
+        poll_task = asyncio.create_task(poll())
+        await asyncio.sleep(0.05)
+        grant_task = asyncio.create_task(
+            client.post(
+                "/v1/access/request",
+                headers=auth,
+                json={
+                    "application": "n8n",
+                    "provider": "GitHub",
+                    "scope": ["repository.read"],
+                    "ttl": 15,
+                },
+            )
+        )
+        incoming = await poll_task
+        assert incoming.status_code == 200, incoming.text
+        body = incoming.json()
+        decide = await client.post(
+            "/v1/broker/decide",
+            headers={**auth, "Origin": UI_ORIGIN},
+            json={
+                "v": 1,
+                "id": body["id"],
+                "body": {"status": "approved", "access_token": SECRET, "expires_in": 15},
+            },
+        )
+        assert decide.status_code == 200
+        granted = await grant_task
+        assert granted.json()["status"] == "approved"
+        assert granted.json()["access_token"] == SECRET
+
+
 async def test_allow_flow_does_not_log_secret(local_app, caplog):
     runtime, app = local_app
     await _create_schema()

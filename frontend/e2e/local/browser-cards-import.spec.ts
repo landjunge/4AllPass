@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickAndType, VAULT_PASSWORD } from "../live/actions.ts";
+import { reachUnlockedLocalApp } from "../live/actions.ts";
 
 const SECRET = "hunter2-browser-import-must-not-appear";
 
@@ -24,9 +24,20 @@ async function stubDesktopShell(page: Page): Promise<void> {
         profiles: [{ id: "default-release", name: "default-release", dirName: "Profiles/abcd" }],
       },
     ];
+    const origFetch = window.fetch.bind(window);
     Object.defineProperty(window, "__TAURI_INTERNALS__", {
       value: {
-        invoke: async (cmd: string, args?: { browserId?: string; profileId?: string }) => {
+        invoke: async (
+          cmd: string,
+          args?: {
+            browserId?: string;
+            profileId?: string;
+            method?: string;
+            path?: string;
+            headers?: Record<string, string>;
+            body?: string | null;
+          },
+        ) => {
           if (cmd === "list_browser_profiles") return cards;
           if (cmd === "import_browser_logins") {
             const browserId = args?.browserId ?? "";
@@ -43,6 +54,14 @@ async function stubDesktopShell(page: Page): Promise<void> {
               },
             ];
           }
+          if (cmd === "sidecar_http") {
+            const res = await origFetch(`${location.origin}${args?.path ?? ""}`, {
+              method: args?.method ?? "GET",
+              headers: args?.headers,
+              body: args?.body ?? undefined,
+            });
+            return { status: res.status, body: await res.text() };
+          }
           throw new Error(`unmocked ${cmd}`);
         },
         transformCallback: () => 0,
@@ -53,7 +72,6 @@ async function stubDesktopShell(page: Page): Promise<void> {
     // Desktop shell talks to 127.0.0.1:8788. This e2e sidecar is the Playwright
     // origin, not a pre-bound 8788. Keep the Tauri stub for cards; send API
     // calls to the running local app.
-    const origFetch = window.fetch.bind(window);
     window.fetch = (input, init) => {
       const raw =
         typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -70,12 +88,8 @@ async function stubDesktopShell(page: Page): Promise<void> {
 test("browser-card import review lists host and username, never the password", async ({ page }) => {
   await stubDesktopShell(page);
   await page.goto("/");
-  await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
-  await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);
-  await page.getByTestId("create-vault").click();
-  await page.getByTestId("confirm-kit-stored").click();
-  await page.getByTestId("dismiss-kit").click();
-  await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  await reachUnlockedLocalApp(page);
+  await page.getByTestId("tab-browser").click();
 
   const cards = page.getByTestId("browser-cards");
   await expect(cards).toBeVisible();
@@ -98,6 +112,7 @@ test("browser-card import review lists host and username, never the password", a
   await expect(review).not.toContainText(SECRET);
 
   await page.getByTestId("confirm-import").click();
+  await page.getByTestId("tab-entries").click();
   await expect(page.getByRole("button", { name: /mail\.example/ })).toHaveCount(2);
   await expect(page.locator("body")).not.toContainText(SECRET);
 });

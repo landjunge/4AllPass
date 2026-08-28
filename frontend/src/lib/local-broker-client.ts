@@ -62,8 +62,10 @@ export function connectLocalBroker(url: string, token: string): void {
     return;
   }
   let cancelled = false;
+  const abort = new AbortController();
   stop = () => {
     cancelled = true;
+    abort.abort();
   };
   session = { url: base, token: trimmed };
   status = "live";
@@ -76,6 +78,7 @@ export function connectLocalBroker(url: string, token: string): void {
         const res = await fetch(`${base}/v1/broker/poll`, {
           method: "GET",
           headers: { Authorization: `Bearer ${trimmed}` },
+          signal: abort.signal,
         });
         if (cancelled) return;
         if (res.status === 401 || res.status === 403) {

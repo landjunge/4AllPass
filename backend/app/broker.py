@@ -91,12 +91,20 @@ async def broker_poll(request: Request) -> Response:
         return denied("malformed_request", 401)
     hub.pollers += 1
     try:
-        job = await asyncio.wait_for(hub.queue.get(), timeout=POLL_SECONDS)
-    except asyncio.TimeoutError:
-        return Response(status_code=204, headers={"cache-control": "no-store"})
+        deadline = asyncio.get_running_loop().time() + POLL_SECONDS
+        while True:
+            if await request.is_disconnected():
+                return Response(status_code=204, headers={"cache-control": "no-store"})
+            try:
+                job = hub.queue.get_nowait()
+            except asyncio.QueueEmpty:
+                if asyncio.get_running_loop().time() >= deadline:
+                    return Response(status_code=204, headers={"cache-control": "no-store"})
+                await asyncio.sleep(0.05)
+                continue
+            return JSONResponse(job, headers={"cache-control": "no-store"})
     finally:
         hub.pollers -= 1
-    return JSONResponse(job, headers={"cache-control": "no-store"})
 
 
 @router.post("/v1/broker/decide")

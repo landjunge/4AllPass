@@ -53,6 +53,63 @@ export async function beginCreateVault(page: Page): Promise<void> {
   await expect(page.getByTestId("vault-password")).toBeVisible({ timeout: 60_000 });
 }
 
+async function dismissRecoveryKit(page: Page): Promise<void> {
+  await expect(page.getByTestId("confirm-kit-stored")).toBeVisible({ timeout: 60_000 });
+  await page.getByTestId("confirm-kit-stored").click();
+  await page.getByTestId("dismiss-kit").click();
+}
+
+/**
+ * Local sidecar (shared SQLite, workers:1). After the first vault exists,
+ * later tests see Unlock (`master-password`), not Create (`vault-password`).
+ * The browser-cards Tauri stub sets `__TAURI_INTERNALS__`, so silent
+ * `/auth/local` is skipped and Auth (`auth-submit`) is first.
+ */
+export async function reachUnlockedLocalApp(page: Page): Promise<void> {
+  const auth = page.getByTestId("auth-submit");
+  const createPassword = page.getByTestId("vault-password");
+  const unlockPassword = page.getByTestId("master-password");
+  await expect(auth.or(createPassword).or(unlockPassword)).toBeVisible({ timeout: 60_000 });
+
+  if (await auth.isVisible()) {
+    await clickAndType(page, page.getByLabel("E-mail"), uniqueEmail());
+    await clickAndType(page, page.getByLabel("Account password"), ACCOUNT_PASSWORD);
+    await page.getByTestId("auth-submit").click();
+    const error = page.getByTestId("error-banner");
+    await Promise.race([
+      createPassword.waitFor({ state: "visible" }),
+      unlockPassword.waitFor({ state: "visible" }),
+      error.waitFor({ state: "visible" }),
+    ]);
+    if (await error.isVisible()) {
+      throw new Error(`sign-up failed: ${((await error.textContent()) ?? "").trim()}`);
+    }
+  }
+
+  if (await unlockPassword.isVisible()) {
+    await unlockWithVaultPassword(page);
+    await skipOnboardingWhenItAppears(page);
+    return;
+  }
+
+  await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
+  await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);
+  await page.getByTestId("create-vault").click();
+  await dismissRecoveryKit(page);
+  await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  await skipOnboardingWhenItAppears(page);
+}
+
+async function skipOnboardingWhenItAppears(page: Page): Promise<void> {
+  const skip = page.getByTestId("onboarding-skip");
+  try {
+    await skip.waitFor({ state: "visible", timeout: 8_000 });
+    await skip.click();
+  } catch {
+    // Already on the desk, or this vault skipped the wizard.
+  }
+}
+
 export async function createVaultWithMouse(page: Page): Promise<string> {
   await beginCreateVault(page);
   await clickAndType(page, page.getByLabel("Vault password"), VAULT_PASSWORD);

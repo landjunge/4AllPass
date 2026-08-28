@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { clickAndType, VAULT_PASSWORD } from "../live/actions.ts";
+import { clickAndType, skipOnboardingIfPresent, VAULT_PASSWORD } from "../live/actions.ts";
 import { emptyDraft, type VaultEntry } from "../../src/lib/entries.ts";
 import { buildSharePackage } from "../../src/lib/share.ts";
 
@@ -31,8 +31,8 @@ test("Welcome restore from share file — new recovery key, secret stays in vaul
   writeFileSync(sharePath, built.json);
 
   await page.goto("/");
-  await expect(page.getByTestId("welcome-restore")).toBeVisible();
-  await page.getByTestId("welcome-restore").click();
+  await expect(page.getByTestId("create-back")).toBeVisible();
+  await page.getByTestId("create-back").click();
   await page.getByTestId("restore-file").setInputFiles(sharePath);
   await clickAndType(page, page.getByTestId("restore-share-key"), built.shareKey);
   await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
@@ -45,6 +45,8 @@ test("Welcome restore from share file — new recovery key, secret stays in vaul
   await page.getByRole("checkbox").click();
   await page.getByTestId("dismiss-kit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  await expect(page.getByTestId("onboarding-skip")).toBeVisible();
+  await skipOnboardingIfPresent(page);
   await expect(page.getByText(RESTORED_TITLE)).toBeVisible();
   await expect(page.locator("body")).not.toContainText("ghp_");
 });

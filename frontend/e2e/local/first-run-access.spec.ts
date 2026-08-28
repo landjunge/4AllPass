@@ -1,27 +1,32 @@
 import { expect, test } from "@playwright/test";
-import { clickAndType, VAULT_PASSWORD } from "../live/actions.ts";
+import { clickAndType, reachUnlockedLocalApp, VAULT_PASSWORD } from "../live/actions.ts";
 
 const DEMO_SECRET = "ghp_demo-not-a-real-key";
 
 test("Welcome → vault → Access allow without showing the secret", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page.getByTestId("create-vault")).toBeVisible();
-  await expect(page.getByTestId("create-back")).toBeVisible();
-  await expect(page.getByTestId("account-email")).toHaveCount(0);
+  const create = page.getByTestId("create-vault");
+  const unlock = page.getByTestId("master-password");
+  await expect(create.or(unlock)).toBeVisible();
+  if (await create.isVisible()) {
+    await expect(page.getByTestId("create-back")).toBeVisible();
+    await expect(page.getByTestId("account-email")).toHaveCount(0);
+    await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
+    await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);
+    await page.getByTestId("create-vault").click();
 
-  await clickAndType(page, page.getByTestId("vault-password"), VAULT_PASSWORD);
-  await clickAndType(page, page.getByTestId("vault-password-repeat"), VAULT_PASSWORD);
-  await page.getByTestId("create-vault").click();
-
-  const recoveryKey = (await page.getByTestId("recovery-key").textContent()) ?? "";
-  expect(recoveryKey.replace(/-/g, "")).toHaveLength(55);
-  await expect(page.getByTestId("dismiss-kit")).toBeDisabled();
-  await page.getByTestId("confirm-kit-stored").click();
-  await expect(page.getByTestId("dismiss-kit")).toBeEnabled();
-  await page.getByTestId("dismiss-kit").click();
-  await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
-  const skip = page.getByTestId("onboarding-skip");
-  if (await skip.isVisible().catch(() => false)) await skip.click();
+    const recoveryKey = (await page.getByTestId("recovery-key").textContent()) ?? "";
+    expect(recoveryKey.replace(/-/g, "")).toHaveLength(55);
+    await expect(page.getByTestId("dismiss-kit")).toBeDisabled();
+    await page.getByTestId("confirm-kit-stored").click();
+    await expect(page.getByTestId("dismiss-kit")).toBeEnabled();
+    await page.getByTestId("dismiss-kit").click();
+    await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    const skip = page.getByTestId("onboarding-skip");
+    if (await skip.isVisible().catch(() => false)) await skip.click();
+  } else {
+    await reachUnlockedLocalApp(page);
+  }
 
   await page.getByTestId("tab-settings").click();
   await expect(page.getByTestId("launch-at-login")).toBeDisabled();

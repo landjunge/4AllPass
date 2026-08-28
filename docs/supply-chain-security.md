@@ -37,7 +37,7 @@ Du bist Grok Build. Deine Aufgabe: **Supply-Chain-Sicherheit in 4AllPass sofort 
 
 - [x] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
 - [x] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
-- [ ] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
+- [x] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
 - [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
 - [ ] Checkliste §6 ist aktuell.
 - [ ] Ein kurzer Eintrag in `docs/reviews/attack-vectors.md` (oder neu angelegt), falls Findings aufgetaucht sind.
@@ -100,11 +100,11 @@ Bevor eine neue Abhängigkeit rein darf:
 
 `packages/crypto` ist der heiligste Teil. Hier gelten strengere Regeln:
 
-- [ ] **Keine Netzwerk-Abhängigkeiten.** Der Crypto-Kern darf nichts fetchen, keinen HTTP-Client, keine Telemetrie.
-- [ ] **Keine UI-Abhängigkeiten.** Kein React, kein DOM, kein Styling.
-- [ ] **Keine "Convenience"-Wrapper**, die intern andere Krypto-Libs aufrufen (z. B. kein `bcrypt`-Wrapper um `argon2`).
-- [ ] **Jede neue Dep im Crypto-Kern braucht ein ADR** unter `docs/architecture/adr/` mit Begründung, warum es nicht anders geht.
-- [ ] **Vendoring erwägen:** Für die kritischsten Deps (z. B. die Argon2-Implementierung) kannst du den Quellcode direkt ins Repo legen und aus dem Vendor-Ordner bauen. Dann kontrollierst du den exakten Byte-Stand.
+- [x] **Keine Netzwerk-Abhängigkeiten.** Der Crypto-Kern darf nichts fetchen, keinen HTTP-Client, keine Telemetrie. Gate: `packages/crypto/test/supply-chain.test.ts`.
+- [x] **Keine UI-Abhängigkeiten.** Kein React, kein DOM, kein Styling. `tsconfig` `lib` is `ES2022` only.
+- [x] **Keine "Convenience"-Wrapper**, die intern andere Krypto-Libs aufrufen (z. B. kein `bcrypt`-Wrapper um `argon2`). Argon2id is `@noble/hashes/argon2.js` directly.
+- [x] **Jede neue Dep im Crypto-Kern braucht ein ADR** unter `docs/architecture/adr/` mit Begründung, warum es nicht anders geht. Current: [ADR-014](architecture/adr/ADR-014-crypto-core-dependencies.md).
+- [x] **Vendoring erwägen:** Abgelehnt für v1. Noble crates are leaves with npm integrity; a `vendor/` copy is a second tree to patch. Revisit on compromise.
 
 ---
 
@@ -162,8 +162,8 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 | `npm audit` in CI | ☑ 2026-08-28 | `npm audit --audit-level=high` already on Node job. 0 high+ today. |
 | `pip-audit` in CI | ☑ 2026-08-28 | `pip-audit -r backend/requirements.txt` already on Python job. |
 | SBOM bei jedem Release | ☐ offen | Phase 3 |
-| Crypto-Kern: keine Netzwerk-/UI-Deps | ☐ prüfen | Phase 2: `packages/crypto` auditieren |
-| Vendoring für kritischste Deps | ☐ offen | Argon2? Phase 2 |
+| Crypto-Kern: keine Netzwerk-/UI-Deps | ☑ 2026-08-28 | Allowlist `@noble/ciphers` + `@noble/hashes`. Test + ADR-014. |
+| Vendoring für kritischste Deps | ☑ 2026-08-28 | Nicht jetzt. Noble ist leaf. ADR-014. |
 | Private Registry für eigene Pakete | ☐ offen | |
 | Incident-Response-Runbook | ☐ offen | Phase 3 |
 

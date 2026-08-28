@@ -32,7 +32,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 - [x] Alle Lockfiles committed und in CI enforced (`--locked`, `npm ci`).
 - [x] `cargo audit`, `cargo deny`, `npm audit --audit-level=high`, `pip-audit` laufen in CI und schlagen bei high/critical fehl.
-- [ ] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
+- [x] `packages/crypto` hat keine Netzwerk- oder UI-Abhängigkeiten.
 - [ ] SBOM-Erzeugung ist im Release-Workflow vorhanden.
 - [ ] Checkliste §6 ist aktuell.
 - [ ] Findings (falls vorhanden) in `docs/reviews/attack-vectors.md` dokumentiert.

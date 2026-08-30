@@ -199,9 +199,21 @@ async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runti
         session = (
             await client.post("/api/v1/auth/local", headers=device)
         ).json()
-        info = await client.get(
+        as_local = await client.get(
             "/api/v1/local/broker",
             headers={**device, "Authorization": f"Bearer {session['token']}"},
+        )
+        assert as_local.status_code == 404, as_local.text
+
+        registered = await client.post(
+            "/api/v1/auth/register",
+            json={"email": "broker-owner@example.com", "password": "account-password-1234"},
+            headers=device,
+        )
+        assert registered.status_code == 200, registered.text
+        info = await client.get(
+            "/api/v1/local/broker",
+            headers={**device, "Authorization": f"Bearer {registered.json()['token']}"},
         )
         assert info.status_code == 200, info.text
         body = info.json()
@@ -209,6 +221,7 @@ async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runti
         assert body["token"] == local_runtime.broker_token
         assert "password" not in body
         assert "ghp_" not in str(body)
+        assert "@" not in str(body)
 
 
 @pytest.mark.asyncio(loop_scope="session")

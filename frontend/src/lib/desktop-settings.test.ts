@@ -17,13 +17,13 @@ test("launch-at-login copy is DE+EN and does not claim auto-unlock", () => {
   assert.equal(/auto-unlock|entsperrt automatisch|passkey|ghp_/i.test(blob), false);
 });
 
-test("sleep copy is manual or Ruhemodus, not screen lock", () => {
+test("sleep copy is Lock button only, not auto-lock", () => {
   assert.match(SLEEP_LOCK_HINT, /FileVault/);
   assert.match(SLEEP_LOCK_HINT, /Ruhemodus/);
-  assert.match(SLEEP_LOCK_HINT, /sleeps/);
+  assert.match(SLEEP_LOCK_HINT, /Sleep/);
   assert.match(SLEEP_LOCK_HINT, /Bildschirmsperre/);
-  assert.match(SLEEP_LOCK_HINT, /Screen lock/);
-  assert.match(SLEEP_LOCK_HINT, /sperrst|you lock/);
+  assert.match(SLEEP_LOCK_HINT, /screen lock/i);
+  assert.match(SLEEP_LOCK_HINT, /Sperren drückst|press Lock/);
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(SLEEP_LOCK_HINT), false);
 });
 

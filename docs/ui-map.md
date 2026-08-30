@@ -21,7 +21,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 |---|---|
 | 1 | Wordmark 4AllPass (Elster + Schlüssel). |
 | 2 | Tresor offen/gesperrt; Sperren; Abmelden nur mit Account. |
-| 3 | `error` / `notice`. Schließen räumt die Meldung. |
+| 3 | `error` / `notice`. Schließen räumt die Meldung. Offener Tresor + Einträge noch auf `local@`: Passwort einmal, Merge hierher. Nicht abmelden, nicht sperren. |
 | 4 | Eine der Views V1–V8. |
 
 > Wireframe: [v0-chrome.html](screenshots/v0-chrome.html)

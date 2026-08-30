@@ -76,11 +76,10 @@ with `--hidden` (menu bar). That does **not** unlock the vault and does **not**
 auto-allow access. Password still required. Browser / `npm run app` has no login
 item.
 
-The vault stays open until **you lock** or the computer **sleeps** (Ruhemodus).
-Screen lock, tray hide, and idle do not. Sleep is a **wall-clock** stall if
->5s passed between 400ms polls, plus macOS `com.apple.system.sleep`. Monotonic
-`Instant` stops during suspend, so it cannot see lid-close. Not FileVault. Not
-hibernation-safe (RAM can still hold VK across the race).
+The vault stays open until **you press Lock**. Sleep (Ruhemodus), screen lock,
+tray hide, idle, and switching to the browser do not. A wall-clock stall plus
+macOS sleep notify used to auto-lock; App Nap made that fire while Chrome was
+in front. Not FileVault. RAM can still hold VK across sleep.
 
 An access request from n8n raises the main window, a desktop notification, and a
 small always-on-top prompt (application / provider / scope / TTL — **not** the

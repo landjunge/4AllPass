@@ -40,7 +40,7 @@ Master password always remains a fallback.
 
 ## Lock lifecycle
 
-The Vault Key is zeroized on lock. In the PWA that is manual lock, inactivity,
-and a hidden tab. In `4AllPass.app` that is the Lock button or system sleep —
-not screen lock, tray, or idle. JavaScript cannot guarantee erasure of every
-copy; that limit is accepted in the threat model.
+The Vault Key is zeroized on lock. In the PWA and in `4AllPass.app` that is
+the Lock button only — not sleep, screen lock, tray, idle, or a hidden tab.
+JavaScript cannot guarantee erasure of every copy; that limit is accepted in
+the threat model.

@@ -6,13 +6,12 @@ import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 
 export function App(): ReactNode {
   const {
     ready,
     email,
-    localMode,
-    localStore,
     vaults,
     lockState,
     error,
@@ -40,7 +39,7 @@ export function App(): ReactNode {
         </span>
         {email ? (
           <div className="header-actions">
-            {localMode && email === "local@127.0.0.1" ? null : (
+            {email === "local@127.0.0.1" ? null : (
               <span className="muted small" data-testid="account-email">
                 {email}
               </span>
@@ -85,18 +84,7 @@ export function App(): ReactNode {
           </button>
         </div>
       ) : null}
-      {email && email !== "local@127.0.0.1" && localStore?.hasLocalVault ? (
-        <div className="banner notice" data-testid="other-vault-banner">
-          <span>
-            {localStore.localEntries > 0
-              ? `Auf diesem Mac liegt noch der lokale Tresor (${localStore.localEntries} Einträge). Nicht neu anlegen — abmelden und den öffnen. / This Mac still has the local vault (${localStore.localEntries} entries). Do not create another — sign out and open it.`
-              : `Auf diesem Mac liegt noch ein lokaler Tresor. Nicht neu anlegen. / This Mac still has a local vault. Do not create another.`}
-          </span>
-          <button type="button" className="link" onClick={() => void signOut()}>
-            Abmelden / Sign out
-          </button>
-        </div>
-      ) : null}
+      {email && email !== "local@127.0.0.1" ? <PullLocalVaultBanner /> : null}
 
       <main>
         {!email ? (

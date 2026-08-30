@@ -30,7 +30,8 @@ export function AuthPage(): ReactNode {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [already, setAlready] = useState(Boolean(remembered));
-  const thisMac = localMode && (localStore?.hasLocalVault ?? false);
+  const thisMac =
+    localMode && (localStore?.hasLocalVault ?? false) && !localStore?.hasOtherAccounts;
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();

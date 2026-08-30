@@ -45,6 +45,12 @@ class LocalStoreStatus(CamelModel):
     has_local_vault: bool
     local_entries: int
     has_other_accounts: bool
+    local_vault_id: str | None = None
+
+
+class AdoptLocalVaultResult(CamelModel):
+    vault_id: str | None = None
+    entries: int = 0
 
 
 def _require_local() -> None:
@@ -61,12 +67,14 @@ async def local_store_status(db: Annotated[AsyncSession, Depends(get_db)]) -> Lo
     others = any(row.email != LOCAL_ACCOUNT_EMAIL for row in users)
     has_vault = False
     entries = 0
+    vault_id: str | None = None
     if local is not None:
         vaults = list((await db.execute(select(Vault).where(Vault.owner_user_id == local.id))).scalars())
         for vault in vaults:
             if vault.active_snapshot_id is None:
                 continue
             has_vault = True
+            vault_id = str(vault.id)
             n = await db.execute(
                 select(func.count())
                 .select_from(EncryptedEntry)
@@ -77,7 +85,39 @@ async def local_store_status(db: Annotated[AsyncSession, Depends(get_db)]) -> Lo
         has_local_vault=has_vault,
         local_entries=entries,
         has_other_accounts=others,
+        local_vault_id=vault_id,
     )
+
+
+@router.post("/adopt-local-vault", response_model=AdoptLocalVaultResult)
+async def adopt_local_vault(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> AdoptLocalVaultResult:
+    """Give this account the on-disk local vault. Decrypt still needs its master password."""
+    _require_local()
+    if user.email == LOCAL_ACCOUNT_EMAIL:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="already the local account")
+    local = (
+        await db.execute(select(User).where(User.email == LOCAL_ACCOUNT_EMAIL))
+    ).scalar_one_or_none()
+    if local is None:
+        return AdoptLocalVaultResult()
+    vaults = list((await db.execute(select(Vault).where(Vault.owner_user_id == local.id))).scalars())
+    vault_id: str | None = None
+    entries = 0
+    for vault in vaults:
+        vault.owner_user_id = user.id
+        vault_id = str(vault.id)
+        if vault.active_snapshot_id is None:
+            continue
+        n = await db.execute(
+            select(func.count())
+            .select_from(EncryptedEntry)
+            .where(EncryptedEntry.snapshot_id == vault.active_snapshot_id)
+        )
+        entries += int(n.scalar_one())
+    return AdoptLocalVaultResult(vault_id=vault_id, entries=entries)
 
 
 @router.get("/webview-caps", response_model=WebviewCaps)

@@ -2,8 +2,8 @@
  * App state and the lock lifecycle of crypto-protocol.md §10.
  *
  * LOCKED → UNLOCKING → UNLOCKED → LOCKING → LOCKED. Leaving UNLOCKED zeroizes
- * the Vault Key and clears plaintext. Desktop app: manual lock or sleep.
- * PWA: inactivity and a hidden tab. Tray hide does not lock.
+ * the Vault Key and clears plaintext. Only the Lock button locks. Sleep, idle,
+ * a hidden tab, and switching to Chrome do not.
  */
 import {
   createContext,
@@ -20,8 +20,10 @@ import { readStorageOrigin } from "../lib/storage-origin.ts";
 import { clearCopiedSecret } from "../lib/clipboard.ts";
 import { openSharePackage } from "../lib/share.ts";
 import { deviceId } from "../lib/device-identity.ts";
-import { listenDesktopLock } from "../lib/desktop.ts";
 import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.ts";
+import { readActiveVaultId, writeActiveVaultId } from "../lib/active-vault.ts";
+import { mergeImportedLogins } from "../lib/import.ts";
+import { decryptVaultEntries } from "../lib/pull-other-vault.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
   commitEntries,
@@ -43,13 +45,18 @@ import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
 export type LockState = "LOCKED" | "UNLOCKING" | "UNLOCKED" | "LOCKING";
 
-export const AUTO_LOCK_MS = 5 * 60 * 1000;
+interface LocalStoreStatus {
+  hasLocalVault: boolean;
+  localEntries: number;
+  hasOtherAccounts: boolean;
+  localVaultId: string | null;
+}
 
 interface AppState {
   ready: boolean;
   email: string | null;
   localMode: boolean;
-  localStore: { hasLocalVault: boolean; localEntries: number; hasOtherAccounts: boolean } | null;
+  localStore: LocalStoreStatus | null;
   vaults: VaultSummary[];
   activeVaultId: string | null;
   lockState: LockState;
@@ -74,6 +81,7 @@ interface AppActions {
   unlockWithRecovery(recoveryKey: string): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
   lock(): void;
+  pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
@@ -106,11 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [localMode, setLocalMode] = useState(false);
-  const [localStore, setLocalStore] = useState<{
-    hasLocalVault: boolean;
-    localEntries: number;
-    hasOtherAccounts: boolean;
-  } | null>(null);
+  const [localStore, setLocalStore] = useState<LocalStoreStatus | null>(null);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [activeVaultId, setActiveVaultId] = useState<string | null>(null);
   const [lockState, setLockState] = useState<LockState>("LOCKED");
@@ -141,9 +145,17 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const loadVaults = useCallback(async (): Promise<VaultSummary[]> => {
     const list = await api.listVaults();
     setVaults(list);
-    const first = list[0]?.vaultId ?? null;
-    setActiveVaultId((current) => current ?? first);
-    if (first) setDeviceUnlockAvailable(await hasDeviceUnlock(first));
+    let next: string | null = null;
+    setActiveVaultId((current) => {
+      const remembered = current ?? readActiveVaultId();
+      next =
+        remembered && list.some((row) => row.vaultId === remembered)
+          ? remembered
+          : (list[0]?.vaultId ?? null);
+      writeActiveVaultId(next);
+      return next;
+    });
+    if (next) setDeviceUnlockAvailable(await hasDeviceUnlock(next));
     return list;
   }, []);
 
@@ -193,44 +205,6 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       }
     })();
   }, [loadVaults]);
-
-  // Desktop: only the Lock button and OS sleep (`desktop-lock`). No idle timer,
-  // no screen-lock, no tray-hide. PWA: inactivity + hidden tab (crypto-protocol.md §10).
-  useEffect(() => {
-    if (lockState !== "UNLOCKED") return;
-    const desktop = localMode && isTauriShell();
-    let timer: number | undefined;
-    const events = ["pointerdown", "keydown", "focus"] as const;
-    const reset = (): void => {
-      if (timer === undefined) return;
-      window.clearTimeout(timer);
-      timer = window.setTimeout(lock, AUTO_LOCK_MS);
-    };
-    const onVisibility = (): void => {
-      if (desktop) return;
-      if (document.visibilityState === "hidden") lock();
-    };
-    if (!desktop) {
-      timer = window.setTimeout(lock, AUTO_LOCK_MS);
-      for (const event of events) window.addEventListener(event, reset);
-      document.addEventListener("visibilitychange", onVisibility);
-    }
-    let cancelled = false;
-    let unlistenLock: (() => void) | undefined;
-    void listenDesktopLock(lock).then((fn) => {
-      if (cancelled) fn();
-      else unlistenLock = fn;
-    });
-    return () => {
-      cancelled = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-      if (!desktop) {
-        for (const event of events) window.removeEventListener(event, reset);
-        document.removeEventListener("visibilitychange", onVisibility);
-      }
-      unlistenLock?.();
-    };
-  }, [lockState, lock, localMode]);
 
   const withStatus = useCallback(
     async <T,>(action: () => Promise<T>, success?: string): Promise<T> => {
@@ -290,6 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async selectVault(vaultId) {
         lock();
         setActiveVaultId(vaultId);
+        writeActiveVaultId(vaultId);
         setDeviceUnlockAvailable(await hasDeviceUnlock(vaultId));
       },
 
@@ -299,6 +274,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           try {
             const created = await createVault(masterPassword, profile);
             setActiveVaultId(created.vault.vaultId);
+            writeActiveVaultId(created.vault.vaultId);
             setUnlocked(created.vault);
             setRecoveryKey(created.recoveryKey);
             await loadVaults();
@@ -318,6 +294,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             const created = await createVault(masterPassword, "mobile_safe");
             const next = await commitEntries(created.vault, entries);
             setActiveVaultId(next.vaultId);
+            writeActiveVaultId(next.vaultId);
             setUnlocked(next);
             setRecoveryKey(created.recoveryKey);
             await loadVaults();
@@ -334,6 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setLockState("UNLOCKING");
           try {
             setUnlocked(await unlockWithMasterPassword(activeVaultId, masterPassword));
+            writeActiveVaultId(activeVaultId);
           } catch (failure) {
             setLockState("LOCKED");
             throw failure;
@@ -347,6 +325,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           setLockState("UNLOCKING");
           try {
             setUnlocked(await unlockWithRecoveryKey(activeVaultId, key));
+            writeActiveVaultId(activeVaultId);
           } catch (failure) {
             setLockState("LOCKED");
             throw failure;
@@ -361,6 +340,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           try {
             const unlocked = await unlockWithDevice(activeVaultId);
             setUnlocked(unlocked);
+            writeActiveVaultId(activeVaultId);
             return unlocked.unlockedWith as DeviceUnlockMechanism;
           } catch (failure) {
             setLockState("LOCKED");
@@ -370,6 +350,38 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
 
       lock,
+
+      async pullLocalIntoOpenVault(masterPassword) {
+        const current = vaultRef.current;
+        if (!current) throw new Error("vault is locked");
+        const keepId = current.vaultId;
+        await withStatus(async () => {
+          const status = await api.localStatus();
+          const adopted = status.hasLocalVault
+            ? await api.adoptLocalVault()
+            : { vaultId: null as string | null, entries: 0 };
+          const listed = await api.listVaults();
+          const sourceId =
+            adopted.vaultId ??
+            status.localVaultId ??
+            listed.find((row) => row.vaultId !== keepId)?.vaultId ??
+            null;
+          if (!sourceId || sourceId === keepId) {
+            throw new Error("no other vault on this Mac");
+          }
+          const incoming = await decryptVaultEntries(sourceId, masterPassword);
+          const merged = mergeImportedLogins(current.entries, incoming);
+          writeActiveVaultId(keepId);
+          setActiveVaultId(keepId);
+          setUnlocked(await commitEntries(current, merged));
+          setLocalStore({
+            hasLocalVault: false,
+            localEntries: 0,
+            hasOtherAccounts: true,
+            localVaultId: null,
+          });
+        }, "Einträge übernommen. Dieser Tresor bleibt offen. / Entries pulled in. This vault stays open.");
+      },
 
       async saveEntries(entries) {
         const current = vaultRef.current;

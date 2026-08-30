@@ -18,7 +18,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | Easy to write | What is true |
 |---|---|
 | Webview navigates to `http://127.0.0.1:8788` with Tauri IPC | UI is bundled `frontendDist`. Sidecar `:8788` is API-only. Remote localhost has **no** Tauri IPC. Occupied 8788 refuses to start. |
-| Hide to tray locks the vault | It does not. Sleep / manual Lock does. |
+| Hide to tray locks the vault | It does not. Only the Lock button does. Sleep / App Nap / Chrome in front do not. |
 | PRF / Touch ID unlock in the desktop webview | Unproven. Master password and recovery kit are the supported paths. |
 
 ## Revoke / WebAuthn

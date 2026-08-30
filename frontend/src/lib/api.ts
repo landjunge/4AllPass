@@ -343,8 +343,13 @@ export const api = {
     hasLocalVault: boolean;
     localEntries: number;
     hasOtherAccounts: boolean;
+    localVaultId: string | null;
   }> {
     return request("GET", "/local/status");
+  },
+
+  adoptLocalVault(): Promise<{ vaultId: string | null; entries: number }> {
+    return request("POST", "/local/adopt-local-vault");
   },
 
   localBroker(): Promise<{ url: string; token: string }> {

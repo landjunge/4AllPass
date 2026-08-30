@@ -266,6 +266,15 @@ pre.mono {
   color: #c8ead6;
 }
 
+form.banner {
+  flex-wrap: wrap;
+}
+
+.banner input[type="password"] {
+  flex: 0 1 220px;
+  min-width: 140px;
+}
+
 .divider {
   text-align: center;
   color: var(--muted);

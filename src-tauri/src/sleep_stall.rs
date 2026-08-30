@@ -9,10 +9,10 @@ pub fn slept_through(prev: SystemTime, now: SystemTime, threshold: Duration) -> 
     now.duration_since(prev).map(|d| d > threshold).unwrap_or(false)
 }
 
-/// Desktop vault lock: sleep / Ruhemodus only. Screen lock is not sleep.
+/// Never auto-lock. App Nap + sleep notify used to fire when Chrome was in front.
 pub fn should_emit_desktop_lock(slept: bool, os_sleep: bool, screen_locked: bool) -> bool {
-    let _ = screen_locked;
-    slept || os_sleep
+    let _ = (slept, os_sleep, screen_locked);
+    false
 }
 
 #[cfg(test)]
@@ -56,9 +56,9 @@ mod tests {
     }
 
     #[test]
-    fn desktop_lock_is_sleep_not_screen_lock() {
-        assert!(should_emit_desktop_lock(true, false, false));
-        assert!(should_emit_desktop_lock(false, true, false));
+    fn desktop_lock_never_fires_on_sleep_or_stall() {
+        assert!(!should_emit_desktop_lock(true, false, false));
+        assert!(!should_emit_desktop_lock(false, true, false));
         assert!(!should_emit_desktop_lock(false, false, true));
         assert!(!should_emit_desktop_lock(false, false, false));
     }

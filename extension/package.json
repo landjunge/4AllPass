@@ -10,8 +10,8 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@4allpass/crypto": "*",
-    "@4allpass/providers": "*"
+    "@4allpass/crypto": "workspace:*",
+    "@4allpass/providers": "workspace:*"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

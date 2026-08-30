@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@4allpass/crypto": "*",
+    "@4allpass/crypto": "workspace:*",
     "@noble/hashes": "2.3.0"
   },
   "devDependencies": {

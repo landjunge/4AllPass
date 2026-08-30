@@ -18,10 +18,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@4allpass/core": "*",
-    "@4allpass/crypto": "*",
-    "@4allpass/providers": "*",
-    "@4allpass/webauthn": "*",
+    "@4allpass/core": "workspace:*",
+    "@4allpass/crypto": "workspace:*",
+    "@4allpass/providers": "workspace:*",
+    "@4allpass/webauthn": "workspace:*",
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/plugin-autostart": "2.5.1",
     "react": "19.2.8",

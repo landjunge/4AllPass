@@ -387,4 +387,29 @@ maximal 7 MB body, the Base32 encoding over 20 000 random keys and all 256 one-h
 keys, the KDF bounds, and an exhaustive search of all 324 revision state pairs over
 three revisions × two key versions × three digest states.
 
+### F-26 — `@4allpass/*` unclaimed on npmjs · **medium** · mitigated in-repo, claim open
+
+Live GET of `@4allpass/{access,broker,core,crypto,providers,webauthn,extension,frontend}`
+on the public registry returned **404** (2026-08-30). The committed lockfile pins every
+internal package as `"link": true`. `npm ci` at the repo root does not resolve them
+from npmjs. Internal `package.json` used to list `"@4allpass/crypto": "*"`, which can
+hit the registry if someone runs `npm install` without the lockfile or outside the
+workspace. That specifier is now `workspace:*` (`scripts/workspace-protocol.test.mjs`).
+
+**Still open:** publish empty placeholder packages (or a private registry) so a
+squatter cannot occupy the scope. That is a maintainer npm-login action, not a code
+change. Checkliste: `docs/supply-chain-security.md` §6.
+
+### 2026-08-30 live unwrap payloads (not a new bug)
+
+Own script against `unwrapVaultKey` / device envelopes (not the shipped vectors):
+wrong-device DWK, wrong expected `deviceId`, wrong `vaultId` AAD, `device` opened as
+`master`, `deviceKeyVersion` 2 vs 1 — all `IntegrityError` / `AuthFailureError` as
+specified. Happy path returned the same VK. 200 000 `randomNonce()` draws: 0
+collisions. Confirms F-02 is still red-when-tampered.
+
+`packages/crypto/test/supply-chain.test.ts`: injecting `left-pad` fails the allowlist.
+Extension MV3: fill via `runtime.onMessage` only, `expectedOrigin`, optional host
+permissions — no finding, not an exhaustive fuzz.
+
 ---

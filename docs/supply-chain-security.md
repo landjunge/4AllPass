@@ -111,7 +111,7 @@ Bevor eine neue Abhängigkeit rein darf:
 ## 3. Typosquatting & Dependency Confusion
 
 - **Private Registry first:** Wenn du eigene Pakete veröffentlichst, nutze eine private Registry (z. B. GitHub Packages) *bevor* npm/PyPI. Sonst kann jemand ein Paket mit demselben Namen hochladen und du ziehst es unbewusst.
-- **Scope prüfen:** `@4allpass/...` für eigene Pakete. Niemals unscoped Pakete mit generischen Namen (z. B. `utils`, `crypto-helpers`) aus öffentlichen Registries ohne Prüfung.
+- **Scope prüfen:** `@4allpass/...` für eigene Pakete. Niemals unscoped Pakete mit generischen Namen (z. B. `utils`, `crypto-helpers`) aus öffentlichen Registries ohne Prüfung. Der Scope ist auf npmjs **noch nicht beansprucht** (HTTP 404, 2026-08-30). Interne Deps: `workspace:*` plus Lockfile-`link`. Placeholder-Publish bleibt Maintainer-Arbeit.
 - **Checksummen:** Wo möglich, integritäts-Hashes in Lockfiles prüfen (npm macht das automatisch über `integrity`-Felder; Cargo über den Lockfile-Hash).
 
 ---
@@ -161,7 +161,7 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 | Regel | Status | Notiz |
 |---|---|---|
 | Cargo.lock committed + `--locked` in CI | ☑ 2026-08-28 | `cargo fetch --locked` in `ci.yml` + `desktop.yml`. Direct deps in `src-tauri/Cargo.toml` are `=x.y.z`. |
-| package-lock.json + `npm ci` | ☑ 2026-08-28 | CI already `npm ci`. Runtime deps exact (no `^`/`~`). Workspace `*` stays internal. |
+| package-lock.json + `npm ci` | ☑ 2026-08-28 | CI `npm ci`. Runtime deps exact. Internal `@4allpass/*` is `workspace:*` (2026-08-30). |
 | Python-Requirements gepinnt | ☑ 2026-08-28 | `backend/requirements.txt` and `requirements-dev.txt` use `==`. |
 | `cargo audit` / `cargo deny` in CI | ☑ 2026-08-28 | Job `Cargo lock + audit`. Unmaintained gtk3-rs / rust-unic are Tauri 2 transitives (warnings, not CI-fail). |
 | `npm audit` in CI | ☑ 2026-08-28 | `npm audit --audit-level=high` already on Node job. 0 high+ today. |
@@ -169,7 +169,7 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 | SBOM bei jedem Release | ☑ 2026-08-28 | CI-Artefakt + `desktop.yml` Release. `scripts/generate-sbom.sh`. |
 | Crypto-Kern: keine Netzwerk-/UI-Deps | ☑ 2026-08-28 | Allowlist `@noble/ciphers` + `@noble/hashes`. Test + ADR-014. |
 | Vendoring für kritischste Deps | ☑ 2026-08-28 | Nicht jetzt. Noble ist leaf. ADR-014. |
-| Private Registry für eigene Pakete | ☐ offen | |
+| Private Registry für eigene Pakete | ☐ offen | Scope `@4allpass` on npmjs is **unclaimed** (HTTP 404, audit 2026-08-30). `workspace:*` + lockfile `link` mitigate `npm ci`. Claim empty placeholders on npmjs before any publish. |
 | Incident-Response-Runbook | ☑ 2026-08-28 | Dieses Dokument §5. |
 
 ---

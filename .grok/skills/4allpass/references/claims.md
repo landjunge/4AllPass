@@ -21,6 +21,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | Hide to tray locks the vault | It does not. Only the Lock button does. Sleep / App Nap / Chrome in front do not. |
 | PRF / Touch ID unlock in the desktop webview | Unproven. Master password and recovery kit are the supported paths. |
 | Account compromise never decrypts the vault | Only if account password ≠ vault password. Login still sends the account password. Hosted PWA: the code host can read the vault password. Bundled desktop is the active-server claim. |
+| Extension unlocks with vault password only | Only when this Mac has no e-mail account. If `hasOtherAccounts`, same e-mail + account password as the app. Empty fields must not POST `/auth/local`. |
 
 ## Revoke / WebAuthn
 

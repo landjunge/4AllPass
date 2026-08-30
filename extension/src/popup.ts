@@ -85,14 +85,42 @@ async function restoreSettings(): Promise<void> {
   const settings = parsePopupSettings(stored[POPUP_SETTINGS_KEY]);
   (document.getElementById("api") as HTMLInputElement).value = settings.apiOrigin;
   (document.getElementById("email") as HTMLInputElement).value = settings.email;
+  unlockForm.dataset.vaultId = settings.vaultId;
   const details = document.getElementById("server-account") as HTMLDetailsElement | null;
   if (details && settings.email) details.open = true;
+  await applyLocalStatus(settings.apiOrigin);
 }
 
-async function rememberSettings(): Promise<void> {
+async function applyLocalStatus(apiOrigin: string): Promise<void> {
+  const details = document.getElementById("server-account") as HTMLDetailsElement | null;
+  const email = document.getElementById("email") as HTMLInputElement;
+  const account = document.getElementById("account") as HTMLInputElement;
+  const hint = document.getElementById("unlock-hint");
+  try {
+    const response = await fetch(`${apiOrigin.replace(/\/$/, "")}/api/v1/local/status`);
+    if (!response.ok) return;
+    const body = (await response.json()) as { hasOtherAccounts?: boolean };
+    if (body.hasOtherAccounts !== true) return;
+    if (details) details.open = true;
+    email.required = true;
+    account.required = true;
+    if (hint) {
+      hint.textContent =
+        "Dieses Gerät hat ein Konto. Dieselbe E-Mail und dieselben Passwörter wie in der App. / This device has an account. Same e-mail and passwords as the app.";
+    }
+  } catch {
+    // Hosted origin has no /local/status.
+  }
+}
+
+async function rememberSettings(vaultId?: string): Promise<void> {
   const apiOrigin = (document.getElementById("api") as HTMLInputElement).value;
   const email = (document.getElementById("email") as HTMLInputElement).value;
-  await ext.storage.local.set({ [POPUP_SETTINGS_KEY]: popupSettingsForStore(apiOrigin, email) });
+  const remembered = vaultId ?? unlockForm.dataset.vaultId ?? "";
+  if (vaultId) unlockForm.dataset.vaultId = vaultId;
+  await ext.storage.local.set({
+    [POPUP_SETTINGS_KEY]: popupSettingsForStore(apiOrigin, email, remembered),
+  });
 }
 
 function hideSuggest(): void {
@@ -149,10 +177,22 @@ unlockForm.addEventListener("submit", (event) => {
     return;
   }
   void rememberSettings()
-    .then(() => send({ type: "unlock", apiOrigin, email, accountPassword, vaultPassword }))
+    .then(() =>
+      send({
+        type: "unlock",
+        apiOrigin,
+        email,
+        accountPassword,
+        vaultPassword,
+        vaultId: unlockForm.dataset.vaultId ?? "",
+      }),
+    )
     .then((result) => {
       if (!result.ok) showError(String(result.error ?? "unlock failed"));
-      else void render();
+      else {
+        if (typeof result.vaultId === "string") void rememberSettings(result.vaultId);
+        void render();
+      }
     })
     .catch((error: unknown) => {
       showError(error instanceof Error ? error.message : String(error));

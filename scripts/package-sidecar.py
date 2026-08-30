@@ -73,7 +73,10 @@ def main() -> int:
         print(f"sidecar already present: {out}")
         return 0
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "pyinstaller"])
+    sidecar_req = root / "backend" / "requirements-sidecar.txt"
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "-q", "--require-hashes", "-r", str(sidecar_req)]
+    )
     backend = root / "backend"
     add_data = f"{root / 'frontend' / 'dist'}{os.pathsep}frontend/dist"
     cmd = [

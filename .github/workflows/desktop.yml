@@ -298,6 +298,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: desktop
+          target_commitish: ${{ github.sha }}
           name: Desktop (rolling)
           prerelease: true
           generate_release_notes: false
@@ -316,3 +317,12 @@ jobs:
             dist/*.AppImage
             dist/*.sha256
           fail_on_unmatched_files: false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Point tag desktop at this commit
+        run: |
+          set -eu
+          git tag -f desktop "$GITHUB_SHA"
+          git push --force origin "refs/tags/desktop"
+          echo "desktop -> $GITHUB_SHA"

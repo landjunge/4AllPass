@@ -1,7 +1,8 @@
 # 4AllPass — Future architecture (2026–2030+)
 
 **Status:** Vision and reality check. **Not implemented.** Not a promise.  
-**Date:** 2026-08-24  
+**Date:** 2026-08-28  
+**What runs today:** [`../security-boundary.md`](../security-boundary.md). This file must not contradict it.  
 **Code sequence (now):** [`../product-maturity.md`](../product-maturity.md) **v3**.  
 **Check for later PRs:** [`future-compatibility-check.md`](future-compatibility-check.md)
 
@@ -12,7 +13,7 @@
 Standing rules (docs, not a license to implement):
 
 1. The server stores the vault. The client owns the vault. ([`../vault-storage.md`](../vault-storage.md), [`../vault-protocol.md`](../vault-protocol.md))
-2. Agents receive capabilities, not the vault. ([`agent-access.md`](agent-access.md))
+2. Agents receive capabilities, not the vault. **Today** that is still a raw-secret handoff after human Allow ([`../security-boundary.md`](../security-boundary.md) §7, [`agent-access.md`](agent-access.md)).
 3. Identity is shared. Authorization stays local. ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md))
 4. Small core, strict guarantees, optional extensions.
 
@@ -35,7 +36,9 @@ The password manager is the **entry**. It is also what we ship in 2026. A half-b
 
 ---
 
-## What the code actually is (2026-08-24)
+## What the code actually is (2026-08-28)
+
+Authoritative running system: [`../security-boundary.md`](../security-boundary.md). Snapshot:
 
 ```text
 packages/crypto     Protocol v1. Random VK. Envelopes. Sealed manifest.
@@ -44,12 +47,20 @@ packages/core       Policy sees Credential {id, provider, label, account, capabi
 backend           Opaque snapshots. Ownership 404. FastAPI mints no vault tokens.
 frontend VaultEntry kind: web | api | sftp; always has username + password + totpSecret
 extension           Fill from unlocked snapshot. Pull newer revision. No Chrome write-back.
-desktop Tauri       Webview → http://127.0.0.1:8788 only (IPC capability is that origin).
-Access broker       Loopback, Origin 403, unknown DENY, TTL grant, not raw password forever.
+Desktop Tauri
+  bundled frontendDist
+  ↓
+loopback API sidecar
+127.0.0.1:8788
+
+Remote localhost content has no Tauri IPC capability.
+
+Access broker       Loopback, Origin 403, unknown DENY, human Allow,
+                    handoff: "raw_secret". TTL stops later handoffs, not a copied secret.
 Share file          New vault id + new VK + recovery envelope. Symmetric. Not live federation.
 ```
 
-Honest one-liner: **one random Vault Key wraps all entries; devices unwrap that key; the server stores blobs; agents are named strings until a human Allow.**
+Honest one-liner: **one random Vault Key wraps all entries; devices unwrap that key; the server stores blobs; agents are named strings; Allow still copies a raw secret.**
 
 ---
 
@@ -66,11 +77,11 @@ GREEN = already points this way. YELLOW = refactor, no new protocol. RED = needs
 | Server never sees secrets | FastAPI schemas reject key material. Sidecar is the same rule. |
 | Crypto agility (symmetric) | `cryptoVersion` / `schemaVersion` / `vaultKeyVersion` are mandatory; versions are never defaulted ([`../crypto-protocol.md`](../crypto-protocol.md) §1). |
 | Post-quantum **honesty** | v1 wrapping is AES-256-GCM. No fake “PQ” sticker. Hybrid KEM only if public-key wrapping exists ([`../post-quantum-roadmap.md`](../post-quantum-roadmap.md)). |
-| Policy without passwords | `@4allpass/core` `Credential` has no secret field. Grant is capability + TTL. |
+| Policy without passwords | `@4allpass/core` `Credential` has no secret field. After Allow, v1 still attaches `handoff: "raw_secret"`. TTL does not un-know a copy. |
 | Share = new domain | [`../sharing.md`](../sharing.md) already mints a **new** vault id and **new** VK. That is federation-shaped, one-shot. |
 | Mobile protocol | Crypto spec already says future Mobile must follow v1. Format is not Tauri-specific. |
 | Unknown agent DENY | `TRUSTED_APPLICATIONS = ["n8n"]`. Unknown = DENY. |
-| Loopback trust | Tauri IPC `remote.urls` = `http://127.0.0.1:8788/**` only. |
+| Loopback trust | UI is bundled `frontendDist`. Sidecar `127.0.0.1:8788` is API-only. Remote localhost has no Tauri IPC. Occupied 8788 refuses to start. |
 
 ### YELLOW
 
@@ -130,7 +141,7 @@ Do **not** replace it with a 12-type union in the autofill slice. Autofill and i
 
 ## Agents (NOW vs LATER)
 
-NOW: string application, loopback broker, human Allow, TTL, no durable raw password. Pairing token ≠ identity.
+NOW: string application, loopback broker, human Allow, `handoff: "raw_secret"`. TTL limits later handoffs, not a copied credential. Pairing token ≠ identity.
 
 LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
 

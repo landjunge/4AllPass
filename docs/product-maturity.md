@@ -1,6 +1,6 @@
 # Produktreife — 4AllPass
 
-Stand: 2026-08-26. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` und Security Freeze #2 auf `main`. P0–P1 Code + UI-Hierarchie (Tresor · Browser · Zugriff · Einstellungen) auf `main`.
+Stand: 2026-08-28. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` und Security Freeze #2 auf `main`. P0–P1 Code + UI-Hierarchie (Tresor · Browser · Zugriff · Einstellungen) auf `main`. Was der laufende Code erzwingt: [`security-boundary.md`](security-boundary.md).
 
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
@@ -31,7 +31,8 @@ Nicht: nächster Bitwarden/1Password. Differenzierung ist **Vault + zuverlässig
 2. Autofill reliable.
 3. Storage secure (ZK, this device).
 4. Access controllable.
-5. Agents never need the underlying password.
+5. **Goal:** agents should not need the underlying long-lived secret.  
+   **Current v1:** human-approved raw-secret handoff. TTL limits future handoffs, not a copied credential.
 
 **Reliability before expansion.** Keine 20 neuen Features, solange Install, Import, Provider, Autofill, Vault nicht zuverlässig sind.
 
@@ -49,7 +50,7 @@ Die meiste Kritik sitzt nicht an der Krypto. Sie sitzt am Alltag, am Preis, an R
 | **KeePassXC** | Sync/Backup selbst, Mobile-Splitter, Passkeys holprig | App ist das Produkt, nicht eine `.kdbx`-Datei |
 | **LastPass** | Recovery vs. Zero-Knowledge, Vertrauensbruch | Kit erzwungen, kein Server-Reset |
 | **Vaultwarden** | Du bist Ops (Backup, Uptime), unaudited | Desktop-App, nicht Postgres-Pflicht |
-| **Alle (2026)** | Agenten brauchen Keys, bekommen Dauer-Secrets | Allow/Deny + TTL, kein Roh-Passwort |
+| **Alle (2026)** | Agenten brauchen Keys, bekommen Dauer-Secrets | Allow/Deny + TTL. Ziel: kein langlebiges Roh-Secret. Heute: Roh-Secret nach Allow; TTL holt eine Kopie nicht zurück |
 
 Drei Muster, die der Plan abdeckt:
 
@@ -110,7 +111,7 @@ Was ein Fremder merkt: App auf, Tresor, Browser erkannt, Import bestätigt.
 - Import: Kopie der Browser-DB → Review **ohne Passwort** → Confirm → `saveEntries`. Nie still, nie Live-DB schreiben.
 - Provider: exact / subdomain / login-domain / unknown. `evilgithub.com` ist nicht GitHub. Origin bleibt Trust-Grenze.
 
-### P1 — Autofill als Produkt (nächster Code)
+### P1 — Autofill als Produkt (Code auf `main`)
 
 Die Extension ist der **Ausführungsarm**, nicht das Produkt. Ziel: **Credential Interaction Engine** — eine Schicht für Import, Autofill und später Agenten.
 
@@ -158,7 +159,7 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 - [x] Why an jeder Entscheidung (`explainAccess`, DE+EN, keine Secrets).
 - [x] Simulator = Access-Tab-Demo (dieselbe Policy wie der Broker, nicht FastAPI).
 - [x] Security-Status auf dem Access-Tab (Loopback, Origin 403, unknown DENY, kein Auto-Handoff).
-- Access ist nicht der erste Bildschirm. Unknown = DENY. Grant = Credential+TTL, kein Roh-Passwort an den Agenten dauerhaft.
+- Access ist nicht der erste Bildschirm. Unknown = DENY. **Current v1:** human-approved `handoff: "raw_secret"`. TTL limits future handoffs, not a copied credential. Mediated access is later.
 
 ### P3 — Passkeys / OTP (bewusst spät)
 
@@ -186,12 +187,11 @@ Langfristige Vision (nicht implementieren): [`architecture/future-architecture.m
 ## Reihenfolge (gesperrt)
 
 ```text
-P0  Install + Import + Provider  (weitgehend im Baum; Fremden-Test offen)
-    → P1  Reliable Autofill (nächster Code) — Spec: autofill-v1.md
-        → P1b Diagnostics / Assisted
-            → P2  Agent UX (Why, Simulator) — Code existiert, First Screen nicht
-                → P3  Passkeys / OTP
-                    → Sichtbarkeit nur nach P0+P1
+P0/P1 implementation substantially complete
+ → external usability validation (Fremder Mac, #120)
+ → remaining edge cases only after evidence
+     P2  Agent UX (Why, Simulator) — Code existiert, First Screen nicht
+     P3  Passkeys / OTP — TOTP auf main; Passkey-Store später
 ```
 
 Apple Doppelklick (Phase A unten) bleibt **Geld-Blocker**, parallel nicht als Ausrede für Feature-Flut.

@@ -53,18 +53,18 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 | Plan | Datei | Status |
 |---|---|---|
 | Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | Phasen 1–3 auf `main`; Private Registry offen |
-| Code-Hygiene | `ROADMAP.md` §1b | offen – nach Supply-Chain, vor Phase 4 |
-| Secret Access Layer (Phase 4) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | offen – nach Supply-Chain, vor Mobile |
+| Code-Hygiene | `ROADMAP.md` §1b | ☑ 2026-08-28 |
+| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | raw-secret / mediated interface / policy; MAIP später |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
 | Lebende Roadmap | `ROADMAP.md` | Status hier pflegen |
 
-**Reihenfolge:** Supply-Chain zuerst, dann **Code-Hygiene**, dann **Phase 4 (Secret Access Layer)**, dann Mobile (PWA → Android → iOS).
+**Reihenfolge:** Supply-Chain (done) → Code-Hygiene (done) → Secret Access Layer vorbereiten → Mobile (PWA → Android → iOS). MAIP nicht in dieser Sequenz. Status: `ROADMAP.md`.
 
 ---
 
-## 1b. Code-Hygiene (nach Supply-Chain, vor Phase 4)
+## 1b. Code-Hygiene — completed 2026-08-28
 
 > Quelle: Code-Review 2026-08-28. Details und Status: `ROADMAP.md` §1b.
 

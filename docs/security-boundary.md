@@ -386,10 +386,10 @@ Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing tok
 `GET /v1/broker/poll` returns 204 if the UI disconnects. A closed tab must not
 dequeue the next grant. The unlocked UI aborts its poll fetch on unmount.
 `GET /api/v1/local/broker` returns that pairing token only after **e-mail**
-storage auth on the local profile **and** that account owns a vault. A
-passwordless `local@127.0.0.1` session is **404** (same as missing). A
-throwaway `POST /auth/register` without a vault is the same 404. The **server**
-profile does not mount these routes. Grants live in page
+storage auth on the local profile **and** that account owns a vault with an
+**active snapshot**. A passwordless `local@127.0.0.1` session is **404**
+(same as missing). Throwaway `register` or empty `POST /vaults` is the same
+404. The **server** profile does not mount these routes. Grants live in page
 memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):
 unknown app DENY, missing scope DENY. `handoff: "mediated"` is **denied**
 (`handoff_unavailable`) — v1 has no proxy that uses the secret on the agent's
@@ -401,7 +401,7 @@ existing broker response. Unknown applications are denied. Audit rows omit the s
 not authentication. The pairing token proves *this process knows the secret*,
 not *this is n8n*. Treat it as the **local root-of-access for agents**
 (mode 0600 file; also `GET /api/v1/local/broker` after e-mail storage auth
-**and** a vault on that account). A
+**and** a vault with an active snapshot). A
 stolen token plus the string `n8n` is still eligible for a human Allow. That
 is V1. Cryptographic agent keys are
 [`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)

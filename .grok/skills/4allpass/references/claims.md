@@ -12,7 +12,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | `application: "n8n"` is identity | String + pairing token. Pairing token ≠ agent identity. Unknown app = DENY. |
 | `handoff: "mediated"` | Typed. **Denied** in v1 (`handoff_unavailable`). No silent fallback to raw_secret. |
 | FastAPI mints provider tokens | It does not. Broker is loopback; Origin 403 on the grant path. |
-| Any `/auth/local` session can fetch the broker pairing token | **No.** `GET /local/broker` is 404 for `local@127.0.0.1` and for an e-mail session that owns **no** vault. Throwaway `register` on the same process is 404 until that account owns a vault. |
+| Any `/auth/local` session can fetch the broker pairing token | **No.** `GET /local/broker` is 404 for `local@127.0.0.1`, a throwaway `register`, and an e-mail account whose vault has **no** active snapshot. Empty `POST /vaults` is not enough. |
 | Robots get credentials without a human | **Library only.** `decideStandingAccess` can auto-approve a **data** credential for a verified `requesterId`. The sidecar still waits for live Allow. Actuation never auto-approves. 4AllPass does not drive a device protocol. Vault Device envelopes are not agent identity. |
 
 ## Desktop / Tauri

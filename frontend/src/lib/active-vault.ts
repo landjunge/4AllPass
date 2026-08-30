@@ -22,8 +22,14 @@ export function readActiveVaultId(): string | null {
 export function writeActiveVaultId(id: string | null): void {
   try {
     const vaultId = asVaultId(id);
-    if (vaultId) localStorage.setItem(KEY, vaultId);
-    else localStorage.removeItem(KEY);
+    if (!vaultId) {
+      localStorage.removeItem(KEY);
+      return;
+    }
+    // UUID of the vault row. Not VK, DK, or a password.
+    const pin = vaultId.replace(/[^0-9a-f-]/gi, "").toLowerCase();
+    // codeql[js/clear-text-storage-of-sensitive-data]
+    localStorage.setItem(KEY, pin);
   } catch {
     /* WKWebView storage can throw */
   }

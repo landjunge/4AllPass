@@ -211,10 +211,13 @@ async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runti
             headers=device,
         )
         assert registered.status_code == 200, registered.text
-        info = await client.get(
-            "/api/v1/local/broker",
-            headers={**device, "Authorization": f"Bearer {registered.json()['token']}"},
-        )
+        email_auth = {**device, "Authorization": f"Bearer {registered.json()['token']}"}
+        throwaway = await client.get("/api/v1/local/broker", headers=email_auth)
+        assert throwaway.status_code == 404, throwaway.text
+
+        created = await client.post("/api/v1/vaults", headers=email_auth)
+        assert created.status_code in {200, 201}, created.text
+        info = await client.get("/api/v1/local/broker", headers=email_auth)
         assert info.status_code == 200, info.text
         body = info.json()
         assert body["url"] == local_runtime.origin

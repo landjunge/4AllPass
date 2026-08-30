@@ -8,7 +8,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | Easy to write | What is true |
 |---|---|
 | Agents never need the password | **Goal.** v1 after human Allow copies a **raw secret** (`handoff: "raw_secret"`). |
-| Zeitlich begrenzte Freigabe widerruft den Key | TTL stops *later 4AllPass handoffs*. A GitHub PAT already copied stays valid until GitHub says otherwise. |
+| Zeitlich begrenzte Freigabe widerruft den Key | TTL stops *later 4AllPass handoffs*. A GitHub PAT already copied stays valid until GitHub says otherwise. The loopback grant is **one-shot** (second `decide` → 404); TTL is not a re-poll window. |
 | `application: "n8n"` is identity | String + pairing token. Pairing token ≠ agent identity. Unknown app = DENY. |
 | `handoff: "mediated"` | Typed. **Denied** in v1 (`handoff_unavailable`). No silent fallback to raw_secret. |
 | FastAPI mints provider tokens | It does not. Broker is loopback; Origin 403 on the grant path. |

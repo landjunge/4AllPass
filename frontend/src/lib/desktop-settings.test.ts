@@ -31,7 +31,8 @@ test("sleep copy is Lock button only, not auto-lock", () => {
 test("license copy is personal free, commercial not", () => {
   assert.match(LICENSE_HINT, /Quelloffen|Privat frei/);
   assert.match(LICENSE_HINT, /Personal use free|Source is public/);
-  assert.match(LICENSE_HINT, /Kommerziell nicht|Commercial use is not/);
+  assert.match(LICENSE_HINT, /Kommerziell nur mit Erlaubnis von Daniel Filipek/);
+  assert.match(LICENSE_HINT, /Commercial use only with permission from Daniel Filipek/);
   assert.match(LICENSE_HINT, /PolyForm Noncommercial/);
 });
 

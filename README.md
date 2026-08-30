@@ -71,7 +71,7 @@ Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten brauch
 
 ### Lizenz
 
-Quelloffen: du darfst den Code lesen und **privat** nutzen. Kommerzielle Nutzung (Firma, Verkauf, bezahltes Produkt) ist **nicht** erlaubt, außer du holst eine Erlaubnis bei Daniel Filipek ein. [PolyForm Noncommercial 1.0.0](LICENSE). Das ist **kein** MIT/Apache — OSI-Open-Source würde Firmen dieselbe Nutzung erlauben.
+Quelloffen: du darfst den Code lesen und **privat** nutzen. Kommerzielle Nutzung (Firma, Verkauf, bezahltes Produkt) **nur mit Erlaubnis von Daniel Filipek**. [PolyForm Noncommercial 1.0.0](LICENSE). Das ist **kein** MIT/Apache — OSI-Open-Source würde Firmen dieselbe Nutzung erlauben.
 
 ---
 
@@ -159,7 +159,7 @@ Import passwords from Chrome or Firefox, keep the vault on your device, and opti
 
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
-**License.** Source is public. Personal use is free. Commercial use (a company, selling it, a paid product) is not allowed unless Daniel Filipek grants permission. [PolyForm Noncommercial 1.0.0](LICENSE). Not MIT/Apache — OSI Open Source would also allow companies to use it.
+**License.** Source is public. Personal use is free. Commercial use (a company, selling it, a paid product) only with permission from Daniel Filipek. [PolyForm Noncommercial 1.0.0](LICENSE). Not MIT/Apache — OSI Open Source would also allow companies to use it.
 
 ---
 

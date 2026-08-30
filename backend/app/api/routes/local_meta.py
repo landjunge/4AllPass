@@ -25,12 +25,24 @@ class LocalBrokerInfo(CamelModel):
 
 
 @router.get("/broker", response_model=LocalBrokerInfo)
-async def local_broker(user: Annotated[User, Depends(get_current_user)]) -> LocalBrokerInfo:
-    """Pairing token. Not a vault secret. Not for the passwordless local row."""
+async def local_broker(
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> LocalBrokerInfo:
+    """Pairing token. Not a vault secret. Not for local@ or a throwaway register."""
     settings = get_settings()
     if not settings.is_local() or not settings.broker_token:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
     if user.email == LOCAL_ACCOUNT_EMAIL:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
+    owned = int(
+        (
+            await db.execute(
+                select(func.count()).select_from(Vault).where(Vault.owner_user_id == user.id)
+            )
+        ).scalar_one()
+    )
+    if owned < 1:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
     return LocalBrokerInfo(url=settings.broker_url.rstrip("/"), token=settings.broker_token)
 

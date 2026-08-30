@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "4AllPass loopback access client for agents. Talks to 127.0.0.1, not FastAPI.",
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/index.ts"
   },

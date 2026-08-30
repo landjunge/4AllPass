@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Runtime-neutral access policy, grants, and audit. No secrets on the request path. No React, DOM, or FastAPI.",
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/index.ts"
   },

@@ -65,6 +65,10 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 
 Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten braucht es weiterhin Vorsicht und ein sicheres Backup.
 
+### Lizenz
+
+Persönliche Nutzung zu Hause ist frei. Kommerzielle Nutzung (Firma, Verkauf, bezahltes Produkt) ist **nicht** erlaubt, außer du holst eine Erlaubnis bei Daniel Filipek ein. Das ist [PolyForm Noncommercial 1.0.0](LICENSE) — öffentlich lesbarer Code, **kein** OSI-Open-Source.
+
 ---
 
 ## Installation
@@ -148,6 +152,8 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 4AllPass is a local-first desktop password vault. Import passwords from your browser, use autofill, and keep control of your encrypted data.
 
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Technical details are available in the [documentation index](docs/README.md).
+
+**License.** Personal use at home is free. Commercial use (a company, selling it, a paid product) is not allowed unless Daniel Filipek grants permission. [PolyForm Noncommercial 1.0.0](LICENSE) — source is public, not OSI Open Source.
 
 ---
 

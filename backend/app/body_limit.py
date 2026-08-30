@@ -63,13 +63,15 @@ class BodyLimitMiddleware:
             chunks.append(body)
             more = bool(message.get("more_body"))
 
-        replayed = False
+        first = True
 
         async def replay_receive() -> dict:
-            nonlocal replayed
-            if replayed:
-                return {"type": "http.disconnect"}
-            replayed = True
-            return {"type": "http.request", "body": b"".join(chunks), "more_body": False}
+            nonlocal first
+            if first:
+                first = False
+                return {"type": "http.request", "body": b"".join(chunks), "more_body": False}
+            # Do not send http.disconnect: ASGITransport treats that as a client
+            # hang-up (204) before the inner app finishes.
+            return {"type": "http.request", "body": b"", "more_body": False}
 
         await self.app(scope, replay_receive, send)

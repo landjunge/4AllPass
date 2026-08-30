@@ -70,3 +70,19 @@ async def test_body_within_limit_is_passed_through():
     sent = await _call(app, _scope(), [b"ok"])
     assert sent[0]["status"] == 200
     assert sent[1]["body"] == b"ok"
+
+
+@pytest.mark.asyncio
+async def test_inner_app_may_call_receive_twice_without_204():
+    async def twice(scope, receive, send):
+        first = await receive()
+        second = await receive()
+        assert first["type"] == "http.request"
+        assert second["type"] == "http.request"
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": first.get("body") or b""})
+
+    app = BodyLimitMiddleware(twice, max_bytes=32)
+    sent = await _call(app, _scope(), [b"grant"])
+    assert sent[0]["status"] == 200
+    assert sent[1]["body"] == b"grant"

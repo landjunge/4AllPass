@@ -49,6 +49,9 @@ If `grok-build-plan.md` says “build Phase 4 MAIP” and `security-boundary.md`
 
 Default is **no new code**.
 
+**Human-first** (`ROADMAP.md` §0b): claim `@4allpass` on npmjs (F-26). Node
+`timingSafeEqual` is already on `main` (F-28) — do not rebuild it.
+
 Next product proof: [#120](https://github.com/landjunge/4AllPass/issues/120) —
 stranger Mac: app opens, vault, browser cards, import review without passwords.
 Checklist: `docs/freeze.md`.

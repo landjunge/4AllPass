@@ -396,8 +396,10 @@ internal package as `"link": true`; `npm ci` at the repo root does not resolve
 them from npmjs. Internal `package.json` files still declare `"@4allpass/…": "*"`.
 A `workspace:*` change was attempted in PR #155; GitHub Actions `npm ci` rejected
 the `workspace:` URL (`EUNSUPPORTEDPROTOCOL`), so that mitigation is **not** on
-`main`. Claiming the scope (empty placeholders) remains a maintainer npm-login
-action. Checkliste: `docs/supply-chain-security.md` §6.
+`main`. Claiming the scope (empty placeholders) is the remaining action — **human,
+npm login**, not a code PR. Exact steps: `ROADMAP.md` §0b. Checkliste:
+`docs/supply-chain-security.md` §6. Re-checked 2026-08-30: this Mac `npm whoami`
+need-auth; registry `@4allpass/crypto` still 404.
 
 ### F-27 — Access grant is one-shot; oversized TTL is not a re-poll window · **info**
 

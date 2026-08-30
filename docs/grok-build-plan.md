@@ -62,6 +62,8 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 **Reihenfolge:** Supply-Chain (done) → Code-Hygiene (done) → Secret Access Layer vorbereiten → Mobile (PWA → Android → iOS). MAIP nicht in dieser Sequenz. Status: `ROADMAP.md`.
 
+**Zuerst der Mensch** (kein Grok-Code): `ROADMAP.md` §0b. Offen: `@4allpass` auf npmjs (F-26). Node-Broker `timingSafeEqual` ist auf `main` (F-28) — nicht nochmal bauen.
+
 ---
 
 ## 1b. Code-Hygiene — completed 2026-08-28
@@ -177,4 +179,4 @@ Wenn hier was steht, das über `security-boundary.md` hinausgeht: Defekt. Nicht 
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-30.*
+*Zuletzt aktualisiert: 2026-08-30 (human-first: npm-Scope, F-28 already on main).*

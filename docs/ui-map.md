@@ -184,7 +184,8 @@ Handy: Spalten unter 820 px untereinander.
 
 Import-Review · Share-Datei · Share öffnen · Recovery-Kit.
 
-Jeweils: Titel, Warnung, eine primäre Aktion, Abbrechen. Server sieht keinen Klartext.
+Jeweils: Titel, Warnung, eine primäre Aktion, Abbrechen. Server sieht keinen Klartext.  
+Import-Review zeigt Art (Login / API-Key / Server) · Host oder Provider · User — **kein** Secret.
 
 > Wireframe: [v8-import.html](screenshots/v8-import.html)
 

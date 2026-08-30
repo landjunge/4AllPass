@@ -46,6 +46,52 @@ test("parses Bitwarden JSON logins and skips notes", () => {
   assert.equal(result.entries[0]?.url, "https://github.com");
   assert.equal(result.entries[0]?.providerId, "github");
   assert.equal(result.entries[0]?.domain, "github.com");
+  assert.equal(result.entries[0]?.kind, "web");
+});
+
+test("Bitwarden login with a GitHub PAT is an API key", () => {
+  const result = parsePlaintextExport(
+    JSON.stringify({
+      items: [
+        {
+          type: 1,
+          name: "deploy",
+          login: {
+            username: "ada",
+            password: "ghp_demotokenvalue1",
+            uris: [{ uri: "https://github.com" }],
+          },
+        },
+      ],
+    }),
+  );
+  assert.equal(result.entries[0]?.kind, "api");
+  assert.equal(result.entries[0]?.provider, "GitHub");
+  assert.equal(JSON.stringify(importReviewRows(result.entries)).includes("ghp_demotokenvalue1"), false);
+});
+
+test("Bitwarden secure note that is a PAT imports as API", () => {
+  const result = parsePlaintextExport(
+    JSON.stringify({
+      items: [{ type: 2, name: "bot", notes: "ghp_demotokenvalue1" }],
+    }),
+  );
+  assert.equal(result.format, "bitwarden-json");
+  assert.equal(result.entries.length, 1);
+  assert.equal(result.entries[0]?.kind, "api");
+});
+
+test("CSV token column and .env file classify as API", () => {
+  const csv = parsePlaintextExport("title,api_key\nopenai,sk-demotokenvalue12ab\n");
+  assert.equal(csv.format, "csv");
+  assert.equal(csv.entries[0]?.kind, "api");
+  assert.equal(csv.entries[0]?.provider, "OpenAI");
+  const env = parsePlaintextExport("OPENAI_API_KEY=sk-demotokenvalue12ab\nGITHUB_TOKEN=ghp_demotokenvalue1\n");
+  assert.equal(env.format, "env");
+  assert.equal(env.entries.length, 2);
+  const json = parsePlaintextExport(JSON.stringify({ OPENAI_API_KEY: "sk-demotokenvalue12ab" }));
+  assert.equal(json.format, "provider-json");
+  assert.equal(json.entries[0]?.kind, "api");
 });
 
 test("parses KeePass-style CSV", () => {
@@ -164,6 +210,7 @@ test("import review never includes the password field", () => {
   assert.equal(rows[0]?.username, "ada");
   assert.equal(JSON.stringify(rows).includes("hunter2"), false);
   assert.equal("password" in (rows[0] ?? {}), false);
+  assert.equal(rows[0]?.kind, "web");
 });
 
 test("merge replaces same host and username", () => {

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { importReviewRows, plaintextImportWarning } from "../../lib/import.ts";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { ImportPending } from "../../types/vault.ts";
+import { kindLabel } from "../../utils/vault/labels.ts";
 
 export function VaultImportReview({
   pending,
@@ -75,7 +76,8 @@ export function VaultImportReview({
                     <strong>{row.title || row.url}</strong>
                     <span className="muted">
                       {" "}
-                      {row.username}
+                      {kindLabel(row.kind, t)}
+                      {row.username ? ` · ${row.username}` : ""}
                       {row.provider ? ` · ${row.provider}${row.confidence >= 0.95 ? "" : " ?"}` : ""}
                     </span>
                   </span>

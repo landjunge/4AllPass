@@ -216,7 +216,42 @@ async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runti
         assert throwaway.status_code == 404, throwaway.text
 
         created = await client.post("/api/v1/vaults", headers=email_auth)
-        assert created.status_code in {200, 201}, created.text
+        assert created.status_code == 201, created.text
+        empty = await client.get("/api/v1/local/broker", headers=email_auth)
+        assert empty.status_code == 404, empty.text
+
+        vault_id = created.json()["vaultId"]
+        committed = await client.post(
+            f"/api/v1/vaults/{vault_id}/snapshots",
+            headers=email_auth,
+            json={
+                "revision": 1,
+                "vaultKeyVersion": 1,
+                "cryptoProtocolVersion": 1,
+                "envelopes": [
+                    {
+                        "version": 1,
+                        "type": "master",
+                        "vaultKeyVersion": 1,
+                        "encryption": "AES-256-GCM",
+                        "nonce": "AAAAAAAAAAAAAAAA",
+                        "ciphertext": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+                        "tag": "AgICAgICAgICAgICAgICAg==",
+                        "kdf": {
+                            "algorithm": "argon2id",
+                            "version": 19,
+                            "memory": 65536,
+                            "iterations": 3,
+                            "parallelism": 4,
+                            "hashLen": 32,
+                            "salt": "ABEiM0RVZneImaq7zN3u/w==",
+                        },
+                    }
+                ],
+                "entries": [],
+            },
+        )
+        assert committed.status_code == 200, committed.text
         info = await client.get("/api/v1/local/broker", headers=email_auth)
         assert info.status_code == 200, info.text
         body = info.json()

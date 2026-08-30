@@ -38,7 +38,12 @@ async def local_broker(
     owned = int(
         (
             await db.execute(
-                select(func.count()).select_from(Vault).where(Vault.owner_user_id == user.id)
+                select(func.count())
+                .select_from(Vault)
+                .where(
+                    Vault.owner_user_id == user.id,
+                    Vault.active_snapshot_id.is_not(None),
+                )
             )
         ).scalar_one()
     )

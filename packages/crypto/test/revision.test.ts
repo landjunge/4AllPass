@@ -22,6 +22,21 @@ describe("evaluateRevision", () => {
     if (d.ok) assert.equal(d.action, "first_seen");
   });
 
+  it("a first-use pin at uint32 max permanently rejects the honest later snapshot", () => {
+    const poisoned: VaultRevision = { ...base, revision: 4294967295 };
+    const first = evaluateRevision(null, poisoned);
+    assert.equal(first.ok, true);
+    if (first.ok) assert.equal(first.action, "first_seen");
+    const honest = evaluateRevision(poisoned, { ...base, revision: 6 });
+    assert.equal(honest.ok, false);
+    if (!honest.ok) {
+      assert.equal(honest.action, "rollback");
+      assert.ok(honest.error instanceof RollbackError);
+      assert.equal(honest.error.lastSeenRevision, 4294967295);
+      assert.equal(honest.error.incomingRevision, 6);
+    }
+  });
+
   it("accepts the same snapshot", () => {
     const d = evaluateRevision(base, { ...base });
     assert.equal(d.ok, true);

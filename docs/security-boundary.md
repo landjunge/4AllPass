@@ -395,6 +395,10 @@ and are **not** built yet. The later profile is [`specs/maip-v0.1.md`](specs/mai
 `expires_in` stop *later handoffs from this process*. After Allow, n8n already
 holds a copy of the vault secret (e.g. a GitHub PAT). 4AllPass does not rotate
 or expire that provider credential. A copy already given is not un-known.
+The loopback relay is **one-shot**: `waiting[id]` is removed when `decide`
+completes. A second `decide` on the same id is 404. The agent cannot re-poll
+the same grant. `ttl` has no maximum in the parser; that does not create a
+re-fetch window.
 
 See [`two-minute-demo.md`](two-minute-demo.md) and
 [`local-access-broker.md`](local-access-broker.md).

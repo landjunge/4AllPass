@@ -84,6 +84,13 @@ Confidentiality under a malicious server therefore reduces to: offline attack on
 
 A **new** client has no pinned revision. The first snapshot it accepts is pin-on-first-use. An active server can choose *which* historical snapshot that new client sees first. Manifest verification makes that snapshot internally consistent — it cannot be a mixture — but it cannot make it *fresh*. After the first successful unlock, further rollback is detected.
 
+Concrete availability consequence (not a confidentiality break): if the first
+accepted pin claims `revision = 4294967295` (uint32 max), every later honest
+snapshot is `RollbackError`. The library has no automatic recovery; the operator
+must clear the local pin. `evaluateRevision` documents this poison-pin case.
+A later UX should confirm the first pin out-of-band (short manifest digest vs an
+already-enrolled device) before storing it.
+
 ### Backend duty
 
 Client-side checks detect an inconsistent snapshot; they do not prevent one. Atomic publication (write the full snapshot including its manifest, then compare-and-swap `active_revision`, one snapshot per `(vault_id, revision)`) is a requirement on the storage layer, specified in `vault-revision.md` §4.1.
@@ -108,7 +115,7 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | Offline brute-force on Master PW  | Accepted (fundamental)                            | Strong Argon2id params + user education |
 | Memory scraping while unlocked    | Accepted (JS/WASM platform limit)                 | Auto-Lock, short-lived secrets, zeroization best-effort |
 | Compromised device already holds VK | Requires hard rotation                            | Atomic snapshot + `vault_key_version` |
-| Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock |
+| Malicious server first-use snapshot choice | Accepted | Pin-on-first-use; warn on first unlock. A pin at revision `2^32-1` is a permanent client DoS until the local pin is wiped. |
 | Malicious server availability     | Accepted | Client keeps last good snapshot locally |
 | Non-atomic backend publication    | Detectable, not preventable client-side           | Backend requirements in `vault-revision.md` §4.1 |
 | No browser / WebAuthn end-to-end test | Open | `packages/crypto` never talks to an authenticator; virtual-authenticator test belongs to the app layer |

@@ -387,4 +387,71 @@ maximal 7 MB body, the Base32 encoding over 20 000 random keys and all 256 one-h
 keys, the KDF bounds, and an exhaustive search of all 324 revision state pairs over
 three revisions × two key versions × three digest states.
 
+### F-26 — `@4allpass/*` unclaimed on npmjs · **medium** · lockfile only
+
+Re-checked 2026-08-30: live GET of
+`@4allpass/{access,broker,core,crypto,providers,webauthn,extension,frontend}` on
+the public registry still returned **404**. The committed lockfile pins every
+internal package as `"link": true`; `npm ci` at the repo root does not resolve
+them from npmjs. Internal `package.json` files still declare `"@4allpass/…": "*"`.
+A `workspace:*` change was attempted in PR #155; GitHub Actions `npm ci` rejected
+the `workspace:` URL (`EUNSUPPORTEDPROTOCOL`), so that mitigation is **not** on
+`main`. Claiming the scope (empty placeholders) remains a maintainer npm-login
+action. Checkliste: `docs/supply-chain-security.md` §6.
+
+### F-27 — Access grant is one-shot; oversized TTL is not a re-poll window · **info**
+
+`POST /v1/access/request` waits on `hub.waiting[id]`. `POST /v1/broker/decide`
+completes that future and the sidecar **pops** the id (`backend/app/broker.py`);
+the Node relay **deletes** it (`packages/broker`). A second decide on the same id
+is 404 and does not contain `access_token`. A new request after the waiter is
+gone is `vault_locked`. `@4allpass/access` is a single POST, not a poll loop.
+
+`ttl` still has no upper bound in `parseAccessBody` / the access client (only
+`ttl > 0`). The approval dialog prints the raw second count. That is a UX issue
+for a non-technical approver, not a second copy of the secret: the agent already
+holds `raw_secret` after the first Allow (F-3 / security-boundary). Tests:
+`test_second_decide_same_id_is_404`, `test_approved_grant_cannot_be_repulled`,
+matching Node tests in `packages/broker/test/relay.test.mjs`.
+
+### F-28 — Node relay used `!==` for the pairing token · **low** · fixed
+
+`packages/broker/src/relay.mjs` compared the Bearer token with `!==`. Production
+sidecar already uses `secrets.compare_digest`. The Node path is documented as
+dev-only (`npm run broker`, not the desktop sidecar). In-process, JS `!==` on a
+64-char token was ~5× faster when the first byte differed than when the last
+byte differed (~3.5 ns vs ~19 ns; `timingSafeEqual` stayed ~350 ns either way).
+Over loopback HTTP (80 samples each) that nanosecond gap is lost in request
+noise — last-byte-wrong was not slower. Not treated as exploitable on loopback
+at this sample size. Still aligned the Node relay with `crypto.timingSafeEqual`
+(`tokenMatches`). Length still leaks, as in Python.
+
+### F-29 — Recovery path, live attacks · **no finding**
+
+Original script against the exported API (`parseRecoveryKey`,
+`deriveRecoveryWrappingKey`, `wrapRecoveryEnvelope`, `unwrapVaultKey`,
+`wrapDeviceKey` / `unwrapDeviceKey`):
+
+| Attack | Result |
+|---|---|
+| Truncated / empty / overlong Emergency Kit | `ProtocolError` |
+| Single-character flip in the kit string | `IntegrityError` (checksum), not a different key |
+| Same 32-byte IKM as PRF output → DWK opens a recovery envelope | `AuthFailureError` (HKDF labels `4allpass-dwk-*` vs `4allpass-rwk-*`) |
+| RWK unwraps a Device-Key Envelope | `AuthFailureError` |
+| Recovery envelope opened as `master` or `device` | `IntegrityError` type mismatch |
+| Kit for vault A opens vault B's recovery envelope | `AuthFailureError` (AAD binds `vaultId`) |
+| Stolen print after `compromised_rotation` | `AuthFailureError` on the new envelope |
+| Old print after `trusted_replacement` | `AuthFailureError` on the new envelope |
+
+Tests: `packages/crypto/test/adversarial-recovery.test.ts`.
+
+### F-30 — First-use pin at uint32 max is a permanent DoS · **info** · documented
+
+`docs/threat-model.md` already calls pin-on-first-use a residual. Live check:
+`evaluateRevision(null, { revision: 4294967295 })` is `first_seen`; the same
+client then rejects the honest server's revision 6 as `RollbackError`. No
+confidentiality bypass. There is no automatic recovery in the library; the
+operator must wipe the local pin. Test:
+`a first-use pin at uint32 max permanently rejects the honest later snapshot`.
+
 ---

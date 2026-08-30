@@ -4,7 +4,7 @@
  * Policy and plaintext stay in the unlocked PWA.
  */
 import { createServer, request as httpRequest } from "node:http";
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 export const DEFAULT_HOST = "127.0.0.1";
@@ -52,6 +52,20 @@ function readBearer(req) {
   const header = req.headers.authorization ?? "";
   const match = /^Bearer\s+(\S+)/i.exec(header);
   return match ? match[1] : "";
+}
+
+/** Pairing-token compare. Length still leaks; values do not. Matches FastAPI `secrets.compare_digest`. */
+export function tokenMatches(got, expected) {
+  if (typeof got !== "string" || typeof expected !== "string" || !got || !expected) {
+    return false;
+  }
+  const a = Buffer.from(got);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) {
+    timingSafeEqual(a, a);
+    return false;
+  }
+  return timingSafeEqual(a, b);
 }
 
 function readBody(req) {
@@ -148,7 +162,7 @@ export function createBroker(opts) {
     }
 
     const bearer = readBearer(req);
-    if (bearer !== token) {
+    if (!tokenMatches(bearer, token)) {
       const allowCors = url.pathname.startsWith("/v1/broker/") ? cors : "";
       send(res, 401, { status: "denied", reason: "malformed_request" }, allowCors);
       return;

@@ -57,6 +57,7 @@ FOURALLPASS_BROKER_TOKEN=… npm run access:demo -- unknown
 | Policy | Still in the PWA (`decideAccess`). Unknown app = DENY. `handoff: "mediated"` → `handoff_unavailable`. Omitted = `raw_secret`. |
 | Identity | **PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata, not authentication. The token proves the caller knows the secret, not that the process is n8n. Treat the pairing token as the local root-of-access for agents. Cryptographic agent keys are not V1 (ADR-008). |
 | TTL | 4AllPass stops later handoffs after `ttl`. It does **not** expire the provider credential already copied (GitHub PAT stays valid until GitHub says otherwise). |
+| One-shot | Each `POST /v1/access/request` gets one `decide`. Replaying `decide` on the same id is 404. The agent cannot re-fetch the secret by polling. A second copy still requires a new Allow. |
 | Logs | Broker logs status, not `access_token`. |
 
 `@4allpass/access` is that Node client: loopback URL only, no `Origin` header, pairing token required. It does not decrypt and does not talk to FastAPI. Using it from a web page will 403 on the grant path.

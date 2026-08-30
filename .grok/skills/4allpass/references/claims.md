@@ -12,6 +12,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | `application: "n8n"` is identity | String + pairing token. Pairing token ≠ agent identity. Unknown app = DENY. |
 | `handoff: "mediated"` | Typed. **Denied** in v1 (`handoff_unavailable`). No silent fallback to raw_secret. |
 | FastAPI mints provider tokens | It does not. Broker is loopback; Origin 403 on the grant path. |
+| Any `/auth/local` session can fetch the broker pairing token | **No.** `GET /local/broker` is 404 for `local@127.0.0.1`. E-mail session on the local profile still can. Remaining: a throwaway register on the same process. |
 
 ## Desktop / Tauri
 

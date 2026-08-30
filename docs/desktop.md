@@ -86,7 +86,7 @@ small always-on-top prompt (application / provider / scope / TTL — **not** the
 secret). Allow / Deny in that prompt talks back to the unlocked UI over Tauri
 events; the sidecar still does not decrypt. The browser / Playwright path keeps
 the in-app overlay. `FOURALLPASS_BROKER_TOKEN` is in `broker.token` under the
-data dir and on `GET /api/v1/local/broker` after local storage auth.
+data dir and on `GET /api/v1/local/broker` after e-mail storage auth (not `local@`).
 
 ```sh
 FOURALLPASS_BROKER_TOKEN=$(cat ~/Library/Application\ Support/4AllPass/broker.token) \

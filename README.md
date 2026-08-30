@@ -7,6 +7,10 @@
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
+Lokaler Passwort-Manager. Autofill. Zero-Knowledge. Agenten nur nach Allow/Deny.
+
+Local-first password manager. Autofill. Zero-knowledge. Agents only after Allow/Deny.
+
 4AllPass speichert Passwörter und Zugänge auf deinem Gerät. Ein Anbieter oder Server soll sie nicht lesen können.
 
 ### 👤 [Für Nutzer – herunterladen und loslegen](#für-nutzer)
@@ -89,7 +93,7 @@ Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsk
 
 ## Für Entwickler
 
-4AllPass ist ein local-first Passwort-Tresor mit Desktop-App, Browser-Erweiterungen und optionalem verschlüsseltem Speicher.
+4AllPass ist ein local-first Passwort-Manager mit Desktop-App, Browser-Erweiterungen und optionalem verschlüsseltem Speicher.
 
 Der Server sieht keinen Klartext, kein Tresor-Passwort und keinen Vault Key. Was die Software tatsächlich erzwingt, steht in [Security Boundary](docs/security-boundary.md).
 
@@ -145,9 +149,11 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 ## English
 
-4AllPass is a local-first desktop password vault. Import passwords from your browser, use autofill, and keep control of your encrypted data.
+4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. Agents get access only after Allow/Deny.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Technical details are available in the [documentation index](docs/README.md).
+Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
+
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 ---
 

@@ -39,7 +39,17 @@ Public copy must not exceed this file: **Local-first. Sync optional. Server dein
 | **Crypto** | “This snapshot is authentic and only an authorized client can decrypt it.” | Client-side AES-GCM, envelopes, sealed manifest |
 
 Authentication is **not** vault decryption. The account password cannot unwrap
-a Vault Key. A valid session token only authorizes *storage* operations.
+a Vault Key **when it differs from the vault password**. Login still sends the
+account password to the server (plaintext over HTTPS, then hashed). Creating a
+vault refuses an exact match; unlocking an existing vault with a match still
+works and warns. A valid session token only authorizes *storage* operations.
+
+**Hosted PWA vs bundled desktop.** A malicious storage operator who also
+serves the decrypting JavaScript (same origin `/` + `/api`) can read the vault
+password before Argon2id. That is not “the operator does not have the Master
+Password.” The desktop app decrypts with **bundled** `frontendDist`; the
+sidecar on `:8788` is API. The active-server Zero-Knowledge claim applies to
+that bundled client, not to a server-delivered PWA.
 
 The server must never receive or derive: Master Password, Vault Key (VK),
 Device Key (DK), Device Wrapping Key (DWK), WebAuthn PRF output, or plaintext

@@ -24,6 +24,7 @@ import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.
 import { readActiveVaultId, writeActiveVaultId } from "../lib/active-vault.ts";
 import { mergeImportedLogins } from "../lib/import.ts";
 import { decryptVaultEntries } from "../lib/pull-other-vault.ts";
+import { passwordsAreSame, SAME_PASSWORD_ERROR, SAME_PASSWORD_NOTICE } from "../lib/password-separation.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
   commitEntries,
@@ -78,6 +79,7 @@ interface AppActions {
   createNewVault(masterPassword: string, profile?: Argon2idProfileName): Promise<void>;
   restoreFromShare(fileText: string, shareKey: string, masterPassword: string): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
+  passwordsCollide(vaultPassword: string): boolean;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
   lock(): void;
@@ -125,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [notice, setNotice] = useState<string | null>(null);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
   const vaultRef = useRef<UnlockedVault | null>(null);
+  const accountPasswordRef = useRef<string | null>(null);
 
   const setUnlocked = useCallback((next: UnlockedVault | null) => {
     vaultRef.current = next;
@@ -231,6 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async signIn(userEmail, password) {
         await withStatus(async () => {
           const session = await api.login(userEmail, password);
+          accountPasswordRef.current = password;
           setEmail(session.email);
           await loadVaults();
         });
@@ -239,6 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async signUp(userEmail, password) {
         await withStatus(async () => {
           const session = await api.register(userEmail, password);
+          accountPasswordRef.current = password;
           setEmail(session.email);
           setVaults([]);
         });
@@ -254,6 +259,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async signOut() {
         lock();
+        accountPasswordRef.current = null;
         await api.logout();
         setEmail(null);
         setVaults([]);
@@ -270,6 +276,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async createNewVault(masterPassword, profile = "mobile_safe") {
         await withStatus(async () => {
+          if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+            throw new Error(SAME_PASSWORD_ERROR);
+          }
           setLockState("UNLOCKING");
           try {
             const created = await createVault(masterPassword, profile);
@@ -287,6 +296,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async restoreFromShare(fileText, shareKey, masterPassword) {
         await withStatus(async () => {
+          if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+            throw new Error(SAME_PASSWORD_ERROR);
+          }
           const entries = openSharePackage(fileText, shareKey);
           if (entries.length === 0) throw new Error("share file has no entries");
           setLockState("UNLOCKING");
@@ -312,11 +324,18 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           try {
             setUnlocked(await unlockWithMasterPassword(activeVaultId, masterPassword));
             writeActiveVaultId(activeVaultId);
+            if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+              setNotice(SAME_PASSWORD_NOTICE);
+            }
           } catch (failure) {
             setLockState("LOCKED");
             throw failure;
           }
         });
+      },
+
+      passwordsCollide(vaultPassword) {
+        return passwordsAreSame(accountPasswordRef.current ?? "", vaultPassword);
       },
 
       async unlockWithRecovery(key) {

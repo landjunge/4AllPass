@@ -7,16 +7,17 @@ export function CreateVaultPage({
 }: {
   onRestore?: () => void;
 }): ReactNode {
-  const { createNewVault } = useApp();
+  const { createNewVault, passwordsCollide } = useApp();
   const { t } = useCopy();
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [busy, setBusy] = useState(false);
   const mismatch = repeat.length > 0 && password !== repeat;
+  const sameAsAccount = passwordsCollide(password);
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (mismatch) return;
+    if (mismatch || sameAsAccount) return;
     setBusy(true);
     try {
       await createNewVault(password);
@@ -67,13 +68,21 @@ export function CreateVaultPage({
             {t({ de: "Die Passwörter stimmen nicht überein.", en: "The passwords do not match." })}
           </p>
         ) : null}
+        {sameAsAccount ? (
+          <p className="error-text" data-testid="same-password-error">
+            {t({
+              de: "Nicht dasselbe wie das Konto-Passwort. Der Server sieht das Konto-Passwort.",
+              en: "Not the same as the account password. The server sees the account password.",
+            })}
+          </p>
+        ) : null}
         <p className="hint">
           {t({
             de: "Verlässt dieses Gerät nicht. Ein paar Sekunden Wartezeit sind Absicht.",
             en: "Does not leave this device. A few seconds of waiting is intentional.",
           })}
         </p>
-        <button type="submit" className="primary" disabled={busy || mismatch} data-testid="create-vault">
+        <button type="submit" className="primary" disabled={busy || mismatch || sameAsAccount} data-testid="create-vault">
           {busy
             ? t({ de: "Tresor wird erzeugt…", en: "Creating vault…" })
             : t({ de: "Tresor anlegen", en: "Create vault" })}

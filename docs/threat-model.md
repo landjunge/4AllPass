@@ -99,8 +99,8 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 
 ## 4. Security Goals
 
-- Full server compromise or a malicious operator → only offline dictionary / brute-force against Argon2id (Master Password) or the Recovery Key remain.
-- Account compromise alone never grants vault decryption.
+- Full server compromise of **opaque blobs** → only offline dictionary / brute-force against Argon2id (Master Password) or the Recovery Key remain. This does **not** hold if the operator also delivers the decrypting PWA JS (same origin).
+- Account compromise alone never grants vault decryption **if the account password is not the vault password**. The client refuses that match on create. Hosted PWA still trusts the code host.
 - Replayed older snapshots are rejected after a newer revision has been pinned.
 - Partial / mixed rotations cannot be applied.
 - Soft revoke for a device that is not believed compromised; hard rotation if it may already know VK.

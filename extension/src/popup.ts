@@ -142,6 +142,12 @@ unlockForm.addEventListener("submit", (event) => {
   const email = (document.getElementById("email") as HTMLInputElement).value;
   const accountPassword = (document.getElementById("account") as HTMLInputElement).value;
   const vaultPassword = (document.getElementById("vault") as HTMLInputElement).value;
+  if (accountPassword.trim() && accountPassword.trim() === vaultPassword.trim()) {
+    showError(
+      "Konto-Passwort und Tresor-Passwort müssen verschieden sein. / Account password and vault password must differ.",
+    );
+    return;
+  }
   void rememberSettings()
     .then(() => send({ type: "unlock", apiOrigin, email, accountPassword, vaultPassword }))
     .then((result) => {

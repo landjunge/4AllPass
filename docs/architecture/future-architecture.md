@@ -143,7 +143,7 @@ Do **not** replace it with a 12-type union in the autofill slice. Autofill and i
 
 NOW: string application, loopback broker, human Allow, `handoff: "raw_secret"`. TTL limits later handoffs, not a copied credential. Pairing token ≠ identity.
 
-LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)).
+LATER: same `evaluatePolicy`, plus MAIP verify **first** ([`../specs/maip-v0.1.md`](../specs/maip-v0.1.md)). Do not replace the broker with MCP. MCP is not the security boundary ([`../capability-contract-v1.md`](../capability-contract-v1.md)). Headless / robot is that same later requester — not a robot SKU, not MHS-in-4AllPass, not a vault Device envelope as the agent’s papers ([`agent-access.md`](agent-access.md) § Headless).
 
 ---
 

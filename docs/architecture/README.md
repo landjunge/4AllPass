@@ -8,7 +8,7 @@
 | [`future-architecture.md`](future-architecture.md) | Long-term vision, honest vs code, architecture phases |
 | [`../security-boundary.md`](../security-boundary.md) | Who may see plaintext / VK (running) |
 | [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Shared agent identity — experimental, not implemented |
-| [`agent-access.md`](agent-access.md) | 4AllPass credential use later; capabilities not vault |
+| [`agent-access.md`](agent-access.md) | 4AllPass credential use later; capabilities not vault. Headless/robot parked there |
 | [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Experimental agent identity profile |
 | [`../vault-protocol.md`](../vault-protocol.md) | Client–server storage contract |
 | [`../vault-storage.md`](../vault-storage.md) | Local / self-host / managed placement |

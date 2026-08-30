@@ -67,3 +67,84 @@ Each request: `agent_id`, `timestamp`, `nonce`, `action`, `resource`, signature.
 ## Today
 
 Loopback broker, Origin 403, pairing token, `TRUSTED_APPLICATIONS = ["n8n"]`, unknown DENY, human Allow. Pairing token ≠ agent identity. Do not replace that demo with MCP-as-security.
+
+---
+
+## Headless / robot requesters (later, not v1)
+
+**Status:** Discussion draft 2026-08-30. **Not implemented.** Do not build on „weiter“.  
+**Source:** maintainer draft (`robot-interface-draft.md`). Corrected against [`../security-boundary.md`](../security-boundary.md).  
+**MHS:** Anthropic Model Hardware Standard, research preview as of 2026-08-30 — not a public spec, not Open Source, not a 4AllPass protocol.
+
+4AllPass does **not** drive robots. MHS (when it exists) already has `read`/`write`, discovery, and device-level physical limits. The robot is another **requester** of the loopback broker, like n8n. Same `packages/access` / `broker.py` model. No parallel robot SKU. No second broker.
+
+### Why the live popup is not enough
+
+Today every grant waits for a human in the desktop window. A field or lab robot often has nobody at that moment.
+
+| Mode | When | What |
+|---|---|---|
+| **Live Allow** | Human is present (commissioning, test) | Today’s overlay / prompt |
+| **Standing rule** | After a live enrollment | Broker matches a human-written rule. Not a blank check |
+
+Standing rule is **always-allow for a bound identity**. Forbidden in v1 until MAIP exists. [`../secret-access-layer.md`](../secret-access-layer.md) Phase D: do not ship “always allow” while `application` is still a string.
+
+### Identity is MAIP, not a vault Device envelope
+
+The draft reused WebAuthn Device envelopes (`PRF → DWK → Device Key → Vault Key`). **That mix is a defect.**
+
+| Object | Question | Must not |
+|---|---|---|
+| Vault **device** | Can this human device unwrap the VK? | Be an n8n or robot principal |
+| Agent / robot | May this requester use secret X after Allow? | Unwrap VK, sit in `packages/crypto` |
+
+- The broker never sees master password, VK, DK, DWK, PRF, or plaintext. It never creates Device envelopes.
+- Enrollment (later): robot generates a keypair in a TPM / secure element; human **live-Allows once**; registry stores the MAIP document (`maip:ed25519:<sha256 of pubkey>`). Each later request is signed. No long-lived shared token as identity.
+- Revoke the robot in the MAIP registry. Vault `deviceKeyVersion` / `hardRevokeDevice` rotates the **vault**, not the agent. Do not “cut a robot” by bumping VK.
+
+Suggested enrollment (same shape as § Enrollment above, hardware-backed if the board has it):
+
+1. Robot generates a non-exportable keypair.
+2. It offers public key + metadata (type, optional MHS manifest ref).
+3. Human confirms live — unknown = DENY until that click.
+4. Registry stores the MAIP document. Independently revocable.
+5. Later requests: signed `agent_id` + nonce + action + resource. Verify MAIP **then** policy.
+
+### Risk class (policy later, not crypto)
+
+Physical mistakes are worse than a leaked read-only API key (MHS/Genentech: a foam error treated as a software bug).
+
+| Class | Example | Rule if this ever ships |
+|---|---|---|
+| **data** | Read-only sensor / DB | Standing rule possible after enrollment; short TTL |
+| **actuation** | Arm, valve, drive | Never `raw_secret` without a **live** Allow. No standing auto-approve, including overnight |
+
+Additive `riskClass` on `@4allpass/core` policy when this ships. The **human** sets the class at enrollment. Do not infer it from MHS metadata in the first cut (misclassification).
+
+### Hard limits (only if standing rules exist)
+
+- Rate-limit per agent id. A compromised box asks at machine speed.
+- Hard TTL ceiling in request parse / `evaluatePolicy`. Today `ttlSeconds` is any finite `> 0` — that gap is real; it is **not** product-audit F-5 (`GET /local/broker` for `local@`).
+- Optional time window / network segment if the requester can prove them.
+- Standing rules expire after N days; human re-confirms. No permanent blank cheque.
+- Offline robot: next signed request fails if the local registry revoked it. Do not pretend VK rotation reaches a robot that is offline.
+
+### Audit
+
+Log agent id (pubkey hash), time, credential id (not the secret), `riskClass`, which rule matched. Same rule as `test_allow_flow_does_not_log_secret`. Logs are not proofs ([`future-architecture.md`](future-architecture.md)).
+
+### Open (from the draft)
+
+1. One MAIP identity per MHS manifest, or one identity for several MHS devices?
+2. Human-set vs inferred `riskClass` — default human.
+3. Four-eyes for actuation?
+4. If public MHS ships its own auth that collides with MAIP, rewrite this chapter. Do not implement against the research preview as if it were a spec.
+
+### Human prep (not Grok code)
+
+1. MHS preview access only if we will actually talk to a device.
+2. What secure element a typical board has (Pi is listed as an MHS partner — check, do not assume).
+3. MAIP enrollment prototype **without** MHS.
+4. Additive `riskClass` + tests, when identity exists.
+
+**Do not:** build this instead of [#120](https://github.com/landjunge/4AllPass/issues/120); mix vault envelopes with agent identity; FastAPI token mint; always-allow for string `n8n`; a 4AllPass robot protocol.

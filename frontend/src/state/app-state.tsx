@@ -49,6 +49,7 @@ interface AppState {
   ready: boolean;
   email: string | null;
   localMode: boolean;
+  localStore: { hasLocalVault: boolean; localEntries: number; hasOtherAccounts: boolean } | null;
   vaults: VaultSummary[];
   activeVaultId: string | null;
   lockState: LockState;
@@ -64,6 +65,7 @@ interface AppState {
 interface AppActions {
   signIn(email: string, password: string): Promise<void>;
   signUp(email: string, password: string): Promise<void>;
+  openThisMac(): Promise<void>;
   signOut(): Promise<void>;
   selectVault(vaultId: string): Promise<void>;
   createNewVault(masterPassword: string, profile?: Argon2idProfileName): Promise<void>;
@@ -104,6 +106,11 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [localMode, setLocalMode] = useState(false);
+  const [localStore, setLocalStore] = useState<{
+    hasLocalVault: boolean;
+    localEntries: number;
+    hasOtherAccounts: boolean;
+  } | null>(null);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [activeVaultId, setActiveVaultId] = useState<string | null>(null);
   const [lockState, setLockState] = useState<LockState>("LOCKED");
@@ -146,6 +153,13 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         const health = await api.waitForHealth();
         const local = health.profile === "local";
         setLocalMode(local);
+        if (local) {
+          try {
+            setLocalStore(await api.localStatus());
+          } catch {
+            setLocalStore(null);
+          }
+        }
         // Browser on :8788 keeps the silent local session (e2e / npm run app).
         // The desktop window shows Konto anlegen first — no auto-login.
         if (local && !getToken() && !isTauriShell() && !readStorageOrigin()) {
@@ -253,6 +267,14 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           const session = await api.register(userEmail, password);
           setEmail(session.email);
           setVaults([]);
+        });
+      },
+
+      async openThisMac() {
+        await withStatus(async () => {
+          const session = await api.localSession();
+          setEmail(session.email);
+          await loadVaults();
         });
       },
 
@@ -447,6 +469,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       ready,
       email,
       localMode,
+      localStore,
       vaults,
       activeVaultId,
       lockState,
@@ -463,6 +486,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       ready,
       email,
       localMode,
+      localStore,
       vaults,
       activeVaultId,
       lockState,

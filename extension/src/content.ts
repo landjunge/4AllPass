@@ -2,6 +2,7 @@ import { ext } from "./browser.ts";
 import {
   FILL_CONFIDENCE_THRESHOLD,
   buildLoginModel,
+  isSignupPath,
   leftoverAssistFields,
   modelHints,
   shouldOfferAssist,
@@ -89,6 +90,16 @@ function mergeMode(modes: FillMode[]): FillMode {
 }
 
 function probeForm(): FillResult {
+  if (isSignupPath(location.pathname)) {
+    return {
+      ok: false,
+      fields: [],
+      filled: [],
+      mode: "skipped",
+      reason: "signup",
+      pageOrigin: location.origin,
+    };
+  }
   const likes = visibleInputs().map(describe);
   return {
     ...probeFromModel(likes, buildLoginModel(likes)),
@@ -140,6 +151,16 @@ function fillNamedField(field: string, value: string): FillResult {
 }
 
 function fillForm(username: string, password: string, otp = "", assist = false): FillResult {
+  if (isSignupPath(location.pathname)) {
+    return {
+      ok: false,
+      fields: [],
+      filled: [],
+      mode: "skipped",
+      reason: "signup",
+      pageOrigin: location.origin,
+    };
+  }
   const inputs = visibleInputs();
   const likes = inputs.map(describe);
   const model = buildLoginModel(likes, assist ? 0 : FILL_CONFIDENCE_THRESHOLD);

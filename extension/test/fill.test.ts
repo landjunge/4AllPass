@@ -6,6 +6,7 @@ import {
   formatFillFailure,
   formatFillSuccess,
   ineligibleReason,
+  isSignupPath,
   leftoverAssistFields,
   pickPassword,
   pickUsername,
@@ -20,6 +21,13 @@ import {
 function input(partial: Partial<InputLike> & { type: string }): InputLike {
   return { name: "", id: "", autocomplete: "", ...partial };
 }
+
+test("Netflix signup path is not a login fill", () => {
+  assert.equal(isSignupPath("/signup"), true);
+  assert.equal(isSignupPath("/signup/password"), true);
+  assert.equal(isSignupPath("/login"), false);
+  assert.equal(isSignupPath("/"), false);
+});
 
 test("pickUsername prefers autocomplete=username", () => {
   const search = input({ type: "search", name: "q" });

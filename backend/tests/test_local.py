@@ -170,6 +170,23 @@ async def test_local_bootstrap_mints_session_without_register(local_runtime):
 
 
 @pytest.mark.asyncio(loop_scope="session")
+async def test_local_status_reports_existing_vault_without_secrets(local_runtime):
+    await _create_schema()
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=local_runtime.origin) as client:
+        empty = await client.get("/api/v1/local/status")
+        assert empty.status_code == 200, empty.text
+        body = empty.json()
+        assert body["hasLocalVault"] is False
+        assert body["localEntries"] == 0
+        assert body["hasOtherAccounts"] is False
+        assert "password" not in str(body).lower()
+        assert "secret" not in str(body).lower()
+        assert "@" not in str(body)
+
+
+@pytest.mark.asyncio(loop_scope="session")
 async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runtime):
     await _create_schema()
     app = create_app()

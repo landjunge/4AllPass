@@ -12,6 +12,7 @@ export function App(): ReactNode {
     ready,
     email,
     localMode,
+    localStore,
     vaults,
     lockState,
     error,
@@ -39,7 +40,7 @@ export function App(): ReactNode {
         </span>
         {email ? (
           <div className="header-actions">
-            {localMode ? null : (
+            {localMode && email === "local@127.0.0.1" ? null : (
               <span className="muted small" data-testid="account-email">
                 {email}
               </span>
@@ -59,11 +60,11 @@ export function App(): ReactNode {
                 Sperren / Lock
               </button>
             ) : null}
-            {localMode ? null : (
+            {email !== "local@127.0.0.1" ? (
               <button type="button" className="link" onClick={() => void signOut()}>
                 Abmelden / Sign out
               </button>
-            )}
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -81,6 +82,18 @@ export function App(): ReactNode {
           <span>{notice}</span>
           <button type="button" className="link" onClick={clearMessages}>
             Schließen / Dismiss
+          </button>
+        </div>
+      ) : null}
+      {email && email !== "local@127.0.0.1" && localStore?.hasLocalVault ? (
+        <div className="banner notice" data-testid="other-vault-banner">
+          <span>
+            {localStore.localEntries > 0
+              ? `Auf diesem Mac liegt noch der lokale Tresor (${localStore.localEntries} Einträge). Nicht neu anlegen — abmelden und den öffnen. / This Mac still has the local vault (${localStore.localEntries} entries). Do not create another — sign out and open it.`
+              : `Auf diesem Mac liegt noch ein lokaler Tresor. Nicht neu anlegen. / This Mac still has a local vault. Do not create another.`}
+          </span>
+          <button type="button" className="link" onClick={() => void signOut()}>
+            Abmelden / Sign out
           </button>
         </div>
       ) : null}

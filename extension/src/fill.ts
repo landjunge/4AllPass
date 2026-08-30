@@ -63,6 +63,12 @@ export interface FillResult {
   confidence?: number;
 }
 
+/** Path is a registration funnel (Netflix /signup), not a login. */
+export function isSignupPath(pathname: string): boolean {
+  const path = pathname.split("?")[0]?.toLowerCase() ?? "";
+  return /\/(signup|sign-up|register|registration|join)(\/|$)/.test(path);
+}
+
 /** Signup: new-password present, no current-password. Do not fill as login. */
 export function isSignupForm(inputs: InputLike[]): boolean {
   const autos = (input: InputLike) => input.autocomplete.toLowerCase();
@@ -91,7 +97,7 @@ export function fillErrorMessage(reason: FillReason | undefined): string {
     case "low-confidence":
       return "Login-Felder unsicher / login fields not confident enough";
     case "signup":
-      return "Sieht nach Registrierung aus / this looks like a sign-up form";
+      return "Sieht nach Registrierung aus — Login-Seite öffnen / this looks like a sign-up form, open the login page";
     case "verify-mismatch":
       return "Seite hat Fill nicht übernommen / page did not accept the fill";
     case "origin-mismatch":

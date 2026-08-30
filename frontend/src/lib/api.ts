@@ -339,6 +339,14 @@ export const api = {
     return session;
   },
 
+  localStatus(): Promise<{
+    hasLocalVault: boolean;
+    localEntries: number;
+    hasOtherAccounts: boolean;
+  }> {
+    return request("GET", "/local/status");
+  },
+
   localBroker(): Promise<{ url: string; token: string }> {
     return request("GET", "/local/broker");
   },

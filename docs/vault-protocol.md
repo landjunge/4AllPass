@@ -110,7 +110,7 @@ Base: `/api/v1`. Ownership: foreign ids are **404**.
 | `PUT/GET` | `…/device-key-envelope` | Opaque DK-mirror, same CAS pointer |
 
 Normative CAS, pin, manifest: [`vault-revision.md`](vault-revision.md).  
-Blob ceilings: `backend/app/core/limits.py` (body **32 MiB**, aligned with `packages/crypto`).
+Blob ceilings: `backend/app/core/limits.py` (body **32 MiB**, aligned with `packages/crypto`). The ASGI middleware counts chunked frames, not only `Content-Length`. Nginx `client_max_body_size` is **32m** on the vault vhost. Account passwords are capped at 256 characters (Argon2id on the server).
 
 HTTP **409** `revision conflict` = another writer won. v1 client reloads the winner. No last-write-wins. No entry merge.
 

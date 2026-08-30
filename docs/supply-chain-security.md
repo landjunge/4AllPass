@@ -169,7 +169,7 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 | SBOM bei jedem Release | ☑ 2026-08-28 | CI-Artefakt + `desktop.yml` Release. `scripts/generate-sbom.sh`. |
 | Crypto-Kern: keine Netzwerk-/UI-Deps | ☑ 2026-08-28 | Allowlist `@noble/ciphers` + `@noble/hashes`. Test + ADR-014. |
 | Vendoring für kritischste Deps | ☑ 2026-08-28 | Nicht jetzt. Noble ist leaf. ADR-014. |
-| Private Registry für eigene Pakete | ☐ offen | |
+| Private Registry für eigene Pakete | ☐ offen | Scope `@4allpass` auf npmjs ist **404** (F-26). Mensch: `ROADMAP.md` §0b Punkt 1. `workspace:*` schließt das nicht (#155). |
 | Incident-Response-Runbook | ☑ 2026-08-28 | Dieses Dokument §5. |
 
 ---
@@ -188,4 +188,4 @@ Wenn ein Paket, das du nutzt, kompromittiert wird:
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-28 – verlinkt auf lebende `ROADMAP.md`, keine neuen Plan-Dateien.*
+*Zuletzt aktualisiert: 2026-08-30 – Scope `@4allpass` bleibt menschlich (`ROADMAP.md` §0b).*

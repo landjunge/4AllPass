@@ -140,12 +140,22 @@ Log agent id (pubkey hash), time, credential id (not the secret), `riskClass`, w
 3. Four-eyes for actuation?
 4. If public MHS ships its own auth that collides with MAIP, rewrite this chapter. Do not implement against the research preview as if it were a spec.
 
+### Maintainer decisions (you write; Grok does not guess)
+
+Fill these **before** anyone wires standing into the sidecar. Library defaults
+are already coded; change them here in a sentence, then a later PR can follow.
+
+- [ ] **Actuation overnight.** Today: `riskClass: "actuation"` never auto-approves, including a repeating harmless motion at night. Keep? Or name the exceptions.
+- [ ] **Who sets `riskClass`.** Today: human at enrollment. Never inferred from a transport. Keep?
+- [ ] **Standing max age.** Today: 7 days (`STANDING_RULE_MAX_AGE_MS`). Other N?
+
+Human-first queue (npm scope, read the review yourself, run the tests yourself): `ROADMAP.md` §0b.
+
 ### Human prep (not Grok code)
 
-1. MHS preview access only if we will actually talk to a device.
-2. What secure element a typical board has (Pi is listed as an MHS partner — check, do not assume).
-3. MAIP enrollment prototype **without** MHS.
-4. Additive `riskClass` + tests, when identity exists.
+1. Claim `@4allpass` on npmjs (`ROADMAP.md` §0b #1).
+2. Secure-element on the target board (private key never leaves it) — independent of any device protocol.
+3. Do not wire the sidecar to always-allow while the caller is only pairing token + string `n8n`.
 
 ### What was built (library, 2026-08-30)
 

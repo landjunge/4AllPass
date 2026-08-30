@@ -4,6 +4,7 @@ export const POPUP_SETTINGS_KEY = "popupSettings";
 export interface PopupSettings {
   apiOrigin: string;
   email: string;
+  vaultId: string;
 }
 
 function isLoopbackHostname(host: string): boolean {
@@ -36,26 +37,35 @@ export function normalizeApiOrigin(raw: string): string {
   throw new Error("API origin must use HTTPS (HTTP is only allowed on loopback)");
 }
 
+const VAULT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function asVaultId(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return VAULT_ID.exec(value.trim())?.[0] ?? "";
+}
+
 export function parsePopupSettings(value: unknown): PopupSettings {
   if (!value || typeof value !== "object") {
-    return { apiOrigin: DEFAULT_API_ORIGIN, email: "" };
+    return { apiOrigin: DEFAULT_API_ORIGIN, email: "", vaultId: "" };
   }
   const row = value as Record<string, unknown>;
   const email = typeof row.email === "string" ? row.email.trim() : "";
+  const vaultId = asVaultId(row.vaultId);
   if (typeof row.apiOrigin !== "string") {
-    return { apiOrigin: DEFAULT_API_ORIGIN, email };
+    return { apiOrigin: DEFAULT_API_ORIGIN, email, vaultId };
   }
   try {
-    return { apiOrigin: normalizeApiOrigin(row.apiOrigin), email };
+    return { apiOrigin: normalizeApiOrigin(row.apiOrigin), email, vaultId };
   } catch {
-    return { apiOrigin: DEFAULT_API_ORIGIN, email };
+    return { apiOrigin: DEFAULT_API_ORIGIN, email, vaultId };
   }
 }
 
 /** Never persist vault or account passwords. */
-export function popupSettingsForStore(apiOrigin: string, email: string): PopupSettings {
+export function popupSettingsForStore(apiOrigin: string, email: string, vaultId = ""): PopupSettings {
   return {
     apiOrigin: normalizeApiOrigin(apiOrigin),
     email: email.trim(),
+    vaultId: asVaultId(vaultId),
   };
 }

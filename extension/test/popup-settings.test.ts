@@ -34,8 +34,18 @@ test("stored settings never include a password field", () => {
   assert.deepEqual(JSON.stringify(stored).includes("s3cret"), false);
 });
 
+test("remembers a vault uuid and drops junk", () => {
+  const stored = popupSettingsForStore(
+    "http://127.0.0.1:8788",
+    "ada@example.com",
+    "00000000-0000-4000-8000-000000000001",
+  );
+  assert.equal(stored.vaultId, "00000000-0000-4000-8000-000000000001");
+  assert.equal(popupSettingsForStore("http://127.0.0.1:8788", "ada@example.com", "vault_icloud").vaultId, "");
+});
+
 test("parsePopupSettings ignores unknown keys and missing objects", () => {
-  assert.deepEqual(parsePopupSettings(null), { apiOrigin: DEFAULT_API_ORIGIN, email: "" });
+  assert.deepEqual(parsePopupSettings(null), { apiOrigin: DEFAULT_API_ORIGIN, email: "", vaultId: "" });
   assert.equal(parsePopupSettings({ apiOrigin: "http://127.0.0.1:8010", email: " a@b.c ", vaultPassword: "nope" }).email, "a@b.c");
   assert.equal(
     JSON.stringify(parsePopupSettings({ apiOrigin: "http://127.0.0.1:8010", vaultPassword: "nope" })).includes("nope"),

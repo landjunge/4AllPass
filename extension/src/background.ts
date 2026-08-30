@@ -566,12 +566,14 @@ async function handle(
       const apiOrigin = normalizeApiOrigin(String(message.apiOrigin ?? "http://127.0.0.1:8788"));
       await ensureApiOrigin(apiOrigin);
       const id = await deviceId();
+      const preferred = String(message.vaultId ?? "");
       const unlocked = await unlockVault({
         apiOrigin,
         deviceId: id,
         email: String(message.email ?? ""),
         accountPassword: String(message.accountPassword ?? ""),
         vaultPassword: String(message.vaultPassword ?? ""),
+        ...(preferred ? { preferredVaultId: preferred } : {}),
       });
       session = {
         apiOrigin,
@@ -589,7 +591,7 @@ async function handle(
       noteActivity();
       await setMenuEnabled(true);
       await refreshBadge();
-      return { ok: true, entryCount: session.entries.length };
+      return { ok: true, entryCount: session.entries.length, vaultId: session.vaultId };
     }
     case "candidates-active": {
       if (!session) return { ok: false, error: "vault is locked" };

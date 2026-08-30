@@ -17,6 +17,7 @@ import {
 import { defaultPinStore, type PinStore } from "./revision-pin.ts";
 import { normalizeApiOrigin } from "./popup-settings.ts";
 import { passwordsAreSame, SAME_PASSWORD_ERROR } from "./password-separation.ts";
+import { assertAccountIfNeeded, pickVaultId } from "./storage-identity.ts";
 
 export interface VaultItem {
   id: string;
@@ -230,12 +231,30 @@ export function openUnlockedSnapshot(
   }
 }
 
+async function readLocalStatus(
+  apiOrigin: string,
+  deviceId: string,
+): Promise<{ hasOtherAccounts?: boolean } | null> {
+  try {
+    return await apiRequest<{ hasOtherAccounts?: boolean }>(
+      apiOrigin,
+      null,
+      deviceId,
+      "GET",
+      "/local/status",
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function unlockVault(options: {
   apiOrigin: string;
   deviceId: string;
   email: string;
   accountPassword: string;
   vaultPassword: string;
+  preferredVaultId?: string;
   pinStore?: PinStore;
 }): Promise<{
   token: string;
@@ -248,6 +267,8 @@ export async function unlockVault(options: {
   if (passwordsAreSame(options.accountPassword, options.vaultPassword)) {
     throw new Error(SAME_PASSWORD_ERROR);
   }
+  const local = await readLocalStatus(options.apiOrigin, options.deviceId);
+  assertAccountIfNeeded(local, options.email, options.accountPassword);
   const auth = storageAuthRequest(options.email, options.accountPassword);
   const session = await apiRequest<{ token: string }>(
     options.apiOrigin,
@@ -264,7 +285,7 @@ export async function unlockVault(options: {
     "GET",
     "/vaults",
   );
-  const vaultId = vaults[0]?.vaultId;
+  const vaultId = pickVaultId(vaults, options.preferredVaultId);
   if (!vaultId) throw new Error("no vault on this account");
   const wire = await apiRequest<unknown>(
     options.apiOrigin,

@@ -29,6 +29,8 @@ const DENY_WHY: Record<DenyReason, string> = {
     "Der Tresor ist gesperrt. / The vault is locked.",
   broker_timeout:
     "Kein Allow/Deny rechtzeitig. / No Allow/Deny in time.",
+  handoff_unavailable:
+    "Vermittelter Zugriff gibt es in v1 nicht. Roh-Secret nur nach Allow, wenn du raw_secret anfragst. / Mediated access is not in v1. Raw-secret only after Allow if you request raw_secret.",
 };
 
 const PENDING_WHY =

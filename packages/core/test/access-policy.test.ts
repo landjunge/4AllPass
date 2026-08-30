@@ -110,6 +110,62 @@ test("explainAccess unknown app DENY names the rule without secrets", () => {
   assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
 });
 
+test("omitted handoff is raw_secret and still pending human Allow", () => {
+  const parsed = parseAccessBody({
+    application: "n8n",
+    provider: "GitHub",
+    scope: ["repository.read"],
+    ttl: 600,
+  });
+  assert.ok(!("status" in parsed));
+  if ("status" in parsed) return;
+  assert.equal(parsed.handoff, "raw_secret");
+  assert.equal(decideAccess(parsed, [github()]).status, "pending");
+});
+
+test("mediated handoff is denied, not silently turned into raw_secret", () => {
+  const decision = evaluatePolicy(req({ handoff: "mediated" }), [github()]);
+  assert.equal(decision.decision, "deny");
+  if (decision.decision === "deny") assert.equal(decision.reason, "handoff_unavailable");
+  assert.equal(decideAccess(req({ handoff: "mediated" }), [github()]).status, "denied");
+});
+
+test("unknown app is still DENY when it asks for mediated", () => {
+  const decision = evaluatePolicy(
+    req({ application: "malicious-agent", handoff: "mediated" }),
+    [github()],
+  );
+  assert.equal(decision.decision, "deny");
+  if (decision.decision === "deny") assert.equal(decision.reason, "application_not_allowed");
+});
+
+test("invalid handoff is malformed, not a secret path", () => {
+  const bad = parseAccessBody({
+    application: "n8n",
+    provider: "GitHub",
+    scope: ["repository.read"],
+    ttl: 600,
+    handoff: "env_export",
+  });
+  assert.ok("status" in bad);
+  if ("status" in bad) assert.equal(bad.reason, "malformed_request");
+});
+
+test("core grant records raw_secret and still holds no secret bytes", () => {
+  const grant = issueGrant(req(), "entry_github", 1_000);
+  assert.equal(grant.handoff, "raw_secret");
+  assert.ok(!("material" in grant));
+  assert.ok(!("access_token" in grant));
+});
+
+test("explainAccess mediated deny names the rule without secrets", () => {
+  const verdict = decideAccess(req({ handoff: "mediated" }), [github()]);
+  const why = explainAccess(verdict);
+  assert.equal(why.code, "handoff_unavailable");
+  assert.match(why.why, /Mediated access is not in v1/);
+  assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
+});
+
 test("7 core works without browser APIs", () => {
   const g = globalThis as Record<string, unknown>;
   assert.equal(g.window, undefined);

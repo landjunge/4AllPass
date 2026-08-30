@@ -118,6 +118,14 @@ test("TTL expires later 4AllPass handoffs; the vault secret is not rotated", () 
   assert.equal(wiped.material, "");
 });
 
+test("mediated handoff is denied and never copies the secret", () => {
+  const entry = github();
+  const verdict = decideAccess(req({ handoff: "mediated" }), [entry]);
+  assert.equal(verdict.status, "denied");
+  if (verdict.status === "denied") assert.equal(verdict.reason, "handoff_unavailable");
+  assert.equal(entry.password, secret);
+});
+
 test("application n8n is policy metadata, not proof of process identity", () => {
   const spoofed = decideAccess(req({ application: "n8n" }), [github()]);
   assert.equal(spoofed.status, "pending");

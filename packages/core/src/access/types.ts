@@ -1,3 +1,5 @@
+import type { HandoffMode } from "./handoff.ts";
+
 /**
  * Wire-compatible access request. `application` stays a string so the
  * loopback broker and n8n HTTP recipe do not change.
@@ -9,6 +11,8 @@ export interface AccessRequest {
   credential: string;
   scope: string[];
   ttlSeconds: number;
+  /** Omitted = `raw_secret` (v1 n8n path). `mediated` is denied until a proxy exists. */
+  handoff?: HandoffMode;
   reason?: string;
   createdAt?: number;
 }
@@ -23,7 +27,8 @@ export type DenyReason =
   | "malformed_request"
   | "revoked_credential"
   | "vault_locked"
-  | "broker_timeout";
+  | "broker_timeout"
+  | "handoff_unavailable";
 
 /** Policy outcome. "allow" means eligible for a human Allow — not auto-handoff. */
 export type AccessDecision =
@@ -54,6 +59,8 @@ export interface AccessGrant {
   expiresAt: number;
   credentialId: string;
   scope: string[];
+  /** v1 is always raw_secret. Core still does not hold the bytes. */
+  handoff: HandoffMode;
 }
 
 export type AccessApiResponse =

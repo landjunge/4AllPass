@@ -1,3 +1,4 @@
+import { parseHandoff } from "./handoff.ts";
 import type { AccessRequest } from "./types.ts";
 
 export function parseAccessBody(
@@ -15,12 +16,15 @@ export function parseAccessBody(
   if (typeof ttl !== "number" || !Number.isFinite(ttl) || ttl <= 0) {
     return { status: "denied", reason: "malformed_request" };
   }
+  const handoff = parseHandoff(body.handoff);
+  if (handoff === "invalid") return { status: "denied", reason: "malformed_request" };
   return {
     application: body.application,
     provider: body.provider,
     credential: typeof body.credential === "string" ? body.credential : "personal",
     scope: body.scope as string[],
     ttlSeconds: ttl,
+    handoff,
     ...(typeof body.reason === "string" ? { reason: body.reason } : {}),
   };
 }

@@ -95,6 +95,26 @@ test("request POSTs JSON with Bearer and no Origin", async () => {
   });
 });
 
+test("mediated handoff is sent as asked, not rewritten to raw_secret", async () => {
+  let body: Record<string, unknown> | undefined;
+  const client = fourAllPass({
+    token: "pairing-token-test",
+    url: DEFAULT_BROKER_URL,
+    fetch: async (_url, init) => {
+      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return jsonResponse(200, { status: "denied", reason: "handoff_unavailable" });
+    },
+  });
+  const result = await client.request({
+    provider: GitHub.provider,
+    capability: GitHub.repositoryRead,
+    ttl: 15,
+    handoff: "mediated",
+  });
+  assert.equal(body?.handoff, "mediated");
+  assert.deepEqual(result, { status: "denied", reason: "handoff_unavailable" });
+});
+
 test("denied is a result, not a thrown secret", async () => {
   const client = fourAllPass({
     token: "pairing-token-test",

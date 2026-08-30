@@ -17,6 +17,7 @@ export function issueGrant(
     expiresAt: now + ttl,
     credentialId,
     scope: [...request.scope],
+    handoff: "raw_secret",
   };
 }
 

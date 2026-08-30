@@ -191,6 +191,18 @@ export {
 } from "./recovery.ts";
 export type { DeriveRecoveryWrappingKeyOptions, RecoveryWrapReason, WrapRecoveryEnvelopeOptions } from "./recovery.ts";
 
+export {
+  REQUESTER_ID_PREFIX,
+  REQUESTER_PUBLIC_KEY_BYTES,
+  REQUESTER_SIGNATURE_BYTES,
+  enrollRequester,
+  requesterIdFromPublicKey,
+  requesterRequestBytes,
+  rotateRequester,
+  verifyRequesterSignature,
+} from "./requester.ts";
+export type { RequesterEnrollment, VerifyRequesterSignatureOptions } from "./requester.ts";
+
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";
 

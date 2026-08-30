@@ -80,4 +80,4 @@ cd backend && pytest
 
 ## Do not
 
-Rewrite crypto. Implement MAIP. Robot/MHS driver. Policy-Freigabe. FastAPI token mint. Tollgate merge. Auto-publish launch posts. Native mobile before PWA. Fifth parallel branch for the same theme.
+Rewrite crypto. Implement MAIP. Device-protocol driver. Sidecar always-allow for string n8n. FastAPI token mint. Tollgate merge. Auto-publish launch posts. Native mobile before PWA. Fifth parallel branch for the same theme.

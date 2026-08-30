@@ -31,6 +31,16 @@ const DENY_WHY: Record<DenyReason, string> = {
     "Kein Allow/Deny rechtzeitig. / No Allow/Deny in time.",
   handoff_unavailable:
     "Vermittelter Zugriff gibt es in v1 nicht. Roh-Secret nur nach Allow, wenn du raw_secret anfragst. / Mediated access is not in v1. Raw-secret only after Allow if you request raw_secret.",
+  ttl_too_large:
+    "TTL über dem erzwungenen Maximum. / TTL exceeds the hard maximum.",
+  standing_unavailable:
+    "Keine Vorabgenehmigung für diesen Requester. / No standing rule for this requester.",
+  standing_expired:
+    "Die Vorabgenehmigung ist abgelaufen. / The standing rule expired.",
+  rate_limited:
+    "Zu viele Anfragen von diesem Requester. / Too many requests from this requester.",
+  actuation_requires_live:
+    "Aktuation braucht eine Live-Bestätigung. / Actuation needs a live Allow.",
 };
 
 const PENDING_WHY =

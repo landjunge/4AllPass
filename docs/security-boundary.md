@@ -403,6 +403,12 @@ stolen token plus the string `n8n` is still eligible for a human Allow. That
 is V1. Cryptographic agent keys are
 [`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)
 and are **not** built yet. The later profile is [`specs/maip-v0.1.md`](specs/maip-v0.1.md) (experimental draft).
+A library prototype for protocol-agnostic requester signatures lives in
+`packages/crypto` (`enrollRequester` / `verifyRequesterSignature`). It does
+**not** wrap a Vault Key and is **not** wired into the sidecar. Standing
+auto-handoff (`decideStandingAccess` in `@4allpass/core`) is the same: policy
+only. The running broker still waits for a human Allow. Actuation credentials
+never auto-approve on that path.
 
 **TTL is a 4AllPass grant clock, not a provider-token clock.** `ttl` /
 `expires_in` stop *later handoffs from this process*. After Allow, n8n already
@@ -410,8 +416,9 @@ holds a copy of the vault secret (e.g. a GitHub PAT). 4AllPass does not rotate
 or expire that provider credential. A copy already given is not un-known.
 The loopback relay is **one-shot**: `waiting[id]` is removed when `decide`
 completes. A second `decide` on the same id is 404. The agent cannot re-poll
-the same grant. `ttl` has no maximum in the parser; that does not create a
-re-fetch window.
+the same grant. `parseAccessBody` rejects `ttl` above 86400 seconds
+(`ttl_too_large`); `issueGrant` also clamps. That still does not expire a
+copy already given.
 
 See [`two-minute-demo.md`](two-minute-demo.md) and
 [`local-access-broker.md`](local-access-broker.md).

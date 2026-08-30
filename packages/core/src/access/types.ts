@@ -1,3 +1,4 @@
+import type { RiskClass } from "../credentials/types.ts";
 import type { HandoffMode } from "./handoff.ts";
 
 /**
@@ -15,6 +16,11 @@ export interface AccessRequest {
   handoff?: HandoffMode;
   reason?: string;
   createdAt?: number;
+  /**
+   * Cryptographic requester id (`req:ed25519:…`). Optional. The n8n string
+   * path ignores this. Standing grants require it.
+   */
+  requesterId?: string;
 }
 
 export type DenyReason =
@@ -28,7 +34,12 @@ export type DenyReason =
   | "revoked_credential"
   | "vault_locked"
   | "broker_timeout"
-  | "handoff_unavailable";
+  | "handoff_unavailable"
+  | "ttl_too_large"
+  | "standing_unavailable"
+  | "standing_expired"
+  | "rate_limited"
+  | "actuation_requires_live";
 
 /** Policy outcome. "allow" means eligible for a human Allow — not auto-handoff. */
 export type AccessDecision =
@@ -37,6 +48,7 @@ export type AccessDecision =
       requestId: string;
       credentialId: string;
       risk: boolean;
+      riskClass: RiskClass;
     }
   | {
       decision: "deny";

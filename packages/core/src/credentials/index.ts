@@ -1,1 +1,5 @@
-export type { Credential } from "./types.ts";
+export {
+  credentialRiskClass,
+  type Credential,
+  type RiskClass,
+} from "./types.ts";

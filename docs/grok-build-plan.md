@@ -155,7 +155,7 @@ Agent
 - Keine MCP-als-Sicherheit.
 - Kein Auto-Submit, kein Clipboard-Watcher als Egress.
 - Keine Zusammenführung mit Tollgate / Capability-Interface.
-- Kein Roboter-/MHS-Treiber, keine Policy-Freigabe, keine Device-Envelopes als Agent-Identität. Headless-Requester bleibt parked (`architecture/agent-access.md`).
+- Kein Geräte-Treiber, kein Sidecar-Always-Allow für String-`n8n`, keine Device-Envelopes als Agent-Identität. Core-Prototyp (`decideStandingAccess`, requester signatures) ist **nicht** der laufende Broker.
 
 ---
 

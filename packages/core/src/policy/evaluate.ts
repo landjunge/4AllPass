@@ -1,7 +1,7 @@
 import { handoffIsAvailable } from "../access/handoff.ts";
 import type { AccessDecision, AccessRequest, AccessVerdict } from "../access/types.ts";
 import { scopeIsRisky } from "../capabilities/registry.ts";
-import type { Credential } from "../credentials/types.ts";
+import { credentialRiskClass, type Credential } from "../credentials/types.ts";
 import { TRUSTED_APPLICATIONS } from "./types.ts";
 
 export function isTrustedApplication(name: string): boolean {
@@ -55,7 +55,8 @@ export function evaluatePolicy(
     decision: "allow",
     requestId,
     credentialId: match.id,
-    risk: scopeIsRisky(request.scope),
+    risk: scopeIsRisky(request.scope) || credentialRiskClass(match) === "actuation",
+    riskClass: credentialRiskClass(match),
   };
 }
 

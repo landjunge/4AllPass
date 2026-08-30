@@ -14,7 +14,7 @@
 
 **Später (nicht jetzt):** MAIP-Implementierung – kryptografische Agent-Identität, Enrollment, signierte Requests, Revocation. Spec: `docs/specs/maip-v0.1.md` (Experimental Draft). `docs/architecture/agent-access.md` bleibt Proposed.
 
-**Headless / Roboter (nicht jetzt):** derselbe Broker, neuer Requester. 4AllPass steuert keine Geräte (kein MHS-Protokoll). Policy-Freigabe ohne Live-Klick braucht MAIP zuerst. Vault-Device-Envelopes sind **nicht** Agent-Identität. Parked: `docs/architecture/agent-access.md` § Headless.
+**Headless / Roboter:** Library-Prototyp 2026-08-30 (`packages/crypto` requester signatures, `@4allpass/core` `riskClass` + `decideStandingAccess`). Sidecar bleibt Live-Allow. Kein Geräte-Protokoll. Vault-Device-Envelopes sind **nicht** Agent-Identität. Spec: `docs/architecture/agent-access.md` § Headless.
 
 ---
 

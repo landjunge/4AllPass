@@ -95,6 +95,17 @@ test("malformed POST body is DENY", () => {
   if (bad.status === "denied") assert.equal(bad.reason, "malformed_request");
 });
 
+test("ttl above the hard max is DENY, not a silent clamp in the parser", () => {
+  const bad = parseAccessBody({
+    application: "n8n",
+    provider: "GitHub",
+    scope: ["repository.read"],
+    ttl: 86_401,
+  });
+  assert.equal(bad.status, "denied");
+  if (bad.status === "denied") assert.equal(bad.reason, "ttl_too_large");
+});
+
 test("approved response shape matches the access API", () => {
   const entry = github();
   const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);

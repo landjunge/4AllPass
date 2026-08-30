@@ -1,3 +1,4 @@
+import { ACCESS_TTL_SECONDS_MAX } from "./limits.ts";
 import type { AccessGrant, AccessRequest } from "./types.ts";
 
 export function issueGrant(
@@ -5,7 +6,8 @@ export function issueGrant(
   credentialId: string,
   now = Date.now(),
 ): AccessGrant {
-  const ttl = Math.max(1, request.ttlSeconds) * 1000;
+  const seconds = Math.min(ACCESS_TTL_SECONDS_MAX, Math.max(1, request.ttlSeconds));
+  const ttl = seconds * 1000;
   const applicationId = request.application.trim().toLowerCase();
   return {
     id: `grant_${now.toString(16)}`,

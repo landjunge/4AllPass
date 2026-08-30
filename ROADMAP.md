@@ -14,6 +14,8 @@
 
 **Später (nicht jetzt):** MAIP-Implementierung – kryptografische Agent-Identität, Enrollment, signierte Requests, Revocation. Spec: `docs/specs/maip-v0.1.md` (Experimental Draft). `docs/architecture/agent-access.md` bleibt Proposed.
 
+**Headless / Roboter (nicht jetzt):** derselbe Broker, neuer Requester. 4AllPass steuert keine Geräte (kein MHS-Protokoll). Policy-Freigabe ohne Live-Klick braucht MAIP zuerst. Vault-Device-Envelopes sind **nicht** Agent-Identität. Parked: `docs/architecture/agent-access.md` § Headless.
+
 ---
 
 ## 1. Produkt-Reihenfolge (NOW)
@@ -101,6 +103,7 @@ Empfohlene Reihenfolge: Exit → Rechtliches → Crypto-Agility.
 ## 4. Bewusst nicht (bis explizite Entscheidung)
 
 - Team Mode, **MAIP-Implementierung** (Identität ≠ Vorbereitung der Access-Schicht), Managed Hosting, S3/WebDAV-Picker
+- **Roboter / MHS / Policy-Freigabe** — parked in `docs/architecture/agent-access.md`. Kein paralleles Robotik-Produkt. Kein always-allow solange `application` ein String ist. Device-Envelopes nicht als Agent-Ausweis.
 - Shadow DOM / Multi-Step / iframe (nach stabilem Password-Autofill)
 - Passkey-Store, Launch-Posts, Connection/Capability-UI
 - Kein Core-Rewrite, kein zweites Tauri, kein zweites Crypto

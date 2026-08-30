@@ -31,3 +31,5 @@ n8n HTTP recipe stays Origin-less, loopback, redacted curl.
 ## Future impact
 
 Same `evaluatePolicy`. New principal fields. No second policy engine.
+
+A later robot / headless requester is this same MAIP principal, not a vault Device envelope and not an MHS driver in this repo ([`../agent-access.md`](../agent-access.md) § Headless).

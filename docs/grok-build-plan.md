@@ -155,6 +155,7 @@ Agent
 - Keine MCP-als-Sicherheit.
 - Kein Auto-Submit, kein Clipboard-Watcher als Egress.
 - Keine Zusammenführung mit Tollgate / Capability-Interface.
+- Kein Roboter-/MHS-Treiber, keine Policy-Freigabe, keine Device-Envelopes als Agent-Identität. Headless-Requester bleibt parked (`architecture/agent-access.md`).
 
 ---
 
@@ -176,4 +177,4 @@ Wenn hier was steht, das über `security-boundary.md` hinausgeht: Defekt. Nicht 
 
 ---
 
-*Zuletzt aktualisiert: 2026-08-28.*
+*Zuletzt aktualisiert: 2026-08-30.*

@@ -192,6 +192,7 @@ A later native n8n credential type (“4AllPass → OpenAI Production”) is a P
 | Clipboard capture | *Ingest* into the vault (suggest, don’t auto-save) | `#59` |
 | MCP / IDE / n8n agent | A **client** of the broker, default off | `#59` points here |
 | Capability × Tollgate | Secret authority vs execution authority; do not merge | `#70`, `capability-interface.md` |
+| Headless / robot requester | Same broker, later MAIP client. 4AllPass does not drive MHS. Standing rules need Phase D. Vault device envelopes ≠ agent identity | `architecture/agent-access.md` |
 
 Do not build four parallel injection paths.
 

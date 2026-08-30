@@ -14,7 +14,7 @@ Legende: ✅ stark/vorhanden · ⚠️ vorhanden mit Einschränkungen · ❌ nic
 | Selective Item-Sharing | ⚠️ Encrypted share file + share key (`docs/sharing.md`); no live wrap to a foreign device | ⚠️ Collection-/Vault-Ebene | ⚠️ Vault-Ebene | ⚠️ eingeschränkt |
 | Offene Testvektoren / Threat Model | ✅ `docs/threat-model.md`, `docs/adversarial-review.md`, `docs/test-vectors*.md` | teilweise | ❌ nicht öffentlich | teilweise (Audit-Berichte) |
 | Unabhängiges Security-Audit | ⏳ vorbereitet in `docs/audit-scope.md` | ✅ regelmäßig | ✅ regelmäßig | ✅ (u. a. Cure53) |
-| Preis / Lizenz | Self-Hosting, keine Abo-Gebühr. [PolyForm Noncommercial 1.0.0](../LICENSE): privat frei, kommerziell nur mit Erlaubnis. Nicht OSI-open. | ~20 $/Jahr Premium (Stand 2026) | ~40–70 $/Jahr | 0–24 $/Jahr |
+| Preis / Lizenz | Self-Hosting, keine Abo-Gebühr. [PolyForm Noncommercial 1.0.0](../LICENSE): quelloffen, privat frei, kommerziell nur mit Erlaubnis. Nicht MIT/Apache (OSI würde Firmen erlauben). | ~20 $/Jahr Premium (Stand 2026) | ~40–70 $/Jahr | 0–24 $/Jahr |
 | Autofill | ⚠️ Chromium + Firefox + Safari-Wrapper; Field Intelligence V1. iOS/Android native ⏳. Kein Store-Listing | ⚠️ oft kritisiert | ✅ stark | ⚠️ teils unzuverlässig |
 | Emergency Access / Recovery | ✅ Recovery Key + Emergency Kit in der PWA (`docs/recovery.md`); kein Server-Reset, kein Trusted-Contact-Wait | ✅ [Emergency Access](https://bitwarden.com/help/emergency-access/) (Premium): Trusted Contact, View oder Takeover nach Wartezeit | ✅ | ⚠️ oft nur höhere Tarife |
 | Kryptografische Gerätebindung | ✅ WebAuthn PRF → DWK → DK → VK | ⚠️ Geräte sind meist organisatorisch | ⚠️ Secret Key + Geräte | ⚠️ |
@@ -32,5 +32,5 @@ Quellen für die 4AllPass-Spalte:
 - Autofill: `extension/`, `docs/autofill-extension.md`
 - Hard-Revoke: `frontend/src/lib/vault-session.ts` (`hardRevokeDevice`)
 - Grenzen: `docs/security-boundary.md`
-- Lizenz: `LICENSE` (PolyForm Noncommercial 1.0.0). Privat frei. Kommerziell nur mit Erlaubnis. Nicht OSI-open.
+- Lizenz: `LICENSE` (PolyForm Noncommercial 1.0.0). Quelloffen. Privat frei. Kommerziell nur mit Erlaubnis. Nicht MIT/Apache.
 - Item-share file: `docs/sharing.md`, `frontend/src/lib/share.ts`

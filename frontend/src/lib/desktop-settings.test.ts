@@ -5,6 +5,7 @@ import {
   LAUNCH_AT_LOGIN_BROWSER,
   LAUNCH_AT_LOGIN_HINT,
   LAUNCH_AT_LOGIN_LABEL,
+  LICENSE_HINT,
   SLEEP_LOCK_HINT,
   UNINSTALL_HINT,
 } from "./desktop-settings.ts";
@@ -25,6 +26,14 @@ test("sleep copy is Lock button only, not auto-lock", () => {
   assert.match(SLEEP_LOCK_HINT, /screen lock/i);
   assert.match(SLEEP_LOCK_HINT, /Sperren drückst|press Lock/);
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(SLEEP_LOCK_HINT), false);
+});
+
+test("license copy is personal free, commercial not", () => {
+  assert.match(LICENSE_HINT, /Privat frei/);
+  assert.match(LICENSE_HINT, /Personal use free/);
+  assert.match(LICENSE_HINT, /Kommerziell nicht|Commercial use is not/);
+  assert.match(LICENSE_HINT, /PolyForm Noncommercial/);
+  assert.match(LICENSE_HINT, /kein OSI-Open-Source|not OSI Open Source/);
 });
 
 test("uninstall copy says the vault folder stays", () => {

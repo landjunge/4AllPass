@@ -43,10 +43,12 @@ Do not stack “also I refactored the PWA” onto a crypto PR.
 
 - Implementation truth → `docs/security-boundary.md`
 - Protocol truth → `crypto-protocol.md` / `vault-revision.md` / `webauthn-prf.md` / `recovery.md`
-- Roadmap in `docs/roadmap.md` is **stale** if it still says “no backend, no frontend.” Update it when you notice, in a docs-only commit if needed.
+- Living roadmap is `ROADMAP.md`. `docs/roadmap.md` is not the status file.
+- Claims: [claims.md](claims.md). Same PR if the claim surface moved.
 
 ## Git hygiene
 
 - One theme per branch. Close or rebase stale `cursor/*` clones.
 - Do not merge empty Copilot “Initial plan” PRs.
 - Commit messages: `feat|fix|harden|docs|test|ci` + area (`crypto`, `backend`, `pwa`, `webauthn`).
+- Follow `docs/git-workflow.md`. Agents open a PR; do not push to `main` unless the maintainer said so.

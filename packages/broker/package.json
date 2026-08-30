@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Dev-only Node loopback relay on :8787. Product path is the sidecar (backend/app/broker.py). Never decrypts, never mints provider tokens.",
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/relay.mjs"
   },

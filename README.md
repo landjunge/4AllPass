@@ -69,6 +69,10 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 
 Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten braucht es weiterhin Vorsicht und ein sicheres Backup.
 
+### Lizenz
+
+Persönliche Nutzung zu Hause ist frei. Kommerzielle Nutzung (Firma, Verkauf, bezahltes Produkt) ist **nicht** erlaubt, außer du holst eine Erlaubnis bei Daniel Filipek ein. Das ist [PolyForm Noncommercial 1.0.0](LICENSE) — öffentlich lesbarer Code, **kein** OSI-Open-Source.
+
 ---
 
 ## Installation
@@ -154,6 +158,8 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+
+**License.** Personal use at home is free. Commercial use (a company, selling it, a paid product) is not allowed unless Daniel Filipek grants permission. [PolyForm Noncommercial 1.0.0](LICENSE) — source is public, not OSI Open Source.
 
 ---
 

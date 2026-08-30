@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "4AllPass desktop shell — UI is this webview, not a browser tab"
 authors = ["landjunge"]
 edition = "2021"
-license = "UNLICENSED"
+license = "PolyForm-Noncommercial-1.0.0"
 publish = false
 
 [lib]

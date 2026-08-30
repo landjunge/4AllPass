@@ -92,6 +92,14 @@ async def test_register_rejects_short_password(client):
     assert response.status_code == 422
 
 
+async def test_register_rejects_oversized_account_password(client):
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": _email(), "password": "x" * 300},
+    )
+    assert response.status_code == 422
+
+
 async def test_session_is_bound_to_device_header(client):
     email = _email()
     register = await client.post(

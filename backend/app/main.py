@@ -11,7 +11,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from app.api.routes import auth, devices, health, local_meta, vaults, webauthn
 from app.broker import BrokerHub, router as broker_router
 from app.core.config import get_settings
-from app.core.limits import REQUEST_BODY_MAX
+from app.body_limit import BodyLimitMiddleware
 
 
 def loopback_connect_origin(url: str) -> str:
@@ -41,36 +41,6 @@ def local_csp(origin: str) -> bytes:
         "base-uri 'self'; "
         "form-action 'self'"
     ).encode()
-
-
-class BodyLimitMiddleware:
-    """Reject oversized snapshot bodies before JSON parse."""
-
-    def __init__(self, app: ASGIApp, max_bytes: int = REQUEST_BODY_MAX) -> None:
-        self.app = app
-        self.max_bytes = max_bytes
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
-        raw = headers.get("content-length")
-        if raw:
-            try:
-                if int(raw) > self.max_bytes:
-                    await send(
-                        {
-                            "type": "http.response.start",
-                            "status": 413,
-                            "headers": [(b"content-type", b"application/json")],
-                        }
-                    )
-                    await send({"type": "http.response.body", "body": b'{"detail":"payload too large"}'})
-                    return
-            except ValueError:
-                pass
-        await self.app(scope, receive, send)
 
 
 class LoopbackHostMiddleware:

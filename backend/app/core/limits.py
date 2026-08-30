@@ -12,3 +12,5 @@ TAG_B64_MAX = 32
 CIPHERTEXT_B64_MAX = 1_400_000
 # Whole snapshot JSON
 REQUEST_BODY_MAX = 32 * 1024 * 1024
+# Account password is hashed with Argon2id on the server. Cap DoS length.
+ACCOUNT_PASSWORD_CHARS_MAX = 256

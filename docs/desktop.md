@@ -23,7 +23,7 @@ Downloads: [GitHub Releases](https://github.com/landjunge/4AllPass/releases) (ta
 `npm run app` builds `frontend/dist` if missing, then `python -m app.local`.
 The SQLite file holds opaque envelopes. `session.secret` is account-auth only.
 
-If port 8788 is taken by a **foreign** process: the window exits with “127.0.0.1:8788 is already bound… refusing to treat it as 4AllPass” (no SIGABRT). A leftover `fourallpass-core` after a crash is killed, then a new core is spawned. A living 4AllPass instance prints “4AllPass läuft schon / already running.” Dock / `open -a` re-shows the window (`RunEvent::Reopen`). The webview never navigates to whoever holds `:8788`.
+If port 8788 is taken by a **foreign** process: the window exits with “127.0.0.1:8788 is already bound… refusing to treat it as 4AllPass” (no SIGABRT). The same refuse applies if something else binds in the window after the free-port check and before our sidecar listens — TCP-up is not “that process is 4AllPass”; the listener must be the child we spawned (or a descendant). A leftover `fourallpass-core` after a crash is killed, then a new core is spawned. A living 4AllPass instance prints “4AllPass läuft schon / already running.” Dock / `open -a` re-shows the window (`RunEvent::Reopen`). The webview never navigates to whoever holds `:8788`.
 
 First run:
 

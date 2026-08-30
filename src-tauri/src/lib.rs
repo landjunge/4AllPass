@@ -16,8 +16,8 @@ mod sleep;
 mod sleep_stall;
 mod tray;
 
-use loopback::prepare_loopback_core;
-use process::{kill_core, spawn_core, wait_core, CoreProcess};
+use loopback::{prepare_loopback_core, wait_our_core};
+use process::{kill_core, spawn_core, CoreProcess};
 use prompts::{deny_closed_prompt, PromptState};
 use sidecar_http::sidecar_http;
 use sleep::watch_desktop_lock;
@@ -59,12 +59,14 @@ pub fn run() {
                 std::process::exit(1);
             }
             let child = spawn_core()?;
+            let child_pid = child.id();
             *app.state::<CoreProcess>()
                 .0
                 .lock()
                 .map_err(|err| err.to_string())? = Some(child);
-            if !wait_core(Duration::from_secs(45)) {
-                eprintln!("4AllPass local core did not bind 127.0.0.1:8788");
+            if let Err(msg) = wait_our_core(child_pid, Duration::from_secs(45)) {
+                eprintln!("{msg}");
+                kill_core(&app.handle());
                 std::process::exit(1);
             }
             if !start_hidden() {

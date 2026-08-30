@@ -1,10 +1,14 @@
 use std::{path::PathBuf, thread, time::{Duration, Instant}};
 
 use crate::core_bind::{
-    classify_occupied, is_core_binary_name, is_ui_binary_name, Occupant, OccupiedKind,
+    classify_occupied, classify_spawned_listener, is_core_binary_name, is_ui_binary_name,
+    Occupant, OccupiedKind, SpawnedListener,
 };
 use crate::process::{bundled_core, core_up, CORE_PORT};
 use crate::process_inspect::{cmd_name, loopback_listen_pid, parent_and_command, terminate};
+
+const FOREIGN_LISTENER: &str =
+    "127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass";
 
 fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
     let Some((mut pid, cmd)) = parent_and_command(listen_pid) else {
@@ -83,7 +87,7 @@ pub fn prepare_loopback_core() -> Result<(), String> {
                 thread::sleep(Duration::from_millis(50));
             }
             if core_up() {
-                Err("127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass".into())
+                Err(FOREIGN_LISTENER.into())
             } else {
                 Ok(())
             }
@@ -92,9 +96,31 @@ pub fn prepare_loopback_core() -> Result<(), String> {
             eprintln!("4AllPass läuft schon auf http://127.0.0.1:8788 / already running.");
             std::process::exit(0);
         }
-        OccupiedKind::Foreign => Err(
-            "127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass"
-                .into(),
-        ),
+        OccupiedKind::Foreign => Err(FOREIGN_LISTENER.into()),
     }
+}
+
+/// After spawn: the process on 8788 must be `child_pid` or a descendant.
+/// A local bind that wins the window between the free-port check and our listen
+/// is the same refuse as a pre-spawn foreign occupant. TCP connect is not trust.
+pub fn wait_our_core(child_pid: u32, timeout: Duration) -> Result<(), String> {
+    let started = Instant::now();
+    while started.elapsed() < timeout {
+        let bound = core_up();
+        let listen_pid = if bound {
+            loopback_listen_pid(CORE_PORT)
+        } else {
+            None
+        };
+        match classify_spawned_listener(bound, listen_pid, child_pid, |pid| {
+            parent_and_command(pid).map(|(ppid, _)| ppid)
+        }) {
+            SpawnedListener::Ours => return Ok(()),
+            SpawnedListener::Foreign => return Err(FOREIGN_LISTENER.into()),
+            SpawnedListener::NotYet | SpawnedListener::Unknown => {
+                thread::sleep(Duration::from_millis(100));
+            }
+        }
+    }
+    Err("4AllPass local core did not bind 127.0.0.1:8788".into())
 }

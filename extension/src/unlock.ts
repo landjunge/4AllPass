@@ -16,6 +16,7 @@ import {
 
 import { defaultPinStore, type PinStore } from "./revision-pin.ts";
 import { normalizeApiOrigin } from "./popup-settings.ts";
+import { passwordsAreSame, SAME_PASSWORD_ERROR } from "./password-separation.ts";
 
 export interface VaultItem {
   id: string;
@@ -244,6 +245,9 @@ export async function unlockVault(options: {
   pin: VaultRevision;
 }> {
   const pins = options.pinStore ?? defaultPinStore();
+  if (passwordsAreSame(options.accountPassword, options.vaultPassword)) {
+    throw new Error(SAME_PASSWORD_ERROR);
+  }
   const auth = storageAuthRequest(options.email, options.accountPassword);
   const session = await apiRequest<{ token: string }>(
     options.apiOrigin,

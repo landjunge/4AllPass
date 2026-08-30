@@ -1,6 +1,6 @@
 # Security
 
-4AllPass is a Zero-Knowledge password manager. A live exploit against wrapping, CAS, or the claim surface is a **private** report, not a public issue.
+4AllPass is a Zero-Knowledge password manager **for the bundled desktop client** (and for a PWA only if you trust the code host). A live exploit against wrapping, CAS, or the claim surface is a **private** report, not a public issue.
 
 ## How to report
 

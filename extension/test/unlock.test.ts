@@ -22,6 +22,7 @@ import {
   openUnlockedSnapshot,
   snapshotHead,
   storageAuthRequest,
+  unlockVault,
 } from "../src/unlock.ts";
 
 const PASSWORD = "extension-unlock-master-password";
@@ -95,6 +96,20 @@ test("server unlock still posts email to /auth/login", () => {
 test("partial account fields do not silently become local auth", () => {
   assert.equal(storageAuthRequest("ada@example.com", "").path, "/auth/login");
   assert.equal(storageAuthRequest("", "account-password-1234").path, "/auth/login");
+});
+
+test("unlockVault refuses when account and vault passwords are the same", async () => {
+  await assert.rejects(
+    () =>
+      unlockVault({
+        apiOrigin: "http://127.0.0.1:8788",
+        deviceId: "dev_test_device_000000000001",
+        email: "ada@example.com",
+        accountPassword: "dummy-same",
+        vaultPassword: "dummy-same",
+      }),
+    /must differ/,
+  );
 });
 
 test("openUnlockedSnapshot verifies the sealed manifest and pins revision", () => {

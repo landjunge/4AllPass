@@ -11,7 +11,7 @@ Lokaler Passwort-Manager. Autofill. Zero-Knowledge. Agenten nur nach Allow/Deny.
 
 Local-first password manager. Autofill. Zero-knowledge. Agents only after Allow/Deny.
 
-4AllPass speichert Passwörter und Zugänge auf deinem Gerät. Ein Anbieter oder Server soll sie nicht lesen können.
+4AllPass speichert Passwörter und Zugänge auf deinem Gerät. Ein Anbieter oder Server soll sie nicht lesen können. Das gilt für die **App auf dem Gerät**. Eine vom Storage-Server gelieferte PWA kann der Betreiber tauschen — das ist kein Zero-Knowledge gegen ihn.
 
 ### 👤 [Für Nutzer – herunterladen und loslegen](#für-nutzer)
 

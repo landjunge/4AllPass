@@ -36,7 +36,7 @@ First run:
 There is no Welcome screen. Create: Tresor-Passwort → Recovery-Kit. Restore:
 `4allpass-share-v1` file + share key → new vault password → **new** recovery key
 (the share key is not that key). A recovery key without the share file cannot
-rebuild the blobs. Account password still cannot unwrap the Vault Key.
+rebuild the blobs. Account password still cannot unwrap the Vault Key when it is not also the vault password.
 
 Proof (Playwright, no Vite): `npm run test:e2e:local -w @4allpass/frontend` —
 Create or Unlock → vault → Access Allow; UI never shows the secret; a Node-like

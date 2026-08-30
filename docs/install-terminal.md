@@ -83,7 +83,7 @@ Datei: `scripts/install.sh` (POSIX `sh`).
    (`~/Library/Application Support/4AllPass/`, `%APPDATA%\4AllPass\`, `~/.local/share/4allpass/`).
 8. Kein sudo. Scheitert `/Applications` (kein Schreibrecht): nach `~/Applications` und das sagen.
 
-Rolling Prerelease-Tag **`desktop`** (nicht `v0.1.2`): `workflow_dispatch` auf `.github/workflows/desktop.yml` hängt Intel/ARM-DMG, AppImage, NSIS und `*.sha256` an diesen Tag. Der One-Liner lädt **genau diesen Tag**, nicht irgendein älteres `v*`. Signaturen/Notar kommen später ([#112](https://github.com/landjunge/4AllPass/issues/112)). Produktseite: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Keine `.net`-Domain.
+Rolling Prerelease-Tag **`desktop`** (nicht `v0.1.2`): `workflow_dispatch` oder der tägliche Cron (04:00 UTC) auf `.github/workflows/desktop.yml` hängt Intel/ARM-DMG, AppImage, NSIS und `*.sha256` an diesen Tag. Der Cron baut nur, wenn `main` neuer ist als der Tag. Der One-Liner lädt **genau diesen Tag**, nicht irgendein älteres `v*`. Signaturen/Notar kommen später ([#112](https://github.com/landjunge/4AllPass/issues/112)). Produktseite: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Keine `.net`-Domain.
 
 ---
 

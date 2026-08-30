@@ -2,8 +2,6 @@ use std::{
     path::PathBuf,
     process::{Child, Command, Stdio},
     sync::Mutex,
-    thread,
-    time::{Duration, Instant},
 };
 
 use tauri::Manager;
@@ -15,17 +13,6 @@ pub struct CoreProcess(pub Mutex<Option<Child>>);
 
 pub fn core_up() -> bool {
     std::net::TcpStream::connect((CORE_HOST, CORE_PORT)).is_ok()
-}
-
-pub fn wait_core(timeout: Duration) -> bool {
-    let started = Instant::now();
-    while started.elapsed() < timeout {
-        if core_up() {
-            return true;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    false
 }
 
 fn repo_root() -> PathBuf {

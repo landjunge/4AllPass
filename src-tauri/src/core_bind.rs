@@ -51,6 +51,66 @@ pub fn is_ui_binary_name(name: &str) -> bool {
     name == "fourallpass" || name == "fourallpass.exe"
 }
 
+/// After *we* spawn: TCP-up on 8788 is not “that process is our sidecar”.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpawnedListener {
+    /// Not bound yet — keep waiting.
+    NotYet,
+    /// Bound, but the listen PID is not named yet (lsof/netstat lag). Keep waiting; never treat as ours.
+    Unknown,
+    /// Bound by the child we spawned, or a descendant (PyInstaller / `npm run app:sidecar`).
+    Ours,
+    /// Bound by someone else. Same refuse as a pre-spawn foreign occupant.
+    Foreign,
+}
+
+/// Walk at most 16 parents. `parent_of(pid)` is the OS parent pid.
+pub fn pid_is_descendant(
+    pid: u32,
+    ancestor: u32,
+    mut parent_of: impl FnMut(u32) -> Option<u32>,
+) -> bool {
+    if pid == 0 || ancestor == 0 {
+        return false;
+    }
+    if pid == ancestor {
+        return true;
+    }
+    let mut current = pid;
+    for _ in 0..16 {
+        let Some(parent) = parent_of(current) else {
+            return false;
+        };
+        if parent == ancestor {
+            return true;
+        }
+        if parent == 0 || parent == current || parent == pid {
+            return false;
+        }
+        current = parent;
+    }
+    false
+}
+
+pub fn classify_spawned_listener(
+    bound: bool,
+    listen_pid: Option<u32>,
+    child_pid: u32,
+    parent_of: impl FnMut(u32) -> Option<u32>,
+) -> SpawnedListener {
+    if !bound {
+        return SpawnedListener::NotYet;
+    }
+    let Some(pid) = listen_pid else {
+        return SpawnedListener::Unknown;
+    };
+    if pid_is_descendant(pid, child_pid, parent_of) {
+        SpawnedListener::Ours
+    } else {
+        SpawnedListener::Foreign
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +175,68 @@ mod tests {
         assert!(!is_ui_binary_name("fourallpass-core"));
         assert!(is_ui_binary_name("fourallpass"));
         assert!(!is_core_binary_name("fourallpass"));
+    }
+
+    #[test]
+    fn spawned_port_not_yet_bound() {
+        assert_eq!(
+            classify_spawned_listener(false, None, 100, |_| None),
+            SpawnedListener::NotYet
+        );
+    }
+
+    #[test]
+    fn spawned_port_unknown_pid_is_not_ours() {
+        assert_eq!(
+            classify_spawned_listener(true, None, 100, |_| None),
+            SpawnedListener::Unknown
+        );
+    }
+
+    #[test]
+    fn spawned_listener_same_pid_is_ours() {
+        assert_eq!(
+            classify_spawned_listener(true, Some(100), 100, |_| None),
+            SpawnedListener::Ours
+        );
+    }
+
+    #[test]
+    fn spawned_listener_grandchild_is_ours() {
+        let parent_of = |pid| match pid {
+            300 => Some(200),
+            200 => Some(100),
+            100 => Some(1),
+            _ => None,
+        };
+        assert_eq!(
+            classify_spawned_listener(true, Some(300), 100, parent_of),
+            SpawnedListener::Ours
+        );
+        assert!(pid_is_descendant(300, 100, parent_of));
+    }
+
+    #[test]
+    fn spawned_listener_unrelated_is_foreign() {
+        let parent_of = |pid| match pid {
+            999 => Some(1),
+            100 => Some(1),
+            _ => None,
+        };
+        assert_eq!(
+            classify_spawned_listener(true, Some(999), 100, parent_of),
+            SpawnedListener::Foreign
+        );
+        assert!(!pid_is_descendant(999, 100, parent_of));
+    }
+
+    #[test]
+    fn descendant_stops_at_init_and_cycles() {
+        assert!(!pid_is_descendant(5, 100, |pid| match pid {
+            5 => Some(1),
+            _ => None,
+        }));
+        assert!(!pid_is_descendant(5, 100, |_| Some(5)));
+        assert!(!pid_is_descendant(0, 100, |_| Some(1)));
     }
 }

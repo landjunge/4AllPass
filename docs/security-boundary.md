@@ -111,7 +111,10 @@ entries. FastAPI still has no `/v1/access` token route. Local responses send
 origin (not `http://127.0.0.1:*`). The **desktop webview does not navigate**
 to the sidecar. UI is the bundled `frontendDist`. Tauri IPC is not granted to
 `http://127.0.0.1:8788/**`. If 8788 is already bound before spawn, the app
-refuses to start (foreign process). The sidecar is the local API only. Local
+refuses to start (foreign process). After spawn, TCP-up on 8788 is not trust:
+the listener must be the child we spawned (or a descendant). A bind that wins
+the window between the free-port check and our listen is the same refuse.
+The sidecar is the local API only. Local
 Host headers must be loopback (`127.0.0.1` / `localhost` / `::1`).
 
 Local first-run in a **normal browser** skips email and account password.

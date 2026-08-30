@@ -90,7 +90,53 @@ function mergeMode(modes: FillMode[]): FillMode {
 
 function probeForm(): FillResult {
   const likes = visibleInputs().map(describe);
-  return { ...probeFromModel(likes, buildLoginModel(likes)), pageOrigin: location.origin };
+  return {
+    ...probeFromModel(likes, buildLoginModel(likes)),
+    pageOrigin: location.origin,
+    fieldNames: likes.map((like) => like.name || like.id).filter(Boolean),
+    fieldLabels: likes
+      .map((like) => like.labelText || like.ariaLabel || like.placeholder || "")
+      .filter(Boolean),
+  };
+}
+
+function findNamedInput(field: string): HTMLInputElement | undefined {
+  const needle = field.trim().toLowerCase();
+  if (!needle) return undefined;
+  const inputs = visibleInputs();
+  const likes = inputs.map(describe);
+  const index = likes.findIndex((like) =>
+    [like.name, like.id, like.labelText, like.ariaLabel, like.placeholder].some(
+      (value) => value && value.toLowerCase() === needle,
+    ),
+  );
+  return index >= 0 ? inputs[index] : undefined;
+}
+
+function fillNamedField(field: string, value: string): FillResult {
+  const likes = visibleInputs().map(describe);
+  const target = findNamedInput(field);
+  if (!target || !value) {
+    return {
+      ...probeFromModel(likes, buildLoginModel(likes)),
+      ok: false,
+      pageOrigin: location.origin,
+      filled: [],
+      mode: "skipped",
+      reason: "no-fields",
+    };
+  }
+  const mode = safeFill(target, value);
+  const ok = mode !== "failed" && target.value === value;
+  return {
+    ok,
+    pageOrigin: location.origin,
+    fields: ["password"],
+    filled: ok ? ["password"] : [],
+    mode,
+    reason: ok ? undefined : "verify-mismatch",
+    fieldNames: [field],
+  };
 }
 
 function fillForm(username: string, password: string, otp = "", assist = false): FillResult {
@@ -163,8 +209,23 @@ ext.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     sendResponse(probeForm());
     return;
   }
-  if (message?.type !== "fill-form") return;
   const expectedOrigin = typeof message.expectedOrigin === "string" ? message.expectedOrigin : "";
+  if (message?.type === "fill-named-field") {
+    if (!expectedOrigin || expectedOrigin !== location.origin) {
+      sendResponse({
+        ok: false,
+        fields: [],
+        filled: [],
+        mode: "skipped",
+        reason: "origin-mismatch",
+        pageOrigin: location.origin,
+      } satisfies FillResult);
+      return;
+    }
+    sendResponse(fillNamedField(String(message.field ?? ""), String(message.value ?? "")));
+    return;
+  }
+  if (message?.type !== "fill-form") return;
   if (!expectedOrigin || expectedOrigin !== location.origin) {
     sendResponse({
       ok: false,

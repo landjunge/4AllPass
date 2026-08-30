@@ -1,9 +1,10 @@
 import { bytesToHex, randomBytes, zeroize, type VaultRevision } from "@4allpass/crypto";
+import { detectSetup, type SetupSuggestion } from "@4allpass/providers";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
 import { totpFromBase32 } from "./totp.ts";
-import { entriesForPage, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
+import { entriesForPage, entriesForProvider, publicPicks, wipeFillEntry, type FillEntry } from "./match.ts";
 import {
   fillTargetStillHolds,
   isHttpUrl,
@@ -362,6 +363,129 @@ async function fillActive(
   };
 }
 
+function publicSuggestion(suggestion: SetupSuggestion): Record<string, unknown> {
+  return {
+    providerId: suggestion.providerId,
+    providerName: suggestion.providerName,
+    credentialKind: suggestion.credentialKind,
+    targetApplication: suggestion.targetApplication,
+    pageHost: suggestion.pageHost,
+    confidence: suggestion.confidence,
+    requiresConfirmation: true,
+    reasons: suggestion.reasons,
+    promptDe: suggestion.promptDe,
+    promptEn: suggestion.promptEn,
+  };
+}
+
+async function suggestActive(): Promise<Record<string, unknown>> {
+  const tab = await activeHttpTab();
+  if (!tab?.id || !tab.url) return { ok: false, reason: "no-fields" };
+  rememberHttpTab(tab);
+  await ensurePageOrigin(tab.url);
+  const probe = await sendToTab(tab.id, { type: "probe-form" });
+  const suggestion = detectSetup({
+    url: tab.url,
+    fieldNames: probe.fieldNames,
+    fieldLabels: probe.fieldLabels,
+    pageTitle: tab.title,
+  });
+  return {
+    ok: true,
+    suggestion: suggestion.promptDe ? publicSuggestion(suggestion) : null,
+  };
+}
+
+async function fillApiSuggestion(entryId?: string, tabId?: number): Promise<Record<string, unknown>> {
+  await pullIfChanged(true);
+  if (!session) {
+    await openPopupSafe();
+    return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
+  }
+  noteActivity();
+  const hinted = tabId !== undefined ? await ext.tabs.get(tabId).catch(() => undefined) : undefined;
+  const tab = hinted?.id !== undefined && isHttpUrl(hinted.url) ? hinted : await activeHttpTab();
+  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  rememberHttpTab(tab);
+  await ensurePageOrigin(tab.url);
+  const matchedUrl = tab.url;
+  const matchedOrigin = pageOrigin(matchedUrl);
+  if (!matchedOrigin) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  const probe = await sendToTab(tab.id, { type: "probe-form" });
+  const liveAfterProbe = await ext.tabs.get(tab.id).catch(() => undefined);
+  if (!fillTargetStillHolds(matchedOrigin, liveAfterProbe?.url, probe.pageOrigin)) {
+    return {
+      ok: false,
+      error: formatFillFailure({ reason: "origin-mismatch" }),
+      reason: "origin-mismatch",
+    };
+  }
+  const suggestion = detectSetup({
+    url: matchedUrl,
+    fieldNames: probe.fieldNames,
+    fieldLabels: probe.fieldLabels,
+    pageTitle: tab.title,
+  });
+  if (!suggestion.providerId || suggestion.credentialKind !== "api" || !suggestion.matchedField) {
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
+  }
+  const matches = entriesForProvider(session.entries, suggestion.providerId);
+  if (matches.length === 0) {
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
+  }
+  const chosen = entryId
+    ? matches.find((entry) => entry.id === entryId)
+    : matches.length === 1
+      ? matches[0]
+      : undefined;
+  if (!chosen) {
+    await openPopupSafe();
+    return { ok: true, needsPick: true, entries: publicPicks(matches) };
+  }
+  const filled = await sendToTab(tab.id, {
+    type: "fill-named-field",
+    field: suggestion.matchedField,
+    value: chosen.password,
+    expectedOrigin: matchedOrigin,
+  });
+  if (!filled.ok) {
+    return {
+      ok: false,
+      error: formatFillFailure(filled),
+      reason: filled.reason,
+      fields: filled.fields,
+      filled: filled.filled ?? [],
+      mode: filled.mode,
+      entryId: chosen.id,
+    };
+  }
+  return {
+    ok: true,
+    fields: filled.fields,
+    filled: filled.filled ?? filled.fields,
+    mode: filled.mode,
+    entryId: chosen.id,
+  };
+}
+
+async function acceptSuggestion(entryId?: string, tabId?: number): Promise<Record<string, unknown>> {
+  const tab = tabId !== undefined ? await ext.tabs.get(tabId).catch(() => undefined) : await activeHttpTab();
+  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  rememberHttpTab(tab);
+  await ensurePageOrigin(tab.url);
+  const probe = await sendToTab(tab.id, { type: "probe-form" });
+  const suggestion = detectSetup({
+    url: tab.url,
+    fieldNames: probe.fieldNames,
+    fieldLabels: probe.fieldLabels,
+    pageTitle: tab.title,
+  });
+  if (suggestion.credentialKind === "api" && suggestion.matchedField) {
+    return fillApiSuggestion(entryId, tab.id);
+  }
+  return fillActive(entryId, false, tab.id);
+}
+
 ext.runtime.onInstalled.addListener(() => {
   void ensureMenu();
 });
@@ -482,6 +606,13 @@ async function handle(
       return fillActive(
         typeof message.entryId === "string" ? message.entryId : undefined,
         message.assist === true,
+        typeof message.tabId === "number" ? message.tabId : undefined,
+      );
+    case "suggest-active":
+      return suggestActive();
+    case "accept-suggestion":
+      return acceptSuggestion(
+        typeof message.entryId === "string" ? message.entryId : undefined,
         typeof message.tabId === "number" ? message.tabId : undefined,
       );
     default:

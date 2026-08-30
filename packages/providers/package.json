@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local deterministic provider resolution from domains. No network, no AI, no secrets.",
+  "description": "Local deterministic provider resolution and setup detection. No network, no AI, no secrets, no fill.",
   "license": "UNLICENSED",
   "exports": {
     ".": "./src/index.ts"

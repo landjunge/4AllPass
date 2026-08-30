@@ -54,6 +54,10 @@ export interface FillResult {
   assistFields?: Array<"username" | "password">;
   /** Machine-readable score reasons. Never page values or secrets. */
   hints?: string[];
+  /** Field name/id for detection. Never values. */
+  fieldNames?: string[];
+  /** Visible labels for detection. Never values. */
+  fieldLabels?: string[];
   mode: FillMode;
   reason?: FillReason;
   confidence?: number;

@@ -54,7 +54,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 |---|---|---|
 | Supply-Chain (jetzt zuerst) | `docs/supply-chain-security.md` | Phasen 1–3 auf `main`; Private Registry offen |
 | Code-Hygiene | `ROADMAP.md` §1b | ☑ 2026-08-28 |
-| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | raw-secret / mediated interface / policy; MAIP später |
+| Secret Access Layer (vorbereiten) | `docs/secret-access-layer.md` + `docs/architecture/agent-access.md` | A+B detect/ask 2026-08-28; mediated/policy; MAIP später |
 | Android-Skelett | `docs/android-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | iOS-Skelett | `docs/ios-skeleton-grok-build.md` | bereit (Prep, nicht vor PWA) |
 | Future Readiness | `docs/future-readiness.md` | offen |
@@ -141,7 +141,7 @@ Agent
 
 **Definition of Done (Phase 4):**
 
-- [ ] Mindestens Phase A+B als Extension-UX auf bestehendem Host-Fill.
+- [x] Mindestens Phase A+B als Extension-UX auf bestehendem Host-Fill. (2026-08-28: `detectSetup` + Popup-Frage, Fill nur nach Klick; C–F offen)
 - [ ] Phase C als Loopback-Broker mit Policy-Overlay, in-memory Handoff, kein Env-Default.
 - [ ] Phase D: OS-Identität (code signature / bundle id) als first-class Objekt; unknown DENY erzwungen.
 - [ ] Phase E: Grant-Records lokal + ciphertext, lesbar in der UI.

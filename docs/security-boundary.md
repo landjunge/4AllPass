@@ -2,7 +2,7 @@
 
 **Status:** Implemented (this file). Highest authority for “what runs.”  
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-26  
+**Date:** 2026-08-28  
 **Index:** [README.md](README.md)
 
 This document describes what the **running backend + PWA / local app** actually enforce.
@@ -290,8 +290,14 @@ pins the server integers; after the first verified manifest that path is closed.
   vault URL is not filled into `http://` of the same host (loopback HTTP is
   allowed). The content script refuses a fill whose `expectedOrigin` is not
   `location.origin`, so a tab that navigated after matching does not receive
-  the password. Privileged extension messages (`unlock`, `fill-tab`, …) from
-  a content-script sender (`sender.tab`) are rejected. After a successful
+  the password. The popup may show a provider/kind **suggestion** from URL +
+  field *names* + title (`detectSetup` in `@4allpass/providers`). Field values
+  are not inputs. A single env-style name (`OPENAI_API_KEY`) is not high
+  confidence. Filling still requires **Auswählen / Fill**. API-key fill uses
+  only vault rows with `kind: "api"` for that provider, into the named field,
+  still with `expectedOrigin`. Privileged extension messages (`unlock`,
+  `fill-tab`, `suggest-active`, `accept-suggestion`, …) from a content-script
+  sender (`sender.tab`) are rejected. After a successful
   fill, the page JavaScript can read the input (`input.value`, listeners).
   That is the **final autofill trust boundary**, not a 4AllPass bug — the
   website never receives the vault, only field values in its own DOM.

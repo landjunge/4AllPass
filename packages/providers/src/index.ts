@@ -13,3 +13,10 @@ export { normalizeDomain, possibleRegistrable } from "./normalize.ts";
 export { hostMatches } from "./match.ts";
 export { resolveProvider, type ResolveOptions } from "./resolve.ts";
 export { BUILTIN_PROVIDERS, providerById } from "./registry/index.ts";
+export {
+  detectSetup,
+  DETECT_FIELD_ONLY_MAX,
+  DETECT_HIGH_MIN,
+  type DetectionSignals,
+  type SetupSuggestion,
+} from "./detect.ts";

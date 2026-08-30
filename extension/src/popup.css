@@ -99,3 +99,14 @@ button.link:hover {
   padding: 0;
   margin: 8px 0 0;
 }
+#suggest-box {
+  margin: 8px 0 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+#suggest {
+  margin: 0;
+  color: var(--text);
+}

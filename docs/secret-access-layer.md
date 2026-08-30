@@ -1,6 +1,6 @@
 # Secret Access Layer
 
-**Status:** Concept + **Phase 4 im Grok-Build-Plan**. Protocol v1 is unchanged.  
+**Status:** Phase A+B in code. Protocol v1 is unchanged.  
 **Date:** 2026-08-20 (Status-Update 2026-08-28)  
 **Not this document:** a broker binary, MCP server, FastAPI grant API, env-var export, clipboard watcher, or an orchestrator.
 **Grok Build:** Nach Supply-Chain (Phasen 1–3) kommt **Phase 4** – dieses Modul. Einstieg: `docs/grok-build-plan.md` §2.
@@ -216,6 +216,6 @@ If this is ever implemented:
 - Explicit request to implement the **Secret Access Layer** (not “weiter”, not “API keys”, not “MCP”, not “n8n”).
 - Phase B only: a small extension UX on top of existing host fill, still click-to-fill — still not a broker.
 
-**Status 2026-08-28:** Trigger „explicit request“ ist gesetzt – Phase 4 steht im `grok-build-plan.md`. Bis Supply-Chain (Phasen 1–3) grün ist, kein Code für A–F. Danach streng in Reihenfolge A→F, keine Sprünge.
+**Status 2026-08-28:** Supply-Chain 1–3 ist auf `main`. Phase A (`detectSetup` in `@4allpass/providers`) und Phase B (Extension-Popup fragt, Fill nur nach Klick) sind Code. Phase C–F nicht. Kein Secret Broker mit App-Identität, keine Grant-Records, kein FastAPI-Pfad.
 
-No code in this repository implements a Secret Broker, application identity, or grant records.
+`detectSetup` füllt nie. Ein einzelnes Feld wie `OPENAI_API_KEY` ist nicht high confidence. Die Extension zeigt die Frage und füllt erst nach **Auswählen**. Host-Login bleibt der bestehende Fill. API-Key-Felder gehen nur in `kind: "api"`-Einträge desselben Providers, nach Klick, mit `expectedOrigin`.

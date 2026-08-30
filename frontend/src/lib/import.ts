@@ -1,8 +1,21 @@
-import { resolveProvider } from "@4allpass/providers";
-import { newEntryId, type VaultEntry } from "./entries.ts";
+import { type EntryKind, type VaultEntry } from "./entries.ts";
+import {
+  classifyImportedEntry,
+  entriesFromEnvText,
+  entriesFromProviderJson,
+  entryIsUsable,
+  looksLikeEnvFile,
+} from "./import-classify.ts";
 import { looksLikeSharePackage } from "./share.ts";
 
-export type ImportFormat = "bitwarden-json" | "onepassword-json" | "onepassword-1pif" | "keepass-xml" | "csv";
+export type ImportFormat =
+  | "bitwarden-json"
+  | "onepassword-json"
+  | "onepassword-1pif"
+  | "keepass-xml"
+  | "csv"
+  | "env"
+  | "provider-json";
 
 export interface ImportResult {
   format: ImportFormat;
@@ -23,35 +36,13 @@ function asEntry(partial: {
   password?: string;
   url?: string;
   notes?: string;
+  nameHint?: string;
 }): VaultEntry {
-  const resolved = resolveProvider(partial.url ?? "");
-  return {
-    id: newEntryId(),
-    kind: "web",
-    title: partial.title?.trim() ?? "",
-    provider: resolved.providerName ?? "",
-    account: "",
-    username: partial.username?.trim() ?? "",
-    password: partial.password ?? "",
-    url: partial.url?.trim() ?? "",
-    host: "",
-    port: "",
-    protocol: "",
-    capabilities: "",
-    credentialType: "password",
-    notes: partial.notes?.trim() ?? "",
-    totpSecret: "",
-    updatedAt: new Date().toISOString(),
-    domain: resolved.normalizedDomain,
-    providerId: resolved.providerId ?? "",
-    providerConfidence: resolved.confidence,
-    providerMatchType: resolved.matchType,
-    favorite: false,
-  };
+  return classifyImportedEntry(partial);
 }
 
 function usable(entry: VaultEntry): boolean {
-  return Boolean(entry.title || entry.username || entry.password);
+  return entryIsUsable(entry);
 }
 
 export interface BrowserLoginRow {
@@ -85,14 +76,16 @@ export function importReviewRows(
   url: string;
   provider: string;
   confidence: number;
+  kind: EntryKind;
 }> {
   return entries.map((entry) => ({
     id: entry.id,
-    title: entry.title || entry.url,
+    title: entry.title || entry.url || entry.host,
     username: entry.username,
     url: entry.url,
     provider: entry.provider || "Unknown",
     confidence: entry.providerConfidence,
+    kind: entry.kind,
   }));
 }
 
@@ -118,21 +111,24 @@ function parseCsv(text: string): ImportResult {
   const title = col(["title", "name", "account", "entry"]);
   const username = col(["username", "user", "login name", "login", "email"]);
   const password = col(["password", "pass"]);
+  const token = col(["token", "api_key", "apikey", "api-key", "secret"]);
   const url = col(["url", "uri", "website", "web site", "login_uri"]);
   const notes = col(["notes", "note", "comments", "comment"]);
-  if (title < 0 && username < 0 && password < 0) {
-    throw new Error("CSV needs a Title, Username, or Password column");
+  if (title < 0 && username < 0 && password < 0 && token < 0) {
+    throw new Error("CSV needs a Title, Username, Password, or Token column");
   }
   const entries: VaultEntry[] = [];
   let skipped = 0;
   for (const line of lines.slice(1)) {
     const cells = splitCsvLine(line);
+    const secret = (password >= 0 ? cells[password] ?? "" : "") || (token >= 0 ? cells[token] ?? "" : "");
     const entry = asEntry({
       title: title >= 0 ? cells[title] ?? "" : "",
       username: username >= 0 ? cells[username] ?? "" : "",
-      password: password >= 0 ? cells[password] ?? "" : "",
+      password: secret,
       url: url >= 0 ? cells[url] ?? "" : "",
       notes: notes >= 0 ? cells[notes] ?? "" : "",
+      nameHint: token >= 0 ? "api_key" : (title >= 0 ? cells[title] ?? "" : ""),
     });
     if (!usable(entry)) {
       skipped += 1;
@@ -169,13 +165,11 @@ function parseBitwarden(data: unknown): ImportResult | null {
   if (!data || typeof data !== "object" || !("items" in data)) return null;
   const items = (data as { items: unknown }).items;
   if (!Array.isArray(items)) return null;
-  const looksBitwarden = items.some(
-    (item) =>
-      item &&
-      typeof item === "object" &&
-      (item as { type?: unknown }).type === 1 &&
-      (item as { login?: unknown }).login != null,
-  );
+  const looksBitwarden = items.some((item) => {
+    if (!item || typeof item !== "object") return false;
+    const type = (item as { type?: unknown }).type;
+    return type === 1 || type === 2;
+  });
   if (!looksBitwarden) return null;
   const entries: VaultEntry[] = [];
   let skipped = 0;
@@ -190,6 +184,16 @@ function parseBitwarden(data: unknown): ImportResult | null {
       notes?: string;
       login?: { username?: string; password?: string; uris?: Array<{ uri?: string }> };
     };
+    if (row.type === 2) {
+      const note = row.notes ?? "";
+      const entry = asEntry({ title: row.name ?? "", password: note, nameHint: row.name ?? "" });
+      if (entry.kind === "api" && usable(entry)) {
+        entries.push(entry);
+        continue;
+      }
+      skipped += 1;
+      continue;
+    }
     if (row.type !== 1 || !row.login) {
       skipped += 1;
       continue;
@@ -201,6 +205,7 @@ function parseBitwarden(data: unknown): ImportResult | null {
         password: row.login.password ?? "",
         url: row.login.uris?.[0]?.uri ?? "",
         notes: row.notes ?? "",
+        nameHint: row.name ?? "",
       }),
     );
   }
@@ -420,13 +425,19 @@ export function parsePlaintextExport(text: string): ImportResult {
     if (bitwarden) return bitwarden;
     const onepassword = parse1PasswordJson(parsed);
     if (onepassword) return onepassword;
+    const provider = entriesFromProviderJson(parsed);
+    if (provider) return { format: "provider-json", entries: provider, skipped: 0 };
     throw new Error(
-      "JSON ist kein Bitwarden- oder 1Password-Export. / JSON is not a Bitwarden or 1Password item export",
+      "JSON ist kein Bitwarden-, 1Password- oder Provider-Export. / JSON is not a Bitwarden, 1Password, or provider-key export",
     );
   }
   const keepass = parseKeepassXml(trimmed);
   if (keepass) return keepass;
   const pif = parse1pif(trimmed);
   if (pif) return pif;
+  if (looksLikeEnvFile(trimmed)) {
+    const entries = entriesFromEnvText(trimmed);
+    return { format: "env", entries, skipped: 0 };
+  }
   return parseCsv(trimmed);
 }

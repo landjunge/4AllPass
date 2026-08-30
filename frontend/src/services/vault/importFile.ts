@@ -16,7 +16,7 @@ export async function parseVaultImportFile(file: File): Promise<ParsedVaultFile>
   if (looksLikeSharePackage(text)) return { type: "share", text };
   const parsed = parsePlaintextExport(text);
   if (parsed.entries.length === 0) {
-    throw new Error("Keine Logins in dieser Datei. / no login entries in this file");
+    throw new Error("Keine Einträge in dieser Datei. / no entries in this file");
   }
   return { type: "plaintext", entries: parsed.entries };
 }

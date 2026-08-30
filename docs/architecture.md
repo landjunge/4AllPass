@@ -15,7 +15,7 @@ Mensch / Agent
     │
     ▼
 ┌─ UI ──────────────┐   React PWA / Tauri   frontend/src
-│  vault desk       │   Tokens: DESIGN.md Magpie, tokens.css
+│  vault desk       │   Palette: frontend/src/tokens.css (Golden Magpie)
 └────────┬──────────┘
          │ saveEntries / copySecret
          ▼
@@ -100,7 +100,7 @@ Radius/Schatten bleiben Desk-Chrome. Gnom-Hub-Grau ist nicht die Marke.
 
 ## 4. First-run
 
-Kein Welcome-Screen. `WelcomePage.tsx` ist unbenutzt.
+Kein Welcome-Screen. First-run is Create or Unlock.
 
 | Oberfläche | Leer | Tresor existiert |
 |---|---|---|

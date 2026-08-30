@@ -17,6 +17,20 @@ Smallest PR that:
 
 Do not stack “also I refactored the PWA” onto a crypto PR.
 
+## File budget
+
+Do not grow a file past **~400 lines** with new logic. Crypto protocol modules with existing `adversarial-*` tests are the exception (they are already split by concern).
+
+These files are over the budget. Touch **only** the function the slice needs. Do not “clean up while here.” On the next *justified* edit, extract a sibling file instead of appending:
+
+- `frontend/src/lib/vault-session.ts` — unlock / commit / revoke / cache (tests already sit in sibling `vault-session.*.test.ts`)
+- `frontend/src/components/vault/VaultEntryForm.tsx`
+- `frontend/src/state/app-state.tsx`
+- `extension/src/background.ts`
+- `src-tauri/src/browsers.rs`
+
+New behavior belongs in a **new file next to** these, not +80 lines inside them.
+
 ## Which tests to run
 
 Run the workspace that matches the diff. Do not skip it. Do not require the whole monorepo for a one-package slice.

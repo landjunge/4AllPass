@@ -26,7 +26,8 @@ function apiBase(): string {
   return "/api/v1";
 }
 
-function useSidecarHttp(): boolean {
+/** Not a React hook — name must not start with `use` (oxlint rules-of-hooks). */
+function sidecarHttpEnabled(): boolean {
   return (
     typeof window !== "undefined" &&
     "__TAURI_INTERNALS__" in window &&
@@ -144,7 +145,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   headers["X-Device-Id"] = deviceId();
   let status: number;
   let text: string;
-  if (useSidecarHttp()) {
+  if (sidecarHttpEnabled()) {
     const { invoke } = await import("@tauri-apps/api/core");
     const result = await invoke<{ status: number; body: string }>("sidecar_http", {
       method,

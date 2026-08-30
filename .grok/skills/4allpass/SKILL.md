@@ -5,7 +5,8 @@ description: >
   autofill, broker, crypto. Trigger on 4AllPass, Tresor, envelopes, Argon2id,
   WebAuthn PRF, CAS, PWA, Extension, Desktop. Do not start 4AllPass coding or
   review without this skill. For "weiter", "nächster Schritt", or "improve"
-  also load 4allpass-next.
+  also load 4allpass-next. For Tresor-UI, first-run, Magpie, copy, or
+  “für normale User” also load 4allpass-ui.
 ---
 
 # 4AllPass
@@ -19,6 +20,9 @@ Machines: **controlled** access (Allow/Deny). v1 after Allow still copies a
 
 For „weiter / nächster Schritt / improve / was jetzt“: stop here and follow
 [../4allpass-next/SKILL.md](../4allpass-next/SKILL.md).
+
+For Tresor-UI / first-run / Magpie / copy / „für normale User“: also follow
+[../4allpass-ui/SKILL.md](../4allpass-ui/SKILL.md).
 
 ## Before you touch anything
 
@@ -58,7 +62,8 @@ malicious server + hostile store.
 
 ## How to code
 
-Follow [references/coding.md](references/coding.md).
+Follow [references/coding.md](references/coding.md) (workflow + which tests).
+Vault surfaces: [../4allpass-ui/SKILL.md](../4allpass-ui/SKILL.md).
 
 ```sh
 npm test
@@ -71,7 +76,7 @@ cd backend && pytest
 
 - DE und EN on every user-facing surface in the same PR.
 - Logo is 4AllPass only: Elster + goldener Schlüssel + Schriftzug.
-- Vault UI: `DESIGN.md`, `docs/ui-map.md`, `frontend/src/components/vault/`. Golden-Magpie, not Gnom-Hub tokens.
+- Palette is `frontend/src/tokens.css`, not the old blue table in `DESIGN.md`.
 
 ## Do not
 

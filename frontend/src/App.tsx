@@ -6,12 +6,12 @@ import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 
 export function App(): ReactNode {
   const {
     ready,
     email,
-    localMode,
     vaults,
     lockState,
     error,
@@ -39,7 +39,7 @@ export function App(): ReactNode {
         </span>
         {email ? (
           <div className="header-actions">
-            {localMode ? null : (
+            {email === "local@127.0.0.1" ? null : (
               <span className="muted small" data-testid="account-email">
                 {email}
               </span>
@@ -59,11 +59,11 @@ export function App(): ReactNode {
                 Sperren / Lock
               </button>
             ) : null}
-            {localMode ? null : (
+            {email !== "local@127.0.0.1" ? (
               <button type="button" className="link" onClick={() => void signOut()}>
                 Abmelden / Sign out
               </button>
-            )}
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -84,6 +84,7 @@ export function App(): ReactNode {
           </button>
         </div>
       ) : null}
+      {email && email !== "local@127.0.0.1" ? <PullLocalVaultBanner /> : null}
 
       <main>
         {!email ? (

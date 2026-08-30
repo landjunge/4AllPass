@@ -22,7 +22,7 @@ function rememberEmail(value: string): void {
 }
 
 export function AuthPage(): ReactNode {
-  const { signIn, signUp } = useApp();
+  const { signIn, signUp, openThisMac, localMode, localStore } = useApp();
   const { t } = useCopy();
   const remembered = readLastEmail();
   const [mode, setMode] = useState<"sign-in" | "sign-up">(remembered ? "sign-in" : "sign-up");
@@ -30,6 +30,8 @@ export function AuthPage(): ReactNode {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [already, setAlready] = useState(Boolean(remembered));
+  const thisMac =
+    localMode && (localStore?.hasLocalVault ?? false) && !localStore?.hasOtherAccounts;
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -51,6 +53,29 @@ export function AuthPage(): ReactNode {
 
   return (
     <div className="centered">
+      {thisMac ? (
+        <div className="card auth" style={{ marginBottom: "1rem" }}>
+          <h2>{t({ de: "Tresor auf diesem Mac", en: "Vault on this Mac" })}</h2>
+          <p>
+            {t({
+              de: `Auf diesem Gerät liegt schon ein Tresor${localStore && localStore.localEntries > 0 ? ` (${localStore.localEntries} Einträge)` : ""}. Nicht neu anlegen — öffnen.`,
+              en: `This device already has a vault${localStore && localStore.localEntries > 0 ? ` (${localStore.localEntries} entries)` : ""}. Do not create another — open it.`,
+            })}
+          </p>
+          <button
+            type="button"
+            className="primary"
+            data-testid="open-this-mac"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void openThisMac().finally(() => setBusy(false));
+            }}
+          >
+            {t({ de: "Diesen Tresor öffnen", en: "Open this vault" })}
+          </button>
+        </div>
+      ) : null}
       <form className="card auth" onSubmit={submit}>
         <h2>
           {mode === "sign-up"

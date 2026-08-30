@@ -346,16 +346,15 @@ access broker still needs the unlocked process). Inactivity auto-lock does
 **not** run in the desktop app. **Launch at login** (Settings, default off)
 starts the process hidden in the tray. It does not unwrap the Vault Key, does
 not skip the password, and does not auto-allow. A cold start after login is
-LOCKED until the user unlocks. The desktop vault locks on **manual Lock** or
-**system sleep** (`desktop-lock`: macOS sleep notify and a >5s **wall-clock**
-gap between polls). Screen lock (Ctrl-Cmd-Q, Win+L, logind `LockedHint`) does
-**not** lock. `Instant` / CLOCK_MONOTONIC stops during suspend with the
-process, so a lid-close looks like one 400ms tick and must not be the stall
-clock.
+LOCKED until the user unlocks. The desktop vault locks on **manual Lock**
+only. Sleep, screen lock, tray hide, inactivity, and switching to the
+browser do **not** lock. A >5s wall-clock stall used to emit `desktop-lock`;
+macOS App Nap suspends the process while Chrome is in front, so that path
+zeroized the Vault Key by mistake and is gone.
 The UI calls the same lock path and zeroizes the in-process Vault Key as well as
 JS allows. A pending access prompt is denied. That is not FileVault and not
-hibernation-safe. The race vs actual sleep is real: a dump of RAM after a
-missed notification can still hold VK. An access request opens a small always-on-top prompt with Allow / Deny;
+hibernation-safe: RAM still holds VK across sleep until the user presses Lock.
+An access request opens a small always-on-top prompt with Allow / Deny;
 that window receives only application / provider / scope / TTL. The grant
 material is issued in the unlocked main webview after the prompt event. The
 prompt is not a second crypto context.

@@ -42,8 +42,8 @@ export function SettingsPanel(): ReactNode {
       <h3>{t({ de: "Wie ist mein Tresor geschützt?", en: "How is my vault protected?" })}</h3>
       <p className="muted">
         {t({
-          de: "Verschlüsselt auf diesem Gerät. Nur du öffnest ihn. Sperren und Ruhemodus, nicht die Bildschirmsperre.",
-          en: "Encrypted on this device. Only you open it. Lock and sleep, not the screen lock.",
+          de: "Verschlüsselt auf diesem Gerät. Nur du öffnest ihn. Nur der Knopf Sperren schließt ihn — nicht Ruhemodus, Bildschirmsperre oder Wechsel in den Browser.",
+          en: "Encrypted on this device. Only you open it. Only the Lock button closes it — not sleep, screen lock, or switching to the browser.",
         })}
       </p>
       <label className="checkbox">

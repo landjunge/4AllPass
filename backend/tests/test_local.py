@@ -170,6 +170,24 @@ async def test_local_bootstrap_mints_session_without_register(local_runtime):
 
 
 @pytest.mark.asyncio(loop_scope="session")
+async def test_local_status_reports_existing_vault_without_secrets(local_runtime):
+    await _create_schema()
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=local_runtime.origin) as client:
+        empty = await client.get("/api/v1/local/status")
+        assert empty.status_code == 200, empty.text
+        body = empty.json()
+        assert body["hasLocalVault"] is False
+        assert body["localEntries"] == 0
+        assert body["hasOtherAccounts"] is False
+        assert body["localVaultId"] is None
+        assert "password" not in str(body).lower()
+        assert "secret" not in str(body).lower()
+        assert "@" not in str(body)
+
+
+@pytest.mark.asyncio(loop_scope="session")
 async def test_local_broker_info_is_pairing_token_not_a_vault_secret(local_runtime):
     await _create_schema()
     app = create_app()
@@ -217,6 +235,99 @@ async def test_local_webview_caps_store_no_secrets(local_runtime):
         assert "password" not in body
         got = await client.get("/api/v1/local/webview-caps")
         assert got.json()["credentialsCreate"] is True
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_adopt_local_vault_moves_owner_without_decrypt(local_runtime):
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+    from app.db.session import get_session_factory
+    from app.models.entry import EncryptedEntry
+    from app.models.snapshot import VaultSnapshot
+    from app.models.user import User
+    from app.models.vault import Vault
+
+    await _create_schema()
+    vault_id = ""
+    async with get_session_factory()() as session:
+        local = User(email=LOCAL_ACCOUNT_EMAIL)
+        session.add(local)
+        await session.flush()
+        vault = Vault(owner_user_id=local.id, crypto_protocol_version=1)
+        session.add(vault)
+        await session.flush()
+        snapshot = VaultSnapshot(
+            vault_id=vault.id,
+            revision=1,
+            vault_key_version=1,
+            crypto_protocol_version=1,
+        )
+        session.add(snapshot)
+        await session.flush()
+        session.add(
+            EncryptedEntry(
+                snapshot_id=snapshot.id,
+                entry_id="entry-opaque",
+                schema_version=1,
+                crypto_version=1,
+                nonce=b"\x00" * 12,
+                ciphertext=b"\x01" * 32,
+                tag=b"\x02" * 16,
+            )
+        )
+        vault.active_snapshot_id = snapshot.id
+        await session.commit()
+        vault_id = str(vault.id)
+
+    app = create_app()
+    transport = ASGITransport(app=app)
+    device = {"X-Device-Id": "dev_localappdevice000000001"}
+    async with AsyncClient(transport=transport, base_url=local_runtime.origin) as client:
+        status = await client.get("/api/v1/local/status")
+        assert status.status_code == 200, status.text
+        body = status.json()
+        assert body["hasLocalVault"] is True
+        assert body["localEntries"] == 1
+        assert body["localVaultId"] == vault_id
+        assert "@" not in str(body)
+        assert "password" not in str(body).lower()
+
+        denied = await client.post("/api/v1/local/adopt-local-vault")
+        assert denied.status_code == 401
+
+        registered = await client.post(
+            "/api/v1/auth/register",
+            json={"email": "landjunge@icloud.com", "password": "account-password-1234"},
+            headers=device,
+        )
+        assert registered.status_code == 200, registered.text
+        token = registered.json()["token"]
+        auth = {**device, "Authorization": f"Bearer {token}"}
+
+        local_session = await client.post("/api/v1/auth/local", headers=device)
+        assert local_session.status_code == 200
+        as_local = await client.post(
+            "/api/v1/local/adopt-local-vault",
+            headers={**device, "Authorization": f"Bearer {local_session.json()['token']}"},
+        )
+        assert as_local.status_code == 400
+
+        adopted = await client.post("/api/v1/local/adopt-local-vault", headers=auth)
+        assert adopted.status_code == 200, adopted.text
+        out = adopted.json()
+        assert out["vaultId"] == vault_id
+        assert out["entries"] == 1
+        assert "password" not in str(out).lower()
+        assert "@" not in str(out)
+
+        listed = await client.get("/api/v1/vaults", headers=auth)
+        assert listed.status_code == 200, listed.text
+        ids = [row["vaultId"] for row in listed.json()]
+        assert vault_id in ids
+
+        after = (await client.get("/api/v1/local/status")).json()
+        assert after["hasLocalVault"] is False
+        assert after["localVaultId"] is None
+        assert after["hasOtherAccounts"] is True
 
 
 @pytest.mark.asyncio(loop_scope="session")

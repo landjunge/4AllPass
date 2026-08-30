@@ -1,4 +1,4 @@
-/** Same idle window as the PWA (`AUTO_LOCK_MS` in app-state). */
+/** Extension idle window. The desk no longer auto-locks. */
 
 export const AUTO_LOCK_MS = 5 * 60 * 1000;
 export const AUTO_LOCK_MINUTES = 5;

@@ -57,7 +57,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
   function handleIncoming(msg: AccessWireRequest, via: "channel" | "loopback"): void {
     const parsed = parseAccessBody(msg.body);
     if ("status" in parsed && parsed.status === "denied") {
-      void sendReply(msg.id, deniedResponse("malformed_request"), via);
+      void sendReply(msg.id, deniedResponse(parsed.reason), via);
       return;
     }
     const request = parsed as AccessRequest;

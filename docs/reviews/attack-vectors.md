@@ -407,12 +407,13 @@ the Node relay **deletes** it (`packages/broker`). A second decide on the same i
 is 404 and does not contain `access_token`. A new request after the waiter is
 gone is `vault_locked`. `@4allpass/access` is a single POST, not a poll loop.
 
-`ttl` still has no upper bound in `parseAccessBody` / the access client (only
-`ttl > 0`). The approval dialog prints the raw second count. That is a UX issue
-for a non-technical approver, not a second copy of the secret: the agent already
-holds `raw_secret` after the first Allow (F-3 / security-boundary). Tests:
+`parseAccessBody` now rejects `ttl` above 86400 (`ttl_too_large`); `issueGrant`
+clamps. Re-checked 2026-08-30 against `broker.py`: second `decide` is 404,
+`@4allpass/access` is a single POST (not a poll). Oversized TTL is **not** a
+second copy of the secret — replay does not raise the severity of F-3 (the
+agent already holds `raw_secret` after the first Allow). Tests:
 `test_second_decide_same_id_is_404`, `test_approved_grant_cannot_be_repulled`,
-matching Node tests in `packages/broker/test/relay.test.mjs`.
+`packages/core/test/standing-grant.test.ts` (`ttl_too_large`).
 
 ### F-28 — Node relay used `!==` for the pairing token · **low** · fixed
 

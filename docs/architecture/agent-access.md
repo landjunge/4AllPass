@@ -72,11 +72,11 @@ Loopback broker, Origin 403, pairing token, `TRUSTED_APPLICATIONS = ["n8n"]`, un
 
 ## Headless / robot requesters (later, not v1)
 
-**Status:** Discussion draft 2026-08-30. **Not implemented.** Do not build on „weiter“.  
+**Status:** Library prototype 2026-08-30. **Not wired to the sidecar.** Do not treat this as always-allow for string `n8n`.  
 **Source:** maintainer draft (`robot-interface-draft.md`). Corrected against [`../security-boundary.md`](../security-boundary.md).  
-**MHS:** Anthropic Model Hardware Standard, research preview as of 2026-08-30 — not a public spec, not Open Source, not a 4AllPass protocol.
+**Transport:** protocol-agnostic. The broker still only answers “who is asking, and may they?”. No device protocol, no discovery, no vendor API.
 
-4AllPass does **not** drive robots. MHS (when it exists) already has `read`/`write`, discovery, and device-level physical limits. The robot is another **requester** of the loopback broker, like n8n. Same `packages/access` / `broker.py` model. No parallel robot SKU. No second broker.
+4AllPass does **not** drive devices. Whatever talks to the hardware (a vendor API, MCP, HTTP, …) is out of this repo. The headless box is another **requester** of the loopback broker, like n8n. Same `packages/access` / `broker.py` model. No parallel device SKU. No second broker.
 
 ### Why the live popup is not enough
 
@@ -147,4 +147,10 @@ Log agent id (pubkey hash), time, credential id (not the secret), `riskClass`, w
 3. MAIP enrollment prototype **without** MHS.
 4. Additive `riskClass` + tests, when identity exists.
 
-**Do not:** build this instead of [#120](https://github.com/landjunge/4AllPass/issues/120); mix vault envelopes with agent identity; FastAPI token mint; always-allow for string `n8n`; a 4AllPass robot protocol.
+### What was built (library, 2026-08-30)
+
+1. **Enrollment / signature** — `packages/crypto/src/requester.ts`. Public key in, `req:ed25519:<sha256>` out. Each request is a signature over canonical bytes. Verify takes `expectedRequesterId` (same expectation style as `unwrapDeviceKey`). Wrong key → `AuthFailureError`. Id/key mismatch → `IntegrityError`. Rotation mints a **new** id; the old key cannot authenticate as the new one. Private keys never enter the module. Tests: `packages/crypto/test/adversarial-requester.test.ts`. **Does not** create a Device envelope or wrap a Vault Key.
+2. **`riskClass`** — additive on `Credential` (`data` default, `actuation` human-set). `evaluatePolicy` reports it. Actuation is high-risk on the live path and **never** standing-auto-approved, even if a rule claims `data`. Tests: `packages/core/test/standing-grant.test.ts`.
+3. **Standing grants** — parallel path `decideStandingAccess` in `packages/core/src/access/standing.ts`, not a silent override of `decideAccess`. Requires `requesterId` (signature already verified by the caller). Rate-limit per id (10 / 60s). Hard TTL: parser max 86400s (`ttl_too_large`); standing clamp 300s. Rules expire after 7 days (`STANDING_RULE_MAX_AGE_MS`). String `application: "n8n"` is not identity on this path. Sidecar / `broker.py` is **unchanged** (still live Allow).
+
+**Do not:** wire this into the sidecar as always-allow for a pairing token; mix vault envelopes with agent identity; FastAPI token mint; a 4AllPass device protocol; infer `riskClass` from a transport.

@@ -68,7 +68,7 @@ Propose **one** item, say why, wait if the user only asked “what next”.
 ### 5. Do not start
 
 - MAIP / cryptographic agent identity
-- Robot / MHS / Policy-Freigabe (parked: `docs/architecture/agent-access.md` § Headless)
+- Sidecar-Always-Allow / MHS-Treiber (Core-Prototyp standing/requester is **not** the running broker; `docs/architecture/agent-access.md` § Headless)
 - Always-allow, env export, credential proxy
 - Autofill expansion on suspicion (Shadow DOM, multi-step, iframe)
 - Native mobile before PWA

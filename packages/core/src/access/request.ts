@@ -1,9 +1,10 @@
 import { parseHandoff } from "./handoff.ts";
+import { ACCESS_TTL_SECONDS_MAX, ttlIsAllowed } from "./limits.ts";
 import type { AccessRequest } from "./types.ts";
 
 export function parseAccessBody(
   input: unknown,
-): AccessRequest | { status: "denied"; reason: "malformed_request" } {
+): AccessRequest | { status: "denied"; reason: "malformed_request" | "ttl_too_large" } {
   if (!input || typeof input !== "object") return { status: "denied", reason: "malformed_request" };
   const body = input as Record<string, unknown>;
   if (typeof body.application !== "string" || typeof body.provider !== "string") {
@@ -16,8 +17,15 @@ export function parseAccessBody(
   if (typeof ttl !== "number" || !Number.isFinite(ttl) || ttl <= 0) {
     return { status: "denied", reason: "malformed_request" };
   }
+  if (!ttlIsAllowed(ttl, ACCESS_TTL_SECONDS_MAX)) {
+    return { status: "denied", reason: "ttl_too_large" };
+  }
   const handoff = parseHandoff(body.handoff);
   if (handoff === "invalid") return { status: "denied", reason: "malformed_request" };
+  const requesterId =
+    typeof body.requesterId === "string" && body.requesterId.trim()
+      ? body.requesterId.trim()
+      : undefined;
   return {
     application: body.application,
     provider: body.provider,
@@ -26,6 +34,7 @@ export function parseAccessBody(
     ttlSeconds: ttl,
     handoff,
     ...(typeof body.reason === "string" ? { reason: body.reason } : {}),
+    ...(requesterId ? { requesterId } : {}),
   };
 }
 

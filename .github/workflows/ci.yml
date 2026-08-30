@@ -28,6 +28,7 @@ jobs:
       - run: npm test
       - run: npm run test:webauthn
       - run: npm run typecheck
+      - run: npm run lint -w @4allpass/frontend
       - run: node scripts/verify-aes-gcm-vectors.mjs
       - name: Reproducible PWA and extension builds
         env:

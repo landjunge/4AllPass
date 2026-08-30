@@ -25,27 +25,11 @@ All projects, apps and websites live under **netzwerkpunkt.de** as the central p
 
 ## 4AllPass Design
 
-### Current Colors (frontend/src/styles.css)
-
-```css
-:root {
-  --bg: #080c18;
-  --panel: #101733;
-  --panel-2: #16204a;
-  --line: #24306b;
-  --text: #eaf0ff;
-  --muted: #93a2d0;
-  --accent: #7aa2ff;
-  --ok: #4fd1a5;
-  --danger: #ff7a90;
-}
-```
-
-### Recommended Palette – "Golden Magpie"
+**Ist-Palette:** `frontend/src/tokens.css` (Golden Magpie). Do not copy colors from this file into CSS.
 
 - **BG:** `#0A0E1A`
 - **Panel:** `#12182B`
-- **Accent / Gold:** `#C9A227` or `#D4AF37`
+- **Accent / Gold:** `#C9A227` / `#D4AF37`
 - **Text:** `#F8F4EC`
 - **Muted:** `#A89F8C`
 - **OK:** `#3DDC97`

@@ -1,5 +1,12 @@
 # Coding conventions
 
+## Before the first edit
+
+1. Name the **package**. UI does not touch `packages/crypto`. Broker policy stays in `@4allpass/core` (no secrets). The sidecar never decrypts.
+2. Read a neighbor file in the same folder. Copy that pattern.
+3. One theme, one branch. If PRs from this work are still open, follow [../../4allpass-next/SKILL.md](../../4allpass-next/SKILL.md).
+4. Vault / first-run / Magpie / copy: also load [../../4allpass-ui/SKILL.md](../../4allpass-ui/SKILL.md).
+
 ## Default change shape
 
 Smallest PR that:
@@ -9,6 +16,44 @@ Smallest PR that:
 3. Updates the spec if the claim surface changed (`security-boundary.md` for “what runs”, protocol docs for “what must be true”).
 
 Do not stack “also I refactored the PWA” onto a crypto PR.
+
+## File budget
+
+Do not grow a file past **~400 lines** with new logic. Crypto protocol modules with existing `adversarial-*` tests are the exception (they are already split by concern).
+
+These files are over the budget. Touch **only** the function the slice needs. Do not “clean up while here.” On the next *justified* edit, extract a sibling file instead of appending:
+
+- `frontend/src/lib/vault-session.ts` — unlock / commit / revoke / cache (tests already sit in sibling `vault-session.*.test.ts`)
+- `frontend/src/components/vault/VaultEntryForm.tsx`
+- `frontend/src/state/app-state.tsx`
+- `extension/src/background.ts`
+- `src-tauri/src/browsers.rs`
+
+New behavior belongs in a **new file next to** these, not +80 lines inside them.
+
+## Which tests to run
+
+Run the workspace that matches the diff. Do not skip it. Do not require the whole monorepo for a one-package slice.
+
+| Change in | Command |
+|---|---|
+| `packages/crypto` | `npm test -w @4allpass/crypto` + typecheck. New behavior needs an `adversarial-*` test. |
+| `packages/core` / access | `npm test -w @4allpass/core` |
+| `packages/providers` | `npm test -w @4allpass/providers` |
+| `packages/access` | `npm test -w @4allpass/access` |
+| `extension/` | `npm test -w @4allpass/extension` |
+| `frontend/src` | `npm test -w @4allpass/frontend` (or the one `*.test.ts`) + `npm run typecheck -w @4allpass/frontend` |
+| `backend/` | `cd backend && pytest` |
+| Claim surface | same PR updates `docs/security-boundary.md` and [claims.md](claims.md) |
+
+Also: `npm run test:webauthn` when `packages/webauthn` or ceremony code moves.
+
+```sh
+npm test                    # full workspaces — before merge, not after every button
+npm run typecheck
+npm run test:webauthn
+cd backend && pytest
+```
 
 ## Crypto (`packages/crypto`)
 
@@ -35,9 +80,12 @@ Do not stack “also I refactored the PWA” onto a crypto PR.
 ## Frontend
 
 - All crypto via `@4allpass/crypto` / `@4allpass/webauthn`. Do not reimplement unwrap in a page.
-- `vault-session.ts` is the sensitive module. Hard revoke / rotation belongs here, not in a random component.
+- `vault-session.ts` is the sensitive module. Hard revoke / rotation belongs here, not in a random component. A Magpie/spacing PR does not edit it.
 - Session token in `sessionStorage` is an accepted XSS trade (account, not vault). Don’t “fix” it by stuffing VK into `localStorage`.
+- No new dependencies. No secrets in logs, test titles, or fixtures except marked dummies (`ghp_demo-…`).
+- Keep pages thin: state in `frontend/src/hooks/vault/`, chrome in `frontend/src/components/vault/`.
 - E2E: `frontend/e2e/` + virtual authenticator. Don’t claim PRF coverage from a mocked `prfSupported: true`.
+- UI behavior: [../../4allpass-ui/SKILL.md](../../4allpass-ui/SKILL.md).
 
 ## Docs
 

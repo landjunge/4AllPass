@@ -63,14 +63,19 @@ export function deriveMasterKey(
   if (typeof password !== "string") {
     throw new ProtocolError("password must be a string");
   }
-  assertKdfBlock({ ...params, salt }, opts.allowTestProfile === true);
-  if (salt.length !== SALT_BYTES_MIN && salt.length !== SALT_BYTES_MAX) {
+  // Derive from the *validated copy*, never from the caller's object. Reading
+  // `params` a second time is a time-of-check/time-of-use gap: an accessor (or a
+  // Proxy) can answer with a production profile while it is being checked and
+  // with a weakened one while the key is being derived. `assertKdfBlock` returns
+  // a flat copy precisely so this cannot happen — see its docstring.
+  const block = assertKdfBlock({ ...params, salt }, opts.allowTestProfile === true);
+  if (block.salt.length !== SALT_BYTES_MIN && block.salt.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
   return deriveArgon2idRaw({
     password: utf8Nfc(password),
-    salt,
-    params,
+    salt: block.salt,
+    params: block,
   });
 }
 

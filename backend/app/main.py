@@ -150,12 +150,19 @@ def _mount_local_ui(app: FastAPI, dist: Path) -> None:
             headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
         )
 
+    root = dist.resolve()
+
     @app.get("/{full_path:path}")
     async def spa(full_path: str) -> Response:
         if full_path.startswith("api/") or full_path.startswith("v1/"):
             return JSONResponse({"detail": "not found"}, status_code=404)
-        candidate = dist / full_path
-        if full_path and candidate.is_file():
+        # `full_path` is percent-decoded request data. The HTTP layer does not
+        # normalize `%2e%2e`, so an unresolved join escapes `dist` and turns this
+        # route into an unauthenticated arbitrary file read. Resolve first, then
+        # require the result to stay under the UI root; anything else falls back
+        # to the SPA index rather than leaking the existence of the target.
+        candidate = (root / full_path).resolve()
+        if full_path and candidate.is_relative_to(root) and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(index)
 

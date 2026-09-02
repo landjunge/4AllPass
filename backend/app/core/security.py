@@ -30,6 +30,22 @@ def verify_account_password(password: str, password_hash: str) -> bool:
         return False
 
 
+# Argon2id over a fixed, unreachable password. Computed once at import so the
+# cost is paid at startup rather than on the first unknown-account login.
+_DUMMY_HASH = _hasher.hash(secrets.token_urlsafe(32))
+
+
+def spend_verify_time() -> None:
+    """Burn one Argon2id verification for a login that has no account to check.
+
+    Without this, `login` short-circuits on a missing user and answers in
+    milliseconds, while a real account costs a full 64 MiB derivation. That gap
+    is a reliable account-enumeration oracle: the rate limit slows the scan but
+    does not remove the signal.
+    """
+    verify_account_password("", _DUMMY_HASH)
+
+
 def new_session_token() -> str:
     return secrets.token_urlsafe(32)
 

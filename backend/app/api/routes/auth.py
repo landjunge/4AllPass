@@ -9,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db, get_session_store
 from app.api.rate_limit import enforce_rate_limit
 from app.core.config import get_settings
-from app.core.security import hash_account_password, new_session_token, verify_account_password
+from app.core.security import (
+    hash_account_password,
+    new_session_token,
+    spend_verify_time,
+    verify_account_password,
+)
 from app.core.sessions import SessionRecord, SessionStore, assert_device_id
 from app.models.user import User
 from app.schemas.auth import AccountMe, AccountSession, LoginRequest, RegisterRequest
@@ -114,12 +119,13 @@ async def login(
     email = str(payload.email).strip().lower()
     result = await db.execute(select(User).where(func.lower(User.email) == email))
     user = result.scalar_one_or_none()
-    if (
-        user is None
-        or not user.is_active
-        or not user.account_password_hash
-        or not verify_account_password(payload.password, user.account_password_hash)
-    ):
+    # Always spend one Argon2id verification, so an unknown or disabled account
+    # costs the same wall time as a real one. Short-circuiting here would make
+    # response latency an account-enumeration oracle.
+    if user is None or not user.is_active or not user.account_password_hash:
+        spend_verify_time()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+    if not verify_account_password(payload.password, user.account_password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
     return await _mint(store, user, device_id)
 

@@ -14,6 +14,17 @@ export function upsertDraft(
   return [...entries, { id: newEntryId(), ...draft, updatedAt }];
 }
 
+/** After save, keep this id selected so the desk does not jump back to empty. */
+export function idAfterUpsert(
+  before: VaultEntry[],
+  after: VaultEntry[],
+  selectedId: string | null,
+): string | null {
+  if (selectedId) return selectedId;
+  const added = after.find((row) => !before.some((old) => old.id === row.id));
+  return added?.id ?? after.at(-1)?.id ?? null;
+}
+
 export function removeEntryById(entries: VaultEntry[], id: string): VaultEntry[] {
   return entries.filter((candidate) => candidate.id !== id);
 }

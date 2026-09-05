@@ -1,5 +1,6 @@
 export {
   appendDraft,
+  idAfterUpsert,
   removeEntryById,
   upsertDraft,
   withAutofillDemoEntry,

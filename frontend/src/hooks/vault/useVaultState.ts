@@ -16,6 +16,7 @@ import {
   pendingFromEntries,
   pickAllImport,
   pickNoneImport,
+  idAfterUpsert,
   removeEntryById,
   selectedImportEntries,
   toggleImportPick,
@@ -96,9 +97,17 @@ export function useVaultState() {
     if (!draft || !vault) return;
     setBusy(true);
     try {
-      await saveEntries(upsertDraft(entries, draft, selectedId));
-      setDraft(null);
-      setSelectedId(null);
+      const next = upsertDraft(entries, draft, selectedId);
+      await saveEntries(next);
+      const id = idAfterUpsert(entries, next, selectedId);
+      const saved = next.find((row) => row.id === id);
+      if (saved) {
+        setSelectedId(saved.id);
+        setDraft(draftFromEntry(saved));
+      } else {
+        setDraft(null);
+        setSelectedId(null);
+      }
     } catch {
       // The banner shows the reason.
     } finally {

@@ -42,6 +42,8 @@ Proof (Playwright, no Vite): `npm run test:e2e:local -w @4allpass/frontend` —
 Create or Unlock → vault → Access Allow; UI never shows the secret; a Node-like
 `POST /v1/access/request` (no Origin) gets `approved` after Allow.
 
+Desktop-shell walk (Auth first, `__TAURI_INTERNALS__` stub, isolated tmp data dir, **not** `/Applications/4AllPass.app` and **not** port 8788): `npm run test:e2e:desktop -w @4allpass/frontend`. Screenshots: `~/gnom-hub-v1/docs/assets/suite-desktop/`.
+
 ## Origins
 
 | How | Origin |

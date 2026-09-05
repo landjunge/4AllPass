@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { FieldLabel } from "../components/vault/FieldLabel.tsx";
 import { useApp } from "../state/app-state.tsx";
 
 const MECHANISM_LABEL: Record<string, string> = {
@@ -79,7 +80,10 @@ export function UnlockPage(): ReactNode {
 
         {useRecovery ? (
           <label>
-            Recovery-Schlüssel / Recovery key
+            <FieldLabel
+              text="Recovery-Schlüssel / Recovery key"
+              tip="Ersatz für das Tresor-Passwort. Nicht das Konto-Passwort. / Replaces the vault password. Not the account password."
+            />
             <textarea
               value={recovery}
               onChange={(event) => setRecovery(event.target.value)}
@@ -90,7 +94,10 @@ export function UnlockPage(): ReactNode {
           </label>
         ) : (
           <label>
-            Tresor-Passwort / Vault password
+            <FieldLabel
+              text="Tresor-Passwort / Vault password"
+              tip="Nur du. Ruhemodus sperrt nicht — nur der Knopf Sperren. / Only you. Sleep does not lock — only the Lock button."
+            />
             <input
               type="password"
               autoComplete="current-password"

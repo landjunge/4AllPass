@@ -134,7 +134,10 @@ npm run tauri:dev
 npm test
 npm run typecheck
 cd backend && pytest
+cd frontend && npm run test:e2e:user-watch
 ~~~
+
+`test:e2e:user-watch` is opt-in, headed or screenshot-only, dummy vault — not the real Desk vault. See [docs/UI_TEST_SUITE.md](docs/UI_TEST_SUITE.md).
 
 ### Technische Dokumentation
 

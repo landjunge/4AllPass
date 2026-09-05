@@ -171,7 +171,7 @@ function renderRow(
           type="button"
           className="row-main"
           onClick={() => opts.onSelect(entry)}
-          title={opts.t({ de: "Eintrag öffnen und bearbeiten", en: "Open and edit this entry" })}
+          title={entryDisplayTitle(entry, opts.untitled)}
         >
           <span className="row-icon" aria-hidden="true">
             <BrowserIcon id={iconName} name={iconName} />

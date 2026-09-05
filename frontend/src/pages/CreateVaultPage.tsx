@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { FieldLabel } from "../components/vault/FieldLabel.tsx";
 import { useApp } from "../state/app-state.tsx";
 import { useCopy } from "../state/copy-mode.tsx";
 
@@ -41,7 +42,13 @@ export function CreateVaultPage({
           })}
         </p>
         <label>
-          {t({ de: "Tresor-Passwort", en: "Vault password" })}
+          <FieldLabel
+            text={t({ de: "Tresor-Passwort", en: "Vault password" })}
+            tip={t({
+              de: "Nicht das Konto-Passwort. Vergessen heißt: nur der Recovery-Schlüssel. Der Server sieht das nicht.",
+              en: "Not the account password. If you forget it, only the recovery key helps. The server never sees this.",
+            })}
+          />
           <input
             type="password"
             autoComplete="new-password"
@@ -53,7 +60,13 @@ export function CreateVaultPage({
           />
         </label>
         <label>
-          {t({ de: "Wiederholen", en: "Repeat" })}
+          <FieldLabel
+            text={t({ de: "Wiederholen", en: "Repeat" })}
+            tip={t({
+              de: "Muss identisch sein. Tippfehler hier sperren den Tresor für immer — ohne Recovery-Schlüssel.",
+              en: "Must match. A typo here locks you out forever without the recovery key.",
+            })}
+          />
           <input
             type="password"
             autoComplete="new-password"

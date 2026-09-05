@@ -24,6 +24,7 @@
     "verify:reproducible": "node scripts/verify-reproducible-build.mjs",
     "broker": "npm run broker -w @4allpass/broker",
     "access:demo": "tsx examples/n8n-access-client.mjs",
+    "desktop": "bash scripts/open-desktop.sh --desktop",
     "app": "node scripts/run-local-app.mjs --open",
     "app:sidecar": "node scripts/run-local-app.mjs",
     "sidecar": "node scripts/run-sidecar.mjs",

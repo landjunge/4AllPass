@@ -1,8 +1,13 @@
-use std::{path::PathBuf, thread, time::{Duration, Instant}};
+use std::{
+    path::PathBuf,
+    process::Command,
+    thread,
+    time::{Duration, Instant},
+};
 
 use crate::core_bind::{
-    classify_occupied, classify_spawned_listener, is_core_binary_name, is_ui_binary_name,
-    Occupant, OccupiedKind, SpawnedListener,
+    classify_occupied, classify_spawned_listener, is_core_binary_name, is_dev_local_command,
+    is_ui_binary_name, Occupant, OccupiedKind, SpawnedListener,
 };
 use crate::process::{bundled_core, core_up, CORE_PORT};
 use crate::process_inspect::{cmd_name, loopback_listen_pid, parent_and_command, terminate};
@@ -10,11 +15,31 @@ use crate::process_inspect::{cmd_name, loopback_listen_pid, parent_and_command, 
 const FOREIGN_LISTENER: &str =
     "127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass";
 
+fn show_foreign_listener_alert() {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("osascript")
+            .args([
+                "-e",
+                r#"display dialog "4AllPass Desk kann nicht starten: Port 8788 ist belegt, aber nicht von der Desk-App.
+
+Dein Tresor ist die App unter Programme, nicht der Browser und nicht npm run app.
+
+4AllPass Desk cannot start: port 8788 is taken by something that is not the desktop app.
+
+Your vault is the app in Applications, not the browser tab." buttons {"OK"} default button 1 with title "4AllPass""#,
+            ])
+            .status();
+    }
+    eprintln!("{FOREIGN_LISTENER}");
+}
+
 fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
     let Some((mut pid, cmd)) = parent_and_command(listen_pid) else {
         return Occupant {
             ours: false,
             ui_parent_alive: false,
+            dev_local: false,
         };
     };
     let first = cmd.split_whitespace().next().unwrap_or("");
@@ -26,6 +51,7 @@ fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
         return Occupant {
             ours: false,
             ui_parent_alive: false,
+            dev_local: is_dev_local_command(&cmd),
         };
     }
     let mut hops = 0;
@@ -38,6 +64,7 @@ fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
             return Occupant {
                 ours: true,
                 ui_parent_alive: true,
+                dev_local: false,
             };
         }
         pid = next;
@@ -45,6 +72,7 @@ fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
     Occupant {
         ours: true,
         ui_parent_alive: false,
+        dev_local: false,
     }
 }
 
@@ -78,25 +106,36 @@ pub fn prepare_loopback_core() -> Result<(), String> {
     let occupant = loopback_listen_pid(CORE_PORT).map(|pid| occupant_of(pid, bundled_core().as_ref()));
     match classify_occupied(true, occupant) {
         OccupiedKind::Free => Ok(()),
-        OccupiedKind::OurOrphan => {
+        OccupiedKind::OurOrphan | OccupiedKind::DevLocal => {
             if let Some(pid) = loopback_listen_pid(CORE_PORT) {
-                reap_our_core_chain(pid);
+                if matches!(
+                    classify_occupied(true, Some(occupant_of(pid, bundled_core().as_ref()))),
+                    OccupiedKind::DevLocal
+                ) {
+                    terminate(pid);
+                } else {
+                    reap_our_core_chain(pid);
+                }
             }
             let started = Instant::now();
             while core_up() && started.elapsed() < Duration::from_secs(2) {
                 thread::sleep(Duration::from_millis(50));
             }
             if core_up() {
+                show_foreign_listener_alert();
                 Err(FOREIGN_LISTENER.into())
             } else {
                 Ok(())
             }
         }
         OccupiedKind::OurLive => {
-            eprintln!("4AllPass läuft schon auf http://127.0.0.1:8788 / already running.");
+            eprintln!("4AllPass Desk läuft schon / desktop already running.");
             std::process::exit(0);
         }
-        OccupiedKind::Foreign => Err(FOREIGN_LISTENER.into()),
+        OccupiedKind::Foreign => {
+            show_foreign_listener_alert();
+            Err(FOREIGN_LISTENER.into())
+        }
     }
 }
 

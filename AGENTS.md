@@ -22,3 +22,4 @@ und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 - Typecheck + Tests im frontend-Workspace vor dem Commit.
 - Keine Secrets im Diff.
 - Committen und PR öffnen (`docs/git-workflow.md`). Nicht direkt auf `main`, außer der Maintainer sagt es.
+- Tresor des Maintainers: `bash scripts/open-desktop.sh --desktop`. Nie Browser auf `:8788`.

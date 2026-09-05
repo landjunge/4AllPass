@@ -16,7 +16,7 @@ Nicht: Crypto anfassen. Nicht: Daniels 400er-Tresor. Isoliertes Data-Dir, nicht 
 |---|---|
 | Desk-Richtung | Gnom-Hub **Desk**: `#121316`, graue Chrome, Silber `#6b7280`, Buttons `3px`, Schrift system-ui ~12px |
 | Site-Grün | Marketing only, kein App-Primary |
-| Laufende App | Magpie in `tokens.css` — Retoken nur nach Freigabe, eigenes UI-PR |
+| Laufende App | Magpie in `tokens.css` bis PR Desk-Chrome |
 | Logo | 4AllPass (Elster + Schlüssel) |
 | Erster Tab | Tresor |
 | Listen | kein Passwort in der Zeile |
@@ -47,7 +47,7 @@ Jemand, der Passwörter nicht mehr im Kopf und nicht in einer Notiz will. Kein C
 | Scrollbar tot, Overflow ohne Ellipsis, Klick tot, Tab-Reihenfolge | ja | — |
 | „Sieht komisch aus“, Dichte, Iconfarbe, wie viel Text genug ist | — | Screenshot |
 | APIs/Provider in Registrierkarten teilen | — | nur nach Freigabe |
-| Magpie → Gnom-Grau umfärben | — | nur nach Freigabe |
+| Magpie → Gnom-Grau umfärben | — | eigenes PR (Schritt 3) |
 
 ## 6. Missverständnis (kurz, damit nicht jedes Feld fragt)
 

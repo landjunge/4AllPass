@@ -22,11 +22,10 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: `http://127.0.0.1:${port}`,
-    headless: false,
-    launchOptions: { slowMo: 500 },
+    headless: true,
     actionTimeout: 90_000,
-    video: "on",
-    trace: "on",
+    video: "retain-on-failure",
+    trace: "retain-on-failure",
     viewport: { width: 1280, height: 800 },
   },
   webServer: {

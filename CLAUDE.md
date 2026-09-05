@@ -14,3 +14,11 @@ Dann:
 Palette: `frontend/src/tokens.css` (Golden Magpie). Nicht Gnom-Hub, nicht die alte Blau-Tabelle in `DESIGN.md`.
 
 Nicht den Benutzerordner als Workspace. Andere Repos: eigene Sitzung oder `/add-dir`, nie `$HOME`.
+
+**Tresor öffnen:** nur Desk-App, Flag Pflicht:
+
+```sh
+bash scripts/open-desktop.sh --desktop
+```
+
+Nie `http://127.0.0.1:8788` im Browser als „dein Tresor“. Das ist `npm run app`, nicht die Desk-App.

@@ -16,6 +16,10 @@ pub enum OccupiedKind {
     OurOrphan,
     /// Another 4AllPass window already owns this core.
     OurLive,
+    /// `python -m app.local` / `npm run app` on 8788. Same data dir as Desk,
+    /// not the sidecar binary. Reap, then spawn `fourallpass-core`. Never
+    /// point the webview at that Python listener.
+    DevLocal,
     /// Unknown process. Hard refuse — do not navigate the webview to :8788.
     Foreign,
 }
@@ -24,6 +28,7 @@ pub enum OccupiedKind {
 pub struct Occupant {
     pub ours: bool,
     pub ui_parent_alive: bool,
+    pub dev_local: bool,
 }
 
 pub fn classify_occupied(already_bound: bool, occupant: Option<Occupant>) -> OccupiedKind {
@@ -34,11 +39,18 @@ pub fn classify_occupied(already_bound: bool, occupant: Option<Occupant>) -> Occ
         Some(Occupant {
             ours: true,
             ui_parent_alive: false,
+            ..
         }) => OccupiedKind::OurOrphan,
         Some(Occupant {
             ours: true,
             ui_parent_alive: true,
+            ..
         }) => OccupiedKind::OurLive,
+        Some(Occupant {
+            ours: false,
+            dev_local: true,
+            ..
+        }) => OccupiedKind::DevLocal,
         _ => OccupiedKind::Foreign,
     }
 }
@@ -49,6 +61,16 @@ pub fn is_core_binary_name(name: &str) -> bool {
 
 pub fn is_ui_binary_name(name: &str) -> bool {
     name == "fourallpass" || name == "fourallpass.exe"
+}
+
+/// Local Python profile (`npm run app` / `python -m app.local`). Not every
+/// Python on 8788 — only this product's entrypoint.
+pub fn is_dev_local_command(cmd: &str) -> bool {
+    let lower = cmd.to_ascii_lowercase();
+    lower.contains("-m app.local")
+        || lower.contains("-mapp.local")
+        || lower.contains("app.local")
+        || lower.contains("app/local.py")
 }
 
 /// After *we* spawn: TCP-up on 8788 is not “that process is our sidecar”.
@@ -134,7 +156,8 @@ mod tests {
                 true,
                 Some(Occupant {
                     ours: false,
-                    ui_parent_alive: false
+                    ui_parent_alive: false,
+                    dev_local: false
                 })
             ),
             OccupiedKind::Foreign
@@ -148,7 +171,8 @@ mod tests {
                 true,
                 Some(Occupant {
                     ours: true,
-                    ui_parent_alive: false
+                    ui_parent_alive: false,
+                    dev_local: false
                 })
             ),
             OccupiedKind::OurOrphan
@@ -162,7 +186,8 @@ mod tests {
                 true,
                 Some(Occupant {
                     ours: true,
-                    ui_parent_alive: true
+                    ui_parent_alive: true,
+                    dev_local: false
                 })
             ),
             OccupiedKind::OurLive
@@ -228,6 +253,27 @@ mod tests {
             SpawnedListener::Foreign
         );
         assert!(!pid_is_descendant(999, 100, parent_of));
+    }
+
+    #[test]
+    fn python_app_local_is_dev_local() {
+        assert!(is_dev_local_command(
+            "/Users/x/4AllPass/backend/.venv/bin/python -m app.local --open"
+        ));
+        assert!(is_dev_local_command("python3 -m app.local"));
+        assert!(!is_dev_local_command("python3 -m http.server 8788"));
+        assert!(!is_dev_local_command("node server.js"));
+        assert_eq!(
+            classify_occupied(
+                true,
+                Some(Occupant {
+                    ours: false,
+                    ui_parent_alive: false,
+                    dev_local: true
+                })
+            ),
+            OccupiedKind::DevLocal
+        );
     }
 
     #[test]

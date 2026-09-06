@@ -22,7 +22,8 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: `http://127.0.0.1:${port}`,
-    headless: true,
+    headless: false,
+    launchOptions: { slowMo: 180 },
     actionTimeout: 90_000,
     video: "retain-on-failure",
     trace: "retain-on-failure",

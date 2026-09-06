@@ -1,9 +1,5 @@
 /**
- * App state and the lock lifecycle of crypto-protocol.md §10.
- *
- * LOCKED → UNLOCKING → UNLOCKED → LOCKING → LOCKED. Leaving UNLOCKED zeroizes
- * the Vault Key and clears plaintext. Only the Lock button locks. Sleep, idle,
- * a hidden tab, and switching to Chrome do not.
+ * App state composition. The vault lock lifecycle lives in vault-lifecycle.
  */
 import {
   createContext,
@@ -16,13 +12,8 @@ import {
   type ReactNode,
 } from "react";
 import { api, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
-import { clearCopiedSecret } from "../../lib/clipboard.ts";
-import { openSharePackage } from "../../lib/share.ts";
 import { deviceId } from "../../lib/device-identity.ts";
-import { readActiveVaultId, writeActiveVaultId } from "../../lib/active-vault.ts";
-import { mergeImportedLogins } from "../../lib/import.ts";
-import { decryptVaultEntries } from "../../lib/pull-other-vault.ts";
-import { useAccount } from "../account/index.ts";
+import { useAccount, type AccountState } from "../account/index.ts";
 import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
 import {
   feedbackError,
@@ -32,26 +23,23 @@ import {
   type NoticeCode,
   type NoticeFeedback,
 } from "../feedback/index.ts";
+import {
+  useVaultLifecycle,
+  type LockState,
+} from "../vault-lifecycle/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
 import {
-  commitEntries,
-  createVault,
   enableDeviceUnlockForVault,
   hardRevokeDevice,
-  hasDeviceUnlock,
-  lock as lockVault,
   replaceTrustedRecoveryKey,
   revokeDevice,
   rotateCompromisedRecovery,
-  unlockWithDevice,
-  unlockWithMasterPassword,
-  unlockWithRecoveryKey,
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
-export type LockState = "LOCKED" | "UNLOCKING" | "UNLOCKED" | "LOCKING";
+export type { LockState } from "../vault-lifecycle/index.ts";
 
 interface AppState {
   ready: boolean;
@@ -108,48 +96,10 @@ export function useApp(): AppState & AppActions {
 }
 
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
-  const [vaults, setVaults] = useState<VaultSummary[]>([]);
-  const [activeVaultId, setActiveVaultId] = useState<string | null>(null);
-  const [lockState, setLockState] = useState<LockState>("LOCKED");
-  const [vault, setVault] = useState<UnlockedVault | null>(null);
   const [devices, setDevices] = useState<DeviceSummary[]>([]);
-  const [deviceUnlockAvailable, setDeviceUnlockAvailable] = useState(false);
   const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
-  const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
-  const vaultRef = useRef<UnlockedVault | null>(null);
-
-  const setUnlocked = useCallback((next: UnlockedVault | null) => {
-    vaultRef.current = next;
-    setVault(next);
-    setLockState(next ? "UNLOCKED" : "LOCKED");
-  }, []);
-
-  const lock = useCallback(() => {
-    if (!vaultRef.current) return;
-    setLockState("LOCKING");
-    lockVault(vaultRef.current);
-    vaultRef.current = null;
-    setVault(null);
-    setLockState("LOCKED");
-    void clearCopiedSecret().catch(() => undefined);
-  }, []);
-
-  const loadVaults = useCallback(async (): Promise<VaultSummary[]> => {
-    const list = await api.listVaults();
-    setVaults(list);
-    let next: string | null = null;
-    setActiveVaultId((current) => {
-      const remembered = current ?? readActiveVaultId();
-      next =
-        remembered && list.some((row) => row.vaultId === remembered)
-          ? remembered
-          : (list[0]?.vaultId ?? null);
-      writeActiveVaultId(next);
-      return next;
-    });
-    if (next) setDeviceUnlockAvailable(await hasDeviceUnlock(next));
-    return list;
-  }, []);
+  const accountRef = useRef<AccountState | null>(null);
+  const updateLocalStoreRef = useRef<(status: LocalStoreStatus) => void>(() => undefined);
 
   const withStatus = useCallback(
     async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
@@ -166,216 +116,114 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     [],
   );
 
-  const afterSignUp = useCallback(() => setVaults([]), []);
-  const afterSignOut = useCallback(() => {
-    setVaults([]);
-    setActiveVaultId(null);
-    setDevices([]);
+  const passwordsCollide = useCallback(
+    (vaultPassword: string) => accountRef.current?.passwordsCollide(vaultPassword) ?? false,
+    [],
+  );
+  const onPasswordReuseWarning = useCallback(() => {
+    dispatchFeedback({ type: "notice", code: "password_reuse_warning" });
   }, []);
+  const updateLocalStore = useCallback((status: LocalStoreStatus) => {
+    updateLocalStoreRef.current(status);
+  }, []);
+
+  const vaultLifecycleOptions = useMemo(
+    () => ({ runWithStatus: withStatus, passwordsCollide, onPasswordReuseWarning, updateLocalStore }),
+    [onPasswordReuseWarning, passwordsCollide, updateLocalStore, withStatus],
+  );
+  const vaultLifecycle = useVaultLifecycle(vaultLifecycleOptions);
+
+  const afterSignUp = useCallback(() => vaultLifecycle.clearVaultList(), [vaultLifecycle]);
+  const afterSignOut = useCallback(() => {
+    vaultLifecycle.clearSignedOutState();
+    setDevices([]);
+  }, [vaultLifecycle]);
+
   const account = useAccount({
     gateway: api,
     runWithStatus: withStatus,
-    afterSignIn: loadVaults,
+    afterSignIn: vaultLifecycle.loadVaults,
     afterSignUp,
-    beforeSignOut: lock,
+    beforeSignOut: vaultLifecycle.lock,
     afterSignOut,
   });
+  accountRef.current = account;
+
   const restoreAccountSession = account.restoreSession;
-  const startup = useStartup({ restoreSession: restoreAccountSession, loadVaults });
-  const updateLocalStore = startup.updateLocalStore;
+  const startup = useStartup({ restoreSession: restoreAccountSession, loadVaults: vaultLifecycle.loadVaults });
+  updateLocalStoreRef.current = startup.updateLocalStore;
 
   const refreshDevices = useCallback(async () => {
-    if (!activeVaultId) return;
-    setDevices(await api.listDevices(activeVaultId));
-  }, [activeVaultId]);
+    if (!vaultLifecycle.activeVaultId) return;
+    setDevices(await api.listDevices(vaultLifecycle.activeVaultId));
+  }, [vaultLifecycle.activeVaultId]);
 
   const actions: AppActions = useMemo(
     () => ({
       async signIn(userEmail, password) {
         await account.signIn(userEmail, password);
       },
-
       async signUp(userEmail, password) {
         await account.signUp(userEmail, password);
       },
-
       async openThisMac() {
         await account.openThisMac();
       },
-
       async signOut() {
         await account.signOut();
       },
-
       async selectVault(vaultId) {
-        lock();
-        setActiveVaultId(vaultId);
-        writeActiveVaultId(vaultId);
-        setDeviceUnlockAvailable(await hasDeviceUnlock(vaultId));
+        await vaultLifecycle.selectVault(vaultId);
       },
-
       async createNewVault(masterPassword, profile = "mobile_safe") {
-        await withStatus(async () => {
-          if (account.passwordsCollide(masterPassword)) {
-            throw feedbackError("passwords_must_differ");
-          }
-          setLockState("UNLOCKING");
-          try {
-            const created = await createVault(masterPassword, profile);
-            setActiveVaultId(created.vault.vaultId);
-            writeActiveVaultId(created.vault.vaultId);
-            setUnlocked(created.vault);
-            setRecoveryKey(created.recoveryKey);
-            await loadVaults();
-          } catch (failure) {
-            setLockState("LOCKED");
-            throw failure;
-          }
-        }, "vault_created");
+        await vaultLifecycle.createNewVault(masterPassword, profile);
       },
-
       async restoreFromShare(fileText, shareKey, masterPassword) {
-        await withStatus(async () => {
-          if (account.passwordsCollide(masterPassword)) {
-            throw feedbackError("passwords_must_differ");
-          }
-          const entries = openSharePackage(fileText, shareKey);
-          if (entries.length === 0) throw feedbackError("empty_share");
-          setLockState("UNLOCKING");
-          try {
-            const created = await createVault(masterPassword, "mobile_safe");
-            const next = await commitEntries(created.vault, entries);
-            setActiveVaultId(next.vaultId);
-            writeActiveVaultId(next.vaultId);
-            setUnlocked(next);
-            setRecoveryKey(created.recoveryKey);
-            await loadVaults();
-          } catch (failure) {
-            setLockState("LOCKED");
-            throw failure;
-          }
-        }, "share_restored");
+        await vaultLifecycle.restoreFromShare(fileText, shareKey, masterPassword);
       },
-
       async unlockWithPassword(masterPassword) {
-        if (!activeVaultId) throw feedbackError("no_vault_selected");
-        await withStatus(async () => {
-          setLockState("UNLOCKING");
-          try {
-            setUnlocked(await unlockWithMasterPassword(activeVaultId, masterPassword));
-            writeActiveVaultId(activeVaultId);
-            if (account.passwordsCollide(masterPassword)) {
-              dispatchFeedback({ type: "notice", code: "password_reuse_warning" });
-            }
-          } catch (failure) {
-            setLockState("LOCKED");
-            throw failure;
-          }
-        });
+        await vaultLifecycle.unlockWithPassword(masterPassword);
       },
-
       passwordsCollide(vaultPassword) {
         return account.passwordsCollide(vaultPassword);
       },
-
       async unlockWithRecovery(key) {
-        if (!activeVaultId) throw feedbackError("no_vault_selected");
-        await withStatus(async () => {
-          setLockState("UNLOCKING");
-          try {
-            setUnlocked(await unlockWithRecoveryKey(activeVaultId, key));
-            writeActiveVaultId(activeVaultId);
-          } catch (failure) {
-            setLockState("LOCKED");
-            throw failure;
-          }
-        });
+        await vaultLifecycle.unlockWithRecovery(key);
       },
-
       async unlockWithBiometrics() {
-        if (!activeVaultId) throw feedbackError("no_vault_selected");
-        return withStatus(async () => {
-          setLockState("UNLOCKING");
-          try {
-            const unlocked = await unlockWithDevice(activeVaultId);
-            setUnlocked(unlocked);
-            writeActiveVaultId(activeVaultId);
-            return unlocked.unlockedWith as DeviceUnlockMechanism;
-          } catch (failure) {
-            setLockState("LOCKED");
-            throw failure;
-          }
-        });
+        return vaultLifecycle.unlockWithBiometrics();
       },
-
-      lock,
-
+      lock: vaultLifecycle.lock,
       async pullLocalIntoOpenVault(masterPassword) {
-        const current = vaultRef.current;
-        if (!current) throw feedbackError("vault_locked");
-        const keepId = current.vaultId;
-        await withStatus(async () => {
-          const status = await api.localStatus();
-          const adopted = status.hasLocalVault
-            ? await api.adoptLocalVault()
-            : { vaultId: null as string | null, entries: 0 };
-          const listed = await api.listVaults();
-          const sourceId =
-            adopted.vaultId ??
-            status.localVaultId ??
-            listed.find((row) => row.vaultId !== keepId)?.vaultId ??
-            null;
-          if (!sourceId || sourceId === keepId) {
-            throw feedbackError("no_other_vault");
-          }
-          const incoming = await decryptVaultEntries(sourceId, masterPassword);
-          const merged = mergeImportedLogins(current.entries, incoming);
-          writeActiveVaultId(keepId);
-          setActiveVaultId(keepId);
-          setUnlocked(await commitEntries(current, merged));
-          updateLocalStore({
-            hasLocalVault: false,
-            localEntries: 0,
-            hasOtherAccounts: true,
-            localVaultId: null,
-          });
-        }, "entries_imported");
+        await vaultLifecycle.pullLocalIntoOpenVault(masterPassword);
       },
-
       async saveEntries(entries) {
-        const current = vaultRef.current;
-        if (!current) throw feedbackError("vault_locked");
-        await withStatus(async () => {
-          setUnlocked(await commitEntries(current, entries));
-        }, "entries_saved");
+        await vaultLifecycle.saveEntries(entries);
       },
-
       async enableBiometrics() {
-        const current = vaultRef.current;
+        const current = vaultLifecycle.currentVault();
         if (!current) throw feedbackError("vault_locked");
         const accountEmail = account.email;
         if (!accountEmail) throw feedbackError("not_signed_in");
         return withStatus(async () => {
           const result = await enableDeviceUnlockForVault(current, accountEmail);
-          setUnlocked(result.vault);
-          setDeviceUnlockAvailable(true);
+          vaultLifecycle.replaceUnlockedVault(result.vault);
+          vaultLifecycle.setDeviceUnlockAvailable(true);
           setDevices(await api.listDevices(current.vaultId));
           return result.mechanism;
         }, "device_unlock_enabled");
       },
-
       async revoke(targetDeviceId) {
-        const current = vaultRef.current;
+        const current = vaultLifecycle.currentVault();
         if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
-          setUnlocked(await revokeDevice(current, targetDeviceId));
+          vaultLifecycle.replaceUnlockedVault(await revokeDevice(current, targetDeviceId));
           setDevices(await api.listDevices(current.vaultId));
-          if (targetDeviceId === deviceId()) setDeviceUnlockAvailable(false);
+          if (targetDeviceId === deviceId()) vaultLifecycle.setDeviceUnlockAvailable(false);
         }, "device_soft_revoked");
       },
-
       async hardRevoke(targetDeviceId, masterPassword, recoveryKeyText) {
-        const current = vaultRef.current;
+        const current = vaultLifecycle.currentVault();
         if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await hardRevokeDevice(current, {
@@ -385,63 +233,47 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           });
           setDevices(await api.listDevices(current.vaultId));
           if (targetDeviceId === deviceId()) {
-            setUnlocked(null);
-            setDeviceUnlockAvailable(false);
+            vaultLifecycle.replaceUnlockedVault(null);
+            vaultLifecycle.setDeviceUnlockAvailable(false);
           } else {
-            setUnlocked(next);
+            vaultLifecycle.replaceUnlockedVault(next);
             if (!next.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
-              setDeviceUnlockAvailable(false);
+              vaultLifecycle.setDeviceUnlockAvailable(false);
             }
           }
         }, "vault_key_rotated");
       },
-
       async replaceTrustedRecovery(oldRecoveryKeyText) {
-        const current = vaultRef.current;
+        const current = vaultLifecycle.currentVault();
         if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await replaceTrustedRecoveryKey(current, oldRecoveryKeyText);
-          setUnlocked(next.vault);
-          setRecoveryKey(next.recoveryKey);
+          vaultLifecycle.replaceUnlockedVault(next.vault);
+          vaultLifecycle.setRecoveryKey(next.recoveryKey);
         }, "recovery_replaced");
       },
-
       async rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText) {
-        const current = vaultRef.current;
+        const current = vaultLifecycle.currentVault();
         if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await rotateCompromisedRecovery(current, {
             masterPassword,
             ...(previousRecoveryKeyText ? { previousRecoveryKeyText } : {}),
           });
-          setUnlocked(next.vault);
-          setRecoveryKey(next.recoveryKey);
+          vaultLifecycle.replaceUnlockedVault(next.vault);
+          vaultLifecycle.setRecoveryKey(next.recoveryKey);
           if (!next.vault.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
-            setDeviceUnlockAvailable(false);
+            vaultLifecycle.setDeviceUnlockAvailable(false);
           }
         }, "recovery_compromised_rotated");
       },
-
       refreshDevices,
-
-      dismissRecoveryKey() {
-        setRecoveryKey(null);
-      },
-
+      dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
       clearMessages() {
         dispatchFeedback({ type: "clear" });
       },
     }),
-    [
-      account,
-      activeVaultId,
-      loadVaults,
-      lock,
-      refreshDevices,
-      setUnlocked,
-      updateLocalStore,
-      withStatus,
-    ],
+    [account, refreshDevices, vaultLifecycle, withStatus],
   );
 
   const value = useMemo(
@@ -450,31 +282,26 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       email: account.email,
       localMode: startup.localMode,
       localStore: startup.localStore,
-      vaults,
-      activeVaultId,
-      lockState,
-      vault,
+      vaults: vaultLifecycle.vaults,
+      activeVaultId: vaultLifecycle.activeVaultId,
+      lockState: vaultLifecycle.lockState,
+      vault: vaultLifecycle.vault,
       devices,
-      deviceUnlockAvailable,
+      deviceUnlockAvailable: vaultLifecycle.deviceUnlockAvailable,
       thisDeviceId: deviceId(),
       error: feedback.error,
       notice: feedback.notice,
-      recoveryKey,
+      recoveryKey: vaultLifecycle.recoveryKey,
       ...actions,
     }),
     [
       startup.ready,
-      account.email,
       startup.localMode,
       startup.localStore,
-      vaults,
-      activeVaultId,
-      lockState,
-      vault,
+      account.email,
+      vaultLifecycle,
       devices,
-      deviceUnlockAvailable,
       feedback,
-      recoveryKey,
       actions,
     ],
   );

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { emptyDraft, newEntryId, type VaultEntry } from "../../lib/entries.ts";
-import { removeEntryById, upsertDraft } from "./entries.ts";
+import { idAfterUpsert, removeEntryById, upsertDraft } from "./entries.ts";
 
 function entry(partial: Partial<VaultEntry>): VaultEntry {
   return { id: newEntryId(), ...emptyDraft("web"), updatedAt: "2026-01-01T00:00:00.000Z", ...partial };
@@ -23,6 +23,18 @@ test("upsertDraft replaces the selected row", () => {
   assert.equal(next.length, 1);
   assert.equal(next[0]?.title, "New");
   assert.equal(next[0]?.id, current.id);
+});
+
+test("idAfterUpsert keeps the selected row", () => {
+  const current = entry({ title: "Old" });
+  const next = upsertDraft([current], { ...emptyDraft("web"), title: "New" }, current.id);
+  assert.equal(idAfterUpsert([current], next, current.id), current.id);
+});
+
+test("idAfterUpsert returns the appended id", () => {
+  const existing = [entry({ title: "Old" })];
+  const next = upsertDraft(existing, emptyDraft("web"), null);
+  assert.equal(idAfterUpsert(existing, next, null), next[1]?.id);
 });
 
 test("removeEntryById drops only that row", () => {

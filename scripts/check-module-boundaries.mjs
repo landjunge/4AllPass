@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const modulesRoot = resolve(repositoryRoot, "frontend/src/modules");
 const sourceExtensions = new Set([".ts", ".tsx"]);
-const importPattern = new RegExp("(?:from\\s*|import\\s*(?:\\(\\s*)?|require\\s*\\(\\s*)[\\"']([^\\"']+)[\\"']", "g");
+const importPattern = /(?:from\s*|import\s*(?:\(\s*)?|require\s*\(\s*)["']([^"']+)["']/g;
 
 function sourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

@@ -19,6 +19,9 @@ test("vault desk: empty CTA, add login, row has no password, star favorites", as
 
   const row = page.getByRole("button", { name: /desk\.example/ });
   await expect(row).toBeVisible();
+  await expect(page.getByTestId("entry-title")).toHaveValue("desk.example");
+  await expect(page.getByTestId("entry-username")).toHaveValue("ada");
+  await expect(row.locator("..")).toHaveClass(/\bactive\b/);
   await expect(page.locator("body")).not.toContainText(SECRET);
 
   const star = page.getByRole("button", { name: /Favorit|Favorite/ }).first();

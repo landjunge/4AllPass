@@ -11,6 +11,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type ReactNode,
@@ -24,7 +25,15 @@ import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.
 import { readActiveVaultId, writeActiveVaultId } from "../lib/active-vault.ts";
 import { mergeImportedLogins } from "../lib/import.ts";
 import { decryptVaultEntries } from "../lib/pull-other-vault.ts";
-import { passwordsAreSame, SAME_PASSWORD_ERROR, SAME_PASSWORD_NOTICE } from "../lib/password-separation.ts";
+import { passwordsAreSame } from "../lib/password-separation.ts";
+import {
+  feedbackError,
+  feedbackReducer,
+  initialFeedbackState,
+  type ErrorFeedback,
+  type NoticeCode,
+  type NoticeFeedback,
+} from "../modules/feedback/index.ts";
 import type { VaultEntry } from "../lib/entries.ts";
 import {
   commitEntries,
@@ -65,8 +74,8 @@ interface AppState {
   devices: DeviceSummary[];
   deviceUnlockAvailable: boolean;
   thisDeviceId: string;
-  error: string | null;
-  notice: string | null;
+  error: ErrorFeedback | null;
+  notice: NoticeFeedback | null;
   recoveryKey: string | null;
 }
 
@@ -107,11 +116,6 @@ export function useApp(): AppState & AppActions {
   return context;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
-
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -123,8 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [vault, setVault] = useState<UnlockedVault | null>(null);
   const [devices, setDevices] = useState<DeviceSummary[]>([]);
   const [deviceUnlockAvailable, setDeviceUnlockAvailable] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
   const vaultRef = useRef<UnlockedVault | null>(null);
   const accountPasswordRef = useRef<string | null>(null);
@@ -210,14 +213,14 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   }, [loadVaults]);
 
   const withStatus = useCallback(
-    async <T,>(action: () => Promise<T>, success?: string): Promise<T> => {
-      setError(null);
+    async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
+      dispatchFeedback({ type: "action_started" });
       try {
         const result = await action();
-        if (success) setNotice(success);
+        if (success) dispatchFeedback({ type: "notice", code: success });
         return result;
       } catch (failure) {
-        setError(describeError(failure));
+        dispatchFeedback({ type: "action_failed", error: failure });
         throw failure;
       }
     },
@@ -277,7 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async createNewVault(masterPassword, profile = "mobile_safe") {
         await withStatus(async () => {
           if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
-            throw new Error(SAME_PASSWORD_ERROR);
+            throw feedbackError("passwords_must_differ");
           }
           setLockState("UNLOCKING");
           try {
@@ -291,16 +294,16 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             setLockState("LOCKED");
             throw failure;
           }
-        }, "Tresor angelegt. Recovery-Schlüssel jetzt sichern. / Vault created. Store the recovery key now.");
+        }, "vault_created");
       },
 
       async restoreFromShare(fileText, shareKey, masterPassword) {
         await withStatus(async () => {
           if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
-            throw new Error(SAME_PASSWORD_ERROR);
+            throw feedbackError("passwords_must_differ");
           }
           const entries = openSharePackage(fileText, shareKey);
-          if (entries.length === 0) throw new Error("share file has no entries");
+          if (entries.length === 0) throw feedbackError("empty_share");
           setLockState("UNLOCKING");
           try {
             const created = await createVault(masterPassword, "mobile_safe");
@@ -314,18 +317,18 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             setLockState("LOCKED");
             throw failure;
           }
-        }, "Tresor aus Share-Datei wiederhergestellt. Neuen Recovery-Schlüssel sichern. Der Share-Schlüssel ist das nicht. / Vault restored from share file. Store the new recovery key. The share key is not this key.");
+        }, "share_restored");
       },
 
       async unlockWithPassword(masterPassword) {
-        if (!activeVaultId) throw new Error("no vault selected");
+        if (!activeVaultId) throw feedbackError("no_vault_selected");
         await withStatus(async () => {
           setLockState("UNLOCKING");
           try {
             setUnlocked(await unlockWithMasterPassword(activeVaultId, masterPassword));
             writeActiveVaultId(activeVaultId);
             if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
-              setNotice(SAME_PASSWORD_NOTICE);
+              dispatchFeedback({ type: "notice", code: "password_reuse_warning" });
             }
           } catch (failure) {
             setLockState("LOCKED");
@@ -339,7 +342,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
 
       async unlockWithRecovery(key) {
-        if (!activeVaultId) throw new Error("no vault selected");
+        if (!activeVaultId) throw feedbackError("no_vault_selected");
         await withStatus(async () => {
           setLockState("UNLOCKING");
           try {
@@ -353,7 +356,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
 
       async unlockWithBiometrics() {
-        if (!activeVaultId) throw new Error("no vault selected");
+        if (!activeVaultId) throw feedbackError("no_vault_selected");
         return withStatus(async () => {
           setLockState("UNLOCKING");
           try {
@@ -372,7 +375,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async pullLocalIntoOpenVault(masterPassword) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         const keepId = current.vaultId;
         await withStatus(async () => {
           const status = await api.localStatus();
@@ -386,7 +389,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             listed.find((row) => row.vaultId !== keepId)?.vaultId ??
             null;
           if (!sourceId || sourceId === keepId) {
-            throw new Error("no other vault on this Mac");
+            throw feedbackError("no_other_vault");
           }
           const incoming = await decryptVaultEntries(sourceId, masterPassword);
           const merged = mergeImportedLogins(current.entries, incoming);
@@ -399,43 +402,43 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
             hasOtherAccounts: true,
             localVaultId: null,
           });
-        }, "Einträge übernommen. Dieser Tresor bleibt offen. / Entries pulled in. This vault stays open.");
+        }, "entries_imported");
       },
 
       async saveEntries(entries) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           setUnlocked(await commitEntries(current, entries));
-        }, "Gespeichert. / Saved.");
+        }, "entries_saved");
       },
 
       async enableBiometrics() {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
-        if (!email) throw new Error("not signed in");
+        if (!current) throw feedbackError("vault_locked");
+        if (!email) throw feedbackError("not_signed_in");
         return withStatus(async () => {
           const result = await enableDeviceUnlockForVault(current, email);
           setUnlocked(result.vault);
           setDeviceUnlockAvailable(true);
           setDevices(await api.listDevices(current.vaultId));
           return result.mechanism;
-        }, "Geräte-Entsperren ist an. Das Tresor-Passwort gilt weiter. / Device unlock enabled. The vault password still works.");
+        }, "device_unlock_enabled");
       },
 
       async revoke(targetDeviceId) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           setUnlocked(await revokeDevice(current, targetDeviceId));
           setDevices(await api.listDevices(current.vaultId));
           if (targetDeviceId === deviceId()) setDeviceUnlockAvailable(false);
-        }, "Aus dem nächsten Sync genommen. Ein Gerät, das diesen Tresor-Schlüssel schon kennt, kennt ihn weiter. / Removed from the next sync. A device that already knows this vault key still knows it.");
+        }, "device_soft_revoked");
       },
 
       async hardRevoke(targetDeviceId, masterPassword, recoveryKeyText) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await hardRevokeDevice(current, {
             targetDeviceId,
@@ -452,22 +455,22 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
               setDeviceUnlockAvailable(false);
             }
           }
-        }, "Tresor-Schlüssel gewechselt. Alte Stände lesbar nur für Inhaber des vorigen Schlüssels. / Vault key rotated. Old snapshots stay readable only to holders of the previous key.");
+        }, "vault_key_rotated");
       },
 
       async replaceTrustedRecovery(oldRecoveryKeyText) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await replaceTrustedRecoveryKey(current, oldRecoveryKeyText);
           setUnlocked(next.vault);
           setRecoveryKey(next.recoveryKey);
-        }, "Neuer Recovery-Schlüssel gedruckt. Der alte öffnet diesen Stand nicht mehr. / New recovery key printed. The previous kit no longer opens this revision.");
+        }, "recovery_replaced");
       },
 
       async rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText) {
         const current = vaultRef.current;
-        if (!current) throw new Error("vault is locked");
+        if (!current) throw feedbackError("vault_locked");
         await withStatus(async () => {
           const next = await rotateCompromisedRecovery(current, {
             masterPassword,
@@ -478,7 +481,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           if (!next.vault.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
             setDeviceUnlockAvailable(false);
           }
-        }, "Tresor-Schlüssel gewechselt, weil das Recovery-Kit gestohlen sein kann. Neuen Schlüssel sichern. / Vault key rotated because the recovery kit may be stolen. Save the new kit.");
+        }, "recovery_compromised_rotated");
       },
 
       refreshDevices,
@@ -488,8 +491,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
 
       clearMessages() {
-        setError(null);
-        setNotice(null);
+        dispatchFeedback({ type: "clear" });
       },
     }),
     [activeVaultId, email, loadVaults, lock, refreshDevices, setUnlocked, withStatus],
@@ -508,8 +510,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       devices,
       deviceUnlockAvailable,
       thisDeviceId: deviceId(),
-      error,
-      notice,
+      error: feedback.error,
+      notice: feedback.notice,
       recoveryKey,
       ...actions,
     }),
@@ -524,8 +526,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       vault,
       devices,
       deviceUnlockAvailable,
-      error,
-      notice,
+      feedback,
       recoveryKey,
       actions,
     ],

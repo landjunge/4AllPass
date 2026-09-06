@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "typecheck": "tsc -b",
-    "test": "tsx --test src/**/*.test.ts src/utils/**/*.test.ts src/services/**/*.test.ts",
+    "test": "node --import tsx --test src/**/*.test.ts src/utils/**/*.test.ts src/services/**/*.test.ts src/modules/*/tests/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:live": "playwright test -c playwright.live.config.ts",
     "test:e2e:autofill": "playwright test -c playwright.extension.config.ts",

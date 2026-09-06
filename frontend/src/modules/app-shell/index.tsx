@@ -1,5 +1,5 @@
 /**
- * App state composition. The vault lock lifecycle lives in vault-lifecycle.
+ * App state composition. Vault and device lifecycles live in their modules.
  */
 import {
   createContext,
@@ -8,7 +8,6 @@ import {
   useMemo,
   useReducer,
   useRef,
-  useState,
   type ReactNode,
 } from "react";
 import { api, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
@@ -23,16 +22,11 @@ import {
   type NoticeCode,
   type NoticeFeedback,
 } from "../feedback/index.ts";
-import {
-  useVaultLifecycle,
-  type LockState,
-} from "../vault-lifecycle/index.ts";
+import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
+import { useDeviceManagement } from "../device-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
 import {
-  enableDeviceUnlockForVault,
-  hardRevokeDevice,
   replaceTrustedRecoveryKey,
-  revokeDevice,
   rotateCompromisedRecovery,
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
@@ -96,7 +90,6 @@ export function useApp(): AppState & AppActions {
 }
 
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
-  const [devices, setDevices] = useState<DeviceSummary[]>([]);
   const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
   const accountRef = useRef<AccountState | null>(null);
   const updateLocalStoreRef = useRef<(status: LocalStoreStatus) => void>(() => undefined);
@@ -133,11 +126,36 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   );
   const vaultLifecycle = useVaultLifecycle(vaultLifecycleOptions);
 
-  const afterSignUp = useCallback(() => vaultLifecycle.clearVaultList(), [vaultLifecycle]);
+  const getActiveVaultId = useCallback(() => vaultLifecycle.activeVaultId, [vaultLifecycle.activeVaultId]);
+  const getAccountEmail = useCallback(() => accountRef.current?.email ?? null, []);
+  const deviceManagementOptions = useMemo(
+    () => ({
+      runWithStatus: withStatus,
+      getActiveVaultId,
+      getAccountEmail,
+      currentVault: vaultLifecycle.currentVault,
+      replaceUnlockedVault: vaultLifecycle.replaceUnlockedVault,
+      setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
+    }),
+    [
+      getAccountEmail,
+      getActiveVaultId,
+      vaultLifecycle.currentVault,
+      vaultLifecycle.replaceUnlockedVault,
+      vaultLifecycle.setDeviceUnlockAvailable,
+      withStatus,
+    ],
+  );
+  const deviceManagement = useDeviceManagement(deviceManagementOptions);
+
+  const afterSignUp = useCallback(
+    () => vaultLifecycle.clearVaultList(),
+    [vaultLifecycle.clearVaultList],
+  );
   const afterSignOut = useCallback(() => {
     vaultLifecycle.clearSignedOutState();
-    setDevices([]);
-  }, [vaultLifecycle]);
+    deviceManagement.clearDevices();
+  }, [deviceManagement.clearDevices, vaultLifecycle.clearSignedOutState]);
 
   const account = useAccount({
     gateway: api,
@@ -152,11 +170,6 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const restoreAccountSession = account.restoreSession;
   const startup = useStartup({ restoreSession: restoreAccountSession, loadVaults: vaultLifecycle.loadVaults });
   updateLocalStoreRef.current = startup.updateLocalStore;
-
-  const refreshDevices = useCallback(async () => {
-    if (!vaultLifecycle.activeVaultId) return;
-    setDevices(await api.listDevices(vaultLifecycle.activeVaultId));
-  }, [vaultLifecycle.activeVaultId]);
 
   const actions: AppActions = useMemo(
     () => ({
@@ -201,47 +214,13 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         await vaultLifecycle.saveEntries(entries);
       },
       async enableBiometrics() {
-        const current = vaultLifecycle.currentVault();
-        if (!current) throw feedbackError("vault_locked");
-        const accountEmail = account.email;
-        if (!accountEmail) throw feedbackError("not_signed_in");
-        return withStatus(async () => {
-          const result = await enableDeviceUnlockForVault(current, accountEmail);
-          vaultLifecycle.replaceUnlockedVault(result.vault);
-          vaultLifecycle.setDeviceUnlockAvailable(true);
-          setDevices(await api.listDevices(current.vaultId));
-          return result.mechanism;
-        }, "device_unlock_enabled");
+        return deviceManagement.enableBiometrics();
       },
       async revoke(targetDeviceId) {
-        const current = vaultLifecycle.currentVault();
-        if (!current) throw feedbackError("vault_locked");
-        await withStatus(async () => {
-          vaultLifecycle.replaceUnlockedVault(await revokeDevice(current, targetDeviceId));
-          setDevices(await api.listDevices(current.vaultId));
-          if (targetDeviceId === deviceId()) vaultLifecycle.setDeviceUnlockAvailable(false);
-        }, "device_soft_revoked");
+        await deviceManagement.revoke(targetDeviceId);
       },
       async hardRevoke(targetDeviceId, masterPassword, recoveryKeyText) {
-        const current = vaultLifecycle.currentVault();
-        if (!current) throw feedbackError("vault_locked");
-        await withStatus(async () => {
-          const next = await hardRevokeDevice(current, {
-            targetDeviceId,
-            masterPassword,
-            ...(recoveryKeyText ? { recoveryKeyText } : {}),
-          });
-          setDevices(await api.listDevices(current.vaultId));
-          if (targetDeviceId === deviceId()) {
-            vaultLifecycle.replaceUnlockedVault(null);
-            vaultLifecycle.setDeviceUnlockAvailable(false);
-          } else {
-            vaultLifecycle.replaceUnlockedVault(next);
-            if (!next.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
-              vaultLifecycle.setDeviceUnlockAvailable(false);
-            }
-          }
-        }, "vault_key_rotated");
+        await deviceManagement.hardRevoke(targetDeviceId, masterPassword, recoveryKeyText);
       },
       async replaceTrustedRecovery(oldRecoveryKeyText) {
         const current = vaultLifecycle.currentVault();
@@ -267,13 +246,13 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           }
         }, "recovery_compromised_rotated");
       },
-      refreshDevices,
+      refreshDevices: deviceManagement.refreshDevices,
       dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
       clearMessages() {
         dispatchFeedback({ type: "clear" });
       },
     }),
-    [account, refreshDevices, vaultLifecycle, withStatus],
+    [account, deviceManagement, vaultLifecycle, withStatus],
   );
 
   const value = useMemo(
@@ -286,7 +265,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       activeVaultId: vaultLifecycle.activeVaultId,
       lockState: vaultLifecycle.lockState,
       vault: vaultLifecycle.vault,
-      devices,
+      devices: deviceManagement.devices,
       deviceUnlockAvailable: vaultLifecycle.deviceUnlockAvailable,
       thisDeviceId: deviceId(),
       error: feedback.error,
@@ -300,7 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       startup.localStore,
       account.email,
       vaultLifecycle,
-      devices,
+      deviceManagement.devices,
       feedback,
       actions,
     ],

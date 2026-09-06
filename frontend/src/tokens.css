@@ -1,6 +1,6 @@
 /**
- * Desk chrome — same on web and desktop (Gnom-Hub v1 desk).
- * Logo stays 4AllPass (Elster + key). Not the green marketing site.
+ * Gnom-Hub-V1 desktop direction — shared chrome on web and desktop.
+ * 4AllPass keeps its own Elster + key logo and product identity.
  */
 :root {
   --bg: #121316;
@@ -10,11 +10,11 @@
   --text: #e2e4e9;
   --text-muted: #8b909a;
   --border: #2e3138;
-  --accent: #6b7280;
+  --accent: #8f98a8;
   --accent-hi: #a1a8b3;
   --ok: #3d9b6a;
   --warn: #c9a227;
-  --err: #c45c5c;
+  --err: #dc7070;
   --radius-sm: 3px;
   --radius-md: 3px;
   --radius-lg: 4px;

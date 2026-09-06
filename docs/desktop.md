@@ -42,6 +42,8 @@ Proof (Playwright, no Vite): `npm run test:e2e:local -w @4allpass/frontend` —
 Create or Unlock → vault → Access Allow; UI never shows the secret; a Node-like
 `POST /v1/access/request` (no Origin) gets `approved` after Allow.
 
+Desktop-logic watch (Auth first, Chromium with `__TAURI_INTERNALS__` stub, isolated tmp data dir): `npm run test:e2e:desktop-logic-watch -w @4allpass/frontend`. This visibly checks the desktop code path, but it is **not** the installed Tauri/WebView app. It never opens `/Applications/4AllPass.app`, never uses the real app data directory, and never uses port 8788. Screenshots: `~/gnom-hub-v1/docs/assets/suite-desktop/`.
+
 ## Origins
 
 | How | Origin |

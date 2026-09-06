@@ -5,7 +5,7 @@
 1. Name the **package**. UI does not touch `packages/crypto`. Broker policy stays in `@4allpass/core` (no secrets). The sidecar never decrypts.
 2. Read a neighbor file in the same folder. Copy that pattern.
 3. One theme, one branch. If PRs from this work are still open, follow [../../4allpass-next/SKILL.md](../../4allpass-next/SKILL.md).
-4. Vault / first-run / Magpie / copy: also load [../../4allpass-ui/SKILL.md](../../4allpass-ui/SKILL.md).
+4. Vault / first-run / Gnom-Hub-V1 chrome / copy: also load [../../4allpass-ui/SKILL.md](../../4allpass-ui/SKILL.md).
 
 ## Default change shape
 
@@ -80,7 +80,7 @@ cd backend && pytest
 ## Frontend
 
 - All crypto via `@4allpass/crypto` / `@4allpass/webauthn`. Do not reimplement unwrap in a page.
-- `vault-session.ts` is the sensitive module. Hard revoke / rotation belongs here, not in a random component. A Magpie/spacing PR does not edit it.
+- `vault-session.ts` is the sensitive module. Hard revoke / rotation belongs here, not in a random component. A Gnom-Hub-V1 chrome/spacing PR does not edit it.
 - Session token in `sessionStorage` is an accepted XSS trade (account, not vault). Don’t “fix” it by stuffing VK into `localStorage`.
 - No new dependencies. No secrets in logs, test titles, or fixtures except marked dummies (`ghp_demo-…`).
 - Keep pages thin: state in `frontend/src/hooks/vault/`, chrome in `frontend/src/components/vault/`.

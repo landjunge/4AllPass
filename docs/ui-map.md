@@ -3,7 +3,7 @@
 **Status:** Flächenkarte für Grok Build. Keine Spec.  
 **Shape:** [`architecture.md`](architecture.md). **Was läuft:** [`security-boundary.md`](security-boundary.md).
 
-Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen (Magpie, nummeriert): [screenshots/index.html](screenshots/index.html).
+Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen (Gnom-Hub-V1-Grau, nummeriert): [screenshots/index.html](screenshots/index.html).
 
 ---
 

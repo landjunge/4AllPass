@@ -19,27 +19,29 @@ Es existieren mehrere Repos mit „Gnom“-Varianten im Namen (`gnom-hub`, `Gnom
 Alle anderen Bezeichnungen (Gnom-Hub, Gnom Hub, Gnom-Hub-V2 usw.) sind veraltet oder falsch und führen zu Verwirrung.  
 Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antworten – damit der Owner nicht immer wieder korrigieren muss.
 
-## 4AllPass Tresor-Chrome (Golden Magpie)
+## Gemeinsame Desktop-Richtung: Gnom-Hub-V1-Grau
 
-Der Tresor ist die 4AllPass-Marke, nicht Gnom-Hub-Grau. Quelle: `frontend/src/tokens.css`. Radius, Schatten, Focus-Ring bleiben Desk-Chrome.
+Gnom-Hub-V1 ist die bestätigte visuelle Richtung für 4AllPass und die weiteren NetzwerkPunkt-Apps und -Tools. Gemeinsame Grundlage sind dunkles Grau, kompakte Abstände, Karten, Dialoge, Eingaben und Fokuszustände. Die Produkte bleiben technisch eigenständig und behalten eigene Namen und Logos.
+
+Quelle für den laufenden 4AllPass-Tresor ist `frontend/src/tokens.css`.
 
 | Token | Wert | Rolle |
 |---|---|---|
-| `--bg` | `#0A0E1A` | Fläche |
-| `--bg-panel` | `#0E1424` | Header / Inputs |
-| `--bg-card` / `--panel` | `#12182B` | Karten |
-| `--bg-elev` | `#1A2238` | angehoben |
-| `--text` | `#F8F4EC` | Titel |
-| `--text-muted` / `--muted` | `#A89F8C` | Username, Meta |
-| `--border` | `#2A3348` | Kanten |
-| `--accent` / `--accent-hi` | `#C9A227` / `#D4AF37` | Gold, Primary, Stern an |
-| `--ok` / `--warn` / `--err` | `#3DDC97` / `#C9A227` / `#ff7a90` | Health / Status / Leak |
+| `--bg` | `#121316` | Hauptfläche |
+| `--bg-panel` | `#1a1b1f` | Header / Inputs |
+| `--bg-card` / `--panel` | `#1e1f24` | Karten |
+| `--bg-elev` | `#24262d` | angehobene Flächen |
+| `--text` | `#e2e4e9` | Haupttext |
+| `--text-muted` / `--muted` | `#8b909a` | Meta-Text |
+| `--border` | `#2e3138` | Kanten |
+| `--accent` / `--accent-hi` | `#8f98a8` / `#a1a8b3` | Aktionen / Fokus |
+| `--ok` / `--warn` / `--err` | `#3d9b6a` / `#c9a227` / `#dc7070` | Status |
 
-Gnom-Hub-V1-Grau (`#121316` / Accent `#6b7280`) gilt für **Gnom-Hub-V1 und Tollgate Control Room**, nicht für diesen Tresor. **Kein Rainbow-Chrome.** Agent-Farben nur in Gnom-Hub-V1.
+Akzent und Fehlerfarbe sind so aufgehellt, dass normaler Text auch auf Karten lesbar bleibt. Gold bleibt als Teil des 4AllPass-Logos und als Warn-/Favoritenhinweis erlaubt, ist aber nicht mehr die allgemeine App-Chrome.
 
-Logos bleiben produktspezifisch (4AllPass-Elster, Gnom-G, Tollgate-Marke).
+Logos bleiben produktspezifisch: 4AllPass-Elster, Gnom-Hub-V1-Marke und TollGate-Marke. Gemeinsame Gestaltung bedeutet keine Zusammenlegung der Apps.
 
-Aktuelles Logo: Elster mit goldenem Schlüssel auf dem Schriftzug (`frontend/public/logo.png`). App-Icon: Elster allein (`icon-512.png`).
+Aktuelles 4AllPass-Logo: Elster mit goldenem Schlüssel auf dem Schriftzug (`frontend/public/logo.png`). App-Icon: Elster allein (`icon-512.png`).
 
 ## Logo-Brief 4AllPass
 
@@ -57,7 +59,7 @@ Canva-Kandidaten (editierbar im Account):
 
 ## Logo-Farbe vs. Chrome
 
-„Golden Magpie“ (`#C9A227`) ist Accent **und** Logo-Schlüssel. Primary-Buttons und der Favoriten-Stern nutzen Gold. `--warn` ist dasselbe Gold als Status, nicht als zweite Marke.
+Der goldene Schlüssel gehört zur 4AllPass-Marke. Warnungen und aktive Favoriten dürfen Gold nutzen; die allgemeine Desktop-Chrome folgt dem Gnom-Hub-V1-Grau.
 
 ## Logo netzwerkpunkt.de (neu)
 
@@ -66,12 +68,11 @@ Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, moder
 
 ## Nächste Schritte
 
-1. Logo-Varianten in Canva bleiben editierbar; PWA/Extension nutzen die Elster-PNGs
-2. 4AllPass-Tokens bleiben Magpie. Gnom-Hub-V1-Grau nicht zurückmischen
-3. Tollgate Control Room bleibt auf Gnom-Hub-V1-Tokens
-4. Optional Light-Mode — nur wenn derselbe Desk ihn hat
-5. 4AllPass + korrekte **Gnom-Hub-V1**-Bezeichnung auf netzwerkpunkt.de eintragen
-6. Logo für netzwerkpunkt.de finalisieren
+1. Gnom-Hub-V1-Grau für die 4AllPass-App vollständig prüfen
+2. 4AllPass-Logo und Elster unverändert produktspezifisch halten
+3. Dieselben Chrome-Grundregeln schrittweise auf weitere NetzwerkPunkt-Apps anwenden
+4. Optionaler Light-Mode nur als eigene, geprüfte Designentscheidung
+5. Korrekte Schreibweisen auf netzwerkpunkt.de und in den Repositories pflegen
 
 ---
 *Angelegt als permanente Design-Basis im Repo. Gnom-Namensregel verbindlich.*

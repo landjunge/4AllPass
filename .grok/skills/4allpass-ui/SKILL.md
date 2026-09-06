@@ -2,7 +2,7 @@
 name: 4allpass-ui
 description: >
   Vault UI for normal people. Use when changing the 4AllPass desk, first-run,
-  unlock, import review, copy, empty states, Magpie chrome, onboarding, or when
+  unlock, import review, copy, empty states, Gnom-Hub-V1 chrome, onboarding, or when
   the user says Tresor-UI, für normale User, or usable vault. Load 4allpass
   first. Do not start vault UI work without this skill.
 ---
@@ -21,13 +21,12 @@ CAS, or revision numbers.
 ```text
 docs/ui-map.md                 one question per surface (V0–V8)
 docs/screenshots/*.html        numbered wireframes
-frontend/src/tokens.css        Golden Magpie — the running palette
+frontend/src/tokens.css        Gnom-Hub-V1 grey — the running palette
 frontend/src/components/vault/ reuse these
 frontend/src/pages/            Auth, Create, Unlock, Restore, Vault
 ```
 
-`DESIGN.md` still shows an old blue table as “Current Colors”. **Ignore it.**
-`tokens.css` wins. Never Gnom-Hub greys.
+`frontend/src/tokens.css` is authoritative. The shared product direction is Gnom-Hub-V1 grey; 4AllPass keeps its own logo and product identity.
 
 ## Non-negotiable
 
@@ -54,7 +53,7 @@ frontend/src/pages/            Auth, Create, Unlock, Restore, Vault
 
 - New tabs or Access-as-home
 - Password in import/list UI
-- Mix Magpie spacing into a `packages/crypto` PR
+- Mix visual chrome changes into a `packages/crypto` PR
 - Bring back a Welcome screen
 - Shadow DOM / multi-step autofill in a UI polish PR
-- Gnom-Hub tokens or mixing the 4AllPass mark with other products
+- Mix product identities or replace the 4AllPass Elster logo with another product mark

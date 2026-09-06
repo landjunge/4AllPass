@@ -11,6 +11,7 @@ A new reader should need **this page plus five links**, not twenty files.
 | What is 4AllPass **today**? | [../README.md](../README.md) |
 | How is the vault shaped (5 min)? | [architecture.md](architecture.md) |
 | Where is each surface on screen? | [ui-map.md](ui-map.md) |
+| Opt-in UI walk (dummy vault)? | [UI_TEST_SUITE.md](UI_TEST_SUITE.md) |
 | What does the running software **enforce**? | [security-boundary.md](security-boundary.md) |
 | How is the vault stored and synced? | [vault-protocol.md](vault-protocol.md), [vault-storage.md](vault-storage.md) |
 | How are tools isolated on the VPS? | [../deploy/LAYOUT.md](../deploy/LAYOUT.md) |

@@ -6,17 +6,7 @@ import type { EntryDraft, EntryKind, Translate, VaultEntry } from "../../types/v
 import { applyKindToDraft, applyTotpInput } from "../../utils/vault/drafts.ts";
 import { formatRelativeChanged, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
 import { passwordStrength } from "../../utils/vault/strength.ts";
-
-function FieldLabel({ text, tip }: { text: string; tip: string }): ReactNode {
-  return (
-    <span className="field-label">
-      {text}
-      <span className="tip" title={tip} aria-label={tip}>
-        ?
-      </span>
-    </span>
-  );
-}
+import { FieldLabel } from "./FieldLabel.tsx";
 
 export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void }): ReactNode {
   const { t } = useCopy();

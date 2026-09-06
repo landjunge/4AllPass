@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { FieldLabel } from "../components/vault/FieldLabel.tsx";
 import { ApiError } from "../lib/api.ts";
 import { useApp } from "../state/app-state.tsx";
 import { useCopy } from "../state/copy-mode.tsx";
@@ -102,7 +103,13 @@ export function AuthPage(): ReactNode {
           </p>
         ) : null}
         <label>
-          {t({ de: "E-Mail", en: "E-mail" })}
+          <FieldLabel
+            text={t({ de: "E-Mail", en: "E-mail" })}
+            tip={t({
+              de: "Nur fürs Konto. Öffnet den Tresor nicht.",
+              en: "Account only. This does not open the vault.",
+            })}
+          />
           <input
             type="email"
             autoComplete="username"
@@ -112,7 +119,13 @@ export function AuthPage(): ReactNode {
           />
         </label>
         <label>
-          {t({ de: "Konto-Passwort", en: "Account password" })}
+          <FieldLabel
+            text={t({ de: "Konto-Passwort", en: "Account password" })}
+            tip={t({
+              de: "Nicht das Tresor-Passwort. Der Server sieht das Konto-Passwort.",
+              en: "Not the vault password. The server sees the account password.",
+            })}
+          />
           <input
             type="password"
             autoComplete={mode === "sign-in" ? "current-password" : "new-password"}

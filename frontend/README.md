@@ -18,6 +18,7 @@ npm run dev -w @4allpass/frontend
 ```sh
 npm run test -w @4allpass/frontend        # unit tests
 npm run test:e2e -w @4allpass/frontend    # Playwright + virtual authenticator
+npm run test:e2e:user-watch -w @4allpass/frontend  # V0–V8 dummy vault, screenshots
 npm run typecheck -w @4allpass/frontend
 npm run build -w @4allpass/frontend
 ```

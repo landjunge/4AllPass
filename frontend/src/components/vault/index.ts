@@ -1,4 +1,5 @@
 export { PullLocalVaultBanner } from "./PullLocalVaultBanner.tsx";
+export { FieldLabel } from "./FieldLabel.tsx";
 export { VaultDetailEmpty, VaultEntryForm } from "./VaultEntryForm.tsx";
 export { VaultHeader } from "./VaultHeader.tsx";
 export { VaultImportReview } from "./VaultImportReview.tsx";

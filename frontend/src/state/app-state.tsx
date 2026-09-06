@@ -25,7 +25,7 @@ import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.
 import { readActiveVaultId, writeActiveVaultId } from "../lib/active-vault.ts";
 import { mergeImportedLogins } from "../lib/import.ts";
 import { decryptVaultEntries } from "../lib/pull-other-vault.ts";
-import { passwordsAreSame } from "../lib/password-separation.ts";
+import { useAccount } from "../modules/account/index.ts";
 import {
   feedbackError,
   feedbackReducer,
@@ -118,7 +118,6 @@ export function useApp(): AppState & AppActions {
 
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [ready, setReady] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
   const [localMode, setLocalMode] = useState(false);
   const [localStore, setLocalStore] = useState<LocalStoreStatus | null>(null);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
@@ -130,7 +129,6 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
   const vaultRef = useRef<UnlockedVault | null>(null);
-  const accountPasswordRef = useRef<string | null>(null);
 
   const setUnlocked = useCallback((next: UnlockedVault | null) => {
     vaultRef.current = next;
@@ -165,6 +163,37 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     return list;
   }, []);
 
+  const withStatus = useCallback(
+    async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
+      dispatchFeedback({ type: "action_started" });
+      try {
+        const result = await action();
+        if (success) dispatchFeedback({ type: "notice", code: success });
+        return result;
+      } catch (failure) {
+        dispatchFeedback({ type: "action_failed", error: failure });
+        throw failure;
+      }
+    },
+    [],
+  );
+
+  const afterSignUp = useCallback(() => setVaults([]), []);
+  const afterSignOut = useCallback(() => {
+    setVaults([]);
+    setActiveVaultId(null);
+    setDevices([]);
+  }, []);
+  const account = useAccount({
+    gateway: api,
+    runWithStatus: withStatus,
+    afterSignIn: loadVaults,
+    afterSignUp,
+    beforeSignOut: lock,
+    afterSignOut,
+  });
+  const restoreAccountSession = account.restoreSession;
+
   useEffect(() => {
     void (async () => {
       try {
@@ -182,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         // The desktop window shows Konto anlegen first — no auto-login.
         if (local && !getToken() && !isTauriShell() && !readStorageOrigin()) {
           const session = await api.localSession();
-          setEmail(session.email);
+          restoreAccountSession(session.email);
           await loadVaults();
           void probeWebviewWebauthn()
             .then((caps) => api.reportWebviewCaps(caps))
@@ -190,42 +219,27 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           return;
         }
         if (getToken()) {
-          const account = await api.me();
-          setEmail(account.email);
+          const currentAccount = await api.me();
+          restoreAccountSession(currentAccount.email);
           await loadVaults();
         }
       } catch {
         if (getToken()) {
           try {
-            const account = await api.me();
-            setEmail(account.email);
+            const currentAccount = await api.me();
+            restoreAccountSession(currentAccount.email);
             await loadVaults();
           } catch {
-            setEmail(null);
+            restoreAccountSession(null);
           }
         } else {
-          setEmail(null);
+          restoreAccountSession(null);
         }
       } finally {
         setReady(true);
       }
     })();
-  }, [loadVaults]);
-
-  const withStatus = useCallback(
-    async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
-      dispatchFeedback({ type: "action_started" });
-      try {
-        const result = await action();
-        if (success) dispatchFeedback({ type: "notice", code: success });
-        return result;
-      } catch (failure) {
-        dispatchFeedback({ type: "action_failed", error: failure });
-        throw failure;
-      }
-    },
-    [],
-  );
+  }, [loadVaults, restoreAccountSession]);
 
   const refreshDevices = useCallback(async () => {
     if (!activeVaultId) return;
@@ -235,39 +249,19 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const actions: AppActions = useMemo(
     () => ({
       async signIn(userEmail, password) {
-        await withStatus(async () => {
-          const session = await api.login(userEmail, password);
-          accountPasswordRef.current = password;
-          setEmail(session.email);
-          await loadVaults();
-        });
+        await account.signIn(userEmail, password);
       },
 
       async signUp(userEmail, password) {
-        await withStatus(async () => {
-          const session = await api.register(userEmail, password);
-          accountPasswordRef.current = password;
-          setEmail(session.email);
-          setVaults([]);
-        });
+        await account.signUp(userEmail, password);
       },
 
       async openThisMac() {
-        await withStatus(async () => {
-          const session = await api.localSession();
-          setEmail(session.email);
-          await loadVaults();
-        });
+        await account.openThisMac();
       },
 
       async signOut() {
-        lock();
-        accountPasswordRef.current = null;
-        await api.logout();
-        setEmail(null);
-        setVaults([]);
-        setActiveVaultId(null);
-        setDevices([]);
+        await account.signOut();
       },
 
       async selectVault(vaultId) {
@@ -279,7 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async createNewVault(masterPassword, profile = "mobile_safe") {
         await withStatus(async () => {
-          if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+          if (account.passwordsCollide(masterPassword)) {
             throw feedbackError("passwords_must_differ");
           }
           setLockState("UNLOCKING");
@@ -299,7 +293,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
       async restoreFromShare(fileText, shareKey, masterPassword) {
         await withStatus(async () => {
-          if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+          if (account.passwordsCollide(masterPassword)) {
             throw feedbackError("passwords_must_differ");
           }
           const entries = openSharePackage(fileText, shareKey);
@@ -327,7 +321,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           try {
             setUnlocked(await unlockWithMasterPassword(activeVaultId, masterPassword));
             writeActiveVaultId(activeVaultId);
-            if (passwordsAreSame(accountPasswordRef.current ?? "", masterPassword)) {
+            if (account.passwordsCollide(masterPassword)) {
               dispatchFeedback({ type: "notice", code: "password_reuse_warning" });
             }
           } catch (failure) {
@@ -338,7 +332,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
 
       passwordsCollide(vaultPassword) {
-        return passwordsAreSame(accountPasswordRef.current ?? "", vaultPassword);
+        return account.passwordsCollide(vaultPassword);
       },
 
       async unlockWithRecovery(key) {
@@ -416,9 +410,10 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async enableBiometrics() {
         const current = vaultRef.current;
         if (!current) throw feedbackError("vault_locked");
-        if (!email) throw feedbackError("not_signed_in");
+        const accountEmail = account.email;
+        if (!accountEmail) throw feedbackError("not_signed_in");
         return withStatus(async () => {
-          const result = await enableDeviceUnlockForVault(current, email);
+          const result = await enableDeviceUnlockForVault(current, accountEmail);
           setUnlocked(result.vault);
           setDeviceUnlockAvailable(true);
           setDevices(await api.listDevices(current.vaultId));
@@ -494,13 +489,13 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         dispatchFeedback({ type: "clear" });
       },
     }),
-    [activeVaultId, email, loadVaults, lock, refreshDevices, setUnlocked, withStatus],
+    [account, activeVaultId, loadVaults, lock, refreshDevices, setUnlocked, withStatus],
   );
 
   const value = useMemo(
     () => ({
       ready,
-      email,
+      email: account.email,
       localMode,
       localStore,
       vaults,
@@ -517,7 +512,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     }),
     [
       ready,
-      email,
+      account.email,
       localMode,
       localStore,
       vaults,

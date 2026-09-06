@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { api, type DeviceSummary } from "../../lib/api.ts";
-import { deviceId } from "../../lib/device-identity.ts";
+import { deviceId } from "../devices/index.ts";
 import {
   enableDeviceUnlockForVault,
   hardRevokeDevice,

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { deviceId } from "../../lib/device-identity.ts";
+import { deviceId } from "../devices/index.ts";
 import {
   replaceTrustedRecoveryKey,
   rotateCompromisedRecovery,

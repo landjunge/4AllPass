@@ -9,23 +9,21 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useReducer,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { api, getToken, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
-import { readStorageOrigin } from "../lib/storage-origin.ts";
+import { api, type DeviceSummary, type VaultSummary } from "../lib/api.ts";
 import { clearCopiedSecret } from "../lib/clipboard.ts";
 import { openSharePackage } from "../lib/share.ts";
 import { deviceId } from "../lib/device-identity.ts";
-import { isTauriShell, probeWebviewWebauthn } from "../lib/webauthnCapabilities.ts";
 import { readActiveVaultId, writeActiveVaultId } from "../lib/active-vault.ts";
 import { mergeImportedLogins } from "../lib/import.ts";
 import { decryptVaultEntries } from "../lib/pull-other-vault.ts";
 import { useAccount } from "../modules/account/index.ts";
+import { useStartup, type LocalStoreStatus } from "../modules/startup/index.ts";
 import {
   feedbackError,
   feedbackReducer,
@@ -54,13 +52,6 @@ import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
 export type LockState = "LOCKED" | "UNLOCKING" | "UNLOCKED" | "LOCKING";
-
-interface LocalStoreStatus {
-  hasLocalVault: boolean;
-  localEntries: number;
-  hasOtherAccounts: boolean;
-  localVaultId: string | null;
-}
 
 interface AppState {
   ready: boolean;
@@ -117,9 +108,6 @@ export function useApp(): AppState & AppActions {
 }
 
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
-  const [ready, setReady] = useState(false);
-  const [localMode, setLocalMode] = useState(false);
-  const [localStore, setLocalStore] = useState<LocalStoreStatus | null>(null);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [activeVaultId, setActiveVaultId] = useState<string | null>(null);
   const [lockState, setLockState] = useState<LockState>("LOCKED");
@@ -193,53 +181,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     afterSignOut,
   });
   const restoreAccountSession = account.restoreSession;
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const health = await api.waitForHealth();
-        const local = health.profile === "local";
-        setLocalMode(local);
-        if (local) {
-          try {
-            setLocalStore(await api.localStatus());
-          } catch {
-            setLocalStore(null);
-          }
-        }
-        // Browser on :8788 keeps the silent local session (e2e / npm run app).
-        // The desktop window shows Konto anlegen first — no auto-login.
-        if (local && !getToken() && !isTauriShell() && !readStorageOrigin()) {
-          const session = await api.localSession();
-          restoreAccountSession(session.email);
-          await loadVaults();
-          void probeWebviewWebauthn()
-            .then((caps) => api.reportWebviewCaps(caps))
-            .catch(() => undefined);
-          return;
-        }
-        if (getToken()) {
-          const currentAccount = await api.me();
-          restoreAccountSession(currentAccount.email);
-          await loadVaults();
-        }
-      } catch {
-        if (getToken()) {
-          try {
-            const currentAccount = await api.me();
-            restoreAccountSession(currentAccount.email);
-            await loadVaults();
-          } catch {
-            restoreAccountSession(null);
-          }
-        } else {
-          restoreAccountSession(null);
-        }
-      } finally {
-        setReady(true);
-      }
-    })();
-  }, [loadVaults, restoreAccountSession]);
+  const startup = useStartup({ restoreSession: restoreAccountSession, loadVaults });
+  const updateLocalStore = startup.updateLocalStore;
 
   const refreshDevices = useCallback(async () => {
     if (!activeVaultId) return;
@@ -390,7 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
           writeActiveVaultId(keepId);
           setActiveVaultId(keepId);
           setUnlocked(await commitEntries(current, merged));
-          setLocalStore({
+          updateLocalStore({
             hasLocalVault: false,
             localEntries: 0,
             hasOtherAccounts: true,
@@ -489,15 +432,24 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         dispatchFeedback({ type: "clear" });
       },
     }),
-    [account, activeVaultId, loadVaults, lock, refreshDevices, setUnlocked, withStatus],
+    [
+      account,
+      activeVaultId,
+      loadVaults,
+      lock,
+      refreshDevices,
+      setUnlocked,
+      updateLocalStore,
+      withStatus,
+    ],
   );
 
   const value = useMemo(
     () => ({
-      ready,
+      ready: startup.ready,
       email: account.email,
-      localMode,
-      localStore,
+      localMode: startup.localMode,
+      localStore: startup.localStore,
       vaults,
       activeVaultId,
       lockState,
@@ -511,10 +463,10 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       ...actions,
     }),
     [
-      ready,
+      startup.ready,
       account.email,
-      localMode,
-      localStore,
+      startup.localMode,
+      startup.localStore,
       vaults,
       activeVaultId,
       lockState,

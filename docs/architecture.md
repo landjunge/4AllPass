@@ -15,7 +15,7 @@ Mensch / Agent
     │
     ▼
 ┌─ UI ──────────────┐   React PWA / Tauri   frontend/src
-│  vault desk       │   Palette: frontend/src/tokens.css (Golden Magpie)
+│  vault desk       │   Palette: frontend/src/tokens.css (Gnom-Hub-V1-Grau)
 └────────┬──────────┘
          │ saveEntries / copySecret
          ▼
@@ -83,18 +83,18 @@ Hooks: `useVaultState` (CRUD, Tabs), `useVaultSearch` (Query + Filter), `useVaul
 
 Wichtige Props: `entries: VaultEntry[]` (Klartext nur unlocked), `draft` / `selectedId`, `favorite: boolean` am Eintrag, nie Passwort in der Liste.
 
-**Tokens** (`frontend/src/tokens.css`, Golden Magpie):
+**Tokens** (`frontend/src/tokens.css`, Gnom-Hub-V1-Grau):
 
 | Token | Wert | Rolle |
 |---|---|---|
-| `--bg` | `#0A0E1A` | Fläche |
-| `--bg-card` / `--panel` | `#12182B` | Karten |
-| `--accent` / `--accent-hi` | `#C9A227` / `#D4AF37` | Gold, Primary, Stern an |
-| `--text` | `#F8F4EC` | Titel |
-| `--muted` | `#A89F8C` | Username, Meta |
-| `--ok` / `--danger` | `#3DDC97` / `#ff7a90` | Health / Leak |
+| `--bg` | `#121316` | Fläche |
+| `--bg-card` / `--panel` | `#1e1f24` | Karten |
+| `--accent` / `--accent-hi` | `#8f98a8` / `#a1a8b3` | Aktionen / Fokus |
+| `--text` | `#e2e4e9` | Titel |
+| `--muted` | `#8b909a` | Username, Meta |
+| `--ok` / `--danger` | `#3d9b6a` / `#dc7070` | Health / Leak |
 
-Radius/Schatten bleiben Desk-Chrome. Gnom-Hub-Grau ist nicht die Marke.
+Radius und Schatten bleiben kompakte Desktop-Chrome. Das 4AllPass-Logo und die Elster bleiben produktspezifisch.
 
 ---
 

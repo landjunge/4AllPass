@@ -70,7 +70,7 @@ export function App(): ReactNode {
 
       {error ? (
         <div className="banner error" role="alert" data-testid="error-banner">
-          <span>{error}</span>
+          <span>{error.userText}</span>
           <button type="button" className="link" onClick={clearMessages}>
             Schließen / Dismiss
           </button>
@@ -78,7 +78,7 @@ export function App(): ReactNode {
       ) : null}
       {notice ? (
         <div className="banner notice" data-testid="notice-banner">
-          <span>{notice}</span>
+          <span>{notice.userText}</span>
           <button type="button" className="link" onClick={clearMessages}>
             Schließen / Dismiss
           </button>

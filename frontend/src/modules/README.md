@@ -1,8 +1,8 @@
 # Frontend module boundaries
 
 This directory is the target structure for the incremental extraction from
-`state/app-state.tsx`. Phase 1 defines boundaries only; it moves no business
-logic and changes no runtime behavior.
+`state/app-state.tsx`. Phase 1 established the boundaries without moving
+business logic. Later phases migrate one responsibility at a time.
 
 ## Rules
 

@@ -34,7 +34,14 @@ for (const file of sourceFiles(modulesRoot)) {
     const target = moduleName(targetPath);
     if (!target || target === owner) continue;
     const publicEntry = resolve(modulesRoot, target);
-    if (targetPath !== publicEntry && targetPath !== publicEntry + ".ts") {
+    const publicEntries = new Set([
+      publicEntry,
+      publicEntry + ".ts",
+      publicEntry + ".tsx",
+      resolve(publicEntry, "index.ts"),
+      resolve(publicEntry, "index.tsx"),
+    ]);
+    if (!publicEntries.has(targetPath)) {
       violations.push(relative(repositoryRoot, file) + " imports private internals from module " + target + ": " + specifier);
     }
   }

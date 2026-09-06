@@ -9,8 +9,9 @@ const port = process.env.E2E_DESKTOP_WATCH_PORT ?? "8796";
 const dataDir = mkdtempSync(join(tmpdir(), "4ap-desktop-watch-"));
 
 /**
- * Desktop-shell path (Auth first). Isolated tmp vault — never
- * ~/Library/Application Support/4AllPass and never port 8788.
+ * Chromium desktop-logic path (Auth first) with stubbed Tauri APIs.
+ * This is not an installed Tauri/WebView app test. The vault is isolated:
+ * never ~/Library/Application Support/4AllPass and never port 8788.
  */
 export default defineConfig({
   testDir: "./e2e/desktop",
@@ -23,7 +24,8 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     ...devices["Desktop Safari"],
-    headless: true,
+    headless: false,
+    launchOptions: { slowMo: 180 },
     actionTimeout: 90_000,
     video: "retain-on-failure",
     trace: "retain-on-failure",

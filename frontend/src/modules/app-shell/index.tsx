@@ -1,5 +1,5 @@
 /**
- * App state composition. Vault and device lifecycles live in their modules.
+ * App state composition. Vault, device and recovery lifecycles live in modules.
  */
 import {
   createContext,
@@ -15,7 +15,6 @@ import { deviceId } from "../../lib/device-identity.ts";
 import { useAccount, type AccountState } from "../account/index.ts";
 import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
 import {
-  feedbackError,
   feedbackReducer,
   initialFeedbackState,
   type ErrorFeedback,
@@ -24,12 +23,9 @@ import {
 } from "../feedback/index.ts";
 import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
 import { useDeviceManagement } from "../device-management/index.ts";
+import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
-import {
-  replaceTrustedRecoveryKey,
-  rotateCompromisedRecovery,
-  type UnlockedVault,
-} from "../../lib/vault-session.ts";
+import type { UnlockedVault } from "../../lib/vault-session.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -148,6 +144,24 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   );
   const deviceManagement = useDeviceManagement(deviceManagementOptions);
 
+  const recoveryManagementOptions = useMemo(
+    () => ({
+      runWithStatus: withStatus,
+      currentVault: vaultLifecycle.currentVault,
+      replaceUnlockedVault: vaultLifecycle.replaceUnlockedVault,
+      setRecoveryKey: vaultLifecycle.setRecoveryKey,
+      setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
+    }),
+    [
+      vaultLifecycle.currentVault,
+      vaultLifecycle.replaceUnlockedVault,
+      vaultLifecycle.setDeviceUnlockAvailable,
+      vaultLifecycle.setRecoveryKey,
+      withStatus,
+    ],
+  );
+  const recoveryManagement = useRecoveryManagement(recoveryManagementOptions);
+
   const afterSignUp = useCallback(
     () => vaultLifecycle.clearVaultList(),
     [vaultLifecycle.clearVaultList],
@@ -223,28 +237,10 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         await deviceManagement.hardRevoke(targetDeviceId, masterPassword, recoveryKeyText);
       },
       async replaceTrustedRecovery(oldRecoveryKeyText) {
-        const current = vaultLifecycle.currentVault();
-        if (!current) throw feedbackError("vault_locked");
-        await withStatus(async () => {
-          const next = await replaceTrustedRecoveryKey(current, oldRecoveryKeyText);
-          vaultLifecycle.replaceUnlockedVault(next.vault);
-          vaultLifecycle.setRecoveryKey(next.recoveryKey);
-        }, "recovery_replaced");
+        await recoveryManagement.replaceTrustedRecovery(oldRecoveryKeyText);
       },
       async rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText) {
-        const current = vaultLifecycle.currentVault();
-        if (!current) throw feedbackError("vault_locked");
-        await withStatus(async () => {
-          const next = await rotateCompromisedRecovery(current, {
-            masterPassword,
-            ...(previousRecoveryKeyText ? { previousRecoveryKeyText } : {}),
-          });
-          vaultLifecycle.replaceUnlockedVault(next.vault);
-          vaultLifecycle.setRecoveryKey(next.recoveryKey);
-          if (!next.vault.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
-            vaultLifecycle.setDeviceUnlockAvailable(false);
-          }
-        }, "recovery_compromised_rotated");
+        await recoveryManagement.rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText);
       },
       refreshDevices: deviceManagement.refreshDevices,
       dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
@@ -252,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         dispatchFeedback({ type: "clear" });
       },
     }),
-    [account, deviceManagement, vaultLifecycle, withStatus],
+    [account, deviceManagement, recoveryManagement, vaultLifecycle],
   );
 
   const value = useMemo(

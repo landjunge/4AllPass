@@ -5,7 +5,7 @@ description: >
   autofill, broker, crypto. Trigger on 4AllPass, Tresor, envelopes, Argon2id,
   WebAuthn PRF, CAS, PWA, Extension, Desktop. Do not start 4AllPass coding or
   review without this skill. For "weiter", "nächster Schritt", or "improve"
-  also load 4allpass-next. For Tresor-UI, first-run, Magpie, copy, or
+  also load 4allpass-next. For Tresor-UI, first-run, Gnom-Hub-V1 chrome, copy, or
   “für normale User” also load 4allpass-ui.
 ---
 
@@ -21,7 +21,7 @@ Machines: **controlled** access (Allow/Deny). v1 after Allow still copies a
 For „weiter / nächster Schritt / improve / was jetzt“: stop here and follow
 [../4allpass-next/SKILL.md](../4allpass-next/SKILL.md).
 
-For Tresor-UI / first-run / Magpie / copy / „für normale User“: also follow
+For Tresor-UI / first-run / Gnom-Hub-V1 chrome / copy / „für normale User“: also follow
 [../4allpass-ui/SKILL.md](../4allpass-ui/SKILL.md).
 
 ## Before you touch anything

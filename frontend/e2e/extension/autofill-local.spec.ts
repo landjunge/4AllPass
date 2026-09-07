@@ -32,11 +32,19 @@ async function unlockAndFill(
   field: { user: string; pass: string; userSel: string; passSel: string; pickTitle?: string },
 ) {
   const popup = await context.newPage();
+  await popup.bringToFront();
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  // Visible proof for a human watching: this must read "Gesperrt/Locked"
+  // before we ever touch the vault password field.
+  await expect(popup.locator("#status")).toContainText("Gesperrt", { timeout: 10_000 });
+  await popup.waitForTimeout(400);
   await popup.locator("#api").fill(ORIGIN);
   await popup.locator("#vault").fill(VAULT_PASSWORD);
   await popup.locator("#unlock-btn").click();
   await expect(popup.locator("#status")).toContainText("Unlocked", { timeout: 60_000 });
+  // Hold the unlocked popup on screen before the next tab covers it, so a
+  // human watching can actually see the locked → unlocked transition.
+  await popup.waitForTimeout(600);
 
   const login = await context.newPage();
   await login.goto(loginUrl);

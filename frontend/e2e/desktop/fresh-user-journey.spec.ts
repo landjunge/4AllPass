@@ -48,8 +48,11 @@ test("fresh desktop user: register, create, sign in, use, lock", async ({ page }
   });
 
   await observer.step("05-sign-in", async () => {
-    const switchMode = page.getByTestId("auth-switch");
-    if (await switchMode.isVisible().catch(() => false)) await switchMode.click();
+    const alreadySignIn = await page
+      .getByRole("button", { name: /Anmelden|Sign in/ })
+      .isVisible()
+      .catch(() => false);
+    if (!alreadySignIn) await page.getByTestId("auth-switch").click();
     await clickAndType(page, page.getByLabel("E-mail"), email);
     await clickAndType(page, page.getByLabel("Account password"), ACCOUNT_PASSWORD);
     await page.getByTestId("auth-submit").click();

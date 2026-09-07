@@ -148,7 +148,7 @@ export async function addEntryWithMouse(
   await clickAndType(page, title, entry.title);
   await clickAndType(page, page.getByTestId("entry-username"), entry.username);
   await clickAndType(page, page.getByTestId("entry-password"), entry.password);
-  if (entry.url) await clickAndType(page, page.getByLabel("URL", { exact: true }), entry.url);
+  if (entry.url) await clickAndType(page, page.getByRole("textbox", { name: "URL", exact: true }), entry.url);
   await page.getByTestId("save-entry").click();
   await expect(page.getByRole("button", { name: new RegExp(entry.title) })).toBeVisible();
 }

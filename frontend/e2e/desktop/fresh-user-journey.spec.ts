@@ -16,6 +16,7 @@ test("fresh desktop user: register, create, sign in, use, lock", async ({ page }
   const origin = `http://127.0.0.1:${process.env.E2E_DESKTOP_WATCH_PORT ?? "8796"}`;
   const email = `fresh_${Date.now()}@example.com`;
   await stubDesktopShell(page, origin);
+  let recoveryKey = "";
 
   await observer.step("01-first-launch", async () => {
     await page.goto("/");
@@ -36,6 +37,8 @@ test("fresh desktop user: register, create, sign in, use, lock", async ({ page }
     await expect(page.getByTestId("create-vault")).toBeEnabled();
     await page.getByTestId("create-vault").click();
     await expect(page.getByTestId("confirm-kit-stored")).toBeVisible({ timeout: 90_000 });
+    recoveryKey = ((await page.getByTestId("recovery-key").textContent()) ?? "").trim();
+    expect(recoveryKey.replace(/-/g, "")).toHaveLength(55);
     await page.getByTestId("confirm-kit-stored").click();
     await page.getByTestId("dismiss-kit").click();
     await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
@@ -112,5 +115,18 @@ test("fresh desktop user: register, create, sign in, use, lock", async ({ page }
     await clickAndType(page, page.getByTestId("master-password"), VAULT_PASSWORD);
     await page.getByTestId("unlock-submit").click();
     await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  });
+
+  // The real "I forgot my password" path: lock, switch to the recovery
+  // key instead of typing a password, and confirm the entry is still there.
+  await observer.step("13-forgot-password-recovery-unlock", async () => {
+    await page.getByTestId("lock").click();
+    await expect(page.getByTestId("master-password")).toBeVisible();
+    await page.getByRole("button", { name: /Recovery-Schlüssel|Use the recovery key/ }).click();
+    await clickAndType(page, page.getByPlaceholder("XXXXX-XXXXX-XXXXX-…"), recoveryKey);
+    await page.getByTestId("unlock-submit").click();
+    await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED", { timeout: 30_000 });
+    await skipOnboardingIfPresent(page);
+    await expect(page.getByRole("button", { name: /Fresh User Login/ })).toBeVisible();
   });
 });

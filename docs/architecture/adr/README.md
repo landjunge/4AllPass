@@ -16,5 +16,6 @@
 | [012](ADR-012-proof-and-signature-layer.md) | Proof and signature layer | research — do not build |
 | [013](ADR-013-vault-storage-placement.md) | Vault storage placement | accepted; protocol is hosting-independent |
 | [014](ADR-014-crypto-core-dependencies.md) | Crypto-core dependencies | accepted; noble only, no vendor yet |
+| [015](ADR-015-write-authorization.md) | Write authorization (Vault Key proof) | staged; rate limits + poisoned-head recovery now, signed writes later |
 
 Parent: [`../future-architecture.md`](../future-architecture.md).

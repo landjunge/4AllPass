@@ -127,6 +127,9 @@ export async function unlockWithVaultPassword(page: Page): Promise<void> {
   await clickAndType(page, page.getByTestId("master-password"), VAULT_PASSWORD);
   await page.getByTestId("unlock-submit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  // A browser profile unlocking this vault for the first time gets the
+  // onboarding checklist, which covers the entries list underneath it.
+  await skipOnboardingIfPresent(page);
 }
 
 export async function skipOnboardingIfPresent(page: Page): Promise<void> {

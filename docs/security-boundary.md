@@ -256,8 +256,17 @@ The server still cannot read any of it. A revision sealed under an earlier
 Vault Key can open; that is why `vaultKeyVersion` is in the listing
 (`test_rotated_revisions_keep_their_own_vault_key_version`), so a client can say
 so plainly instead of failing with a decryption error. This exposes no plaintext
-that a session could not already fetch from the active snapshot. **There is no
-client UI for any of this yet** — see §6.
+that a session could not already fetch from the active snapshot.
+
+The PWA surfaces this under **Einstellungen → Sicherheit → Frühere Stände**
+(`docs/ui-map.md` V7.3), not on the desk. `openHistoricEntries` is deliberately
+not `openSnapshot`: it verifies the sealed manifest bound to that older
+revision, but never calls `savePin` and never writes the offline cache, so
+reading history cannot become the rollback `assertFreshSnapshot` exists to
+refuse — including when the read fails
+(`vault-session.history.test.ts`). The preview lists titles and usernames only;
+passwords are never rendered there. Restore goes through the ordinary
+`commitEntries` path, so it is revision N+1 under the current VK.
 
 Same serialization when the two payloads differ in `vaultKeyVersion` (a normal
 same-VK commit vs a hard-revoke VK++ on the same `expectedRevision`). Measured

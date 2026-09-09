@@ -362,6 +362,70 @@ async function acceptSnapshot(
   return vault;
 }
 
+export class HistoricRevisionUnreadable extends Error {
+  readonly revision: number;
+
+  constructor(revision: number) {
+    super(`revision ${String(revision)} was sealed under an earlier vault key`);
+    this.name = "HistoricRevisionUnreadable";
+    this.revision = revision;
+  }
+}
+
+/**
+ * Decrypt one superseded revision for review or restore.
+ *
+ * Deliberately NOT `openSnapshot`: reading history must never move the
+ * freshness pin (`savePin`) or the cached snapshot, or it would become the
+ * rollback that `assertFreshSnapshot` exists to refuse. It verifies the sealed
+ * manifest bound to *that* revision, so an older state still cannot be
+ * tampered with — it just does not become the state we trust going forward.
+ *
+ * The result is plaintext in memory only. Restoring is a normal forward commit
+ * by the caller (`commitEntries`), never a rewind.
+ */
+export function openHistoricEntries(
+  snapshot: VaultSnapshot,
+  vault: UnlockedVault,
+): VaultEntry[] {
+  if (snapshot.vaultId !== vault.vaultId) {
+    throw new IntegrityError("historic snapshot belongs to a different vault");
+  }
+  // A revision sealed under an earlier Vault Key is unreadable by design after
+  // a rotation. Say so plainly instead of surfacing a decrypt failure.
+  if (snapshot.vaultKeyVersion !== vault.vaultKeyVersion) {
+    throw new HistoricRevisionUnreadable(snapshot.revision);
+  }
+  let entriesToOpen = snapshot.entries;
+  if (snapshot.sealedManifest) {
+    const verified = verifySnapshotManifest(
+      snapshot.sealedManifest,
+      { entries: snapshot.entries, envelopes: snapshot.envelopes },
+      {
+        vaultKey: vault.vaultKey,
+        vaultId: snapshot.vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+      },
+    );
+    entriesToOpen = verified.entries;
+  }
+  return verifySnapshot({
+    vaultId: snapshot.vaultId,
+    vaultKey: vault.vaultKey,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    entries: entriesToOpen,
+  })
+    .map((entry) => {
+      try {
+        return decodeEntryPlaintext(entry.id, entry.plaintext);
+      } finally {
+        zeroize(entry.plaintext);
+      }
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
 export interface CreatedVault {
   vault: UnlockedVault;
   /** Show once, then it only exists on the user's Emergency Kit. */

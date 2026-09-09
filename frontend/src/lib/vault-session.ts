@@ -426,6 +426,111 @@ export function openHistoricEntries(
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
+export interface HeadRecovery {
+  /** The newest revision that still opens under this master password. */
+  revision: number;
+  createdAt: string;
+  entries: VaultEntry[];
+  /** The unopenable head this would be committed on top of. */
+  brokenRevision: number;
+}
+
+/**
+ * Find the newest revision that still verifies, when the live head does not.
+ *
+ * The Vault Key lives *inside* a snapshot's master envelope, so an unopenable
+ * head takes the key with it — recovery has to derive VK from an older
+ * revision's own envelope, not from the head.
+ *
+ * Nothing here writes: no pin, no cache, no commit. This only answers "is
+ * there something left to go back to", and the caller shows the human what
+ * they would be accepting before anything is written. That matters, because a
+ * hostile server could poison the head precisely to push someone onto older
+ * content — it must never be silent, and `assertFreshSnapshot` must never be
+ * walked backwards to make it work.
+ */
+export async function findRecoverableRevision(
+  vaultId: string,
+  masterPassword: string,
+): Promise<HeadRecovery | null> {
+  const summary = await api.getVault(vaultId);
+  const brokenRevision = summary.activeRevision;
+  if (brokenRevision === null) return null;
+
+  const revisions = await api.listRevisions(vaultId);
+  for (const row of revisions) {
+    if (row.revision > brokenRevision) continue;
+    let masterKey: Uint8Array | null = null;
+    let vaultKey: Uint8Array | null = null;
+    try {
+      const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, row.revision));
+      if (snapshot.vaultId !== vaultId) continue;
+      const masterEnvelope = masterEnvelopeOf(snapshot);
+      masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+      vaultKey = unwrapVaultKey(masterEnvelope, {
+        wrappingKey: masterKey,
+        vaultId,
+        expectType: "master",
+        expectVaultKeyVersion: snapshot.vaultKeyVersion,
+      });
+      const entries = openHistoricEntries(snapshot, {
+        vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+        vaultKey,
+        envelopes: snapshot.envelopes,
+        entries: [],
+        unlockedWith: "master_password",
+      });
+      return { revision: row.revision, createdAt: row.createdAt, entries, brokenRevision };
+    } catch {
+      // This revision is not the way back. Keep walking down.
+      continue;
+    } finally {
+      if (masterKey) zeroize(masterKey);
+      if (vaultKey) zeroize(vaultKey);
+    }
+  }
+  return null;
+}
+
+/**
+ * Put a recovered revision back as the new head.
+ *
+ * Forward only: this commits `brokenRevision + 1`, so the freshness pin moves
+ * up, never down. The damaged revision stays stored like every other one.
+ */
+export async function restoreRecoveredRevision(
+  vaultId: string,
+  masterPassword: string,
+  recovery: HeadRecovery,
+): Promise<UnlockedVault> {
+  const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, recovery.revision));
+  const masterEnvelope = masterEnvelopeOf(snapshot);
+  const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  try {
+    const vaultKey = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
+    const staged: UnlockedVault = {
+      vaultId,
+      // Commit on top of the broken head, not on top of the revision we read.
+      revision: recovery.brokenRevision,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+      vaultKey,
+      envelopes: snapshot.envelopes,
+      entries: [],
+      unlockedWith: "master_password",
+    };
+    return await commitEntries(staged, recovery.entries);
+  } finally {
+    zeroize(masterKey);
+  }
+}
+
 export interface CreatedVault {
   vault: UnlockedVault;
   /** Show once, then it only exists on the user's Emergency Kit. */

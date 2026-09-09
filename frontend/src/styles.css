@@ -378,6 +378,11 @@ form.banner {
   gap: 12px;
 }
 
+.card.damaged {
+  border-color: var(--danger, var(--line));
+  margin-top: 12px;
+}
+
 .history-list,
 .history-preview {
   list-style: none;

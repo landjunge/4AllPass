@@ -18,6 +18,10 @@ und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 
 - Wiederverwenden statt neu erfinden.
 - Palette: `frontend/src/tokens.css` (Golden Magpie), nicht Gnom-Hub und nicht die alte Blau-Tabelle in DESIGN.md.
+- **Sprache immer DE und EN planen — aber getrennt.** Jeder sichtbare Text geht durch
+  `t({ de: "…", en: "…" })`. Nie selbst `"Tresor gesperrt / Vault locked"` schreiben:
+  den Schrägstrich setzt die Anzeige, nicht der Autor. Deutsch ist Standard,
+  umschaltbar unter Einstellungen. `npm test` prüft das (`scripts/check-copy-language.mjs`).
 - Keine neuen Dependencies, keine Crypto-Änderungen.
 - Typecheck + Tests im frontend-Workspace vor dem Commit.
 - Keine Secrets im Diff.

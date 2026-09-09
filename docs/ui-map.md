@@ -192,3 +192,19 @@ Import-Review zeigt Art (Login / API-Key / Server) · Host oder Provider · User
 ---
 
 Neue Fläche? Erst hier eine Nummer, dann Code. Tokens: [`architecture.md`](architecture.md) §3.
+
+---
+
+## Sprache: immer DE **und** EN planen, nie beide gleichzeitig zeigen
+
+Jeder sichtbare Text geht durch `t({ de: "…", en: "…" })`. Beide Sprachen
+gehören in denselben PR — aber **getrennt**, damit der Umschalter
+(Einstellungen → Sprache) eine davon wählen kann.
+
+Nie selbst `"Tresor gesperrt / Vault locked"` in JSX schreiben. Der Schrägstrich
+ist Sache der Anzeige, nicht des Autors. Deutsch ist der Standard.
+
+Das prüft `scripts/check-copy-language.mjs` bei jedem `npm test`. Es ist eine
+Sperre mit Budget, keine Wand: die bestehenden handgeschriebenen Stellen sind
+erlaubt, eine neue lässt den Lauf rot werden. Wer eine Datei umzieht, senkt das
+Budget im selben Commit — die Zahl geht nur nach unten.

@@ -7,6 +7,9 @@
 `git-workflow.md` beschreibt, **wie** ein PR aussieht. Dieses Dokument
 beschreibt, **wie die Arbeit dorthin kommt** — und was Daniel beim Mergen tut.
 
+Zum Abhaken beim Arbeiten: [`checklists.md`](checklists.md). Dieses Dokument ist
+das Handbuch, das ist die Checkliste.
+
 ---
 
 ## Teil A — Der Weg einer Änderung

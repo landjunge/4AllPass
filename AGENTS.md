@@ -6,6 +6,9 @@ For „weiter / nächster Schritt / improve“ also open
 [`.grok/skills/4allpass-next/SKILL.md`](.grok/skills/4allpass-next/SKILL.md).
 For Tresor-UI / normale User: [`.grok/skills/4allpass-ui/SKILL.md`](.grok/skills/4allpass-ui/SKILL.md).
 
+How a change comes about (slicing, ADR, verifying, merging):
+[`docs/dev-workflow.md`](docs/dev-workflow.md).
+
 `docs/` is authoritative. `docs/security-boundary.md` describes what the
 running backend and PWA actually enforce.
 

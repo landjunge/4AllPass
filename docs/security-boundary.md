@@ -232,6 +232,33 @@ commits that re-attach a revoked device’s envelope (HTTP 422).
 Two clients both at revision 10 → 11: exactly one wins; the loser gets 409
 with `currentRevision`.
 
+**Reading superseded revisions.** Because step 6 never overwrites, the rows a
+commit replaced are still there. `GET /vaults/{vault_id}/revisions` lists them
+(`revision`, `vaultKeyVersion`, `createdAt`, `entryCount`, `isActive` — metadata
+only; no envelopes, entries, or manifest leave that route), and
+`GET /vaults/{vault_id}/revisions/{revision}` returns one of them byte-for-byte.
+Both go through `get_owned_vault`, so another account's vault is 404, as is an
+unknown revision (`test_history_is_owner_scoped`,
+`test_unknown_revision_and_unknown_vault_are_404`).
+
+These are reads, not a second write path. They do not move
+`active_snapshot_id` (`test_reading_an_old_revision_does_not_move_the_pointer`)
+and the client must not treat one as an advance for its freshness pin —
+`assertFreshSnapshot` still refuses an older revision on the normal open path,
+which is what stops rollback. **Restoring is a normal forward commit**: the
+client re-commits the recovered content as revision N+1 under the current Vault
+Key; re-sending the old revision number is the usual 409
+(`test_restore_is_a_forward_commit_not_a_rewind`). Nothing is deleted by a
+restore — the revision that was live stays stored like every other one.
+
+The server still cannot read any of it. A revision sealed under an earlier
+`vault_key_version` is returned as ciphertext nobody holding only the current
+Vault Key can open; that is why `vaultKeyVersion` is in the listing
+(`test_rotated_revisions_keep_their_own_vault_key_version`), so a client can say
+so plainly instead of failing with a decryption error. This exposes no plaintext
+that a session could not already fetch from the active snapshot. **There is no
+client UI for any of this yet** — see §6.
+
 Same serialization when the two payloads differ in `vaultKeyVersion` (a normal
 same-VK commit vs a hard-revoke VK++ on the same `expectedRevision`). Measured
 in `test_concurrent_same_vk_commit_and_hard_revoke_one_wins`: statuses are

@@ -10,7 +10,7 @@ re-attached, and that sealedManifest is present after the initial revision.
 from __future__ import annotations
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,6 +24,7 @@ from app.models.snapshot import VaultSnapshot
 from app.models.vault import Vault
 from app.schemas.snapshot import (
     SnapshotCommit,
+    VaultRevisionSummary,
     WireEncryptedEntry,
     WireKdfParams,
     WireKeyEnvelope,
@@ -140,6 +141,55 @@ async def load_active_snapshot(db: AsyncSession, vault: Vault) -> VaultSnapshot 
         .options(selectinload(VaultSnapshot.envelopes), selectinload(VaultSnapshot.entries))
     )
     return result.scalar_one_or_none()
+
+
+async def load_snapshot_at_revision(
+    db: AsyncSession, vault: Vault, revision: int
+) -> VaultSnapshot | None:
+    """Read one superseded revision. Still opaque; still owner-scoped.
+
+    Reading an older revision is not an advance and must never move the CAS
+    pointer: restoring is a normal forward commit of N+1 by the client
+    (docs/vault-revision.md §4). Whether the returned ciphertext can be opened
+    at all is the client's problem — a revision sealed under an earlier
+    ``vault_key_version`` stays unreadable to anyone who no longer holds that
+    Vault Key, which is the point of rotation.
+    """
+    result = await db.execute(
+        select(VaultSnapshot)
+        .where(VaultSnapshot.vault_id == vault.id, VaultSnapshot.revision == revision)
+        .options(selectinload(VaultSnapshot.envelopes), selectinload(VaultSnapshot.entries))
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_revisions(db: AsyncSession, vault: Vault) -> list[VaultRevisionSummary]:
+    """Metadata only: no envelopes, no entries, no manifest, no ciphertext."""
+    active_revision = await db.scalar(
+        select(VaultSnapshot.revision).where(VaultSnapshot.id == vault.active_snapshot_id)
+    )
+    result = await db.execute(
+        select(
+            VaultSnapshot.revision,
+            VaultSnapshot.vault_key_version,
+            VaultSnapshot.created_at,
+            func.count(EncryptedEntry.id),
+        )
+        .outerjoin(EncryptedEntry, EncryptedEntry.snapshot_id == VaultSnapshot.id)
+        .where(VaultSnapshot.vault_id == vault.id)
+        .group_by(VaultSnapshot.id)
+        .order_by(VaultSnapshot.revision.desc())
+    )
+    return [
+        VaultRevisionSummary(
+            revision=revision,
+            vault_key_version=vault_key_version,
+            created_at=created_at,
+            entry_count=entry_count,
+            is_active=revision == active_revision,
+        )
+        for revision, vault_key_version, created_at, entry_count in result.all()
+    ]
 
 
 async def _lock_vault_and_current(

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -65,6 +66,21 @@ class WireVaultSnapshot(CamelModel):
     envelopes: list[WireKeyEnvelope] = Field(max_length=ENVELOPES_MAX)
     entries: list[WireEncryptedEntry] = Field(max_length=ENTRIES_MAX)
     sealed_manifest: WireSealedManifest | None = None
+
+
+class VaultRevisionSummary(CamelModel):
+    """One stored revision, metadata only — no envelopes, entries, or manifest.
+
+    ``entry_count`` is a row count of opaque ciphertext blobs, not a hint about
+    their content. A revision whose ``vault_key_version`` is below the active
+    one cannot be opened by a client that only holds the current Vault Key.
+    """
+
+    revision: int
+    vault_key_version: int
+    created_at: datetime
+    entry_count: int
+    is_active: bool
 
 
 class SnapshotCommit(WriteModel):

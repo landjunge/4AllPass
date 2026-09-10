@@ -49,3 +49,23 @@ test("content-script senders are not privileged", () => {
   assert.equal(isPrivilegedExtensionSender({ tab: null }), true);
   assert.equal(isPrivilegedExtensionSender({ tab: { id: 12 } }), false);
 });
+
+test("the extension's own page opened in a tab stays privileged", () => {
+  const extensionOrigin = "chrome-extension://abc123/";
+  assert.equal(
+    isPrivilegedExtensionSender(
+      { tab: { id: 12 }, url: `${extensionOrigin}popup.html` },
+      extensionOrigin,
+    ),
+    true,
+  );
+});
+
+test("a content script on a real website is never privileged, even with a spoofed-looking url", () => {
+  const extensionOrigin = "chrome-extension://abc123/";
+  assert.equal(
+    isPrivilegedExtensionSender({ tab: { id: 12 }, url: "https://evil.example/popup.html" }, extensionOrigin),
+    false,
+  );
+  assert.equal(isPrivilegedExtensionSender({ tab: { id: 12 }, url: `${extensionOrigin}popup.html` }), false);
+});

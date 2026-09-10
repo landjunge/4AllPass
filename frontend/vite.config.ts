@@ -39,8 +39,14 @@ export default defineConfig({
       manifest: {
         name: '4AllPass',
         short_name: '4AllPass',
+        // One language, like every other surface. The install prompt and the
+        // home-screen entry are rendered by the OS from this file, so `t()`
+        // never sees them — a switch at runtime cannot reach an installed
+        // icon's label. German matches the app default; without `lang` the
+        // plugin writes "en" while the UI starts in German.
+        lang: 'de',
         description:
-          'Credential-Zugang für Menschen, Apps und KI-Agenten. / Secure credential access for humans, applications and AI agents.',
+          'Credential-Zugang für Menschen, Apps und KI-Agenten.',
         // Matches the app shell in src/styles.css, so the splash and the
         // browser chrome do not flash a different colour on launch.
         theme_color: '#121316',

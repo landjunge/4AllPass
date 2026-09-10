@@ -16,7 +16,7 @@ import { readStorageOrigin, writeStorageOrigin } from "../lib/storage-origin.ts"
 export function SettingsPanel(): ReactNode {
   const desktop = isTauriShell();
   const { signOut } = useApp();
-  const { plain, setPlain, t } = useCopy();
+  const { plain, setPlain, language, setLanguage, t } = useCopy();
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [originDraft, setOriginDraft] = useState(() => readStorageOrigin() ?? "");
@@ -47,6 +47,23 @@ export function SettingsPanel(): ReactNode {
           en: "Encrypted on this device. Only you open it. Only the Lock button closes it — not sleep, screen lock, or switching to the browser.",
         })}
       </p>
+      <label>
+        {t({ de: "Sprache", en: "Language" })}
+        <select
+          value={language}
+          data-testid="language-select"
+          onChange={(event) => setLanguage(event.target.value === "en" ? "en" : "de")}
+        >
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <p className="hint" data-testid="language-hint">
+        {t({
+          de: "Gilt für App und Browser gleichermaßen. Bleibt gespeichert, bis du sie änderst.",
+          en: "Applies to the app and the browser alike. Stays saved until you change it.",
+        })}
+      </p>
       <label className="checkbox">
         <input
           type="checkbox"
@@ -59,8 +76,8 @@ export function SettingsPanel(): ReactNode {
       <p className="hint" data-testid="plain-language-hint">
         {t(
           {
-            de: "An: kurze Sätze, DE und EN. Aus: mehr Fachwörter, für Kenner.",
-            en: "On: short sentences, DE and EN. Off: more jargon, for experts.",
+            de: "An: kurze Sätze. Aus: mehr Fachwörter, für Kenner.",
+            en: "On: short sentences. Off: more jargon, for experts.",
           },
         )}
       </p>

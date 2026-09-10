@@ -87,14 +87,15 @@ jobs:
           if-no-files-found: error
 
   desktop-stall:
-    name: Desktop sleep stall
+    # Pure-function guards that need no Tauri build. The wall-clock stall test
+    # is gone with sleep_stall.rs: sleep now locks on the OS notification, so
+    # certifying the rejected clock heuristic certified nothing we ship.
+    name: Desktop unit guards
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Wall-clock stall (not Instant)
-        run: rustc --edition 2021 --test src-tauri/src/sleep_stall.rs -o sleep-stall && ./sleep-stall
       - name: Sidecar bind is not foreign-port trust
         run: rustc --edition 2021 --test src-tauri/src/core_bind.rs -o core-bind && ./core-bind
       - name: Loopback process inspect parsers

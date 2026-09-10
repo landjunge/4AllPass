@@ -175,6 +175,15 @@ Handy: Spalten unter 820 px untereinander.
 |---|---|
 | 1 | Untertabs. Geräte = Biometrie + Revoke (DELETE = metadata_only). |
 | 2 | Sicherheit = Revision nur zur Kontrolle, nicht Alltag. |
+| 3 | Sicherheit → **Frühere Stände**: Liste älterer Stände (Datum · Anzahl Einträge). Lesen ist kein Zurückdrehen. |
+
+**V7.3 Frühere Stände.** Eine Frage: *Was war vorher drin?* Pro Zeile Datum und
+Anzahl Einträge, aktueller Stand markiert. Stände von vor einem
+Schlüsselwechsel sind nicht lesbar und werden als solche benannt, nicht
+versteckt. Öffnen zeigt die Titel/Benutzer dieses Standes — **nie Passwörter**.
+Wiederherstellen legt einen **neuen** Stand an; nichts wird zurückgedreht und
+nichts gelöscht. Gehört hierher, nicht auf den Desk: Stände sind Kontrolle,
+kein Alltag.
 
 > Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 

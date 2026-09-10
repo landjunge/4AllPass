@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DevicesPanel } from "../DevicesPanel.tsx";
 import { SettingsPanel } from "../SettingsPanel.tsx";
+import { VaultHistoryPanel } from "./VaultHistoryPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { SettingsPane } from "../../types/vault.ts";
 
@@ -46,6 +47,7 @@ export function VaultSettings({
       {pane === "devices" ? (
         <DevicesPanel />
       ) : pane === "security" ? (
+        <>
         <section className="card" data-testid="settings-security">
           <h3>{t({ de: "Kontrolle", en: "Checking" })}</h3>
           <p className="hint">
@@ -69,6 +71,8 @@ export function VaultSettings({
             </div>
           </dl>
         </section>
+        <VaultHistoryPanel />
+        </>
       ) : (
         <SettingsPanel />
       )}

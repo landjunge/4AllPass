@@ -45,6 +45,43 @@
 
 ---
 
+## 2.1 Actor #7 — what a stolen account session can and cannot do
+
+Named above since v1, but never analysed: §3 and §5 examine the malicious
+*server* only. Filling that in (ADR-015).
+
+The attacker has a valid bearer token and `X-Device-Id`. They do **not** have
+the Master Password, and therefore no Vault Key.
+
+### Cannot do
+
+- Read anything. Every entry, envelope, and manifest is sealed under VK.
+- Forge a snapshot a legitimate client will open: `verifySnapshotManifest`
+  fails, and the client refuses rather than showing tampered data.
+- Unwrap or rotate a Vault Key.
+
+### Can do
+
+- **Commit a snapshot the server accepts.** `POST …/snapshots` requires
+  `sealedManifest` to be present but never verifies it was sealed under VK
+  (`security-boundary.md` §5). A garbage revision N+1 becomes the CAS head.
+  The legitimate client then fails closed on open — correct, but the vault is
+  unusable until an earlier revision is restored.
+- **Drop device envelopes** by committing without them — the unauthorized soft
+  revoke §3 already concedes for a malicious server.
+- **Revoke devices and overwrite the Device-Key-Envelope mirror.** Both are
+  metered since ADR-015 §1; neither requires key possession.
+
+### Bounded by
+
+Every superseded revision is still stored and readable
+(`GET …/revisions`), so the damage is a forced recovery, not a loss — provided
+the client can *reach* that recovery while the head is unopenable. Making that
+path reachable is ADR-015 §2. Removing the write itself needs signed writes,
+ADR-015 §3, which is not built.
+
+---
+
 ## 3. Malicious server — what they can and cannot do
 
 ### Can do (availability / integrity-of-history)
@@ -122,6 +159,7 @@ Client-side checks detect an inconsistent snapshot; they do not prevent one. Ato
 | UV-gated local store (no PRF)     | Weaker than PRF                                   | Documented in `webauthn-prf.md`; Master Password remains |
 | Side-channel attacks on Argon2id  | Partially mitigated by parameters                 | Not a primary target for v1 |
 | Quantum attacks on AES            | Out of scope for v1                               | AES-256 remains ~128-bit under Grover; see `docs/post-quantum-roadmap.md`. No KEM in v1 |
+| Stolen account session writes a snapshot it cannot read | **Open** — confidentiality holds, integrity/availability do not | Server accepts any well-formed commit; client fails closed on open. Superseded revisions stay stored, so recovery is possible. Destructive routes metered (ADR-015 §1). Reachable recovery from a poisoned head: ADR-015 §2. Refusing the write at all needs signed writes: ADR-015 §3, not built |
 
 ---
 

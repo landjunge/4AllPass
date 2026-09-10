@@ -29,6 +29,8 @@ const restorePort = process.env.E2E_RESTORE_PORT ?? "8792";
 /**
  * First-run against the local one-process app (SQLite, no Vite, no Postgres).
  * Argon2id is slow on purpose. Restore needs its own empty data dir.
+ * language-switch is its own project so this file can merge with main:
+ * first-run's testMatch stays identical to main; the new spec is additive.
  */
 export default defineConfig({
   testDir: "./e2e/local",
@@ -44,7 +46,12 @@ export default defineConfig({
   projects: [
     {
       name: "first-run",
-      testMatch: /first-run-access|import-review|browser-cards-import|vault-desk|language-switch|vault-history|poisoned-head-recovery/,
+      testMatch: /first-run-access|import-review|browser-cards-import|vault-desk|vault-history|poisoned-head-recovery/,
+      use: { baseURL: `http://127.0.0.1:${firstPort}` },
+    },
+    {
+      name: "language-switch",
+      testMatch: /language-switch/,
       use: { baseURL: `http://127.0.0.1:${firstPort}` },
     },
     {

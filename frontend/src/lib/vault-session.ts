@@ -362,6 +362,175 @@ async function acceptSnapshot(
   return vault;
 }
 
+export class HistoricRevisionUnreadable extends Error {
+  readonly revision: number;
+
+  constructor(revision: number) {
+    super(`revision ${String(revision)} was sealed under an earlier vault key`);
+    this.name = "HistoricRevisionUnreadable";
+    this.revision = revision;
+  }
+}
+
+/**
+ * Decrypt one superseded revision for review or restore.
+ *
+ * Deliberately NOT `openSnapshot`: reading history must never move the
+ * freshness pin (`savePin`) or the cached snapshot, or it would become the
+ * rollback that `assertFreshSnapshot` exists to refuse. It verifies the sealed
+ * manifest bound to *that* revision, so an older state still cannot be
+ * tampered with — it just does not become the state we trust going forward.
+ *
+ * The result is plaintext in memory only. Restoring is a normal forward commit
+ * by the caller (`commitEntries`), never a rewind.
+ */
+export function openHistoricEntries(
+  snapshot: VaultSnapshot,
+  vault: UnlockedVault,
+): VaultEntry[] {
+  if (snapshot.vaultId !== vault.vaultId) {
+    throw new IntegrityError("historic snapshot belongs to a different vault");
+  }
+  // A revision sealed under an earlier Vault Key is unreadable by design after
+  // a rotation. Say so plainly instead of surfacing a decrypt failure.
+  if (snapshot.vaultKeyVersion !== vault.vaultKeyVersion) {
+    throw new HistoricRevisionUnreadable(snapshot.revision);
+  }
+  let entriesToOpen = snapshot.entries;
+  if (snapshot.sealedManifest) {
+    const verified = verifySnapshotManifest(
+      snapshot.sealedManifest,
+      { entries: snapshot.entries, envelopes: snapshot.envelopes },
+      {
+        vaultKey: vault.vaultKey,
+        vaultId: snapshot.vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+      },
+    );
+    entriesToOpen = verified.entries;
+  }
+  return verifySnapshot({
+    vaultId: snapshot.vaultId,
+    vaultKey: vault.vaultKey,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    entries: entriesToOpen,
+  })
+    .map((entry) => {
+      try {
+        return decodeEntryPlaintext(entry.id, entry.plaintext);
+      } finally {
+        zeroize(entry.plaintext);
+      }
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export interface HeadRecovery {
+  /** The newest revision that still opens under this master password. */
+  revision: number;
+  createdAt: string;
+  entries: VaultEntry[];
+  /** The unopenable head this would be committed on top of. */
+  brokenRevision: number;
+}
+
+/**
+ * Find the newest revision that still verifies, when the live head does not.
+ *
+ * The Vault Key lives *inside* a snapshot's master envelope, so an unopenable
+ * head takes the key with it — recovery has to derive VK from an older
+ * revision's own envelope, not from the head.
+ *
+ * Nothing here writes: no pin, no cache, no commit. This only answers "is
+ * there something left to go back to", and the caller shows the human what
+ * they would be accepting before anything is written. That matters, because a
+ * hostile server could poison the head precisely to push someone onto older
+ * content — it must never be silent, and `assertFreshSnapshot` must never be
+ * walked backwards to make it work.
+ */
+export async function findRecoverableRevision(
+  vaultId: string,
+  masterPassword: string,
+): Promise<HeadRecovery | null> {
+  const summary = await api.getVault(vaultId);
+  const brokenRevision = summary.activeRevision;
+  if (brokenRevision === null) return null;
+
+  const revisions = await api.listRevisions(vaultId);
+  for (const row of revisions) {
+    if (row.revision > brokenRevision) continue;
+    let masterKey: Uint8Array | null = null;
+    let vaultKey: Uint8Array | null = null;
+    try {
+      const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, row.revision));
+      if (snapshot.vaultId !== vaultId) continue;
+      const masterEnvelope = masterEnvelopeOf(snapshot);
+      masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+      vaultKey = unwrapVaultKey(masterEnvelope, {
+        wrappingKey: masterKey,
+        vaultId,
+        expectType: "master",
+        expectVaultKeyVersion: snapshot.vaultKeyVersion,
+      });
+      const entries = openHistoricEntries(snapshot, {
+        vaultId,
+        revision: snapshot.revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+        vaultKey,
+        envelopes: snapshot.envelopes,
+        entries: [],
+        unlockedWith: "master_password",
+      });
+      return { revision: row.revision, createdAt: row.createdAt, entries, brokenRevision };
+    } catch {
+      // This revision is not the way back. Keep walking down.
+      continue;
+    } finally {
+      if (masterKey) zeroize(masterKey);
+      if (vaultKey) zeroize(vaultKey);
+    }
+  }
+  return null;
+}
+
+/**
+ * Put a recovered revision back as the new head.
+ *
+ * Forward only: this commits `brokenRevision + 1`, so the freshness pin moves
+ * up, never down. The damaged revision stays stored like every other one.
+ */
+export async function restoreRecoveredRevision(
+  vaultId: string,
+  masterPassword: string,
+  recovery: HeadRecovery,
+): Promise<UnlockedVault> {
+  const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, recovery.revision));
+  const masterEnvelope = masterEnvelopeOf(snapshot);
+  const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  try {
+    const vaultKey = unwrapVaultKey(masterEnvelope, {
+      wrappingKey: masterKey,
+      vaultId,
+      expectType: "master",
+      expectVaultKeyVersion: snapshot.vaultKeyVersion,
+    });
+    const staged: UnlockedVault = {
+      vaultId,
+      // Commit on top of the broken head, not on top of the revision we read.
+      revision: recovery.brokenRevision,
+      vaultKeyVersion: snapshot.vaultKeyVersion,
+      vaultKey,
+      envelopes: snapshot.envelopes,
+      entries: [],
+      unlockedWith: "master_password",
+    };
+    return await commitEntries(staged, recovery.entries);
+  } finally {
+    zeroize(masterKey);
+  }
+}
+
 export interface CreatedVault {
   vault: UnlockedVault;
   /** Show once, then it only exists on the user's Emergency Kit. */

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { addVirtualAuthenticator } from "./virtual-authenticator.ts";
+import { skipOnboardingIfPresent } from "./live/actions.ts";
 
 const MASTER_PASSWORD = "korrektes-pferd-batterie-heftklammer";
 const ENTRY = { title: "GitHub", username: "ada@example.com", password: "s3cret-entry-value-42" };
@@ -48,16 +49,21 @@ async function enableDeviceUnlock(page: Page): Promise<string> {
   await page.getByTestId("tab-devices").click();
   await page.getByTestId("enable-biometrics").click();
   const enabled = page.getByTestId("enabled-mechanism");
-  const conflict = page.getByTestId("error-banner").filter({ hasText: "revision conflict" });
-  await expect(enabled.or(conflict)).toBeVisible();
-  if (await conflict.isVisible()) {
-    // Enrol is a snapshot CAS. A profile that unlocked just before another
-    // device committed must reload, then retry once.
+  // Enrol is a snapshot CAS. A profile that unlocked just before another
+  // device committed must reload, then retry — the server reports this as a
+  // 409 "revision conflict", but a nearly-simultaneous commit from another
+  // profile can also surface as a 404 on this profile's now-stale challenge,
+  // so treat any error banner here the same way rather than only that one.
+  const conflict = page.getByTestId("error-banner");
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(enabled.or(conflict)).toBeVisible({ timeout: 30_000 });
+    if (!(await conflict.isVisible().catch(() => false))) break;
     await conflict.getByRole("button", { name: "Dismiss" }).click();
     await page.getByTestId("lock").click();
     await page.getByTestId("master-password").fill(MASTER_PASSWORD);
     await page.getByTestId("unlock-submit").click();
     await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    await skipOnboardingIfPresent(page);
     await page.getByTestId("tab-settings").click();
     await page.getByTestId("tab-devices").click();
     await page.getByTestId("enable-biometrics").click();
@@ -79,7 +85,7 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
       name: "UV-gated local store fallback",
       hasPrf: false,
       hasLargeBlob: false,
-      expected: "UV-gated local store (rank 3)",
+      expected: "UV-gated local store (rank 3 — policy only)",
     },
   ]) {
     test(`provisions and unlocks with ${scenario.name}`, async ({ page, context }) => {
@@ -186,11 +192,16 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     // DELETE also drops sessions bound to that device id. Sign in again, then
     // device unlock must fail: the envelope is gone. Master still works.
     await firstPage.getByRole("button", { name: "Sign out" }).click();
-    await firstPage.getByTestId("auth-switch").click();
+    await expect(firstPage.getByTestId("auth-submit")).toBeVisible({ timeout: 30_000 });
+    const alreadySignIn = await firstPage
+      .getByRole("button", { name: /Anmelden|Sign in/ })
+      .isVisible()
+      .catch(() => false);
+    if (!alreadySignIn) await firstPage.getByTestId("auth-switch").click();
     await firstPage.getByLabel("E-mail").fill(email);
     await firstPage.getByLabel("Account password").fill("account-password-1234");
     await firstPage.getByTestId("auth-submit").click();
-    await firstPage.getByTestId("unlock-biometrics").click();
+    await firstPage.getByTestId("unlock-biometrics").click({ timeout: 60_000 });
     await expect(firstPage.getByTestId("error-banner")).toBeVisible();
     await expect(firstPage.getByTestId("lock-state")).toHaveText("LOCKED");
 
@@ -225,6 +236,9 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
     await victimPage.getByTestId("master-password").fill(MASTER_PASSWORD);
     await victimPage.getByTestId("unlock-submit").click();
     await expect(victimPage.getByTestId("lock-state")).toHaveText("UNLOCKED");
+    // First time this browser profile unlocks this vault: the onboarding
+    // checklist covers the entries list underneath it.
+    await skipOnboardingIfPresent(victimPage);
     await expect(victimPage.getByRole("button", { name: new RegExp(ENTRY.title) })).toBeVisible();
     // Enrol writes a snapshot. Reload so expectedRevision matches the
     // attacker's device envelope (CAS 409 otherwise).
@@ -256,12 +270,26 @@ test.describe("device unlock over the WebAuthn fallback hierarchy", () => {
 
     // Rotation DELETEs the victim device and drops its sessions. Re-auth, then
     // device unlock must fail; the vault password unwraps VK₂.
+    // The victim's own live-update poll notices the rotation independently and
+    // shows a toast, which can race the sign-out click landing — dismiss it
+    // first, then require the auth page before continuing.
+    const rotationNotice = victimPage
+      .getByTestId("notice-banner")
+      .filter({ hasText: "Vault key rotated" });
+    if (await rotationNotice.isVisible().catch(() => false)) {
+      await rotationNotice.getByRole("button", { name: "Dismiss" }).click();
+    }
     await victimPage.getByRole("button", { name: "Sign out" }).click();
-    await victimPage.getByTestId("auth-switch").click();
+    await expect(victimPage.getByTestId("auth-submit")).toBeVisible({ timeout: 30_000 });
+    const victimAlreadySignIn = await victimPage
+      .getByRole("button", { name: /Anmelden|Sign in/ })
+      .isVisible()
+      .catch(() => false);
+    if (!victimAlreadySignIn) await victimPage.getByTestId("auth-switch").click();
     await victimPage.getByLabel("E-mail").fill(email);
     await victimPage.getByLabel("Account password").fill("account-password-1234");
     await victimPage.getByTestId("auth-submit").click();
-    await victimPage.getByTestId("unlock-biometrics").click();
+    await victimPage.getByTestId("unlock-biometrics").click({ timeout: 60_000 });
     await expect(victimPage.getByTestId("error-banner")).toBeVisible();
     await expect(victimPage.getByTestId("lock-state")).toHaveText("LOCKED");
 

@@ -542,9 +542,9 @@ ext.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handle(
   message: { type?: string; [key: string]: unknown },
-  sender: { tab?: { id?: number } | null } = {},
+  sender: { tab?: { id?: number } | null; url?: string } = {},
 ): Promise<unknown> {
-  if (!isPrivilegedExtensionSender(sender)) {
+  if (!isPrivilegedExtensionSender(sender, ext.runtime.getURL(""))) {
     return { ok: false, error: "not allowed" };
   }
   switch (message.type) {

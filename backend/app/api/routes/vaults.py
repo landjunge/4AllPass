@@ -14,9 +14,16 @@ from app.core.config import get_settings
 from app.core.sessions import SessionStore
 from app.models.user import User
 from app.models.vault import Vault
-from app.schemas.snapshot import SnapshotCommit, WireVaultSnapshot
+from app.schemas.snapshot import SnapshotCommit, VaultRevisionSummary, WireVaultSnapshot
 from app.schemas.vault import VaultSummary
-from app.services.snapshots import RevisionConflict, commit_snapshot, load_active_snapshot, snapshot_to_wire
+from app.services.snapshots import (
+    RevisionConflict,
+    commit_snapshot,
+    list_revisions,
+    load_active_snapshot,
+    load_snapshot_at_revision,
+    snapshot_to_wire,
+)
 
 router = APIRouter(prefix="/vaults", tags=["vaults"])
 
@@ -73,6 +80,33 @@ async def get_snapshot(
     snapshot = await load_active_snapshot(db, vault)
     if snapshot is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="vault has no snapshot")
+    return snapshot_to_wire(vault.id, snapshot)
+
+
+@router.get("/{vault_id}/revisions", response_model=list[VaultRevisionSummary])
+async def get_revisions(
+    vault: Annotated[Vault, Depends(get_owned_vault)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[VaultRevisionSummary]:
+    """Which revisions this vault still stores. Newest first, metadata only."""
+    return await list_revisions(db, vault)
+
+
+@router.get("/{vault_id}/revisions/{revision}", response_model=WireVaultSnapshot)
+async def get_revision(
+    revision: int,
+    vault: Annotated[Vault, Depends(get_owned_vault)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WireVaultSnapshot:
+    """One superseded revision, byte-for-byte as it was committed.
+
+    This is a read. It does not move ``active_snapshot_id`` and is not an
+    advance for the client's freshness pin: restoring means committing the
+    recovered content forward as a new revision.
+    """
+    snapshot = await load_snapshot_at_revision(db, vault, revision)
+    if snapshot is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="revision not found")
     return snapshot_to_wire(vault.id, snapshot)
 
 

@@ -201,6 +201,11 @@ async def revoke_device(
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
+    # Destructive and reachable with a session alone (ADR-015 §1): revoking
+    # drops the device's sessions and blocks its envelope mirror. A stolen
+    # token cannot read anything, but it should not get an unmetered hand
+    # either.
+    await enforce_write_rate_limit(store, request, "device")
     device = await _get_device(db, vault, device_id)
     device.revoked_at = datetime.now(timezone.utc)
     for cred in device.webauthn_credentials:
@@ -322,10 +327,15 @@ async def put_device_key_envelope(
     device_id: str,
     credential_id: str,
     payload: WireDeviceKeyEnvelope,
+    request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
     expected_revision: Annotated[int, Query(alias="expectedRevision")],
 ) -> WireDeviceKeyEnvelope:
+    # Overwrites unlock material for a device (ADR-015 §1). CAS on
+    # expectedRevision bounds *what* can be written, not how often.
+    await enforce_write_rate_limit(store, request, "device")
     device = await _get_device(db, vault, device_id)
     _require_active_device(device)
     raw_id = _decode_credential_path(credential_id)

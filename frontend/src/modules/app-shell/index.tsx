@@ -27,7 +27,7 @@ import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
 import { useDeviceManagement } from "../device-management/index.ts";
 import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
-import type { UnlockedVault } from "../../lib/vault-session.ts";
+import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -61,6 +61,8 @@ interface AppActions {
   unlockWithPassword(masterPassword: string): Promise<void>;
   passwordsCollide(vaultPassword: string): boolean;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
+  findHeadRecovery(masterPassword: string): Promise<HeadRecovery | null>;
+  restoreHeadRecovery(masterPassword: string, recovery: HeadRecovery): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
@@ -233,6 +235,12 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
       passwordsCollide(vaultPassword) {
         return account.passwordsCollide(vaultPassword);
+      },
+      async findHeadRecovery(masterPassword) {
+        return vaultLifecycle.findHeadRecovery(masterPassword);
+      },
+      async restoreHeadRecovery(masterPassword, recovery) {
+        await vaultLifecycle.restoreHeadRecovery(masterPassword, recovery);
       },
       async unlockWithRecovery(key) {
         await vaultLifecycle.unlockWithRecovery(key);

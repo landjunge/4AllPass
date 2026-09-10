@@ -4,7 +4,7 @@ export function FieldLabel({ text, tip }: { text: string; tip: string }): ReactN
   return (
     <span className="field-label">
       {text}
-      <span className="tip" data-tip={tip} title={tip} aria-label={tip}>
+      <span className="tip" data-tip={tip} title={tip} aria-hidden="true">
         ?
       </span>
     </span>

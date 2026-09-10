@@ -7,7 +7,14 @@
 # An inline `// gitleaks:allow` does not help on a pull request: the action runs
 # with fetch-depth 0 and scans the branch's whole history, so the original,
 # un-annotated commit still trips the rule. The fingerprint pins that commit.
+#
+# A fingerprint contains the commit and the line number, so **editing the line
+# again mints a new one**. Fix the finding before you touch its surroundings,
+# then leave the line alone — otherwise this file grows one entry per edit.
 
 # Playwright fixture password typed into a throwaway local vault; no account and
 # no server behind it. See frontend/e2e/local/poisoned-head-recovery.spec.ts.
+# Two entries because the second commit moved the line while annotating it —
+# exactly the mistake the note above warns about.
 90ddc3742efa7e35d0b093a57975c2b8e03e63f1:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:20
+14c0454b41363185d02f2301c073fb89944c73f8:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:22

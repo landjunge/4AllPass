@@ -9,41 +9,71 @@
  * explicit budget; adding one fails. Converting a file means lowering the
  * budget in the same commit, so the number only ever walks down.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourceRoot = resolve(repositoryRoot, "frontend/src");
-const sourceExtensions = new Set([".ts", ".tsx"]);
+const sourceExtensions = new Set([".ts", ".tsx", ".html"]);
+
+/**
+ * Every surface a user reads, not just the React app.
+ *
+ * The first version watched `frontend/src` only, which made the count look
+ * like the whole problem. It was not: the tab title and the social preview in
+ * `index.html`, the desktop access prompt in `public/`, and the entire browser
+ * extension were outside the lens and kept their slashes untouched.
+ */
+const scanRoots = [
+  "frontend/src",
+  "frontend/index.html",
+  "frontend/public",
+  "frontend/vite.config.ts",
+  "extension/src",
+].map((path) => resolve(repositoryRoot, path));
 
 /**
  * Budget of hand-written bilingual strings still in the tree.
- * Only ever lower this. See docs/ui-map.md.
+ *
+ * Only ever lower this. The one exception is widening the lens above — then
+ * the number jumps because more is being *seen*, not because more was
+ * written, and the commit that widens it says so. Never raise it to make a
+ * failing run pass. See docs/ui-map.md.
+ *
+ * 136 → 160 when the lens widened. Two movements inside that number:
+ * `frontend/src` went 136 → 132, because four of the old hits were code
+ * comments and comments are not copy; and 28 real ones came into view —
+ * 18 in the browser extension, 5 in the tab title and social preview, 5 in
+ * the desktop access prompt.
  */
-const BUDGET = 136;
+const BUDGET = 160;
 
 // "Etwas Deutsches / Something English" — a slash with words on both sides,
 // inside one quoted string or a JSX text node.
 const DENGLISH = /[^\s"'`{}<>/][^"'`{}<>/]{3,60} \/ [A-ZÄÖÜ][^"'`{}<>/]{3,60}/;
 
-function sourceFiles(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = resolve(directory, entry.name);
-    if (entry.isDirectory()) return sourceFiles(path);
+function sourceFiles(path) {
+  if (!statSync(path, { throwIfNoEntry: false })?.isDirectory()) return [path];
+  return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
+    const child = resolve(path, entry.name);
+    if (entry.isDirectory()) return sourceFiles(child);
     const extension = entry.name.slice(entry.name.lastIndexOf("."));
     if (!sourceExtensions.has(extension)) return [];
-    return entry.name.endsWith(".test.ts") || entry.name.endsWith(".test.tsx") ? [] : [path];
+    return entry.name.endsWith(".test.ts") || entry.name.endsWith(".test.tsx") ? [] : [child];
   });
 }
 
 const found = [];
-for (const file of sourceFiles(sourceRoot)) {
+for (const file of scanRoots.flatMap(sourceFiles)) {
   const lines = readFileSync(file, "utf8").split("\n");
   lines.forEach((line, index) => {
     // A line that is already handing both halves to `t()` is correct by
     // construction — the renderer picks one.
     if (/\bde:\s*["'`]/.test(line) || /\ben:\s*["'`]/.test(line)) return;
+    // Comments are not copy. A slash in prose ("memory / IndexedDB") is not
+    // Denglisch, and counting it would push developers to reword comments
+    // instead of fixing labels.
+    if (/^\s*(\/\/|\/\*|\*|<!--)/.test(line)) return;
     const match = DENGLISH.exec(line);
     if (match) {
       found.push(`${relative(repositoryRoot, file)}:${String(index + 1)}: ${match[0].trim().slice(0, 70)}`);

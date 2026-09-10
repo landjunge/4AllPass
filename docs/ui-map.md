@@ -217,3 +217,26 @@ Das prüft `scripts/check-copy-language.mjs` bei jedem `npm test`. Es ist eine
 Sperre mit Budget, keine Wand: die bestehenden handgeschriebenen Stellen sind
 erlaubt, eine neue lässt den Lauf rot werden. Wer eine Datei umzieht, senkt das
 Budget im selben Commit — die Zahl geht nur nach unten.
+
+Geprüft werden **alle** Flächen, die ein Mensch liest, nicht nur die React-App:
+`frontend/src`, `frontend/index.html` (Tab-Titel und Social-Vorschau),
+`frontend/public` (das Zugriffs-Fenster der Desktop-App), `frontend/vite.config.ts`
+(das PWA-Manifest) und `extension/src`. Kommentare zählen nicht — ein
+Schrägstrich in Prosa ist kein Denglisch.
+
+Stand: **160**. Davon 132 in `frontend/src`, 18 in der Browser-Erweiterung,
+5 im Tab-Titel, 5 im Zugriffs-Fenster.
+
+Zwei Flächen können `t()` **nicht** benutzen und brauchen einen eigenen Weg:
+
+- **`extension/src`** ist eine andere Laufzeit ohne React-Kontext. Die
+  Erweiterung müsste die Sprachwahl aus ihrem eigenen Speicher lesen.
+- **`.html` in `frontend/public`** wird ohne die App geladen. Das
+  Zugriffs-Fenster ist genau der Moment, in dem jemand *Erlauben* oder
+  *Ablehnen* entscheidet — zwei Sprachen im selben Knopf sind dort am wenigsten
+  angebracht.
+
+Das **PWA-Manifest** ist ein dritter Sonderfall: Betriebssystem und
+Installations-Dialog rendern es, `t()` sieht es nie, und ein Umschalter zur
+Laufzeit erreicht ein bereits installiertes Symbol nicht mehr. Es trägt daher
+fest `lang: 'de'` und eine deutsche Beschreibung.

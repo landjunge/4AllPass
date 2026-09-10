@@ -1,0 +1,13 @@
+# Known false positives, one fingerprint per line: <commit>:<file>:<rule>:<line>.
+#
+# Only synthetic test fixtures belong here. Never a value that was ever real —
+# this repo is a password manager, and an entry here is invisible to review
+# unless someone opens this file. Prefer changing the fixture over adding a line.
+#
+# An inline `// gitleaks:allow` does not help on a pull request: the action runs
+# with fetch-depth 0 and scans the branch's whole history, so the original,
+# un-annotated commit still trips the rule. The fingerprint pins that commit.
+
+# Playwright fixture password typed into a throwaway local vault; no account and
+# no server behind it. See frontend/e2e/local/poisoned-head-recovery.spec.ts.
+90ddc3742efa7e35d0b093a57975c2b8e03e63f1:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:20

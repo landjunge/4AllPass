@@ -17,9 +17,9 @@ test("a vault poisoned by a token-only writer can be recovered at unlock", async
   await addEntryWithMouse(page, {
     title: "Überlebt den Angriff",
     username: "ada@example.com",
-    // Synthetic fixture, typed into a throwaway local vault. The marker has to
-    // sit on the flagged line itself — gitleaks reads it per line, not per block.
-    password: "survives-the-attack-42", // gitleaks:allow
+    // Synthetic fixture, typed into a throwaway local vault. gitleaks reads it
+    // as a generic API key; the false positive is pinned in `.gitleaksignore`.
+    password: "survives-the-attack-42",
   });
   await expect(page.getByRole("button", { name: /Überlebt den Angriff/ })).toBeVisible();
 

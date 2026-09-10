@@ -359,14 +359,21 @@ access broker still needs the unlocked process). Inactivity auto-lock does
 **not** run in the desktop app. **Launch at login** (Settings, default off)
 starts the process hidden in the tray. It does not unwrap the Vault Key, does
 not skip the password, and does not auto-allow. A cold start after login is
-LOCKED until the user unlocks. The desktop vault locks on **manual Lock**
-only. Sleep, screen lock, tray hide, inactivity, and switching to the
+LOCKED until the user unlocks. The desktop vault locks on **manual Lock** and
+on **system sleep**. Screen lock, tray hide, inactivity, and switching to the
 browser do **not** lock. A >5s wall-clock stall used to emit `desktop-lock`;
 macOS App Nap suspends the process while Chrome is in front, so that path
-zeroized the Vault Key by mistake and is gone.
+zeroized the Vault Key by mistake and is gone. Sleep instead uses the OS
+signal itself: `src-tauri/src/sleep.rs` observes
+`NSWorkspaceWillSleepNotification` (macOS only — Windows
+`WM_POWERBROADCAST` and Linux logind `PrepareForSleep` are not wired) and
+emits `desktop-lock`, which `modules/app-shell` turns into the normal lock.
 The UI calls the same lock path and zeroizes the in-process Vault Key as well as
 JS allows. A pending access prompt is denied. That is not FileVault and not
-hibernation-safe: RAM still holds VK across sleep until the user presses Lock.
+hibernation-safe: the event has to reach the WKWebView process, and if the
+machine suspends first the lock lands on wake instead — before the vault is
+usable again, but after VK has spent the sleep in RAM. Sleep-lock raises the
+bar for a stolen sleeping laptop; it does not defeat a RAM attack on one.
 An access request opens a small always-on-top prompt with Allow / Deny;
 that window receives only application / provider / scope / TTL. The grant
 material is issued in the unlocked main webview after the prompt event. The

@@ -5,6 +5,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   useRef,
@@ -12,6 +13,7 @@ import {
 } from "react";
 import { api, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
 import { deviceId } from "../../lib/device-identity.ts";
+import { listenDesktopLock } from "../desktop-adapter/index.ts";
 import { useAccount, type AccountState } from "../account/index.ts";
 import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
 import {
@@ -121,6 +123,24 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     [onPasswordReuseWarning, passwordsCollide, updateLocalStore, withStatus],
   );
   const vaultLifecycle = useVaultLifecycle(vaultLifecycleOptions);
+
+  // macOS says it is about to suspend -> zeroize the Vault Key. Browser builds
+  // get no such event and the subscribe call resolves to a no-op there.
+  // Not FileVault: if the machine suspends before the webview drains the event,
+  // the lock lands on wake instead, and VK sat in RAM meanwhile.
+  const lockOnDesktopSleep = vaultLifecycle.lock;
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    let cancelled = false;
+    void listenDesktopLock(lockOnDesktopSleep).then((stop) => {
+      if (cancelled) stop();
+      else unlisten = stop;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [lockOnDesktopSleep]);
 
   const getActiveVaultId = useCallback(() => vaultLifecycle.activeVaultId, [vaultLifecycle.activeVaultId]);
   const getAccountEmail = useCallback(() => accountRef.current?.email ?? null, []);

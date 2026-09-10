@@ -9,11 +9,14 @@ import type { VaultEntry } from "../../lib/entries.ts";
 import {
   commitEntries,
   createVault,
+  findRecoverableRevision,
+  restoreRecoveredRevision,
   hasDeviceUnlock,
   lock as lockVault,
   unlockWithDevice,
   unlockWithMasterPassword,
   unlockWithRecoveryKey,
+  type HeadRecovery,
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { feedbackError, type NoticeCode } from "../feedback/index.ts";
@@ -50,6 +53,8 @@ export interface VaultLifecycleActions {
   restoreFromShare(fileText: string, shareKey: string, masterPassword: string): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
+  findHeadRecovery(masterPassword: string): Promise<HeadRecovery | null>;
+  restoreHeadRecovery(masterPassword: string, recovery: HeadRecovery): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
@@ -171,6 +176,35 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     });
   }, [activeVaultId, options, replaceUnlockedVault]);
 
+  /**
+   * ADR-015 §2. Only reachable after an unlock failed on integrity, and only
+   * on an explicit click: a poisoned head must never quietly become "here is
+   * some older content instead".
+   */
+  const findHeadRecovery = useCallback(async (masterPassword: string) => {
+    if (!activeVaultId) throw feedbackError("no_vault_selected");
+    return findRecoverableRevision(activeVaultId, masterPassword);
+  }, [activeVaultId]);
+
+  const restoreHeadRecovery = useCallback(async (
+    masterPassword: string,
+    recovery: HeadRecovery,
+  ) => {
+    if (!activeVaultId) throw feedbackError("no_vault_selected");
+    await options.runWithStatus(async () => {
+      setLockState("UNLOCKING");
+      try {
+        replaceUnlockedVault(
+          await restoreRecoveredRevision(activeVaultId, masterPassword, recovery),
+        );
+        writeActiveVaultId(activeVaultId);
+      } catch (failure) {
+        setLockState("LOCKED");
+        throw failure;
+      }
+    });
+  }, [activeVaultId, options, replaceUnlockedVault]);
+
   const unlockWithRecovery = useCallback(async (key: string) => {
     if (!activeVaultId) throw feedbackError("no_vault_selected");
     await options.runWithStatus(async () => {
@@ -245,6 +279,8 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     restoreFromShare,
     unlockWithPassword,
     unlockWithRecovery,
+    findHeadRecovery,
+    restoreHeadRecovery,
     unlockWithBiometrics,
     lock,
     pullLocalIntoOpenVault,

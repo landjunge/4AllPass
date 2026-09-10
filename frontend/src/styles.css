@@ -378,6 +378,35 @@ form.banner {
   gap: 12px;
 }
 
+.card.damaged {
+  border-color: var(--danger, var(--line));
+  margin-top: 12px;
+}
+
+.history-list,
+.history-preview {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.history-list li {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+.history-list button {
+  text-align: left;
+  padding: 0;
+}
+
+.history-preview li {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
 .tabs .active {
   border-color: var(--accent);
   color: var(--accent-hi);

@@ -56,6 +56,15 @@ export interface VaultSummary {
   createdAt: string;
 }
 
+/** One stored revision, metadata only. `entryCount` counts ciphertext rows. */
+export interface VaultRevisionSummary {
+  revision: number;
+  vaultKeyVersion: number;
+  createdAt: string;
+  entryCount: number;
+  isActive: boolean;
+}
+
 export interface CredentialSummary {
   id: string;
   credentialId: string;
@@ -221,6 +230,15 @@ export const api = {
 
   commitSnapshot(vaultId: string, payload: SnapshotCommit): Promise<WireVaultSnapshot> {
     return request("POST", `/vaults/${vaultId}/snapshots`, payload);
+  },
+
+  listRevisions(vaultId: string): Promise<VaultRevisionSummary[]> {
+    return request("GET", `/vaults/${vaultId}/revisions`);
+  },
+
+  /** A superseded revision. Reading one is not an advance — see openHistoricEntries. */
+  getRevision(vaultId: string, revision: number): Promise<WireVaultSnapshot> {
+    return request("GET", `/vaults/${vaultId}/revisions/${revision}`);
   },
 
   listDevices(vaultId: string): Promise<DeviceSummary[]> {

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { Page, TestInfo } from "@playwright/test";
+import { test, type Page, type TestInfo } from "@playwright/test";
 
 export interface JourneyEvent {
   step: string;
@@ -28,7 +28,7 @@ export class JourneyObserver {
     this.events.push({ step: name, status: "started", at: new Date().toISOString() });
     this.persist();
     try {
-      const result = await this.testInfo.step(name, action);
+      const result = await test.step(name, action);
       const screenshot = `${name}.png`;
       await this.page.screenshot({ path: join(this.root, screenshot), fullPage: true });
       this.events.push({ step: name, status: "passed", at: new Date().toISOString(), screenshot });
@@ -54,12 +54,17 @@ export async function expectUsableControls(page: Page): Promise<void> {
   const bad = await page.locator("button:visible, input:visible, textarea:visible, select:visible").evaluateAll((nodes) =>
     nodes.flatMap((node) => {
       const el = node as HTMLElement;
+      const labelledByWrapper = el.closest("label")?.textContent?.trim() ?? "";
+      const labelledById =
+        el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.textContent?.trim();
       const label =
         el.getAttribute("aria-label") ||
         el.getAttribute("title") ||
         el.getAttribute("data-testid") ||
         (el instanceof HTMLInputElement ? el.placeholder : "") ||
         el.textContent?.trim() ||
+        labelledByWrapper ||
+        labelledById ||
         "";
       return label ? [] : [el.outerHTML.slice(0, 180)];
     }),

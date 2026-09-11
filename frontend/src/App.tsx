@@ -6,6 +6,7 @@ import { CreateVaultPage } from "./pages/CreateVaultPage.tsx";
 import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
+import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 
@@ -39,6 +40,7 @@ export function App(): ReactNode {
         <span className="brand">
           <img src="/logo.png" alt="4AllPass" />
         </span>
+        <LanguageSwitch />
         {email ? (
           <div className="header-actions">
             {email === "local@127.0.0.1" ? null : (

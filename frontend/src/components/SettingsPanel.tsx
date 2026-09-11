@@ -59,8 +59,8 @@ export function SettingsPanel(): ReactNode {
       <p className="hint" data-testid="plain-language-hint">
         {t(
           {
-            de: "An: kurze Sätze, DE und EN. Aus: mehr Fachwörter, für Kenner.",
-            en: "On: short sentences, DE and EN. Off: more jargon, for experts.",
+            de: "An: kurze Sätze. Aus: mehr Fachwörter, für Kenner. Die Sprache wählst du oben im Kopf.",
+            en: "On: short sentences. Off: more jargon, for experts. Pick the language in the header.",
           },
         )}
       </p>

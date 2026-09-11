@@ -31,12 +31,9 @@ export function N8nHttpRecipe(): ReactNode {
 
   return (
     <section className="card" data-testid="n8n-http">
-      <h3>n8n auf diesem Rechner / n8n HTTP Request</h3>
+      <h3>{t({ de: "n8n auf diesem Rechner", en: "n8n HTTP Request" })}</h3>
       <p className="muted">
-        Die meisten Nutzer brauchen das nicht. Nur wenn n8n auf diesem Rechner nach einem Login
-        fragen soll: HTTP Request, POST, JSON-Body, kein Origin-Header. Kein Marketplace-Node. /
-        Most people can skip this. Only if n8n on this computer should ask: HTTP Request, POST,
-        JSON body, no Origin header. Not a marketplace node.
+        {t({ de: "Die meisten Nutzer brauchen das nicht. Nur wenn n8n auf diesem Rechner nach einem Login fragen soll: HTTP Request, POST, JSON-Body, kein Origin-Header. Kein Marketplace-Node.", en: "Most people can skip this. Only if n8n on this computer should ask: HTTP Request, POST, JSON body, no Origin header. Not a marketplace node." })}
       </p>
       <p className="hint">
         Method <code>POST</code> · URL <code data-testid="n8n-http-url">{recipe.url}</code>
@@ -45,25 +42,27 @@ export function N8nHttpRecipe(): ReactNode {
       <pre className="mono block" data-testid="n8n-http-body">
         {JSON.stringify(recipe.jsonBody, null, 2)}
       </pre>
-      <p className="muted small">curl (Authorization nur in der Kopie / only in the copy)</p>
+      <p className="muted small">{t({ de: "curl (Authorization nur in der Kopie", en: "only in the copy)" })}</p>
       <pre className="mono block" data-testid="n8n-http-curl">
         {recipe.curlDisplay}
       </pre>
       <div className="actions">
         <button type="button" data-testid="n8n-copy-body" onClick={() => copy("body")}>
-          JSON kopieren / Copy JSON
+          {t({ de: "JSON kopieren", en: "Copy JSON" })}
         </button>
         <button type="button" className="primary" data-testid="n8n-copy-curl" onClick={() => copy("curl")}>
-          curl kopieren / Copy curl
+          {t({ de: "curl kopieren", en: "Copy curl" })}
         </button>
       </div>
       {copied ? (
         <p className="hint" data-testid="n8n-copied">
           {copied === "body"
-            ? "JSON kopiert. / JSON copied."
-            : "curl kopiert (inkl. Koppel-Code). / curl copied (pairing token included)."}{" "}
-          Zwischenablage nach 30s überschrieben, wenn sie noch passt. / Clipboard overwrite after
-          30s if it still matches.
+            ? t({ de: "JSON kopiert.", en: "JSON copied." })
+            : t({ de: "curl kopiert (inkl. Koppel-Code).", en: "curl copied (pairing token included)." })}{" "}
+          {t({
+            de: "Zwischenablage nach 30s überschrieben, wenn sie noch passt.",
+            en: "Clipboard overwrite after 30s if it still matches.",
+          })}
         </p>
       ) : null}
       <p className="hint" data-testid="n8n-docker-note">

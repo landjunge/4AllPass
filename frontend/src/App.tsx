@@ -28,7 +28,7 @@ export function App(): ReactNode {
   if (!ready) {
     return (
       <div className="centered">
-        <p className="muted">Laden… / Loading…</p>
+        <p className="muted">{t({ de: "Laden…", en: "Loading…" })}</p>
       </div>
     );
   }
@@ -52,18 +52,18 @@ export function App(): ReactNode {
             {vaults.length > 0 ? (
               <span className="lock-pill" aria-hidden="true">
                 {lockState === "UNLOCKED"
-                  ? "🔓 Tresor geöffnet / Vault open"
-                  : "🔒 Gesperrt / Locked"}
+                  ? t({ de: "🔓 Tresor geöffnet", en: "Vault open" })
+                  : t({ de: "🔒 Gesperrt", en: "Locked" })}
               </span>
             ) : null}
             {lockState === "UNLOCKED" ? (
               <button type="button" className="primary" onClick={lock} data-testid="lock">
-                Sperren / Lock
+                {t({ de: "Sperren", en: "Lock" })}
               </button>
             ) : null}
             {email !== "local@127.0.0.1" ? (
               <button type="button" className="link" onClick={() => void signOut()}>
-                Abmelden / Sign out
+                {t({ de: "Abmelden", en: "Sign out" })}
               </button>
             ) : null}
           </div>
@@ -74,7 +74,7 @@ export function App(): ReactNode {
         <div className="banner error" role="alert" data-testid="error-banner">
           <span>{t(error.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Schließen / Dismiss
+            {t({ de: "Schließen", en: "Dismiss" })}
           </button>
         </div>
       ) : null}
@@ -82,7 +82,7 @@ export function App(): ReactNode {
         <div className="banner notice" data-testid="notice-banner">
           <span>{t(notice.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Schließen / Dismiss
+            {t({ de: "Schließen", en: "Dismiss" })}
           </button>
         </div>
       ) : null}

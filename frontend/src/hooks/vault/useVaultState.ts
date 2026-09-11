@@ -1,4 +1,4 @@
-import type { Line } from "../../lib/copy-mode.ts";
+import { LineError, type Line } from "../../lib/copy-mode.ts";
 import { useEffect, useState } from "react";
 import { generatePassword } from "../../lib/entries.ts";
 import type { BrowserLoginRow } from "../../lib/import.ts";
@@ -88,6 +88,16 @@ export function useVaultState() {
     setDraft(draftFromEntry(entry));
   }
 
+  function alertError(error: unknown): void {
+    // LineError traegt beide Sprachen und wird uebersetzt gezeigt. Alles
+    // andere ist technisch und bleibt, wie es kam.
+    if (error instanceof LineError) {
+      window.alert(t(error.line));
+      return;
+    }
+    window.alert(error instanceof Error ? error.message : String(error));
+  }
+
   function applyDetect(text: string): void {
     const result = applyDetectedText(text, draft?.password);
     setDetectedLabel(result.label);
@@ -125,7 +135,7 @@ export function useVaultState() {
       }
       setImportPending(pendingFromEntries(parsed.entries, "plaintext"));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 
@@ -134,7 +144,7 @@ export function useVaultState() {
     try {
       setShare(createEntryShare(selected));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 
@@ -145,7 +155,7 @@ export function useVaultState() {
       setShareImport(null);
       setImportPending(pendingFromEntries(opened, "share"));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 

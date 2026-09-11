@@ -1,8 +1,10 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { looksLikeSharePackage } from "../lib/share.ts";
 import { useApp } from "../state/app-state.tsx";
+import { useCopy } from "../state/copy-mode.tsx";
 
 export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode {
+  const { t } = useCopy();
   const { restoreFromShare } = useApp();
   const [fileText, setFileText] = useState("");
   const [fileName, setFileName] = useState("");
@@ -36,17 +38,13 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
   return (
     <div className="centered">
       <form className="card auth" onSubmit={submit}>
-        <h2>Tresor wiederherstellen / Restore vault</h2>
+        <h2>{t({ de: "Tresor wiederherstellen", en: "Restore vault" })}</h2>
         <p className="muted">
-          Öffne eine 4AllPass-Share-Datei plus Share-Schlüssel. Danach gilt ein neues
-          Tresor-Passwort und ein neuer Recovery-Schlüssel. Der Share-Schlüssel ist nicht der
-          Recovery-Schlüssel. Ohne die Datei reicht der Recovery-Schlüssel allein nicht. / Open a
-          4AllPass share file plus share key. Then a new vault password and recovery key apply. The
-          share key is not the recovery key. The recovery key alone is not enough without the file.
+          {t({ de: "Öffne eine 4AllPass-Share-Datei plus Share-Schlüssel. Danach gilt ein neues Tresor-Passwort und ein neuer Recovery-Schlüssel. Der Share-Schlüssel ist nicht der Recovery-Schlüssel. Ohne die Datei reicht der Recovery-Schlüssel allein nicht.", en: "Open a 4AllPass share file plus share key. Then a new vault password and recovery key apply. The share key is not the recovery key. The recovery key alone is not enough without the file." })}
         </p>
         <label>
-          Share-Datei / Share file
-          <input
+          {t({ de: "Share-Datei", en: "Share file" })}
+        <input
             type="file"
             accept="application/json,.json"
             data-testid="restore-file"
@@ -59,13 +57,12 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
         {fileName ? <p className="hint">{fileName}</p> : null}
         {notShare ? (
           <p className="error-text">
-            Das ist keine 4AllPass-Share-Datei (kind 4allpass-share-v1). / This is not a 4AllPass
-            share file.
+            {t({ de: "Das ist keine 4AllPass-Share-Datei (kind 4allpass-share-v1).", en: "This is not a 4AllPass share file." })}
           </p>
         ) : null}
         <label>
-          Share-Schlüssel / Share key
-          <textarea
+          {t({ de: "Share-Schlüssel", en: "Share key" })}
+        <textarea
             value={shareKey}
             onChange={(event) => setShareKey(event.target.value)}
             rows={3}
@@ -75,8 +72,8 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
           />
         </label>
         <label>
-          Neues Tresor-Passwort / New vault password
-          <input
+          {t({ de: "Neues Tresor-Passwort", en: "New vault password" })}
+        <input
             type="password"
             autoComplete="new-password"
             value={password}
@@ -87,8 +84,8 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
           />
         </label>
         <label>
-          Wiederholen / Repeat
-          <input
+          {t({ de: "Wiederholen", en: "Repeat" })}
+        <input
             type="password"
             autoComplete="new-password"
             value={repeat}
@@ -99,22 +96,21 @@ export function RestoreVaultPage({ onBack }: { onBack: () => void }): ReactNode 
         </label>
         {mismatch ? (
           <p className="error-text">
-            Die Passwörter stimmen nicht überein. / The passwords do not match.
+            {t({ de: "Die Passwörter stimmen nicht überein.", en: "The passwords do not match." })}
           </p>
         ) : null}
         <p className="hint">
-          Die Datei bleibt auf diesem Gerät. Der Server sieht weder Datei noch Schlüssel. / The
-          file stays on this device. The server sees neither the file nor the keys.
+          {t({ de: "Die Datei bleibt auf diesem Gerät. Der Server sieht weder Datei noch Schlüssel.", en: "The file stays on this device. The server sees neither the file nor the keys." })}
         </p>
         <button
           type="submit"
           disabled={busy || mismatch || notShare || !fileText}
           data-testid="restore-vault"
         >
-          {busy ? "Tresor wird erzeugt… / Creating vault…" : "Wiederherstellen / Restore"}
+          {busy ? t({ de: "Tresor wird erzeugt…", en: "Creating vault…" }) : t({ de: "Wiederherstellen", en: "Restore" })}
         </button>
         <button type="button" className="link" onClick={onBack} data-testid="restore-back">
-          Zurück / Back
+          {t({ de: "Zurück", en: "Back" })}
         </button>
       </form>
     </div>

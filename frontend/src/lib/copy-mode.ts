@@ -26,6 +26,22 @@ export function bilingual(line: Line): string {
   return `${de} / ${en}`;
 }
 
+/**
+ * Ein Fehler, dessen Text der Nutzer zu sehen bekommt, und der deshalb beide
+ * Sprachen traegt. message bleibt bewusst verschweisst: sie landet in Logs und
+ * in Tests, nie unuebersetzt in der Oberflaeche — dort wird line durch t()
+ * gerendert.
+ */
+export class LineError extends Error {
+  readonly line: Line;
+
+  constructor(line: Line) {
+    super(`${line.de} / ${line.en}`);
+    this.name = "LineError";
+    this.line = line;
+  }
+}
+
 export function pick(mode: CopyMode, plain: Line, expert?: Line): string {
   return bilingual(mode === "expert" && expert ? expert : plain);
 }

@@ -151,14 +151,14 @@ export function AccessPanel({
         <ol className="demo-steps" data-testid="demo-steps">
           {(["read", "delete", "expire", "unknown"] as const).map((id) => (
             <li key={id} className={scene === id ? "active" : ""}>
-              {demoSceneCopy(id).title}
+              {t(demoSceneCopy(id).title)}
             </li>
           ))}
         </ol>
         <p className="hint" data-testid="demo-scene">
-          {copy.step} — {copy.title}
+          {t(copy.step)} — {t(copy.title)}
         </p>
-        <p>{copy.body}</p>
+        <p>{t(copy.body)}</p>
         {scene === "setup" ? (
           <div className="device-actions">
             <button
@@ -172,7 +172,7 @@ export function AccessPanel({
                 void onSeedDemo().finally(() => setSeeding(false));
               }}
             >
-              {seeding ? "Wird gespeichert… / Encrypting…" : copy.action}
+              {seeding ? t({ de: "Wird gespeichert…", en: "Encrypting…" }) : t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -184,7 +184,7 @@ export function AccessPanel({
               data-testid="demo-n8n-read"
               onClick={() => run(demoReadRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -196,7 +196,7 @@ export function AccessPanel({
               data-testid="demo-n8n-delete"
               onClick={() => run(demoDeleteRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -209,7 +209,7 @@ export function AccessPanel({
               disabled={!grant}
               onClick={expireNow}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -221,14 +221,14 @@ export function AccessPanel({
               data-testid="demo-unknown-app"
               onClick={() => run(demoUnknownRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
         {scene === "done" ? (
           <div className="device-actions">
             <button type="button" className="primary" data-testid="demo-replay" onClick={reset}>
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -245,7 +245,7 @@ export function AccessPanel({
         ) : null}
         {grant && live && "material" in live ? (
           <p className="hint" data-testid="demo-grant-status">
-            {grantHandoffCopy(grant.application, left)}
+            {t(grantHandoffCopy(grant.application, left))}
           </p>
         ) : null}
         {expired && grant ? (

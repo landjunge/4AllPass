@@ -72,19 +72,19 @@ export function SettingsPanel(): ReactNode {
           data-testid="launch-at-login"
           onChange={() => void toggle()}
         />
-        {LAUNCH_AT_LOGIN_LABEL}
+        {t(LAUNCH_AT_LOGIN_LABEL)}
       </label>
       <p className="hint" data-testid="launch-at-login-hint">
-        {desktop ? LAUNCH_AT_LOGIN_HINT : LAUNCH_AT_LOGIN_BROWSER}
+        {t(desktop ? LAUNCH_AT_LOGIN_HINT : LAUNCH_AT_LOGIN_BROWSER)}
       </p>
       <p className="hint" data-testid="sleep-lock-hint">
-        {SLEEP_LOCK_HINT}
+        {t(SLEEP_LOCK_HINT)}
       </p>
       <p className="hint" data-testid="uninstall-hint">
-        {UNINSTALL_HINT}
+        {t(UNINSTALL_HINT)}
       </p>
       <p className="hint" data-testid="license-hint">
-        {LICENSE_HINT}
+        {t(LICENSE_HINT)}
       </p>
       <form
         className="stack-actions"

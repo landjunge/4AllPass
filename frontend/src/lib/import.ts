@@ -1,3 +1,4 @@
+import type { Line } from "./copy-mode.ts";
 import { type EntryKind, type VaultEntry } from "./entries.ts";
 import {
   classifyImportedEntry,
@@ -23,10 +24,12 @@ export interface ImportResult {
   skipped: number;
 }
 
-const PLAINTEXT_WARNING =
-  "Diese Datei ist Klartext. Nach dem Bestätigen verschlüsselt 4AllPass die Einträge auf diesem Gerät; der Server speichert nur Chiffretext. Die Exportdatei danach löschen. / This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.";
+const PLAINTEXT_WARNING: Line = {
+  de: "Diese Datei ist Klartext. Nach dem Bestätigen verschlüsselt 4AllPass die Einträge auf diesem Gerät; der Server speichert nur Chiffretext. Die Exportdatei danach löschen.",
+  en: "This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.",
+};
 
-export function plaintextImportWarning(): string {
+export function plaintextImportWarning(): Line {
   return PLAINTEXT_WARNING;
 }
 

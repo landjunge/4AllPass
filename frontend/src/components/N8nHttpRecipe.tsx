@@ -5,8 +5,10 @@ import {
   subscribeBrokerClient,
 } from "../lib/local-broker-client.ts";
 import { n8nHttpRecipe } from "../lib/n8n-http.ts";
+import { useCopy } from "../state/copy-mode.tsx";
 
 export function N8nHttpRecipe(): ReactNode {
+  const { t } = useCopy();
   const [snap, setSnap] = useState(getBrokerClientState());
   const [copied, setCopied] = useState<"body" | "curl" | null>(null);
 
@@ -65,7 +67,7 @@ export function N8nHttpRecipe(): ReactNode {
         </p>
       ) : null}
       <p className="hint" data-testid="n8n-docker-note">
-        {recipe.dockerNote}
+        {t(recipe.dockerNote)}
       </p>
     </section>
   );

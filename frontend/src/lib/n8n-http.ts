@@ -4,11 +4,14 @@
  * The JSON body never contains the pairing token or a vault secret.
  */
 
+import type { Line } from "./copy-mode.ts";
 export const N8N_HTTP_TTL_SECONDS = 600;
 export const N8N_HTTP_PLACEHOLDER_TOKEN = "PAIRING_TOKEN";
 
-export const N8N_DOCKER_NOTE =
-  "n8n in Docker cannot reach 127.0.0.1 on the host. Use host.docker.internal from the container; the broker stays on the host. / n8n in Docker erreicht 127.0.0.1 auf dem Host nicht. Im Container host.docker.internal; der Broker bleibt auf dem Host.";
+export const N8N_DOCKER_NOTE: Line = {
+  de: "n8n in Docker erreicht 127.0.0.1 auf dem Host nicht. Im Container host.docker.internal; der Broker bleibt auf dem Host.",
+  en: "n8n in Docker cannot reach 127.0.0.1 on the host. Use host.docker.internal from the container; the broker stays on the host.",
+};
 
 export interface N8nHttpBody {
   application: "n8n";
@@ -25,7 +28,7 @@ export interface N8nHttpRecipe {
   jsonText: string;
   curl: string;
   curlDisplay: string;
-  dockerNote: string;
+  dockerNote: Line;
 }
 
 function loopbackOrigin(raw: string): string {

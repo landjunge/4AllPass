@@ -23,7 +23,7 @@ export function VaultShareDialog({
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
       <div className="card kit">
         <h2 id="share-dialog-title">{t({ de: "Diesen Login teilen", en: "Share this login" })}</h2>
-        <p>{shareWarning()}</p>
+        <p>{t(shareWarning())}</p>
         <p className="muted small">{t({ de: "Share-Schlüssel", en: "Share key" })}</p>
         <code className="mono block key" data-testid="share-key">
           {share.shareKey}

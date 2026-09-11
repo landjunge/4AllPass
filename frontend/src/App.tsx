@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useApp } from "./state/app-state.tsx";
+import { useCopy } from "./state/copy-mode.tsx";
 import { AuthPage } from "./pages/AuthPage.tsx";
 import { CreateVaultPage } from "./pages/CreateVaultPage.tsx";
 import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
@@ -21,6 +22,7 @@ export function App(): ReactNode {
     lock,
     signOut,
   } = useApp();
+  const { t } = useCopy();
   const [emptyMode, setEmptyMode] = useState<"create" | "restore">("create");
 
   if (!ready) {
@@ -70,7 +72,7 @@ export function App(): ReactNode {
 
       {error ? (
         <div className="banner error" role="alert" data-testid="error-banner">
-          <span>{error.userText}</span>
+          <span>{t(error.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
             Schließen / Dismiss
           </button>
@@ -78,7 +80,7 @@ export function App(): ReactNode {
       ) : null}
       {notice ? (
         <div className="banner notice" data-testid="notice-banner">
-          <span>{notice.userText}</span>
+          <span>{t(notice.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
             Schließen / Dismiss
           </button>

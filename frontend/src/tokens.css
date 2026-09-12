@@ -9,24 +9,31 @@
   --bg-elev: #24262d;
   --text: #e2e4e9;
   --text-muted: #8b909a;
+  /* --border trennt Flaechen (Deko). --border-strong zeichnet die Kante von
+     Bedienelementen und haelt dafuer 3:1 gegen den Hintergrund ein
+     (WCAG 2.2, 1.4.11 Non-text Contrast). */
   --border: #2e3138;
+  --border-strong: #5f646f;
   --accent: #8f98a8;
   --accent-hi: #a1a8b3;
   --ok: #3d9b6a;
   --warn: #c9a227;
   --err: #dc7070;
-  /* Keine Rundungen. Vier Schriftgroessen, mehr nicht. Gilt in allen
-     Werkzeugen — siehe Notion "Was / Wie / Warum". */
-  --text-sm: 12px;
-  --text-base: 14px;
-  --text-lg: 18px;
-  --text-xl: 24px;
+  /* Keine Rundungen. Vier Schriftgroessen, mehr nicht: 16px Grundgroesse
+     wie fuer Fliesstext im Web empfohlen, die Stufen darum herum im
+     Verhaeltnis 1.25 (grosse Terz). Gilt in allen Werkzeugen — siehe
+     Notion "Was / Wie / Warum". */
+  --text-sm: 13px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 25px;
   --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
 
   --panel: var(--bg-card);
   --panel-2: var(--bg-elev);
   --line: var(--border);
+  --line-strong: var(--border-strong);
   --muted: var(--text-muted);
   --danger: var(--err);
 }

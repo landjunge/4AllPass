@@ -139,9 +139,10 @@ input,
 select,
 textarea {
   width: 100%;
+  min-height: 32px;
   padding: 8px 10px;
   border-radius: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-strong);
   background: var(--bg-panel);
   color: var(--text);
   font: inherit;
@@ -169,9 +170,11 @@ textarea:focus {
 
 button {
   padding: 6px 12px;
-  min-height: 28px;
+  /* Mindestgroesse fuer Klick- und Tippziele. WCAG 2.2 (2.5.8) verlangt
+     24px, wir geben 32px. */
+  min-height: 32px;
   border-radius: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-strong);
   background: var(--bg-card);
   color: var(--text);
   font: inherit;

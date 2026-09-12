@@ -27,6 +27,16 @@
   --text-base: 16px;
   --text-lg: 20px;
   --text-xl: 25px;
+  /* Zwei Groessen fuer Bedienelemente, mehr gibt es nicht:
+     --control ist der Regelfall (Knopf, Eingabefeld, Auswahlmenue),
+     --control-sm die kompakte Fassung fuer dichte Zeilen und Chips.
+     Beide liegen auf dem 8er-Raster. Unter dem Finger werden beide 44px
+     gross — das ist keine dritte Groesse, sondern dieselben Elemente unter
+     einem anderen Eingabegeraet (Apple HIG, Material). Gilt in allen
+     Werkzeugen. */
+  --control: 40px;
+  --control-sm: 32px;
+  --control-touch: 44px;
   /* Dieselbe Schrift in allen Werkzeugen: die des Betriebssystems. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

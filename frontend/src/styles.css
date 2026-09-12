@@ -139,7 +139,7 @@ input,
 select,
 textarea {
   width: 100%;
-  min-height: 32px;
+  min-height: var(--control);
   padding: 8px 10px;
   border-radius: 0;
   border: 1px solid var(--border-strong);
@@ -170,9 +170,7 @@ textarea:focus {
 
 button {
   padding: 6px 12px;
-  /* Mindestgroesse fuer Klick- und Tippziele. WCAG 2.2 (2.5.8) verlangt
-     24px, wir geben 32px. */
-  min-height: 32px;
+  min-height: var(--control);
   border-radius: 0;
   border: 1px solid var(--border-strong);
   background: var(--bg-card);
@@ -561,7 +559,7 @@ form.banner {
 
 .browser-card-panel-head button {
   padding: 4px 8px;
-  min-height: 24px;
+  min-height: var(--control-sm);
   font-size: var(--text-sm);
 }
 
@@ -688,17 +686,9 @@ form.banner {
 
   .add-split .primary {
     flex: 1;
-    min-height: 44px;
-  }
-
-  .fav-star {
-    width: 44px;
-    min-height: 44px;
-    font-size: var(--text-xl);
   }
 
   .row-main {
-    min-height: 44px;
     padding: 10px 10px 10px 4px;
   }
 
@@ -709,12 +699,27 @@ form.banner {
 
   .chip {
     flex-shrink: 0;
-    min-height: 32px;
+  }
+}
+
+@media (pointer: coarse) {
+  /* Unter dem Finger werden alle Ziele 44px. Das ist die Zahl, die Apple
+     und Material dafuer nennen — kein eigener Geschmack. Der Zeiger ist das
+     richtige Signal, nicht die Fensterbreite: ein schmales Desktop-Fenster
+     ist kein Finger. */
+  button,
+  input,
+  select,
+  textarea,
+  .chip,
+  .row-main {
+    min-height: var(--control-touch);
   }
 
-  .auth button.primary,
-  .auth button[type="submit"] {
-    min-height: 44px;
+  .fav-star {
+    width: var(--control-touch);
+    min-height: var(--control-touch);
+    font-size: var(--text-xl);
   }
 }
 
@@ -796,8 +801,8 @@ form.banner {
 }
 
 .fav-star {
-  width: 32px;
-  min-height: 32px;
+  width: var(--control-sm);
+  min-height: var(--control-sm);
   margin: 4px 0 4px 4px;
   padding: 0;
   border: 0;
@@ -1107,7 +1112,7 @@ form.banner {
 }
 
 .chip {
-  min-height: 26px;
+  min-height: var(--control-sm);
   padding: 3px 10px;
   border-radius: 0;
   font-size: var(--text-sm);

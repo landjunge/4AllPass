@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCopy } from "../state/copy-mode.tsx";
 import {
   ACCESS_CHANNEL,
   auditLine,
@@ -30,6 +31,7 @@ function isWireRequest(value: unknown): value is AccessWireRequest {
 }
 
 export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactNode {
+  const { t } = useCopy();
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [pending, setPending] = useState<{
     id: string;
@@ -167,27 +169,34 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
     <>
       {audit.length > 0 ? (
         <p className="hint" data-testid="broker-last">
-          Letzte Anfrage / Last: {audit[0]?.decision} {audit[0]?.application}
+          {t({ de: "Letzte Anfrage", en: "Last request" })}: {audit[0]?.decision}{" "}
+          {audit[0]?.application}
         </p>
       ) : null}
       {pending && !desktopPrompt ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Ein Programm fragt / Access request</h2>
+            <h2>{t({ de: "Ein Programm fragt", en: "Access request" })}</h2>
             <p>
-              <strong>{pending.request.application}</strong> möchte{" "}
+              <strong>{pending.request.application}</strong>{" "}
+              {t({ de: "möchte", en: "requests" })}{" "}
               <strong>{pending.request.provider}</strong>{" "}
-              <code>{pending.request.scope.join(", ")}</code> für {pending.request.ttlSeconds}{" "}
-              Sekunden. Nach Erlauben bekommt das Programm das Secret (raw_secret). Die
-              Zeitbegrenzung holt eine Kopie nicht zurück. / After Allow the program receives the
-              secret (raw_secret). TTL cannot recall a copy.
+              <code>{pending.request.scope.join(", ")}</code>{" "}
+              {t({
+                de: `für ${pending.request.ttlSeconds} Sekunden. Nach Erlauben bekommt das Programm das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück.`,
+                en: `for ${pending.request.ttlSeconds} seconds. After Allow the program receives the secret (raw_secret). TTL cannot recall a copy.`,
+              })}
             </p>
             <p className="hint">
-              Anfrage auf diesem Rechner, nicht über den Server. / Request on this computer, not
-              FastAPI ({pending.via === "loopback" ? "127.0.0.1" : "local channel"}).
+              {t({
+                de: "Anfrage auf diesem Rechner, nicht über den Server.",
+                en: "Request on this computer, not FastAPI.",
+              })}{" "}
+              ({pending.via === "loopback" ? "127.0.0.1" : "local channel"})
             </p>
             <p className="hint" data-testid="broker-why">
-              Warum / Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
+              {t({ de: "Warum", en: "Why" })}:{" "}
+              {explainAccess({ status: "pending", entryId: "", risk: false }).why}
             </p>
             <div className="actions">
               <button
@@ -210,7 +219,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
                   finish(approvedResponse(grant));
                 }}
               >
-                Erlauben / Allow
+                {t({ de: "Erlauben", en: "Allow" })}
               </button>
               <button
                 type="button"
@@ -221,7 +230,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
                   finish(deniedResponse("denied_by_user"));
                 }}
               >
-                Ablehnen / Deny
+                {t({ de: "Ablehnen", en: "Deny" })}
               </button>
             </div>
           </div>

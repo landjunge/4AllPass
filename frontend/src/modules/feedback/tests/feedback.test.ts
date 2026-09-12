@@ -52,7 +52,8 @@ test("known security failures get distinct user-safe codes", () => {
 test("intentional app errors use catalog text instead of caller text", () => {
   const feedback = describeError(feedbackError("vault_locked"));
   assert.equal(feedback.code, "vault_locked");
-  assert.match(feedback.userText, /Tresor ist gesperrt/);
+  assert.match(feedback.userText.de, /Tresor ist gesperrt/);
+  assert.match(feedback.userText.en, /vault is locked/);
 });
 
 test("feedback state keeps existing notice semantics and clears both banners", () => {

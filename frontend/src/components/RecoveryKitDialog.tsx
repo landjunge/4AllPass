@@ -3,6 +3,10 @@ import { CLIPBOARD_CLEAR_MS, copySecret } from "../lib/clipboard.ts";
 import { useApp } from "../state/app-state.tsx";
 import { useCopy } from "../state/copy-mode.tsx";
 
+// Die Notfall-Datei bleibt bewusst zweisprachig und folgt NICHT dem
+// Sprachumschalter. Sie wird ausgedruckt und Jahre spaeter gelesen,
+// moeglicherweise von jemand anderem als dem Besitzer. Eine Sprache zu
+// verlieren hiesse hier, den Tresor zu verlieren.
 function kitText(vaultId: string, recoveryKey: string): string {
   return [
     "4AllPass Notfall-Schlüssel / emergency kit",

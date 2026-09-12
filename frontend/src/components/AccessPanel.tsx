@@ -86,9 +86,9 @@ export function AccessPanel({
     setGrant(issueGrant(pending, entry));
     setAudit((rows) => [auditLine(pending, "APPROVED"), ...rows]);
     setPending(null);
-    setFlash("Erlaubt / ACCESS GRANTED");
+    setFlash(t({ de: "Erlaubt", en: "ACCESS GRANTED" }));
     setWhy(
-      "Allow übergibt das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück. / Allow hands over the secret (raw_secret). TTL cannot recall a copy.",
+      t({ de: "Allow übergibt das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück.", en: "Allow hands over the secret (raw_secret). TTL cannot recall a copy." }),
     );
     setNowTick(Date.now());
     window.setTimeout(() => setNowTick(Date.now()), (DEMO_TTL_SECONDS + 1) * 1000);
@@ -112,7 +112,7 @@ export function AccessPanel({
       ),
       ...rows,
     ]);
-    setFlash("Zeit um / Credential expired.");
+    setFlash(t({ de: "Zeit um", en: "Credential expired." }));
     setWhy(explainDenyReason("expired"));
   }
 
@@ -145,20 +145,19 @@ export function AccessPanel({
       <section className="card">
         <h3>{t({ de: "Üben", en: "Practice" })}</h3>
         <p className="muted">
-          Vier Schritte, ohne echtes GitHub. Dieselbe Regel wie bei einer echten Anfrage. / Four
-          steps, no live GitHub. Same policy as a real request.
+          {t({ de: "Vier Schritte, ohne echtes GitHub. Dieselbe Regel wie bei einer echten Anfrage.", en: "Four steps, no live GitHub. Same policy as a real request." })}
         </p>
         <ol className="demo-steps" data-testid="demo-steps">
           {(["read", "delete", "expire", "unknown"] as const).map((id) => (
             <li key={id} className={scene === id ? "active" : ""}>
-              {demoSceneCopy(id).title}
+              {t(demoSceneCopy(id).title)}
             </li>
           ))}
         </ol>
         <p className="hint" data-testid="demo-scene">
-          {copy.step} — {copy.title}
+          {t(copy.step)} — {t(copy.title)}
         </p>
-        <p>{copy.body}</p>
+        <p>{t(copy.body)}</p>
         {scene === "setup" ? (
           <div className="device-actions">
             <button
@@ -172,7 +171,7 @@ export function AccessPanel({
                 void onSeedDemo().finally(() => setSeeding(false));
               }}
             >
-              {seeding ? "Wird gespeichert… / Encrypting…" : copy.action}
+              {seeding ? t({ de: "Wird gespeichert…", en: "Encrypting…" }) : t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -184,7 +183,7 @@ export function AccessPanel({
               data-testid="demo-n8n-read"
               onClick={() => run(demoReadRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -196,7 +195,7 @@ export function AccessPanel({
               data-testid="demo-n8n-delete"
               onClick={() => run(demoDeleteRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -209,7 +208,7 @@ export function AccessPanel({
               disabled={!grant}
               onClick={expireNow}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
@@ -221,37 +220,36 @@ export function AccessPanel({
               data-testid="demo-unknown-app"
               onClick={() => run(demoUnknownRequest())}
             >
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
         {scene === "done" ? (
           <div className="device-actions">
             <button type="button" className="primary" data-testid="demo-replay" onClick={reset}>
-              {copy.action}
+              {t(copy.action)}
             </button>
           </div>
         ) : null}
         {flash ? (
           <p className={flash.startsWith("DENIED") ? "error-text" : "ok"} data-testid="access-flash">
             {flash}
-            {expired && scene !== "expire" ? " Zeit um / Credential expired." : ""}
+            {expired && scene !== "expire" ? ` ${t({ de: "Zeit um.", en: "Credential expired." })}` : ""}
           </p>
         ) : null}
         {why ? (
           <p className="hint" data-testid="access-why">
-            Warum / Why: {why}
+            {t({ de: "Warum", en: "Why" })}: {why}
           </p>
         ) : null}
         {grant && live && "material" in live ? (
           <p className="hint" data-testid="demo-grant-status">
-            {grantHandoffCopy(grant.application, left)}
+            {t(grantHandoffCopy(grant.application, left))}
           </p>
         ) : null}
         {expired && grant ? (
           <p className="hint" data-testid="demo-expired">
-            Kein neuer Zugang. Ein schon rausgegebenes Passwort holst du nicht zurück — dann beim
-            Anbieter wechseln. / Future handoffs stop. Rotate the upstream secret to revoke a leak.
+            {t({ de: "Kein neuer Zugang. Ein schon rausgegebenes Passwort holst du nicht zurück — dann beim Anbieter wechseln.", en: "Future handoffs stop. Rotate the upstream secret to revoke a leak." })}
           </p>
         ) : null}
         {scene !== "setup" && scene !== "done" ? (
@@ -261,12 +259,11 @@ export function AccessPanel({
             data-testid="demo-next"
             onClick={() => setScene(nextDemoScene(scene))}
           >
-            Nächster Schritt / Next scene
+            {t({ de: "Nächster Schritt", en: "Next scene" })}
           </button>
         ) : null}
         <p className="hint">
-          Nur zum Üben. Alltag: ein Programm fragt, du klickst Erlauben oder Ablehnen. / Practice
-          only. Day-to-day: a program asks, you Allow or Deny.
+          {t({ de: "Nur zum Üben. Alltag: ein Programm fragt, du klickst Erlauben oder Ablehnen.", en: "Practice only. Day-to-day: a program asks, you Allow or Deny." })}
         </p>
       </section>
       <section className="card" data-testid="access-security-status">
@@ -300,10 +297,10 @@ export function AccessPanel({
         <LocalBrokerConnect />
       </details>
       <section className="card">
-        <h3>Protokoll / Audit</h3>
-        <p className="hint">Kein Passwort in diesen Zeilen. / No secret is stored in these rows.</p>
+        <h3>{t({ de: "Protokoll", en: "Audit" })}</h3>
+        <p className="hint">{t({ de: "Kein Passwort in diesen Zeilen.", en: "No secret is stored in these rows." })}</p>
         {audit.length === 0 ? (
-          <p className="muted">Noch keine Anfragen. / No access events yet.</p>
+          <p className="muted">{t({ de: "Noch keine Anfragen.", en: "No access events yet." })}</p>
         ) : (
           <ul className="devices" data-testid="access-audit">
             {audit.map((row) => (
@@ -322,23 +319,26 @@ export function AccessPanel({
       {pending ? (
         <div className="overlay" role="dialog" aria-modal="true">
           <div className="card kit">
-            <h2>Ein Programm fragt / Access request</h2>
+            <h2>{t({ de: "Ein Programm fragt", en: "Access request" })}</h2>
             <p>
-              <strong>{pending.application}</strong> möchte <strong>{pending.provider}</strong>{" "}
-              <code>{pending.scope.join(", ")}</code> für {pending.ttlSeconds} Sekunden. Nach
-              Erlauben bekommt das Programm das Secret (raw_secret). Die Zeitbegrenzung holt eine
-              Kopie nicht zurück. / requests {pending.provider} for {pending.ttlSeconds} seconds.
-              After Allow the program receives the secret (raw_secret). TTL cannot recall a copy.
+              <strong>{pending.application}</strong>{" "}
+              {t({ de: "möchte", en: "requests" })} <strong>{pending.provider}</strong>{" "}
+              <code>{pending.scope.join(", ")}</code>{" "}
+              {t({
+                de: `für ${pending.ttlSeconds} Sekunden. Nach Erlauben bekommt das Programm das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück.`,
+                en: `for ${pending.ttlSeconds} seconds. After Allow the program receives the secret (raw_secret). TTL cannot recall a copy.`,
+              })}
             </p>
             <p className="hint" data-testid="access-why-pending">
-              Warum / Why: {explainAccess({ status: "pending", entryId: "", risk: false }).why}
+              {t({ de: "Warum", en: "Why" })}:{" "}
+              {explainAccess({ status: "pending", entryId: "", risk: false }).why}
             </p>
             {pending.scope.some((scope) => /write|delete|admin/i.test(scope)) ? (
-              <p className="error-text">Hohes Risiko / High-risk capability</p>
+              <p className="error-text">{t({ de: "Hohes Risiko", en: "High-risk capability" })}</p>
             ) : null}
             <div className="actions">
               <button type="button" className="primary" data-testid="access-allow" onClick={allow}>
-                Erlauben / Allow
+                {t({ de: "Erlauben", en: "Allow" })}
               </button>
               <button
                 type="button"
@@ -351,7 +351,7 @@ export function AccessPanel({
                   setWhy(explainDenyReason("denied_by_user"));
                 }}
               >
-                Ablehnen / Deny
+                {t({ de: "Ablehnen", en: "Deny" })}
               </button>
             </div>
           </div>

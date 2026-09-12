@@ -40,7 +40,12 @@ test("empty pairing token becomes a placeholder, not an empty Bearer", () => {
 
 test("Docker note does not include a secret and names host.docker.internal", () => {
   const recipe = n8nHttpRecipe("http://127.0.0.1:8788", TOKEN);
-  assert.match(recipe.dockerNote, /host\.docker\.internal/);
-  assert.equal(recipe.dockerNote.includes(TOKEN), false);
-  assert.equal(recipe.dockerNote.includes("ghp_"), false);
+  // Jede Sprache steht seit dem Umschalter allein: der Hinweis muss in beiden
+  // vollstaendig sein und in keiner ein Secret tragen.
+  for (const text of [recipe.dockerNote.de, recipe.dockerNote.en]) {
+    assert.match(text, /host\.docker\.internal/);
+    assert.match(text, /127\.0\.0\.1/);
+    assert.equal(text.includes(TOKEN), false);
+    assert.equal(text.includes("ghp_"), false);
+  }
 });

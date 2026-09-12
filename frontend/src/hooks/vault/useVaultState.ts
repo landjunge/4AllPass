@@ -1,3 +1,4 @@
+import { LineError, type Line } from "../../lib/copy-mode.ts";
 import { useEffect, useState } from "react";
 import { generatePassword } from "../../lib/entries.ts";
 import type { BrowserLoginRow } from "../../lib/import.ts";
@@ -52,7 +53,7 @@ export function useVaultState() {
   const [share, setShare] = useState<BuiltShare | null>(null);
   const [shareImport, setShareImport] = useState<ShareImport | null>(null);
   const [paste, setPaste] = useState("");
-  const [detectedLabel, setDetectedLabel] = useState<string | null>(null);
+  const [detectedLabel, setDetectedLabel] = useState<Line | null>(null);
   const [customTemplate, setCustomTemplate] = useState("");
 
   useEffect(() => {
@@ -85,6 +86,16 @@ export function useVaultState() {
     setSelectedId(entry.id);
     setShowMore(draftHasAdvancedFields(entry));
     setDraft(draftFromEntry(entry));
+  }
+
+  function alertError(error: unknown): void {
+    // LineError traegt beide Sprachen und wird uebersetzt gezeigt. Alles
+    // andere ist technisch und bleibt, wie es kam.
+    if (error instanceof LineError) {
+      window.alert(t(error.line));
+      return;
+    }
+    window.alert(error instanceof Error ? error.message : String(error));
   }
 
   function applyDetect(text: string): void {
@@ -124,7 +135,7 @@ export function useVaultState() {
       }
       setImportPending(pendingFromEntries(parsed.entries, "plaintext"));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 
@@ -133,7 +144,7 @@ export function useVaultState() {
     try {
       setShare(createEntryShare(selected));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 
@@ -144,7 +155,7 @@ export function useVaultState() {
       setShareImport(null);
       setImportPending(pendingFromEntries(opened, "share"));
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
+      alertError(error);
     }
   }
 
@@ -201,7 +212,7 @@ export function useVaultState() {
   function ingestBrowserLogins(rows: BrowserLoginRow[]): void {
     const pending = browserLoginsToPending(rows);
     if (!pending) {
-      window.alert("Keine Passwörter gelesen. / No passwords read.");
+      window.alert(t({ de: "Keine Passwörter gelesen.", en: "No passwords read." }));
       return;
     }
     setImportPending(pending);
@@ -237,9 +248,10 @@ export function useVaultState() {
         applyDetect(text);
       })
       .catch(() => {
-        setDetectedLabel(
-          "Zwischenablage nicht lesbar. Einfügen und Erkennen. / Clipboard blocked. Paste, then Detect.",
-        );
+        setDetectedLabel({
+          de: "Zwischenablage nicht lesbar. Einfügen und Erkennen.",
+          en: "Clipboard blocked. Paste, then Detect.",
+        });
       });
   }
 
@@ -261,14 +273,14 @@ export function useVaultState() {
         ...applyTemplate(template, draft.account || "personal"),
         password: draft.password || generatePassword(),
       });
-      setDetectedLabel(
-        `Template ${template.name}. ${t({
-          de: "Speichern legt es verschlüsselt ab. Programme brauchen weiterhin Erlauben.",
-          en: "Save encrypts it. Access still needs Allow.",
-        })}`,
-      );
+      setDetectedLabel({
+        de: `Template ${template.name}. Speichern legt es verschlüsselt ab. Programme brauchen weiterhin Erlauben.`,
+        en: `Template ${template.name}. Save encrypts it. Access still needs Allow.`,
+      });
     } catch (error) {
-      setDetectedLabel(error instanceof Error ? error.message : String(error));
+      // Eine Vorlagen-Fehlermeldung ist technisch und hat keine Uebersetzung.
+      const reason = error instanceof Error ? error.message : String(error);
+      setDetectedLabel({ de: reason, en: reason });
     }
   }
 

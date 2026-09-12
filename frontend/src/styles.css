@@ -65,6 +65,30 @@ header {
   gap: 12px;
 }
 
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.lang-switch button {
+  background: none;
+  border: none;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+}
+
+.lang-switch button.is-current {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 .lock-pill {
   font-size: 13px;
   color: var(--muted);

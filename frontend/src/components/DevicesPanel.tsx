@@ -99,18 +99,15 @@ export function DevicesPanel(): ReactNode {
         ) : null}
         {prfState && prfState !== "available" ? (
           <p className="hint" data-testid="no-prf-hint">
-            Dieses Fenster hat WebAuthn-PRF nicht bewiesen (Desktop-WebView oft null). Enable fällt
-            auf largeBlob oder einen UV-gated lokalen Store zurück (Rang 2 oder 3). / This window
-            has not proven WebAuthn PRF (desktop WebView often reports none). Enabling falls back to
-            largeBlob or a UV-gated local store (rank 2 or 3).
+            {t({ de: "Dieses Fenster hat WebAuthn-PRF nicht bewiesen (Desktop-WebView oft null). Enable fällt auf largeBlob oder einen UV-gated lokalen Store zurück (Rang 2 oder 3).", en: "This window has not proven WebAuthn PRF (desktop WebView often reports none). Enabling falls back to largeBlob or a UV-gated local store (rank 2 or 3)." })}
           </p>
         ) : null}
         {mechanism === "uv_gated_local" ? (
           <p className="hint" data-testid="rank3-warning">
-            Rang 3 ist nur ein Policy-Tor, keine kryptografische Authenticator-Bindung. Face ID /
-            Touch ID gibt den Wrapping-Key in diesem Browser-Profil frei — das ist nicht PRF. / Rank
-            3 is a policy gate, not a cryptographic authenticator bind. Face ID / Touch ID releases
-            a wrapping key stored in this browser profile. That is not PRF.
+            {t({
+              de: "Rang 3 ist nur ein Policy-Tor, keine kryptografische Authenticator-Bindung. Face ID / Touch ID gibt den Wrapping-Key in diesem Browser-Profil frei — das ist nicht PRF.",
+              en: "Rank 3 is a policy gate, not a cryptographic authenticator bind. Face ID / Touch ID releases a wrapping key stored in this browser profile. That is not PRF.",
+            })}
           </p>
         ) : null}
         <p className="hint">
@@ -292,17 +289,14 @@ export function DevicesPanel(): ReactNode {
 
       {needsRecoveryKey ? (
         <section className="card">
-          <h3>Notfall-Schlüssel / Emergency kit</h3>
+          <h3>{t({ de: "Notfall-Schlüssel", en: "Emergency kit" })}</h3>
           <p className="hint">
-            Ein gestohlener Recovery Key ist vollständiger Vault-Zugriff. Nur ersetzen, wenn der
-            alte Schlüssel noch bei dir ist. Wenn er kompromittiert sein kann: Vault-Key rotieren.
-            / A stolen recovery key is full vault access. Replace the print only while you still
-            hold the old kit. If it may be stolen: rotate the vault key.
+            {t({ de: "Ein gestohlener Recovery Key ist vollständiger Vault-Zugriff. Nur ersetzen, wenn der alte Schlüssel noch bei dir ist. Wenn er kompromittiert sein kann: Vault-Key rotieren.", en: "A stolen recovery key is full vault access. Replace the print only while you still hold the old kit. If it may be stolen: rotate the vault key." })}
           </p>
           {kitAction === "none" ? (
             <div className="device-actions">
               <button type="button" onClick={() => setKitAction("trusted")} data-testid="replace-recovery-trusted">
-                Neuen Schlüssel drucken / Print a new kit
+                {t({ de: "Neuen Schlüssel drucken", en: "Print a new kit" })}
               </button>
               <button
                 type="button"
@@ -310,7 +304,7 @@ export function DevicesPanel(): ReactNode {
                 onClick={() => setKitAction("compromised")}
                 data-testid="rotate-recovery-compromised"
               >
-                Kit gestohlen / Kit may be stolen
+                {t({ de: "Kit gestohlen", en: "Kit may be stolen" })}
               </button>
             </div>
           ) : null}
@@ -329,8 +323,8 @@ export function DevicesPanel(): ReactNode {
               }}
             >
               <label>
-                Bisheriger Recovery Key / Current recovery key
-                <textarea
+                {t({ de: "Bisheriger Recovery Key", en: "Current recovery key" })}
+              <textarea
                   value={oldKitText}
                   onChange={(event) => setOldKitText(event.target.value)}
                   rows={3}
@@ -339,11 +333,11 @@ export function DevicesPanel(): ReactNode {
                 />
               </label>
               <p className="hint">
-                Gleiche Vault-Key-Generation, neuer Druck. / Same vault-key generation, new print.
+                {t({ de: "Gleiche Vault-Key-Generation, neuer Druck.", en: "Same vault-key generation, new print." })}
               </p>
               <div className="device-actions">
                 <button type="submit" disabled={busy} data-testid="confirm-trusted-recovery">
-                  {busy ? "…" : "Neuen Schlüssel erzeugen / Mint new kit"}
+                  {busy ? "…" : t({ de: "Neuen Schlüssel erzeugen", en: "Mint new kit" })}
                 </button>
                 <button type="button" className="link" onClick={() => setKitAction("none")}>
                   {t({ de: "Abbrechen", en: "Cancel" })}
@@ -379,8 +373,8 @@ export function DevicesPanel(): ReactNode {
                 />
               </label>
               <label>
-                Alter Recovery Key, falls noch da / Previous kit if you still have it
-                <textarea
+                {t({ de: "Alter Recovery Key, falls noch da", en: "Previous kit if you still have it" })}
+              <textarea
                   value={oldKitText}
                   onChange={(event) => setOldKitText(event.target.value)}
                   rows={3}
@@ -388,8 +382,7 @@ export function DevicesPanel(): ReactNode {
                 />
               </label>
               <p className="hint">
-                Erzwingt eine neue Vault-Key-Generation. Der alte Druck öffnet VK₂ nicht. / Forces a
-                new vault-key generation. The stolen print cannot open VK₂.
+                {t({ de: "Erzwingt eine neue Vault-Key-Generation. Der alte Druck öffnet VK₂ nicht.", en: "Forces a new vault-key generation. The stolen print cannot open VK₂." })}
               </p>
               <div className="device-actions">
                 <button type="submit" className="danger" disabled={busy} data-testid="confirm-compromised-recovery">

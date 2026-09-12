@@ -143,10 +143,10 @@ export function AuthPage(): ReactNode {
         </p>
         <button type="submit" className="primary" disabled={busy} data-testid="auth-submit">
           {busy
-            ? "Einen Moment… / One moment…"
+            ? t({ de: "Einen Moment…", en: "One moment…" })
             : mode === "sign-in"
-              ? "Anmelden / Sign in"
-              : "Konto anlegen / Create account"}
+              ? t({ de: "Anmelden", en: "Sign in" })
+              : t({ de: "Konto anlegen", en: "Create account" })}
         </button>
         <button
           type="button"
@@ -155,8 +155,8 @@ export function AuthPage(): ReactNode {
           onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
         >
           {mode === "sign-in"
-            ? "Noch kein Konto? / Need an account?"
-            : "Schon ein Konto? / Already have an account?"}
+            ? t({ de: "Noch kein Konto?", en: "Need an account?" })
+            : t({ de: "Schon ein Konto?", en: "Already have an account?" })}
         </button>
       </form>
     </div>

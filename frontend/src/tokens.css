@@ -27,6 +27,9 @@
   --text-base: 16px;
   --text-lg: 20px;
   --text-xl: 25px;
+  /* Dieselbe Schrift in allen Werkzeugen: die des Betriebssystems. */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
 

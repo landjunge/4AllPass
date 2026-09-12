@@ -18,7 +18,7 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: var(--text-base)/1.5 var(--font);
 }
 
 .app {
@@ -267,7 +267,7 @@ button.link {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
 }
 
 pre.mono {
@@ -455,7 +455,7 @@ form.banner {
 
 .revision {
   margin-left: auto;
-  font: 500 12px/1 ui-monospace, monospace;
+  font: 500 var(--text-sm)/1 var(--font-mono);
   color: var(--muted);
 }
 

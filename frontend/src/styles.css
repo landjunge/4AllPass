@@ -69,17 +69,17 @@ header {
   display: inline-flex;
   gap: 2px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 0;
   padding: 2px;
 }
 
 .lang-switch button {
   background: none;
   border: none;
-  border-radius: 999px;
+  border-radius: 0;
   color: var(--muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-sm);
   letter-spacing: 0.04em;
   padding: 3px 9px;
 }
@@ -90,7 +90,7 @@ header {
 }
 
 .lock-pill {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -110,7 +110,7 @@ main {
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   padding: 18px 20px;
   box-shadow: var(--shadow-soft);
 }
@@ -131,7 +131,7 @@ h3 {
 label {
   display: grid;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -140,11 +140,24 @@ select,
 textarea {
   width: 100%;
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   border: 1px solid var(--line);
   background: var(--bg-panel);
   color: var(--text);
   font: inherit;
+}
+
+select {
+  /* Ohne das zeichnet das Betriebssystem das Menue selbst — eigener Rahmen,
+     eigene Schrift, unter Windows mit 3D-Effekt. Pfeil deshalb selbst. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+                    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
 input:focus,
@@ -157,12 +170,12 @@ textarea:focus {
 button {
   padding: 6px 12px;
   min-height: 28px;
-  border-radius: 3px;
+  border-radius: 0;
   border: 1px solid var(--line);
   background: var(--bg-card);
   color: var(--text);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -213,11 +226,11 @@ button.link {
 }
 
 .small {
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .hint {
-  font-size: 12px;
+  font-size: var(--text-sm);
   line-height: 1.35;
   color: var(--muted);
   margin: 0;
@@ -247,7 +260,7 @@ button.link {
 .error-text {
   color: var(--danger);
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .mono {
@@ -257,7 +270,7 @@ button.link {
 pre.mono {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .block {
@@ -265,7 +278,7 @@ pre.mono {
   padding: 10px 12px;
   background: var(--bg-panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   word-break: break-all;
 }
 
@@ -275,7 +288,7 @@ pre.mono {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .banner.error {
@@ -302,7 +315,7 @@ form.banner {
 .divider {
   text-align: center;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .vault {
@@ -317,7 +330,7 @@ form.banner {
 }
 
 .vault-hero h2 {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   font-weight: 560;
 }
 
@@ -345,7 +358,7 @@ form.banner {
   list-style: none;
   cursor: pointer;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   padding: 8px 10px;
 }
 
@@ -356,7 +369,7 @@ form.banner {
   display: grid;
   background: var(--bg-elev);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   min-width: 10rem;
   z-index: 4;
   padding: 6px;
@@ -393,7 +406,7 @@ form.banner {
 }
 
 .tech-dl dt {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -427,7 +440,7 @@ form.banner {
 }
 
 .history-preview li {
-  font-size: 14px;
+  font-size: var(--text-base);
   overflow-wrap: anywhere;
 }
 
@@ -457,7 +470,7 @@ form.banner {
 
 .browser-card {
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--bg-elev);
   overflow: hidden;
   min-width: 0;
@@ -514,7 +527,7 @@ form.banner {
 }
 
 .browser-card-status {
-  font-size: 12px;
+  font-size: var(--text-sm);
   line-height: 1.25;
 }
 
@@ -531,7 +544,7 @@ form.banner {
   margin: 0 0 8px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--bg-panel);
 }
 
@@ -546,12 +559,12 @@ form.banner {
 .browser-card-panel-head button {
   padding: 4px 8px;
   min-height: 24px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .compact-hint {
   margin: 0 0 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .browser-ext {
@@ -564,14 +577,14 @@ form.banner {
   margin-top: 12px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   background: var(--bg-elev);
 }
 
 .browser-install-hint code {
   display: block;
   margin-top: 6px;
-  font-size: 11px;
+  font-size: var(--text-sm);
   word-break: break-all;
 }
 
@@ -678,7 +691,7 @@ form.banner {
   .fav-star {
     width: 44px;
     min-height: 44px;
-    font-size: 22px;
+    font-size: var(--text-xl);
   }
 
   .row-main {
@@ -716,9 +729,9 @@ form.banner {
   cursor: pointer;
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--bg-card);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .import-file input {
@@ -745,7 +758,7 @@ form.banner {
   align-items: stretch;
   text-align: left;
   padding: 4px 4px 4px 2px;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--bg-panel);
   border: 1px solid var(--line);
 }
@@ -787,7 +800,7 @@ form.banner {
   border: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 18px;
+  font-size: var(--text-lg);
   line-height: 1;
 }
 
@@ -858,7 +871,7 @@ form.banner {
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--bg-panel);
 }
 
@@ -879,7 +892,7 @@ form.banner {
   margin: 8px 0 12px;
   padding-left: 22px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .demo-steps .active {
@@ -893,7 +906,7 @@ form.banner {
   margin-top: 16px;
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--bg-panel);
 }
 
@@ -905,10 +918,10 @@ form.banner {
   display: inline-block;
   margin-left: 8px;
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: 0;
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 
 .overlay {
@@ -931,7 +944,7 @@ form.banner {
   max-height: 240px;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   padding: 8px;
 }
 
@@ -971,10 +984,10 @@ form.banner {
   place-items: center;
   width: 16px;
   height: 16px;
-  border-radius: 3px;
+  border-radius: 0;
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-sm);
   line-height: 1;
   cursor: help;
   position: relative;
@@ -991,11 +1004,11 @@ form.banner {
   background: var(--bg-elev, var(--bg-card));
   border: 1px solid var(--border, var(--line));
   color: var(--text, var(--fg));
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.35;
   padding: 6px 8px;
-  border-radius: 3px;
+  border-radius: 0;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
 }
 
@@ -1008,7 +1021,7 @@ form.banner {
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   background: var(--bg-elev);
   border: 1px solid var(--line);
 }
@@ -1039,7 +1052,7 @@ form.banner {
 }
 
 .row-meta {
-  font-size: 12px;
+  font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1048,10 +1061,10 @@ form.banner {
 .kind-badge {
   flex-shrink: 0;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
@@ -1093,8 +1106,8 @@ form.banner {
 .chip {
   min-height: 26px;
   padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+  border-radius: 0;
+  font-size: var(--text-sm);
 }
 
 .chip.active {
@@ -1111,18 +1124,18 @@ form.banner {
   margin-top: 10px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel));
 }
 
 .health-number {
   margin: 0 0 4px;
-  font-size: 1.6rem;
+  font-size: var(--text-xl);
   color: var(--accent-hi);
 }
 
 .health-number span {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   color: var(--muted);
 }
 
@@ -1140,7 +1153,7 @@ form.banner {
 
 .list-section-title {
   margin: 0 0 6px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1148,9 +1161,9 @@ form.banner {
 }
 
 .issue-pill {
-  font-size: 10px;
+  font-size: var(--text-sm);
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid var(--line);
 }
 
@@ -1166,7 +1179,7 @@ form.banner {
 
 .form-step {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--accent-hi);
@@ -1190,7 +1203,7 @@ form.banner {
 
 .strength {
   margin: -4px 0 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .strength-weak {
@@ -1214,7 +1227,7 @@ form.banner {
 
 .vault-empty .empty {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .vault-detail-empty .empty-actions {
@@ -1232,11 +1245,11 @@ form.banner {
   text-align: left;
   min-height: 5.5rem;
   padding: 12px 14px;
-  border-radius: var(--radius-md);
+  border-radius: 0;
 }
 
 .empty-action span {
-  font-size: 12px;
+  font-size: var(--text-sm);
   line-height: 1.35;
   color: var(--muted);
   font-weight: 400;
@@ -1247,7 +1260,7 @@ form.banner {
 }
 
 .kit .key {
-  font-size: 15px;
+  font-size: var(--text-base);
   letter-spacing: 0.06em;
   line-height: 1.8;
 }
@@ -1257,7 +1270,7 @@ form.banner {
   align-items: center;
   gap: 8px;
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .checkbox input {

@@ -15,9 +15,12 @@
   --ok: #3d9b6a;
   --warn: #c9a227;
   --err: #dc7070;
-  --radius-sm: 3px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
+  /* Keine Rundungen. Vier Schriftgroessen, mehr nicht. Gilt in allen
+     Werkzeugen — siehe Notion "Was / Wie / Warum". */
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 18px;
+  --text-xl: 24px;
   --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
 

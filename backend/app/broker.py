@@ -133,6 +133,12 @@ async def broker_decide(request: Request) -> Response:
     if not isinstance(body, dict):
         body = {"status": "denied", "reason": "malformed_request"}
     fut.set_result(body)
+    try:
+        from app.authority_emit import emit_from_decide
+
+        emit_from_decide(req_id, body)
+    except Exception:
+        pass
     return JSONResponse({"ok": True}, headers={"cache-control": "no-store"})
 
 

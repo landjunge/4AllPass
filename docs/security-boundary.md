@@ -447,6 +447,9 @@ profile also serves the **same relay** on this process
 (`POST /v1/access/request` on `http://127.0.0.1:8788`). That route is a pairing
 queue, not a token mint: the server never decrypts, never invents a GitHub
 secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
+Optional G5: `FOURALLPASS_AUTHORITY_EVENTS=1` appends capability granted/denied/revoked
+metadata to JSONL. The envelope must not contain `access_token`, passwords, or vault
+bytes. Off under pytest unless that flag is set.
 Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing token required.
 `GET /v1/broker/poll` returns 204 if the UI disconnects. A closed tab must not
 dequeue the next grant. The unlocked UI aborts its poll fetch on unmount.

@@ -83,10 +83,14 @@ test("redacted token never contains the secret body", () => {
 
 test("grant UI copy never includes the secret or a prefix", () => {
   const shown = grantHandoffCopy("n8n", 12);
-  assert.equal(shown.includes(DEMO_DUMMY_TOKEN), false);
-  assert.equal(shown.includes("ghp_"), false);
-  assert.match(shown, /n8n/);
-  assert.match(shown, /12s left/);
+  const both = `${shown.de} ${shown.en}`;
+  assert.equal(both.includes(DEMO_DUMMY_TOKEN), false);
+  assert.equal(both.includes("ghp_"), false);
+  // Jede Sprache muss allein tragen: Programmname und Restzeit in beiden.
+  assert.match(shown.de, /n8n/);
+  assert.match(shown.en, /n8n/);
+  assert.match(shown.de, /12s/);
+  assert.match(shown.en, /12s left/);
 });
 
 test("remaining seconds hits zero at expiry", () => {
@@ -101,13 +105,22 @@ test("scene copy does not include the dummy token", () => {
   }
 });
 
-test("scene copy is German first and keeps the English e2e phrases", () => {
+test("scene copy keeps both languages separable and complete", () => {
   const setup = demoSceneCopy("setup");
-  assert.match(setup.title, /Need a GitHub credential/);
-  assert.match(setup.body, /Tresor|Gerät/);
+  assert.match(setup.title.en, /Need a GitHub credential/);
+  assert.match(setup.body.de, /Tresor|Gerät/);
   const read = demoSceneCopy("read");
-  assert.match(read.title, /n8n asks GitHub repository.read/);
-  assert.match(read.body, /raw_secret_handoff/);
+  assert.match(read.title.en, /n8n asks GitHub repository.read/);
+  assert.match(read.body.de, /raw_secret_handoff/);
+  assert.match(read.body.en, /raw_secret_handoff/);
   const grant = grantHandoffCopy("n8n", 12);
-  assert.match(grant, /darf noch/);
+  assert.match(grant.de, /darf noch/);
+  // Kein Feld darf in einer Sprache leer bleiben.
+  for (const id of ["setup", "read", "delete", "expire", "unknown", "done"] as const) {
+    const copy = demoSceneCopy(id);
+    for (const line of [copy.step, copy.title, copy.body, copy.action]) {
+      assert.ok(line.de.trim().length > 0, `de fehlt in ${id}`);
+      assert.ok(line.en.trim().length > 0, `en fehlt in ${id}`);
+    }
+  }
 });

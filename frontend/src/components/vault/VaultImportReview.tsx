@@ -46,7 +46,7 @@ export function VaultImportReview({
                   de: "macOS hat den Zugriff erlaubt. Bestätigen legt die Logins verschlüsselt in deinen Tresor. Der Server sieht sie nicht.",
                   en: "macOS granted access. Confirm encrypts into your vault. The server never sees them.",
                 })
-              : plaintextImportWarning()}
+              : t(plaintextImportWarning())}
         </p>
         <div className="import-review" data-testid="import-review">
           <p className="muted">

@@ -4,6 +4,9 @@
 **Für:** Daniel Filipek (landjunge) + Agents  
 **Status:** Verbindlich für Solo- und Agent-Entwicklung
 
+Wie die Arbeit bis zum PR kommt und was beim Review/Mergen zu tun ist:
+[`dev-workflow.md`](dev-workflow.md).
+
 ## Prinzipien
 
 - `main` ist immer grün und das Produkt.

@@ -13,7 +13,6 @@ mod prompts;
 mod secret_fs;
 mod sidecar_http;
 mod sleep;
-mod sleep_stall;
 mod tray;
 
 use loopback::{prepare_loopback_core, wait_our_core};

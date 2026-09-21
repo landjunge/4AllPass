@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useCopy } from "../state/copy-mode.tsx";
 import {
   DEFAULT_BROKER_URL,
   connectLocalBroker,
@@ -8,6 +9,7 @@ import {
 } from "../lib/local-broker-client.ts";
 
 export function LocalBrokerConnect(): ReactNode {
+  const { t } = useCopy();
   const [url, setUrl] = useState(DEFAULT_BROKER_URL);
   const [token, setToken] = useState("");
   const [snap, setSnap] = useState(getBrokerClientState());
@@ -16,16 +18,13 @@ export function LocalBrokerConnect(): ReactNode {
 
   return (
     <section className="card" data-testid="local-broker">
-      <h3>Verbindung für Programme / Program connection</h3>
+      <h3>{t({ de: "Verbindung für Programme", en: "Program connection" })}</h3>
       <p className="muted">
-        Nur wenn ein Programm auf diesem Rechner fragen soll. Solange der Tresor offen ist, nimmt
-        4AllPass die Frage entgegen. Der Server sieht kein Passwort. / Only if a program on this
-        computer should ask. While the vault is unlocked, 4AllPass takes the question. The server
-        never sees the password.
+        {t({ de: "Nur wenn ein Programm auf diesem Rechner fragen soll. Solange der Tresor offen ist, nimmt 4AllPass die Frage entgegen. Der Server sieht kein Passwort.", en: "Only if a program on this computer should ask. While the vault is unlocked, 4AllPass takes the question. The server never sees the password." })}
       </p>
       <label>
-        Adresse / Broker URL
-        <input
+        {t({ de: "Adresse", en: "Broker URL" })}
+      <input
           value={url}
           onChange={(event) => setUrl(event.target.value)}
           data-testid="broker-url"
@@ -33,8 +32,8 @@ export function LocalBrokerConnect(): ReactNode {
         />
       </label>
       <label>
-        Koppel-Code / Pairing token
-        <input
+        {t({ de: "Koppel-Code", en: "Pairing token" })}
+      <input
           value={token}
           onChange={(event) => setToken(event.target.value)}
           data-testid="broker-token"
@@ -44,7 +43,7 @@ export function LocalBrokerConnect(): ReactNode {
       <div className="actions">
         {snap.status === "live" || snap.status === "connecting" ? (
           <button type="button" data-testid="broker-disconnect" onClick={() => disconnectLocalBroker()}>
-            Trennen / Disconnect
+            {t({ de: "Trennen", en: "Disconnect" })}
           </button>
         ) : (
           <button
@@ -53,18 +52,18 @@ export function LocalBrokerConnect(): ReactNode {
             data-testid="broker-connect"
             onClick={() => connectLocalBroker(url, token)}
           >
-            Verbinden / Connect
+            {t({ de: "Verbinden", en: "Connect" })}
           </button>
         )}
       </div>
       <p className="hint" data-testid="broker-status">
         {snap.status === "off"
-          ? "aus / off"
+          ? t({ de: "aus", en: "off" })
           : snap.status === "live"
-            ? "verbunden — Tresor hört auf diesem Rechner / live — vault is polling 127.0.0.1"
+            ? t({ de: "verbunden — Tresor hört auf diesem Rechner", en: "live — vault is polling 127.0.0.1" })
             : snap.status === "connecting"
-              ? "verbindet… / connecting…"
-              : snap.error || "Fehler / error"}
+              ? t({ de: "verbindet…", en: "connecting…" })
+              : snap.error || t({ de: "Fehler", en: "error" })}
       </p>
     </section>
   );

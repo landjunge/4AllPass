@@ -1,6 +1,7 @@
 /**
  * Selective item share for protocol v1: a portable snapshot, not a server ACL.
  */
+import type { Line } from "../../lib/copy-mode.ts";
 import {
   buildManifest,
   bytesToHex,
@@ -45,10 +46,12 @@ export interface BuiltShare {
 
 const VAULT_KEY_VERSION = 1;
 
-export const SHARE_WARNING =
-  "Das verschlüsselt die gewählten Logins in eine Datei plus Share-Schlüssel. 4AllPass sieht keines von beiden. Wer beides hat, kann diese Logins lesen. Eine Kopie holst du nicht zurück. / This encrypts the chosen logins into a file plus a share key. 4AllPass never sees either. Anyone with both can read those logins. You cannot take a copy back.";
+export const SHARE_WARNING: Line = {
+  de: "Das verschlüsselt die gewählten Logins in eine Datei plus Share-Schlüssel. 4AllPass sieht keines von beiden. Wer beides hat, kann diese Logins lesen. Eine Kopie holst du nicht zurück.",
+  en: "This encrypts the chosen logins into a file plus a share key. 4AllPass never sees either. Anyone with both can read those logins. You cannot take a copy back.",
+};
 
-export function shareWarning(): string {
+export function shareWarning(): Line {
   return SHARE_WARNING;
 }
 

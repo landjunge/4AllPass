@@ -9,7 +9,9 @@ import {
 } from "./import.ts";
 
 test("warns that the file is plaintext", () => {
-  assert.match(plaintextImportWarning(), /plaintext/i);
+  const warning = plaintextImportWarning();
+  assert.match(warning.de, /Klartext/i);
+  assert.match(warning.en, /plaintext/i);
 });
 
 test("refuses a 4AllPass share file on the plaintext path", () => {

@@ -1,3 +1,4 @@
+import type { Line } from "../../lib/copy-mode.ts";
 import type { ReactNode } from "react";
 import { TotpCode } from "../TotpCode.tsx";
 import { BUILTIN_TEMPLATES } from "../../lib/providers.ts";
@@ -100,7 +101,7 @@ export function VaultEntryForm({
   revealPassword: boolean;
   copied: string | null;
   paste: string;
-  detectedLabel: string | null;
+  detectedLabel: Line | null;
   customTemplate: string;
   clipboardClearSeconds: number;
   onChange: (draft: EntryDraft) => void;
@@ -408,7 +409,7 @@ export function VaultEntryForm({
         </div>
         {detectedLabel ? (
           <p className="ok" data-testid="detect-label">
-            {detectedLabel}
+            {t(detectedLabel)}
           </p>
         ) : null}
         <div className="tabs">

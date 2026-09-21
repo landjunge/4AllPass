@@ -39,3 +39,13 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Already in the tree via Tauri; declared here so the sleep watcher can use
+# them directly, pinned to the versions Tauri already resolved. The NSWorkspace
+# feature does pull in one crate that was not there before,
+# objc2-core-video 0.3.2 — same family, same version line, same authors as the
+# eight objc2-* crates Tauri already depends on.
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "=0.6.2"
+objc2-app-kit = { version = "=0.3.2", features = ["NSWorkspace"] }
+objc2-foundation = { version = "=0.3.2", features = ["NSNotification", "NSOperation", "NSString"] }

@@ -1,3 +1,4 @@
+import { LineError } from "../../lib/copy-mode.ts";
 import {
   buildSharePackage,
   downloadShareFile,
@@ -13,7 +14,10 @@ export function createEntryShare(entry: VaultEntry): BuiltShare {
 export function decryptSharePackage(text: string, key: string): VaultEntry[] {
   const opened = openSharePackage(text, key);
   if (opened.length === 0) {
-    throw new Error("Share-Datei ohne Logins. / share file had no logins");
+    throw new LineError({
+      de: "Share-Datei ohne Logins.",
+      en: "The share file had no logins.",
+    });
   }
   return opened;
 }

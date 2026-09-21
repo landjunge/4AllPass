@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { useApp } from "./state/app-state.tsx";
+import { useCopy } from "./state/copy-mode.tsx";
 import { AuthPage } from "./pages/AuthPage.tsx";
 import { CreateVaultPage } from "./pages/CreateVaultPage.tsx";
 import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
+import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 
@@ -21,12 +23,13 @@ export function App(): ReactNode {
     lock,
     signOut,
   } = useApp();
+  const { t } = useCopy();
   const [emptyMode, setEmptyMode] = useState<"create" | "restore">("create");
 
   if (!ready) {
     return (
       <div className="centered">
-        <p className="muted">Laden… / Loading…</p>
+        <p className="muted">{t({ de: "Laden…", en: "Loading…" })}</p>
       </div>
     );
   }
@@ -37,6 +40,7 @@ export function App(): ReactNode {
         <span className="brand">
           <img src="/logo.png" alt="4AllPass" />
         </span>
+        <LanguageSwitch />
         {email ? (
           <div className="header-actions">
             {email === "local@127.0.0.1" ? null : (
@@ -50,18 +54,18 @@ export function App(): ReactNode {
             {vaults.length > 0 ? (
               <span className="lock-pill" aria-hidden="true">
                 {lockState === "UNLOCKED"
-                  ? "🔓 Tresor geöffnet / Vault open"
-                  : "🔒 Gesperrt / Locked"}
+                  ? t({ de: "🔓 Tresor geöffnet", en: "Vault open" })
+                  : t({ de: "🔒 Gesperrt", en: "Locked" })}
               </span>
             ) : null}
             {lockState === "UNLOCKED" ? (
               <button type="button" className="primary" onClick={lock} data-testid="lock">
-                Sperren / Lock
+                {t({ de: "Sperren", en: "Lock" })}
               </button>
             ) : null}
             {email !== "local@127.0.0.1" ? (
               <button type="button" className="link" onClick={() => void signOut()}>
-                Abmelden / Sign out
+                {t({ de: "Abmelden", en: "Sign out" })}
               </button>
             ) : null}
           </div>
@@ -70,17 +74,17 @@ export function App(): ReactNode {
 
       {error ? (
         <div className="banner error" role="alert" data-testid="error-banner">
-          <span>{error.userText}</span>
+          <span>{t(error.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Schließen / Dismiss
+            {t({ de: "Schließen", en: "Dismiss" })}
           </button>
         </div>
       ) : null}
       {notice ? (
         <div className="banner notice" data-testid="notice-banner">
-          <span>{notice.userText}</span>
+          <span>{t(notice.userText)}</span>
           <button type="button" className="link" onClick={clearMessages}>
-            Schließen / Dismiss
+            {t({ de: "Schließen", en: "Dismiss" })}
           </button>
         </div>
       ) : null}

@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { parseOtpauth, totpFromBase32, totpRemaining } from "../lib/totp.ts";
+import { useCopy } from "../state/copy-mode.tsx";
 
 export function TotpCode({ secret }: { secret: string }): ReactNode {
+  const { t } = useCopy();
   const [code, setCode] = useState("");
   const [left, setLeft] = useState(30);
 
@@ -28,7 +30,7 @@ export function TotpCode({ secret }: { secret: string }): ReactNode {
   }, [secret]);
 
   if (!code) {
-    return <p className="error-text">TOTP-Secret ungültig / invalid TOTP secret</p>;
+    return <p className="error-text">{t({ de: "TOTP-Secret ungültig", en: "invalid TOTP secret" })}</p>;
   }
   return (
     <p className="ok" data-testid="totp-code">

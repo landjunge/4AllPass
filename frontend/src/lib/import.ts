@@ -1,3 +1,4 @@
+import { LineError, type Line } from "./copy-mode.ts";
 import { type EntryKind, type VaultEntry } from "./entries.ts";
 import {
   classifyImportedEntry,
@@ -23,10 +24,12 @@ export interface ImportResult {
   skipped: number;
 }
 
-const PLAINTEXT_WARNING =
-  "Diese Datei ist Klartext. Nach dem Bestätigen verschlüsselt 4AllPass die Einträge auf diesem Gerät; der Server speichert nur Chiffretext. Die Exportdatei danach löschen. / This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.";
+const PLAINTEXT_WARNING: Line = {
+  de: "Diese Datei ist Klartext. Nach dem Bestätigen verschlüsselt 4AllPass die Einträge auf diesem Gerät; der Server speichert nur Chiffretext. Die Exportdatei danach löschen.",
+  en: "This file is plaintext. After you confirm, 4AllPass encrypts the entries on this device and the server only stores ciphertext. Delete the export file.",
+};
 
-export function plaintextImportWarning(): string {
+export function plaintextImportWarning(): Line {
   return PLAINTEXT_WARNING;
 }
 
@@ -409,15 +412,17 @@ function parseKeepassXml(text: string): ImportResult | null {
 /** Parse a plaintext password export. The file is never sent to the server. */
 export function parsePlaintextExport(text: string): ImportResult {
   if (text.startsWith("PK") || text.includes("\0")) {
-    throw new Error(
-      "Diese Datei wirkt verschlüsselt oder gezippt. 1Password als JSON exportieren (oder .1pux entpacken und export.data importieren). KeePass als XML oder CSV, nicht .kdbx. / This file looks encrypted or zipped. Export 1Password as JSON (or unzip .1pux and import export.data). Export KeePass as XML or CSV, not .kdbx.",
-    );
+    throw new LineError({
+      de: "Diese Datei wirkt verschlüsselt oder gezippt. 1Password als JSON exportieren (oder .1pux entpacken und export.data importieren). KeePass als XML oder CSV, nicht .kdbx.",
+      en: "This file looks encrypted or zipped. Export 1Password as JSON (or unzip .1pux and import export.data). Export KeePass as XML or CSV, not .kdbx.",
+    });
   }
   const trimmed = text.trim();
   if (looksLikeSharePackage(trimmed)) {
-    throw new Error(
-      "Das ist eine 4AllPass-Share-Datei, kein Klartext-Export. Über die Dateiauswahl importieren und den Share-Schlüssel eingeben. / This is a 4AllPass share file, not a plaintext export. Import it and enter the share key.",
-    );
+    throw new LineError({
+      de: "Das ist eine 4AllPass-Share-Datei, kein Klartext-Export. Über die Dateiauswahl importieren und den Share-Schlüssel eingeben.",
+      en: "This is a 4AllPass share file, not a plaintext export. Import it and enter the share key.",
+    });
   }
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     const parsed = JSON.parse(trimmed) as unknown;
@@ -427,9 +432,10 @@ export function parsePlaintextExport(text: string): ImportResult {
     if (onepassword) return onepassword;
     const provider = entriesFromProviderJson(parsed);
     if (provider) return { format: "provider-json", entries: provider, skipped: 0 };
-    throw new Error(
-      "JSON ist kein Bitwarden-, 1Password- oder Provider-Export. / JSON is not a Bitwarden, 1Password, or provider-key export",
-    );
+    throw new LineError({
+      de: "JSON ist kein Bitwarden-, 1Password- oder Provider-Export.",
+      en: "JSON is not a Bitwarden, 1Password, or provider-key export.",
+    });
   }
   const keepass = parseKeepassXml(trimmed);
   if (keepass) return keepass;

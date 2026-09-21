@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>4AllPass herunterladen | Netzwerkpunkt</title>
+  <meta name="description" content="4AllPass für macOS, Windows und Linux. Direkter Download mit SHA-256-Prüfsumme.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://4allpass.netzwerkpunkt.de/download.html"><meta name="theme-color" content="#0a0c0b">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://4allpass.netzwerkpunkt.de/download.html">
+  <meta property="og:title" content="4AllPass herunterladen"><meta property="og:description" content="Für macOS, Windows und Linux. Direkter Download mit SHA-256-Prüfsumme.">
+  <meta property="og:site_name" content="Netzwerkpunkt"><meta property="og:locale" content="de_DE">
+  <link rel="icon" href="https://netzwerkpunkt.de/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://netzwerkpunkt.de/hub.css?v=20260826-products">
+  <style>
+    /* Scoped to this page. hub.css is shared and not edited from here. */
+    /* lang="de" is set, so let the browser hyphenate properly instead of
+       snapping a lone "n" onto its own line. */
+    .download-page h1 { hyphens: auto; overflow-wrap: break-word; }
+    .download-page .actions { flex-wrap: wrap; }
+    .download-page .actions .button { max-width: 100%; }
+    .download-page #file-info,
+    .download-page #verify-cmd { overflow-wrap: anywhere; }
+    /* Five columns never fit a phone: let the table scroll, not the page. */
+    .download-page .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .download-page .table-scroll table { min-width: 34rem; }
+    .download-page pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body class="product-page vault-page download-page">
+<header class="topbar">
+  <a class="brand" href="https://netzwerkpunkt.de/" aria-label="Zur Netzwerkpunkt-Startseite"><img src="https://netzwerkpunkt.de/favicon.svg" width="25" height="25" alt=""><span>Netzwerkpunkt</span></a>
+  <nav aria-label="Seitennavigation"><a href="/">4AllPass</a><a class="nav-cta" href="https://netzwerkpunkt.de/">Alle Produkte ↗</a></nav>
+</header>
+<main>
+
+<section class="product-hero">
+  <div>
+    <h1>4AllPass herunterladen</h1>
+    <p class="intro" id="lead">Wird geladen…</p>
+    <div class="actions">
+      <a class="button primary" id="main-download" href="https://github.com/landjunge/4AllPass/releases/tag/desktop">Download <span>↗</span></a>
+      <a class="button secondary" href="https://github.com/landjunge/4AllPass/releases/tag/desktop">Alle Dateien auf GitHub <span>↗</span></a>
+    </div>
+    <p class="hint" id="file-info"></p>
+  </div>
+</section>
+
+<section id="gatekeeper" hidden>
+  <h2>Was dein Mac beim ersten Start sagt</h2>
+  <p>
+    4AllPass ist noch <strong>nicht von Apple beglaubigt</strong> — das Entwickler-Abo
+    kostet Geld und ist derzeit pausiert. macOS meldet deshalb beim ersten Öffnen,
+    die App sei von einem „nicht verifizierten Entwickler“ oder „beschädigt“.
+  </p>
+  <p>
+    <strong>So startest du sie trotzdem:</strong> Im Finder auf 4AllPass
+    <strong>rechtsklicken → Öffnen</strong>, dann im Dialog nochmal <strong>Öffnen</strong>.
+    Nur beim ersten Mal nötig.
+  </p>
+  <p class="hint">
+    Das ist kein Trick, um eine Warnung zu umgehen: Prüf die Prüfsumme unten, dann
+    weißt du, dass die Datei unverändert von hier kommt. Die Beglaubigung sagt nur,
+    dass Apple den Entwickler kennt — nicht, dass die Datei heil ist.
+  </p>
+</section>
+
+<section id="checksum">
+  <h2>Prüfsumme</h2>
+  <p>So prüfst du, dass die Datei unterwegs nicht verändert wurde:</p>
+  <pre class="mono" id="verify-cmd">shasum -a 256 &lt;datei&gt;</pre>
+  <p class="hint">
+    Muss übereinstimmen mit dem Wert in
+    <a id="expected-hash" href="https://github.com/landjunge/4AllPass/releases/tag/desktop">der Prüfsummen-Datei</a>.
+  </p>
+</section>
+
+<section id="all-platforms">
+  <h2>Alle Systeme</h2>
+  <div class="table-scroll">
+  <table id="asset-table">
+    <thead><tr><th>System</th><th>Datei</th><th>Größe</th><th>Stand</th><th>Prüfsumme</th></tr></thead>
+    <tbody><tr><td colspan="5">Wird geladen…</td></tr></tbody>
+  </table>
+  </div>
+  <p class="hint">
+    Quellcode und alle Dateien:
+    <a href="https://github.com/landjunge/4AllPass/releases/tag/desktop">GitHub Releases ↗</a>
+  </p>
+</section>
+
+</main>
+<script>
+(function () {
+  "use strict";
+  var TAG = "desktop";
+  var REPO = "landjunge/4AllPass";
+  var RELEASE = "https://github.com/" + REPO + "/releases/tag/" + TAG;
+
+  // Which build belongs to which machine. Order matters: the first match wins.
+  var PLATFORMS = [
+    { id: "mac-arm", label: "macOS (Apple Silicon)", match: /\.dmg$/, arch: /aarch64|arm64/i, verify: "shasum -a 256" },
+    { id: "mac-intel", label: "macOS (Intel)", match: /\.dmg$/, arch: /x64|x86_64|amd64/i, verify: "shasum -a 256" },
+    { id: "windows", label: "Windows", match: /\.(exe|msi)$/, arch: null, verify: "certutil -hashfile <datei> SHA256" },
+    { id: "linux", label: "Linux", match: /\.(AppImage|deb)$/, arch: null, verify: "sha256sum" }
+  ];
+
+  function detect() {
+    var ua = navigator.userAgent;
+    var p = navigator.platform || "";
+    if (/Win/i.test(p) || /Windows/i.test(ua)) return "windows";
+    if (/Mac/i.test(p) || /Mac OS X/i.test(ua)) {
+      // Apple Silicon does not announce itself in the UA. WebGL renderer is
+      // the usual tell; when it is unavailable we guess Apple Silicon, which
+      // is the far more common Mac today, and the table below covers the rest.
+      try {
+        var gl = document.createElement("canvas").getContext("webgl");
+        var dbg = gl && gl.getExtension("WEBGL_debug_renderer_info");
+        var r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
+        if (/Intel/i.test(r)) return "mac-intel";
+      } catch (e) { /* fall through */ }
+      return "mac-arm";
+    }
+    if (/Linux|X11/i.test(p) || /Linux/i.test(ua)) return "linux";
+    return null;
+  }
+
+  function human(bytes) {
+    return (bytes / 1048576).toFixed(1).replace(".", ",") + " MB";
+  }
+
+  function assetFor(assets, id) {
+    var spec = PLATFORMS.filter(function (x) { return x.id === id; })[0];
+    if (!spec) return null;
+    var hits = assets.filter(function (a) {
+      if (!spec.match.test(a.name)) return false;
+      if (!spec.arch) return true;
+      return spec.arch.test(a.name);
+    });
+    // mac-intel must not swallow the aarch64 build, and vice versa.
+    if (id === "mac-intel") {
+      hits = hits.filter(function (a) { return !/aarch64|arm64/i.test(a.name); });
+    }
+    return hits[0] || null;
+  }
+
+  function setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function render(assets, sums) {
+    var id = detect();
+    var mine = id ? assetFor(assets, id) : null;
+    var spec = PLATFORMS.filter(function (x) { return x.id === id; })[0];
+
+    if (mine) {
+      var link = document.getElementById("main-download");
+      link.href = mine.browser_download_url;
+      link.setAttribute("download", "");
+      link.firstChild.nodeValue = "4AllPass für " + spec.label + " ";
+      setText("lead", "Erkannt: " + spec.label + ". Der Download sollte von allein starten \u2014 "
+        + "falls dein Browser das blockiert, nimm den Knopf.");
+      setText("file-info", mine.name + " · " + human(mine.size) + " · Stand " +
+        new Date(mine.updated_at).toLocaleDateString("de-DE"));
+      var sumLink = document.getElementById("expected-hash");
+      if (sums[mine.name]) {
+        sumLink.href = sums[mine.name];
+        sumLink.textContent = mine.name + ".sha256";
+      }
+      setText("verify-cmd", spec.verify.indexOf("<datei>") >= 0
+        ? spec.verify.replace("<datei>", mine.name)
+        : spec.verify + " " + mine.name);
+      if (id === "mac-arm" || id === "mac-intel") {
+        document.getElementById("gatekeeper").hidden = false;
+      }
+      // Sofort auslösen — kein Zwischenstopp bei GitHub.
+      var kick = document.createElement("a");
+      kick.href = mine.browser_download_url;
+      kick.setAttribute("download", "");
+      document.body.appendChild(kick);
+      kick.click();
+      document.body.removeChild(kick);
+    } else {
+      setText("lead", "System nicht erkannt — wähl deine Datei unten aus.");
+    }
+
+    var rows = PLATFORMS.map(function (p) {
+      var a = assetFor(assets, p.id);
+      if (!a) return "";
+      return "<tr><td>" + p.label + "</td>" +
+        '<td><a href="' + a.browser_download_url + '" download>' + a.name + "</a></td>" +
+        "<td>" + human(a.size) + "</td>" +
+        "<td>" + new Date(a.updated_at).toLocaleDateString("de-DE") + "</td>" +
+        "<td>" + (sums[a.name]
+          ? '<a href="' + sums[a.name] + '">.sha256 ↗</a>'
+          : "—") + "</td></tr>";
+    }).join("");
+    var body = document.querySelector("#asset-table tbody");
+    if (rows) body.innerHTML = rows;
+  }
+
+  function fallback() {
+    setText("lead", "Download-Liste gerade nicht erreichbar — hier geht es direkt zu den Dateien.");
+    var body = document.querySelector("#asset-table tbody");
+    if (body) {
+      body.innerHTML = '<tr><td colspan="5"><a href="' + RELEASE + '">Alle Dateien auf GitHub ↗</a></td></tr>';
+    }
+  }
+
+  // Asset names carry the version, so they change with every release. Reading
+  // the release instead of hardcoding names is what keeps "aktuell" true.
+  fetch("https://api.github.com/repos/" + REPO + "/releases/tags/" + TAG, {
+    headers: { Accept: "application/vnd.github+json" }
+  })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function (rel) {
+      var assets = rel.assets || [];
+      var installers = assets.filter(function (a) { return !/\.sha256$/.test(a.name); });
+      // The .sha256 files are linked, not read: GitHub serves release assets
+      // without Access-Control-Allow-Origin, so a browser can never fetch
+      // their contents. Linking is honest and always works — do not retry
+      // this with fetch().
+      var sums = {};
+      assets.forEach(function (a) {
+        if (/\.sha256$/.test(a.name)) sums[a.name.replace(/\.sha256$/, "")] = a.browser_download_url;
+      });
+      render(installers, sums);
+    })
+    .catch(fallback);
+})();
+</script>
+</body>
+</html>

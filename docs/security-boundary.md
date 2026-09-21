@@ -370,6 +370,28 @@ pins the server integers; after the first verified manifest that path is closed.
   range API: only the first 5 hex chars of SHA-1(password), with `Add-Padding`.
   The 4AllPass server never receives the password or the hash. Offline, the
   “leaked” category is skipped. This is not a cryptographic proof.
+- No restore-old-revision UI. §5 inserts a new immutable snapshot row per
+  commit and only moves `active_snapshot_id` — the previous row is not
+  deleted, so an accidentally-deleted entry's ciphertext likely still exists
+  in an older revision row. There is today no client feature to browse or
+  restore a prior revision; the bytes outlive the mistake, but nothing in
+  the UI can reach them. Recovery would mean a direct DB read of an older
+  `(vault_id, revision)` row, decrypted by hand under the VK that revision
+  used — not a supported flow.
+- A stolen **account session** (Bearer token) can wipe access to a vault
+  without ever knowing the vault password. `POST …/snapshots` (§5) requires
+  `sealedManifest` to be *present*, but the server stores it opaque and
+  never verifies it was actually sealed under the real VK — only the client
+  does that, on open (`verifySnapshotManifest`). So a token thief who cannot
+  decrypt anything can still commit a syntactically valid, garbage/empty
+  snapshot and CAS-flip `active_snapshot_id` to it. The legitimate owner's
+  next open then correctly fails closed (`IntegrityError`, §6 above) rather
+  than showing tampered data — but the vault is now inaccessible until
+  someone manually recovers an older revision (see the point above; today
+  that is a direct DB operation, not a supported client flow). Fixing this
+  properly needs the server to demand some cryptographic proof tied to the
+  VK before accepting a commit, not just a well-formed request from a valid
+  session.
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See

@@ -115,7 +115,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 5 | Geleakt / doppelt / schwach, dann alle anderen nach `updatedAt`. Icon + Titel + User/Host + Badge. |
 | 6 | Formular in Fragen (Art → Name → Zugang). Kopieren am Feld. Oder Empty mit Login/API/Server. |
 
-Handy: Spalten unter 820 px untereinander.
+Desktop-Beschluss vom 03.10.2026: feste Spalten, mindestens 1180×760 CSS-Pixel. Kleinere Ausschnitte scrollen ohne automatisches Stapeln. Das ersetzt die ältere Mobilvorgabe des UI-Skills für diesen Auftrag.
 
 > Wireframe: [v4-desk.html](screenshots/v4-desk.html) · [v4-desk-empty.html](screenshots/v4-desk-empty.html) · [v4-desk-phone.html](screenshots/v4-desk-phone.html)  
 > Foto optional: `docs/screenshots/v4-desk.png`
@@ -201,3 +201,9 @@ Import-Review zeigt Art (Login / API-Key / Server) · Host oder Provider · User
 ---
 
 Neue Fläche? Erst hier eine Nummer, dann Code. Tokens: [`architecture.md`](architecture.md) §3.
+
+## Gemeinsame Gestaltung — 03.10.2026
+
+V0–V8 verwenden die gemeinsame Bedienbasis aus [ThreadDesk b0b6815](https://github.com/landjunge/threaddesk/blob/b0b6815d1996b7d28f374841c616dcb458304848/src/threaddesk/ui/static/networkpunkt.css). Lokale unveränderte Kopie: `frontend/src/networkpunkt.css`; Produkt-Aliase: `tokens.css`; Desktop-Komposition: `desktop.css`. Regeln und Begründung: GOLDENRULES §19 im selben ThreadDesk-Commit. Keine neue Oberfläche, keine neue Abhängigkeit und keine Änderung an Kryptografie oder Freigaben. Der Tresor bleibt die Startfläche. Sperren, Freigabeumfang, Importprüfung und Recovery bleiben sichtbar.
+
+Prüfnachweis vom 03.10.2026: 43 Frontend-Tests, Typecheck, Lint und Produktionsbuild bestanden; drei echte Chromium-Abläufe mit frischem SQLite-Testtresor bestanden (Importvorschau, Eintrag/Favorit, DE/EN, Sperren/Entsperren, kleiner Desktop-Ausschnitt). [Prüfumfang und Grenzen](usability/design-2026-10-03/checks.json), [Browserbild](usability/design-2026-10-03/desktop.png). Dies ist kein Nachweis einer nativen Ausgabe oder einer vollständigen Sicherheitsabnahme.

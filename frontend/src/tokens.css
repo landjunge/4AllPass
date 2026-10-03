@@ -1,48 +1,30 @@
-/**
- * Gnom-Hub-V1 desktop direction — shared chrome on web and desktop.
- * 4AllPass keeps its own Elster + key logo and product identity.
- */
+/* Product adapter for the shared desktop foundation, pinned in docs/ui-map.md. */
+@import "./networkpunkt.css";
 :root {
-  --bg: #121316;
-  --bg-panel: #1a1b1f;
-  --bg-card: #1e1f24;
-  --bg-elev: #24262d;
-  --text: #e2e4e9;
-  --text-muted: #8b909a;
-  /* --border trennt Flaechen (Deko). --border-strong zeichnet die Kante von
-     Bedienelementen und haelt dafuer 3:1 gegen den Hintergrund ein
-     (WCAG 2.2, 1.4.11 Non-text Contrast). */
-  --border: #2e3138;
-  --border-strong: #5f646f;
-  --accent: #8f98a8;
-  --accent-hi: #a1a8b3;
-  --ok: #3d9b6a;
-  --warn: #c9a227;
-  --err: #dc7070;
-  /* Keine Rundungen. Vier Schriftgroessen, mehr nicht: 16px Grundgroesse
-     wie fuer Fliesstext im Web empfohlen, die Stufen darum herum im
-     Verhaeltnis 1.25 (grosse Terz). Gilt in allen Werkzeugen — siehe
-     Notion "Was / Wie / Warum". */
-  --text-sm: 13px;
-  --text-base: 16px;
-  --text-lg: 20px;
-  --text-xl: 25px;
-  /* Zwei Groessen fuer Bedienelemente, mehr gibt es nicht:
-     --control ist der Regelfall (Knopf, Eingabefeld, Auswahlmenue),
-     --control-sm die kompakte Fassung fuer dichte Zeilen und Chips.
-     Beide liegen auf dem 8er-Raster. Unter dem Finger werden beide 44px
-     gross — das ist keine dritte Groesse, sondern dieselben Elemente unter
-     einem anderen Eingabegeraet (Apple HIG, Material). Gilt in allen
-     Werkzeugen. */
-  --control: 40px;
-  --control-sm: 32px;
-  --control-touch: 44px;
-  /* Dieselbe Schrift in allen Werkzeugen: die des Betriebssystems. */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bg: var(--np-canvas);
+  --bg-panel: var(--np-surface);
+  --bg-card: var(--np-surface);
+  --bg-elev: var(--np-hover);
+  --text: var(--np-text);
+  --text-muted: var(--np-muted);
+  --border: var(--np-divider);
+  --border-strong: var(--np-control-border);
+  --accent: var(--np-action);
+  --accent-hi: var(--np-focus);
+  --ok: var(--np-success);
+  --warn: var(--np-warning);
+  --err: var(--np-danger);
+  --text-sm: var(--np-meta);
+  --text-base: var(--np-body);
+  --text-lg: var(--np-heading);
+  --text-xl: var(--np-title);
+  --control: var(--np-control);
+  --control-sm: var(--np-control);
+  --control-touch: var(--np-control-touch);
+  --font: var(--np-font);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
-  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi);
-
+  --shadow-soft: none;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--np-focus);
   --panel: var(--bg-card);
   --panel-2: var(--bg-elev);
   --line: var(--border);

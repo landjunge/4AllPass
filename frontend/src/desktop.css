@@ -1,0 +1,35 @@
+/* 4AllPass adapts the shared foundation; no viewport-driven rearrangement. */
+html, body { overflow: auto; }
+body { min-width: 1180px; min-height: 760px; }
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { width: 0; height: 0; }
+.app { height: max(100dvh, 760px); }
+.app > header { flex-shrink: 0; min-height: 72px; padding: 12px 24px; background: var(--bg); }
+.app > main { padding: 24px 32px; }
+.card { box-shadow: none; padding: 24px; }
+.columns { grid-template-columns: 360px minmax(0, 1fr); gap: 24px; }
+.vault-desk > .card { background: transparent; border: 0; padding: 0; }
+.vault-desk > .detail { border-left: 1px solid var(--line); padding-left: 24px; }
+.vault-desk .list { max-height: calc(max(100dvh, 760px) - 180px); }
+.list-sticky { background: var(--bg); }
+.list-header { gap: 8px; }
+.vault-hero { position: static; display: block; padding: 0 0 16px; background: transparent; }
+.vault-hero h1 { margin: 0 0 8px; }
+.vault-hero p { margin: 4px 0; }
+.import-file { min-height: var(--control); display: inline-flex; align-items: center; }
+.kind-filters { gap: 4px; }
+.kind-filters .chip { padding-inline: 8px; font-size: var(--text-sm); }
+.tabs { border-bottom: 1px solid var(--line); gap: 24px; }
+.tabs button { border: 0; border-bottom: 2px solid transparent; background: transparent; padding-inline: 0; }
+.tabs button.active, .tabs button[aria-selected="true"] { color: var(--text); background: transparent; border-bottom-color: var(--np-focus); }
+.lang-switch { border: 0; }
+.lang-switch button.is-current { background: var(--bg-elev); color: var(--text); }
+button, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select { min-height: var(--control); }
+button { font-size: var(--text-base); }
+button.primary { background: var(--np-action); color: var(--np-action-text); border-color: var(--np-action); }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--np-focus); outline-offset: 3px; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+h1 { font-size: var(--text-xl); }
+h2, h3 { font-size: var(--text-lg); }
+.auth { width: 440px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

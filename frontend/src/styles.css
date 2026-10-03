@@ -644,84 +644,9 @@ form.banner {
   padding-right: 2px;
 }
 
-@media (max-width: 820px) {
-  main {
-    padding: 12px 12px 20px;
-  }
 
-  .tabs {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-  }
 
-  .tabs button {
-    flex-shrink: 0;
-  }
 
-  .columns {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .vault-desk .list,
-  .vault-desk .detail {
-    min-height: 0;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .vault-sections {
-    overflow: visible;
-  }
-
-  .list-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .add-split {
-    width: 100%;
-  }
-
-  .add-split .primary {
-    flex: 1;
-  }
-
-  .row-main {
-    padding: 10px 10px 10px 4px;
-  }
-
-  .kind-filters {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-  }
-
-  .chip {
-    flex-shrink: 0;
-  }
-}
-
-@media (pointer: coarse) {
-  /* Unter dem Finger werden alle Ziele 44px. Das ist die Zahl, die Apple
-     und Material dafuer nennen — kein eigener Geschmack. Der Zeiger ist das
-     richtige Signal, nicht die Fensterbreite: ein schmales Desktop-Fenster
-     ist kein Finger. */
-  button,
-  input,
-  select,
-  textarea,
-  .chip,
-  .row-main {
-    min-height: var(--control-touch);
-  }
-
-  .fav-star {
-    width: var(--control-touch);
-    min-height: var(--control-touch);
-    font-size: var(--text-xl);
-  }
-}
 
 .list-header {
   display: flex;

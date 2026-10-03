@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-03",
+  "shared_css_source": "https://github.com/landjunge/threaddesk/blob/b0b6815d1996b7d28f374841c616dcb458304848/src/threaddesk/ui/static/networkpunkt.css",
+  "shared_css_sha256": "98371bd9edc96fb940a0e0de34933740fed1062b510aa516498fcb53e112591e",
+  "rules": "https://github.com/landjunge/threaddesk/blob/b0b6815d1996b7d28f374841c616dcb458304848/docs/usability/GOLDENRULES.MD#19-gemeinsame-bedienbasis-für-die-fünf-produkte",
+  "browser": "Chromium 145 / Linux, synthetic test workspaces",
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      1024,
+      700
+    ]
+  ],
+  "minimum_desktop": [
+    1180,
+    760
+  ],
+  "native_builds": false,
+  "user_acceptance": false,
+  "media_pipeline_owner": "Grok; not produced by these checks",
+  "css_adapter": "frontend/src/networkpunkt.css",
+  "base": "47cc823d36f7731001a83f7fbda87d38ccc8e9b4",
+  "unit_tests_passed": 43,
+  "browser_tests_passed": 3,
+  "browser_seconds": 44.4,
+  "typecheck": "passed",
+  "lint": "passed with 9 existing warnings in unchanged files",
+  "production_build": "passed; existing chunk-size warning",
+  "passed": [
+    "CSV import review excludes password",
+    "new login and favorite",
+    "DE/EN",
+    "lock/unlock",
+    "desktop two columns at small viewport",
+    "scroll to controls"
+  ],
+  "command": "FOURALLPASS_CHROMIUM=<chromium> npx playwright test -c frontend/playwright.design.config.ts"
+}

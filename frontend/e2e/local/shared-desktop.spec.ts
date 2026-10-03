@@ -1,0 +1,31 @@
+import { expect, test } from "@playwright/test";
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { reachUnlockedLocalApp } from "../live/actions.ts";
+
+test("desktop layout keeps vault regions and controls reachable in smaller windows", async ({ page }) => {
+  await page.goto("/");
+  await reachUnlockedLocalApp(page);
+  const create = page.getByTestId("new-entry");
+  await expect(create).toBeVisible();
+  const height = await create.evaluate(el => el.getBoundingClientRect().height);
+  expect(height).toBeGreaterThanOrEqual(40);
+  const columns = page.locator(".vault-desk");
+  const layout = () => columns.evaluate(el => getComputedStyle(el).gridTemplateColumns);
+  expect((await layout()).split(" ")).toHaveLength(2);
+  await page.getByTestId("language-de").click();
+  await expect(page.getByTestId("tab-entries")).toHaveText("Tresor");
+  await page.getByTestId("language-en").click();
+  await expect(page.getByTestId("tab-entries")).toHaveText("Vault");
+  await page.getByTestId("language-de").click();
+  const output = join(import.meta.dirname, "../../../docs/usability/design-2026-10-03");
+  mkdirSync(output, { recursive: true });
+  await page.screenshot({ path: join(output, "desktop.png") });
+  await page.setViewportSize({ width: 1024, height: 700 });
+  expect((await layout()).split(" ")).toHaveLength(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeGreaterThanOrEqual(1180);
+  await page.getByTestId("lock").click();
+  await expect(page.getByTestId("master-password")).toBeVisible();
+  await reachUnlockedLocalApp(page);
+  await expect(create).toBeVisible();
+});

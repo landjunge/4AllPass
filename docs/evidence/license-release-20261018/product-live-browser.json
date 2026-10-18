@@ -1,0 +1,36 @@
+{
+  "realPublicPage": true,
+  "scope": "headless Chrome, 390x844 DPR1; license, links, actual light/dark images and screenshot; not native GUI or autofill",
+  "checks": [
+    {
+      "theme": "light",
+      "title": "4AllPass — Passwort-Tresor | NetzwerkPunkt",
+      "license": true,
+      "legacyLicense": false,
+      "newLinks": 2,
+      "oldDownloadLinks": 0,
+      "icon": "https://4allpass.netzwerkpunkt.de/ap4-light-128-v1.png",
+      "iconLoaded": 128,
+      "styleSheets": [
+        "https://4allpass.netzwerkpunkt.de/assets/site.css",
+        "https://netzwerkpunkt.de/assets/hub-home.css"
+      ],
+      "errors": []
+    },
+    {
+      "theme": "dark",
+      "title": "4AllPass — Passwort-Tresor | NetzwerkPunkt",
+      "license": true,
+      "legacyLicense": false,
+      "newLinks": 2,
+      "oldDownloadLinks": 0,
+      "icon": "https://4allpass.netzwerkpunkt.de/ap4-dark-128-v1.png",
+      "iconLoaded": 128,
+      "styleSheets": [
+        "https://4allpass.netzwerkpunkt.de/assets/site.css",
+        "https://netzwerkpunkt.de/assets/hub-home.css"
+      ],
+      "errors": []
+    }
+  ]
+}

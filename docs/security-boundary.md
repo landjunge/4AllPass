@@ -469,6 +469,18 @@ can leave the core; redirect/unknown/duplicate fields and unbounded bodies fail.
 Transport exceptions and provider bodies never become general tool errors.
 It has no production HTTP/CLI/server entry point, credential file or vault bridge.
 
+**Additional binding-core hardening (source only):** Normal ExecutorCore calls
+without a supported host now fail `protected_host_unavailable` before lookup.
+There is no production host. Only an explicit fixed-secret SyntheticHostCapability
+can run synthetic tests. Metadata-only versioned ProtectedGrant/UseRequest bind
+consumer, configured origin/principal references, exact target/operation,
+request hash, grant version, consent reference and lifecycle. Version/time types
+are strict; nonfinite/bool timestamps are refused before expiry comparisons.
+All binding/hash/lifetime checks repeat at actual dispatch; a duplicate callback
+cannot send twice. Public DTOs/trust flags/old material callbacks cannot activate
+a host. The synthetic nominal type is not OS isolation or authenticated identity;
+no real secret enters it. See [DE/EN contract](../protected_executor/README.md).
+
 **Unmet production prerequisite:** a secret execution boundary inaccessible to
 the connected agent, including its file, shell, process/debug and descendant
 paths, plus a trusted vault-to-executor transfer and KB-C02 origin binding. The

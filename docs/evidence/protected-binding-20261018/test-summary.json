@@ -1,0 +1,45 @@
+{
+  "observed_at": "2026-10-18T18:38:54.177151+00:00",
+  "base_source": "fd5473203abc8fdc3fab4fff2e2331882d5f2dde",
+  "scope": "metadata/host-negative core and actual TollGate adapter only",
+  "tests": [
+    {
+      "files": [
+        "protected_executor/tests/test_core.py",
+        "protected_executor/tests/test_tollgate.py"
+      ],
+      "passed": 20,
+      "elapsed_seconds": 0.86,
+      "actual_loopback_dummy_get": true
+    },
+    {
+      "files": [
+        "protected_executor/tests/test_binding.py"
+      ],
+      "passed": 68,
+      "elapsed_seconds": 0.11
+    }
+  ],
+  "production_host_available": false,
+  "os_secret_boundary_verified": false,
+  "real_vault_used": false,
+  "provider_or_paid_call": false,
+  "new_account_or_server": false,
+  "artifact_build": false,
+  "source_sha256": {
+    "protected_executor/core.py": "1927a9efb4eb43a0462d8af46982499826bf8bba5c830c8fd078ea090a5f17e7",
+    "protected_executor/contracts.py": "b58b1c00517a32ac0b2413b1fd063b611ff454a4979a627df55a54999ee29811",
+    "protected_executor/capability.py": "a1c4e543efb607b83cb0c5d561cb9f1b2653457ca987d036f3b1c8742d389446",
+    "protected_executor/tests/test_core.py": "5b39ea1a84d376eab97cdb0e815c90a7c0b4092f15b339afe4af57644b649bd6",
+    "protected_executor/tests/test_tollgate.py": "d9d431cc243cddb000078820567d0498e479a2d828600a1fa79b3c199bb091fe",
+    "protected_executor/tests/test_binding.py": "4738f9991f979c916911f33c9767a15265674410feb4899b9dfa39baf240e682"
+  },
+  "license_sha256": "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec",
+  "ap4_source_sha256": {
+    "dark": "e34a5925bee7a35434145646c8fca497edc26eef015b3e88a40411e006bbb094",
+    "light": "d253dfba15a8eea31c958debf5b3b1fdb068c96dd8e7a77192681e3e655866b4"
+  },
+  "tollgate_source_commit": "c3a062d89cd3be449cb61976149ee5d455d67b8a",
+  "tollgate_module_sha256": "577697fd197f12a5082e30a6adb623e3039badd20f22ed166ededd53b29a4648",
+  "note": "Metadata fingerprints identify tested source contents; they do not prove host identity or isolation. Core/adapter tests ran before subsequent formatting/import-only cleanup."
+}

@@ -87,3 +87,12 @@ startup fixes remain in its main ancestry; no icon or crypto redesign.
 Rollback is a source revert/rebuild decision, not a safe security default: it
 would reopen the historical raw-material behavior. No data/schema migration was
 made and no existing journal, credential or vault was deleted.
+
+## Subsequent binding hardening (separate source slice)
+
+The original acceptance above remains its historical scope. The later
+[metadata/host binding contract](../protected_executor/README.md) and
+[separate evidence](evidence/protected-binding-20261018/STATUS.md) close concrete
+consumer/origin/principal/request/version/lifecycle validation gaps and deny
+missing production host before lookup. They do not supply the unavailable
+production host, consent service, OS boundary or FP-C03 browser isolation.

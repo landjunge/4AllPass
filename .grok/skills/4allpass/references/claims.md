@@ -11,6 +11,9 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
   are not silently updated or relabeled by this source change.
 - Pairing token and application strings are not authenticated model identity.
 - TTL never recalls previous credential copies or provider sessions.
+- A metadata-only grant or caller trust flag is not a host. Normal protected-core
+  calls without a production host fail before lookup; only fixed-secret synthetic
+  fixtures can run tests. No real host/secret transfer is implemented.
 - The synthetic API core/TollGate tests do not prove OS isolation, protected
   browser login, third-party audit or a deployed product integration.
 

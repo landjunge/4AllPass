@@ -105,3 +105,27 @@ approved, hash-preserved raster assets. Small-size detail is limited at16px;
 no automatic simplification. Native theme choice and original provenance are
 recorded in brand/README.md. LICENSE now retains identical LF bytes on Windows
 as well, with an explicit original-hash guard.
+
+## Zusätzlich belegter Oberflächenfehler vor Freigabe
+
+Der bestehende Backend-CI-Lauf blieb nach26 bestandenen Tests bei der ersten
+Dateiauslieferungsprobe stehen. Lokale Einzelreproduktion mit Python3.12,
+Starlette1.8.0 und Timeout-Stack zeigte eine Endlosschleife in FileResponse:
+BodyLimitMiddleware lieferte nach dem gepufferten Request endlos sofortige
+leere http.request-Nachrichten. Dadurch wurde der parallele Streaming-Task
+bei ASGI-Versionen vor2.4 nicht eingeplant. Das ist ein Middlewarefehler,
+kein Grund, die Traversal-Prüfung zu überspringen oder Datenbank-/Crypto-
+Berechtigungen zu ändern.
+
+Nach dem einmaligen Body-Replay wartet die Middleware jetzt auf das echte
+Receive des Transports (einschließlich tatsächlichem Disconnect). Keine
+künstliche Trennung einer noch laufenden Antwort. Alle16 gezielten Bodylimit-
+und Traversal-/Dateiprüfungen bestehen lokal in1.08s; Größenbegrenzung und
+Pfadgrenze bleiben erhalten. Die Paket-Vorabprobe verlangt jetzt zusätzlich
+HTML und das bytegleiche AP4-Favicon, jeweils mit begrenztem Netzwerk-Timeout.
+Gesundheit allein wird nicht als benutzbare Oberfläche gewertet.
+
+A reproduced middleware busy loop could starve FileResponse streaming on
+ASGI<2.4. Replaying the body once and then awaiting the real transport fixes
+it while preserving real disconnects and body limits. Sixteen targeted checks
+pass; packaged startup now checks bounded HTML and exact AP4-favicon delivery.

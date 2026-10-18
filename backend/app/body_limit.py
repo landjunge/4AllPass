@@ -70,8 +70,10 @@ class BodyLimitMiddleware:
             if first:
                 first = False
                 return {"type": "http.request", "body": b"".join(chunks), "more_body": False}
-            # Do not send http.disconnect: ASGITransport treats that as a client
-            # hang-up (204) before the inner app finishes.
-            return {"type": "http.request", "body": b"", "more_body": False}
+            # After replaying the bounded body, preserve the transport's actual
+            # disconnect/wait semantics. Immediate synthetic request frames can
+            # busy-loop and starve FileResponse's streaming task (ASGI < 2.4).
+            # An invented disconnect would instead abort a live response.
+            return await receive()
 
         await self.app(scope, replay_receive, send)

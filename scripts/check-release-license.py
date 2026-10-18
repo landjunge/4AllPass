@@ -114,7 +114,10 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             )
             result["macos_code_signature_valid"] = True
             signature = subprocess.run(
-                ["codesign", "-dv", str(app)], check=True, capture_output=True, text=True
+                ["codesign", "-dv", str(app)],
+                check=True,
+                capture_output=True,
+                text=True,
             )
             result["signing"] = (
                 "ad-hoc"
@@ -225,7 +228,9 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             for k in ("source_commit", "sidecar_sha256", "license_sha256")
         ):
             assert reused.get("isolated_packaged_sidecar_database_startup") is True
+            assert reused.get("packaged_ui_and_ap4_favicon_served") is True
             result["isolated_packaged_sidecar_database_startup"] = True
+            result["packaged_ui_and_ap4_favicon_served"] = True
             result["startup_evidence_reused_for_identical_binary"] = prior.name
         else:
             startup_check(sidecar, tmp, result)
@@ -265,7 +270,9 @@ def startup_check(sidecar, tmp, result):
                 distributions = re.findall(
                     r"No package metadata was found for ([a-zA-Z0-9_.-]+)", raw
                 )
-                types = re.findall(r"^([a-zA-Z0-9_.]*(?:Error|Exception)):", raw, re.MULTILINE)
+                types = re.findall(
+                    r"^([a-zA-Z0-9_.]*(?:Error|Exception)):", raw, re.MULTILINE
+                )
                 diagnostic = {
                     "exit_code": proc.returncode,
                     "missing_modules": modules,
@@ -294,6 +301,17 @@ def startup_check(sidecar, tmp, result):
             time.sleep(0.5)
         assert success, "Packaged sidecar database startup failed"
         result["isolated_packaged_sidecar_database_startup"] = True
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as response:
+            assert response.status == 200 and b"4AllPass" in response.read(65536)
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{port}/favicon.png", timeout=5
+        ) as response:
+            assert (
+                response.status == 200
+                and response.read(65536)
+                == (ROOT / "brand/ap4/dark/4allpass-dark-32.png").read_bytes()
+            )
+        result["packaged_ui_and_ap4_favicon_served"] = True
     finally:
         if sys.platform == "win32" and proc.poll() is None:
             # PyInstaller onefile has an owned parent + child. Killing only the

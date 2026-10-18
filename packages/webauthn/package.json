@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "WebAuthn device unlock for 4AllPass: PRF > largeBlob > UV-gated local store",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "exports": {
     ".": "./src/index.ts"
   },

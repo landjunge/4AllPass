@@ -92,6 +92,8 @@ def main() -> int:
         ".",
         "--add-data",
         add_data,
+        "--add-data",
+        f"{root / 'LICENSE'}{os.pathsep}.",
         "--hidden-import",
         "uvicorn.logging",
         "--hidden-import",

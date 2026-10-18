@@ -108,7 +108,7 @@ as well, with an explicit original-hash guard.
 
 ## Zusätzlich belegter Oberflächenfehler vor Freigabe
 
-Der bestehende Backend-CI-Lauf blieb nach26 bestandenen Tests bei der ersten
+Der bestehende Backend-CI-Lauf blieb nach21 bestandenen Tests bei der ersten
 Dateiauslieferungsprobe stehen. Lokale Einzelreproduktion mit Python3.12,
 Starlette1.8.0 und Timeout-Stack zeigte eine Endlosschleife in FileResponse:
 BodyLimitMiddleware lieferte nach dem gepufferten Request endlos sofortige
@@ -129,3 +129,20 @@ A reproduced middleware busy loop could starve FileResponse streaming on
 ASGI<2.4. Replaying the body once and then awaiting the real transport fixes
 it while preserving real disconnects and body limits. Sixteen targeted checks
 pass; packaged startup now checks bounded HTML and exact AP4-favicon delivery.
+
+## Native PNG-Formatkorrektur
+
+Der erste AP4-Lauf39131186934 (a794a41) besteht die erweiterte Sidecar-Probe,
+scheitert beim nativen Compile aber an RGB statt RGBA in32x32.png. Die gelieferten
+Original-/Größen-PNGs bleiben unverändert. Ausschließlich native Ableitungen
+werden mit dem bereits vorhandenen Tauri-Iconwerkzeug erzeugt; ein unabhängiger
+PNG-Decoder bestätigt für jede Größe dieselben RGBA-Bildpunkte nach Ergänzung
+von Alpha255. Der Gate-Check verlangt diesen Format-/Pixelnachweis vor dem
+Rustbau. Keine Neugestaltung, Interpolation oder neue Bildabhängigkeit.
+Beleg: ap4-native-format-check.json; vorheriger Check bleibt erhalten.
+
+The first AP4 native build exposed the Tauri RGBA requirement. Native-only
+format conversion adds opaque alpha without changing decoded pixels or size;
+originals and web/extension images stay unchanged. The early gate now checks
+native RGBA and pixel equality before compiling. Existing failed-run evidence
+is retained; no unverified native package is published.

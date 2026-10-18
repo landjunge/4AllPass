@@ -21,7 +21,12 @@ wird nicht behauptet. README, Produktseite und Browser-Favicon wählen mit
 `prefers-color-scheme` Hell/Dunkel; PWA-/Touch-Icons bleiben fest Dark.
 
 `python scripts/sync-approved-icons.py` kopiert passende bereitgestellte PNGs
-bytegleich, baut ICO mit unveränderten PNG-Frames und ICNS mit Apples `iconutil`
+bytegleich für Web/Erweiterungen. Tauri benötigt native RGBA-PNGs: `ap4/native/`
+enthält mit dem vorhandenen Tauri-Iconwerkzeug aus den jeweiligen bereitgestellten
+Größen erzeugte Ableitungen. Eine unabhängige PNG-Dekodierung vergleicht alle
+Bildpunkte einschließlich Alpha (RGB wird ausschließlich um deckendes Alpha255
+ergänzt); keine Farb-/Größenänderung. ICO enthält diese RGBA-Frames,
+ICNS entsteht mit Apples `iconutil`
 (macOS erforderlich nur für die Erzeugung). `--check` prüft die Quellen, Größen,
 Hashes und aktuellen Zielkopien ohne Änderungen auf allen CI-Plattformen.
 Safari-Assetkataloge verwenden dieselben bereitgestellten Größen. Der Safari-
@@ -35,7 +40,9 @@ Abbildungen werden nicht umgeschrieben. Die bestehende UI-Palette bleibt erhalte
 
 Approved by the user on 18 October 2026; transferred originals from the ChatGPT
 Library. Both originals and all 13 supplied sizes are preserved with hashes.
-No redesign, distortion or simplified small-size substitute. Current app,
+Native RGBA derivatives add opaque alpha only; decoded pixels are checked
+against each supplied size before building. No redesign, distortion or
+simplified small-size substitute. Current app,
 installer and extension assets replace the former magpie with AP4. Fixed dark
 native/app/extension icons; adaptive light/dark README, product page and favicons.
 No automatic native theme switching is claimed. Existing UI colours, vaults,

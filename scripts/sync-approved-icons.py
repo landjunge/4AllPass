@@ -12,6 +12,7 @@ import shutil
 import struct
 import subprocess
 import tempfile
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,6 +22,7 @@ ORIGINALS = {
     "dark": "e34a5925bee7a35434145646c8fca497edc26eef015b3e88a40411e006bbb094",
     "light": "d253dfba15a8eea31c958debf5b3b1fdb068c96dd8e7a77192681e3e655866b4",
 }
+NATIVE_SIZES = (16, 24, 32, 48, 64, 128, 256, 512, 1024)
 
 
 def png(variant, size):
@@ -29,6 +31,52 @@ def png(variant, size):
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def rgba_pixels(path):
+    """Decode known 8-bit non-interlaced RGB/RGBA PNGs without image dependencies."""
+    data = path.read_bytes()
+    width, height = struct.unpack(">II", data[16:24])
+    assert data[:8] == b"\x89PNG\r\n\x1a\n" and data[24] == 8 and data[28] == 0
+    channels = {2: 3, 6: 4}[data[25]]
+    offset, compressed = 8, bytearray()
+    while offset < len(data):
+        length = struct.unpack(">I", data[offset : offset + 4])[0]
+        if data[offset + 4 : offset + 8] == b"IDAT":
+            compressed.extend(data[offset + 8 : offset + 8 + length])
+        offset += length + 12
+    raw = zlib.decompress(compressed)
+    stride = width * channels
+    assert len(raw) == height * (stride + 1)
+    previous, pixels = bytearray(stride), bytearray()
+    for start in range(0, len(raw), stride + 1):
+        filter_type = raw[start]
+        row = bytearray(raw[start + 1 : start + 1 + stride])
+        assert 0 <= filter_type <= 4
+        for i in range(stride):
+            a = row[i - channels] if i >= channels else 0
+            b = previous[i]
+            c = previous[i - channels] if i >= channels else 0
+            if filter_type == 1:
+                predictor = a
+            elif filter_type == 2:
+                predictor = b
+            elif filter_type == 3:
+                predictor = (a + b) // 2
+            elif filter_type == 4:
+                p = a + b - c
+                predictor = min((a, b, c), key=lambda value: abs(p - value))
+            else:
+                predictor = 0
+            row[i] = (row[i] + predictor) % 256
+        if channels == 4:
+            pixels.extend(row)
+        else:
+            for i in range(0, stride, 3):
+                pixels.extend(row[i : i + 3])
+                pixels.append(255)
+        previous = row
+    return width, height, pixels
 
 
 def mappings():
@@ -43,7 +91,7 @@ def mappings():
         "512x512@2x.png": 1024,
         "icon.png": 1024,
     }.items():
-        result[f"src-tauri/icons/{name}"] = png("dark", size)
+        result[f"src-tauri/icons/{name}"] = BRAND / "native" / f"{size}x{size}.png"
     for name, size in {
         "favicon.png": 32,
         "logo.png": 96,
@@ -80,7 +128,7 @@ def ico_bytes():
     sizes = (16, 24, 32, 48, 64, 128, 256)
     entries, payload, offset = [], [], 6 + 16 * len(sizes)
     for size in sizes:
-        data = png("dark", size).read_bytes()
+        data = (BRAND / "native" / f"{size}x{size}.png").read_bytes()
         entries.append(
             struct.pack(
                 "<BBBBHHII", size % 256, size % 256, 0, 0, 1, 32, len(data), offset
@@ -104,6 +152,33 @@ def main():
             assert data[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(
                 ">II", data[16:24]
             ) == (size, size)
+    native = BRAND / "native"
+    if not args.check:
+        native.mkdir(exist_ok=True)
+        for size in NATIVE_SIZES:
+            subprocess.run(
+                [
+                    "npm",
+                    "run",
+                    "tauri",
+                    "--",
+                    "icon",
+                    str(png("dark", size)),
+                    "--png",
+                    str(size),
+                    "--output",
+                    str(native),
+                ],
+                cwd=ROOT,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+    for size in NATIVE_SIZES:
+        converted = native / f"{size}x{size}.png"
+        assert converted.read_bytes()[25] == 6, "Tauri requires RGBA native icons"
+        assert rgba_pixels(converted) == rgba_pixels(png("dark", size)), (
+            "Native conversion changed pixels"
+        )
     for relative, source in mappings().items():
         target = ROOT / relative
         if not args.check:
@@ -158,7 +233,8 @@ def main():
             {
                 "approved_originals": ORIGINALS,
                 "provided_sizes_each": list(SIZES),
-                "pixel_identical_targets": len(mappings()),
+                "checked_target_copies": len(mappings()),
+                "native_rgba_pixel_equivalent_sizes": list(NATIVE_SIZES),
                 "ico_frames": 7,
                 "native_variant": "dark",
             }

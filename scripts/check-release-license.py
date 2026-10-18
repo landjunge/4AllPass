@@ -162,7 +162,7 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             same_license(tmp / "squashfs-root", license_bytes)
             package_icon_checks(tmp / "squashfs-root", result)
             expected_icons = {
-                p.read_bytes() for p in (ROOT / "brand/ap4/dark").glob("*.png")
+                p.read_bytes() for p in (ROOT / "brand/ap4").glob("**/*.png")
             }
             assert any(
                 p.read_bytes() in expected_icons
@@ -192,7 +192,7 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             )
             pe = pefile.PE(str(exe))
             expected_icons = {
-                p.read_bytes() for p in (ROOT / "brand/ap4/dark").glob("*.png")
+                p.read_bytes() for p in (ROOT / "brand/ap4").glob("**/*.png")
             }
             frames = []
             for kind in pe.DIRECTORY_ENTRY_RESOURCE.entries:

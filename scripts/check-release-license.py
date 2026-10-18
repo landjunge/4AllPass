@@ -17,6 +17,12 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from package_machine_deny import (
+    isolated_sidecar_environment,
+    machine_handoff_deny_probe,
+    reusable_startup_evidence,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -223,14 +229,13 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             if prior.exists() and not sidecar_only
             else None
         )
-        if reused and all(
-            reused.get(k) == result[k]
-            for k in ("source_commit", "sidecar_sha256", "license_sha256")
-        ):
-            assert reused.get("isolated_packaged_sidecar_database_startup") is True
-            assert reused.get("packaged_ui_and_ap4_favicon_served") is True
+        if reusable_startup_evidence(reused, result):
             result["isolated_packaged_sidecar_database_startup"] = True
             result["packaged_ui_and_ap4_favicon_served"] = True
+            result["packaged_machine_handoff_deny_v1"] = True
+            result["machine_handoff_deny_checks"] = reused[
+                "machine_handoff_deny_checks"
+            ]
             result["startup_evidence_reused_for_identical_binary"] = prior.name
         else:
             startup_check(sidecar, tmp, result)
@@ -246,13 +251,13 @@ def startup_check(sidecar, tmp, result):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
-    env = dict(os.environ)
-    env.pop("FOURALLPASS_SIDECAR", None)
+    env = isolated_sidecar_environment(os.environ)
     stderr_path = tmp / "sidecar-stderr.txt"
     log = stderr_path.open("wb")
     proc = subprocess.Popen(
         [str(sidecar), "--data-dir", str(tmp / "synthetic-data"), "--port", str(port)],
         env=env,
+        cwd=tmp,
         stdout=subprocess.DEVNULL,
         stderr=log,
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
@@ -312,6 +317,7 @@ def startup_check(sidecar, tmp, result):
                 == (ROOT / "brand/ap4/dark/4allpass-dark-32.png").read_bytes()
             )
         result["packaged_ui_and_ap4_favicon_served"] = True
+        result.update(machine_handoff_deny_probe(port))
     finally:
         if sys.platform == "win32" and proc.poll() is None:
             # PyInstaller onefile has an owned parent + child. Killing only the

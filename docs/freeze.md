@@ -1,5 +1,13 @@
 # Freeze — 2026-08-26
 
+> **Aktueller Hinweis, 19.10.2026 / Current note:** Dieser Freeze bleibt der
+> historische August-Beleg. Der nachstehende Access-Allow-Ablauf ist seit dem
+> Quell-Hardening aus PR #222/#224 gesperrt; aktueller Prüfweg:
+> [Maschinenzugriff verweigert](two-minute-demo.md). Current source denies machine
+> handoffs without a production protected host. Public `v0.1.2-rc.2` (`60eef0a`)
+> remains historical and is not updated by this document. The original freeze
+> and its human/Apple/audit gaps below are preserved, not newly certified.
+
 **DE.** Code-Stand nach internem adversarial Review. Kein Launch, kein Store, kein Dritt-Audit.
 **EN.** Code snapshot after an internal adversarial review. Not a launch, not a store build, not a third-party audit.
 

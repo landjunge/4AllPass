@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "4AllPass",
-  "version": "0.1.0",
+  "version": "0.1.2-rc.2",
   "identifier": "de.netzwerkpunkt.fourallpass",
   "build": {
     "beforeDevCommand": "npm run app:sidecar",
@@ -30,7 +30,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -39,8 +42,15 @@
       "icons/icon.ico",
       "icons/icon.png"
     ],
-    "externalBin": ["binaries/fourallpass-core"],
-    "resources": ["../extension/dist/chromium", "../extension/dist/firefox"],
+    "externalBin": [
+      "binaries/fourallpass-core"
+    ],
+    "resources": [
+      "../extension/dist/chromium",
+      "../extension/dist/firefox",
+      "../LICENSE",
+      "../dist/third-party-licenses"
+    ],
     "macOS": {
       "signingIdentity": "-",
       "hardenedRuntime": true,
@@ -60,6 +70,8 @@
       "appimage": {
         "bundleMediaFramework": false
       }
-    }
+    },
+    "license": "LicenseRef-Netzwerkpunkt-Personal-Use-1.0",
+    "licenseFile": "../LICENSE"
   }
 }

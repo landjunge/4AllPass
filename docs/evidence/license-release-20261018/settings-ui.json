@@ -1,0 +1,20 @@
+{
+  "actualComponent": "SettingsPanel with existing AppProvider/CopyModeProvider/LanguageSwitch",
+  "isolatedContext": true,
+  "networkAccountRequestsBlocked": true,
+  "personalVaultOrAccountUsed": false,
+  "states": [
+    {
+      "language": "de",
+      "licenseVisible": true,
+      "currentLicense": true,
+      "overflow": false
+    },
+    {
+      "language": "en",
+      "licenseVisible": true,
+      "currentLicense": true,
+      "overflow": false
+    }
+  ]
+}

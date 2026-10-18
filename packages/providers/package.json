@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "description": "Local deterministic provider resolution and setup detection. No network, no AI, no secrets, no fill.",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"

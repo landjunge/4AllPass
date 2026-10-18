@@ -1,0 +1,104 @@
+{
+  "at": "2026-10-18T12:31:26.773515+00:00",
+  "tags": {
+    "desktop": "1859101b0016565cfd4da1dcb56a06c337201bce",
+    "v0.1.0": "ef0bb7f0e13befdc2c6438e0a97ebbf3bb63f04d",
+    "v0.1.1": "03a3b9790c6cc70736054ec0827a56f26d5dda84"
+  },
+  "releases": [
+    {
+      "id": 375371777,
+      "tag": "desktop",
+      "assets": [
+        {
+          "id": 621590129,
+          "name": "4AllPass_0.1.0_aarch64.dmg",
+          "size": 35593944,
+          "digest": "sha256:498cceff43b80b449b42f263f7cdb697db1463b262e9afcffa0bf6c3a51b6a6a",
+          "updated_at": "2026-10-08T11:10:34Z"
+        },
+        {
+          "id": 621590131,
+          "name": "4AllPass_0.1.0_aarch64.dmg.sha256",
+          "size": 93,
+          "digest": "sha256:a7b474635909799b2e84b32fb233bc4bd1f812b88eb0d918c8154231db12ce57",
+          "updated_at": "2026-10-08T11:10:32Z"
+        },
+        {
+          "id": 621590123,
+          "name": "4AllPass_0.1.0_amd64.AppImage",
+          "size": 140986872,
+          "digest": "sha256:ccc397edfddb84df413d178bb90600f8e4fdb56693fb13244993951ff1065ad4",
+          "updated_at": "2026-10-08T11:10:37Z"
+        },
+        {
+          "id": 621590119,
+          "name": "4AllPass_0.1.0_amd64.AppImage.sha256",
+          "size": 96,
+          "digest": "sha256:67fa48df7b64d206cb409689260d99e54b4d374b0baad52b81a0899c7e8fa9ed",
+          "updated_at": "2026-10-08T11:10:32Z"
+        },
+        {
+          "id": 621590122,
+          "name": "4AllPass_0.1.0_x64-setup.exe",
+          "size": 34119916,
+          "digest": "sha256:e79e48de84960b3049edbf6c54554056de48ba9aa94818b6fa5f722126a2ac3b",
+          "updated_at": "2026-10-08T11:10:34Z"
+        },
+        {
+          "id": 621590128,
+          "name": "4AllPass_0.1.0_x64-setup.exe.sha256",
+          "size": 96,
+          "digest": "sha256:32dd888753ce7af94338b36d2a0caab51634118e9e44b1001253228d82a564aa",
+          "updated_at": "2026-10-08T11:10:32Z"
+        },
+        {
+          "id": 621590125,
+          "name": "4AllPass_0.1.0_x64.dmg",
+          "size": 34675156,
+          "digest": "sha256:c1c5b50f3c6a6e29bc814376d68359a4ec4f08d9db463510de759c2a12ad384f",
+          "updated_at": "2026-10-08T11:10:34Z"
+        },
+        {
+          "id": 621590120,
+          "name": "4AllPass_0.1.0_x64.dmg.sha256",
+          "size": 89,
+          "digest": "sha256:d015f6f92aa57a50b0e96e20fccc16da6039292f558f7c9f260703f7aff85641",
+          "updated_at": "2026-10-08T11:10:32Z"
+        }
+      ]
+    },
+    {
+      "id": 374650474,
+      "tag": "v0.1.1",
+      "assets": [
+        {
+          "id": 524205976,
+          "name": "4AllPass_0.1.0_aarch64.dmg",
+          "size": 32933955,
+          "digest": "sha256:f91523753cac1d5538f7222357c86fcf32a5c08606a541a6d39a228abea0043a",
+          "updated_at": "2026-08-21T20:12:20Z"
+        },
+        {
+          "id": 524205977,
+          "name": "4AllPass_0.1.0_amd64.AppImage",
+          "size": 138074616,
+          "digest": "sha256:8b272faaa133477a04d8551ea99ac81b78e2b389ccd199fe8579b328049ada86",
+          "updated_at": "2026-08-21T20:12:24Z"
+        },
+        {
+          "id": 524205978,
+          "name": "4AllPass_0.1.0_x64-setup.exe",
+          "size": 32805686,
+          "digest": "sha256:9aaf1a3fd8840ff296d15472d74f86a9b9c8091f25af87eb6bcbe3529169c9cc",
+          "updated_at": "2026-08-21T20:12:20Z"
+        }
+      ]
+    },
+    {
+      "id": 374642509,
+      "tag": "v0.1.0",
+      "assets": []
+    }
+  ]
+}

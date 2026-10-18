@@ -1,0 +1,202 @@
+{
+  "browser": "installed Chrome, isolated headless context, deviceScaleFactor=1",
+  "personalVaultOrAccountUsed": false,
+  "apiRequestsBlocked": true,
+  "sizes": [
+    {
+      "src": "../brand/ap4/light/4allpass-light-16.png",
+      "natural": [
+        16,
+        16
+      ],
+      "css": [
+        16,
+        16
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-24.png",
+      "natural": [
+        24,
+        24
+      ],
+      "css": [
+        24,
+        24
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-32.png",
+      "natural": [
+        32,
+        32
+      ],
+      "css": [
+        32,
+        32
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-48.png",
+      "natural": [
+        48,
+        48
+      ],
+      "css": [
+        48,
+        48
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-64.png",
+      "natural": [
+        64,
+        64
+      ],
+      "css": [
+        64,
+        64
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-96.png",
+      "natural": [
+        96,
+        96
+      ],
+      "css": [
+        96,
+        96
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/light/4allpass-light-128.png",
+      "natural": [
+        128,
+        128
+      ],
+      "css": [
+        128,
+        128
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-16.png",
+      "natural": [
+        16,
+        16
+      ],
+      "css": [
+        16,
+        16
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-24.png",
+      "natural": [
+        24,
+        24
+      ],
+      "css": [
+        24,
+        24
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-32.png",
+      "natural": [
+        32,
+        32
+      ],
+      "css": [
+        32,
+        32
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-48.png",
+      "natural": [
+        48,
+        48
+      ],
+      "css": [
+        48,
+        48
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-64.png",
+      "natural": [
+        64,
+        64
+      ],
+      "css": [
+        64,
+        64
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-96.png",
+      "natural": [
+        96,
+        96
+      ],
+      "css": [
+        96,
+        96
+      ],
+      "loaded": true
+    },
+    {
+      "src": "../brand/ap4/dark/4allpass-dark-128.png",
+      "natural": [
+        128,
+        128
+      ],
+      "css": [
+        128,
+        128
+      ],
+      "loaded": true
+    }
+  ],
+  "logo": {
+    "src": "/logo.png",
+    "loaded": true,
+    "natural": [
+      96,
+      96
+    ],
+    "css": [
+      36,
+      36
+    ]
+  },
+  "favicons": [
+    {
+      "theme": "light",
+      "matching": [
+        "/favicon.png",
+        "/favicon-light.png"
+      ]
+    },
+    {
+      "theme": "dark",
+      "matching": [
+        "/favicon.png"
+      ]
+    }
+  ]
+}

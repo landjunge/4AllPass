@@ -75,7 +75,7 @@ cd backend && pytest
 ## Standing (UI / language)
 
 - DE und EN on every user-facing surface in the same PR.
-- Logo is 4AllPass only: Elster + goldener Schlüssel + Schriftzug.
+- Logo is the user-approved AP4 raster/grid motif (18 October 2026); see brand/README.md. Preserve original pixels, no magpie in current product assets.
 - Palette is `frontend/src/tokens.css`, not the old blue table in `DESIGN.md`.
 
 ## Do not

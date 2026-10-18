@@ -1,0 +1,5 @@
+# Keep the adopted LICENSE byte-identical across platform packages.
+LICENSE text eol=lf
+*.png binary
+*.ico binary
+*.icns binary

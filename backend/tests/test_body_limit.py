@@ -73,12 +73,12 @@ async def test_body_within_limit_is_passed_through():
 
 
 @pytest.mark.asyncio
-async def test_inner_app_may_call_receive_twice_without_204():
+async def test_after_replayed_body_transport_disconnect_is_preserved():
     async def twice(scope, receive, send):
         first = await receive()
         second = await receive()
         assert first["type"] == "http.request"
-        assert second["type"] == "http.request"
+        assert second["type"] == "http.disconnect"
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": first.get("body") or b""})
 

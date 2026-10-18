@@ -1,0 +1,18 @@
+[
+  {
+    "source_commit": "2767afba7c96585b69e810d7ad0538e2214972e2",
+    "ci_artifact_file": "dist/release-metadata/package-check-x86_64-pc-windows-msvc.json",
+    "raw_sha256": "5c67c7315e70bfe6c17da228fafd14fded4d53b870847ad6ac8e6ca53d8d9dab",
+    "readable_copy": "startup-fixed-package-check-x86_64-pc-windows-msvc.json",
+    "copy_sha256": "cfb2fd6419397f78e0243b42c3bcd97ae060b5a85deb89be689d831be3e1757a",
+    "copy_transform": "CRLF to LF only"
+  },
+  {
+    "source_commit": "316595415799aec8b0333068c5d7cbf21a7c1475",
+    "ci_artifact_file": "dist/release-metadata/package-check-aarch64-apple-darwin.json",
+    "raw_sha256": "85f108b6bb37a9df2fc0c1a8d5bb7526e97ed7774204e63d597a1275fece0600",
+    "readable_copy": "startup-fixed-package-check-aarch64-apple-darwin.json",
+    "copy_sha256": "85f108b6bb37a9df2fc0c1a8d5bb7526e97ed7774204e63d597a1275fece0600",
+    "copy_transform": "CRLF to LF only"
+  }
+]

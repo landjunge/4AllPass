@@ -39,14 +39,14 @@ test("sleep copy is Lock button only, not auto-lock", () => {
 });
 
 test("license copy is personal free, commercial not", () => {
-  assert.match(LICENSE_HINT.de, /Quelloffen/);
-  assert.match(LICENSE_HINT.de, /Privat frei/);
-  assert.match(LICENSE_HINT.de, /Kommerziell nur mit Erlaubnis von Daniel Filipek/);
-  assert.match(LICENSE_HINT.de, /PolyForm Noncommercial/);
-  assert.match(LICENSE_HINT.en, /Source is public/);
-  assert.match(LICENSE_HINT.en, /Personal use free/);
-  assert.match(LICENSE_HINT.en, /Commercial use only with permission from Daniel Filipek/);
-  assert.match(LICENSE_HINT.en, /PolyForm Noncommercial/);
+  assert.match(LICENSE_HINT.de, /Netzwerkpunkt Personal Use License 1.0/);
+  assert.match(LICENSE_HINT.de, /nicht geschäftliche Nutzung kostenlos/);
+  assert.match(LICENSE_HINT.de, /schriftlicher Erlaubnis/);
+  assert.match(LICENSE_HINT.de, /Deutsch maßgeblich/);
+  assert.match(LICENSE_HINT.en, /Free private non-business use/);
+  assert.match(LICENSE_HINT.en, /separate written permission/);
+  assert.match(LICENSE_HINT.en, /German governs/);
+  assert.equal(/PolyForm|OSI-approved/.test(LICENSE_HINT.de + LICENSE_HINT.en), false);
 });
 
 test("uninstall copy says the vault folder stays", () => {

@@ -11,6 +11,7 @@ fi
 STAGE="$(mktemp -d "${TMPDIR:-/tmp}/4allpass-dmg.XXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 cp -R "$APP" "$STAGE/4AllPass.app"
+cp "$ROOT/LICENSE" "$STAGE/LICENSE"
 ln -s /Applications "$STAGE/Applications"
 mkdir -p "$OUTDIR"
 ARCH="$(uname -m)"
@@ -19,6 +20,8 @@ case "$ARCH" in
   x86_64) SLUG="x64" ;;
   *) SLUG="$ARCH" ;;
 esac
-OUT="$OUTDIR/4AllPass_0.1.0_${SLUG}.dmg"
-hdiutil create -volname "4AllPass" -srcfolder "$STAGE" -ov -format UDZO "$OUT"
+VERSION="$(node -p 'require(process.argv[1]).version' "$ROOT/src-tauri/tauri.conf.json")"
+OUT="$OUTDIR/4AllPass_${VERSION}_${SLUG}.dmg"
+[ ! -e "$OUT" ] || { echo "refusing to overwrite $OUT" >&2; exit 1; }
+hdiutil create -volname "4AllPass" -srcfolder "$STAGE" -format UDZO "$OUT"
 echo "$OUT"

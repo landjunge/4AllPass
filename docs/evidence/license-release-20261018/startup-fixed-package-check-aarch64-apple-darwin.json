@@ -1,0 +1,15 @@
+{
+  "version": "0.1.2-rc.1",
+  "source_commit": "316595415799aec8b0333068c5d7cbf21a7c1475",
+  "platform": "Darwin-arm64",
+  "license_sha256": "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec",
+  "sidecar_embedded_license": true,
+  "uses_personal_vault_or_account": false,
+  "sidecar_sha256": "0a97d959646528f5562ad90f439904c9b4c28812a8749061f5d67b95309f96c7",
+  "macos_code_signature_valid": true,
+  "signing": "ad-hoc",
+  "dmg_root_license": true,
+  "isolated_packaged_sidecar_database_startup": true,
+  "startup_evidence_reused_for_identical_binary": "sidecar-preflight-aarch64-apple-darwin.json",
+  "third_party_notice_inventory_in_resources": true
+}

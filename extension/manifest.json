@@ -1,17 +1,21 @@
 {
   "manifest_version": 3,
   "name": "4AllPass",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Fill logins from your 4AllPass vault. Chromium, Firefox, and Safari. Decryption stays on this device.",
   "icons": {
     "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "128": "icons/icon128.png",
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png"
   },
   "action": {
     "default_title": "4AllPass",
     "default_icon": {
       "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "128": "icons/icon128.png",
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
     },
     "default_popup": "popup.html"
   },
@@ -20,12 +24,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "activeTab", "tabs", "scripting", "contextMenus", "alarms"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "scripting",
+    "contextMenus",
+    "alarms"
+  ],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://127.0.0.1:*/*",
@@ -38,7 +54,10 @@
     "http://localhost:8010/*",
     "http://localhost:8788/*"
   ],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "addon@4allpass.local",

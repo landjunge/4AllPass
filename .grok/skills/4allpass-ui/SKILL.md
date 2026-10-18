@@ -56,4 +56,4 @@ frontend/src/pages/            Auth, Create, Unlock, Restore, Vault
 - Mix visual chrome changes into a `packages/crypto` PR
 - Bring back a Welcome screen
 - Shadow DOM / multi-step autofill in a UI polish PR
-- Mix product identities or replace the 4AllPass Elster logo with another product mark
+- Mix product identities or replace the approved 4AllPass AP4 icon with another product mark

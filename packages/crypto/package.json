@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "4AllPass Crypto Protocol v1 — Argon2id, AES-256-GCM, envelopes",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "exports": {
     ".": "./src/index.ts",
     "./test-only": "./src/test-only.ts"

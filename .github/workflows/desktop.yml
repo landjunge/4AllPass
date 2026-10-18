@@ -9,9 +9,15 @@ name: Desktop installers
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Select only a failed platform for a targeted rebuild'
+        type: choice
+        default: all
+        options: [all, macOS, macOS-Intel, Windows, Linux]
 
 concurrency:
-  group: desktop-installers
+  group: desktop-installers-${{ inputs.target || 'all' }}
   cancel-in-progress: false
 
 # Default token cannot push tags. Release/rolling jobs opt in to contents: write.
@@ -25,14 +31,29 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build: ${{ steps.check.outputs.build }}
+      matrix: ${{ steps.check.outputs.matrix }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: check
         env:
           EVENT: ${{ github.event_name }}
+          REQUESTED_TARGET: ${{ inputs.target || 'all' }}
         run: |
           set -eu
           python3 scripts/check-release-license.py
+          python3 - <<'PY'
+          import json, os
+          targets = [
+              {"name": "macOS", "os": "macos-latest", "bundle": "app"},
+              {"name": "macOS-Intel", "os": "macos-15-intel", "bundle": "app"},
+              {"name": "Windows", "os": "windows-latest", "bundle": "nsis"},
+              {"name": "Linux", "os": "ubuntu-22.04", "bundle": "appimage"},
+          ]
+          selected = [t for t in targets if os.environ["REQUESTED_TARGET"] in ("all", t["name"])]
+          assert selected, "Unknown platform selection"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write("matrix=" + json.dumps({"include": selected}) + "\n")
+          PY
           echo "build=true" >> "$GITHUB_OUTPUT"
 
   bundle:
@@ -43,20 +64,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: macOS
-            os: macos-latest
-            bundle: app
-          - name: macOS-Intel
-            os: macos-15-intel
-            bundle: app
-          - name: Windows
-            os: windows-latest
-            bundle: nsis
-          - name: Linux
-            os: ubuntu-22.04
-            bundle: appimage
+      matrix: ${{ fromJSON(needs.gate.outputs.matrix) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -95,6 +103,8 @@ jobs:
           python scripts/package-sidecar.py
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      - name: Isolated packaged sidecar preflight
+        run: python scripts/check-release-license.py --sidecar
       - name: Preserve third-party notices
         run: python scripts/collect-release-notices.py
       - name: Import Apple certificate
@@ -235,3 +245,10 @@ jobs:
             src-tauri/target/release/bundle/appimage/*.sha256
           if-no-files-found: error
           compression-level: 0
+      - name: Preserve compact failure diagnosis
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: 4AllPass-diagnostics-${{ matrix.name }}
+          path: dist/release-checks/*.json
+          if-no-files-found: warn

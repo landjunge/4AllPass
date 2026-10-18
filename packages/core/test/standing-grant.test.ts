@@ -79,7 +79,7 @@ test("live n8n transport is disabled pending a protected executor", () => {
     [github()],
   );
   assert.equal(decision.decision, "deny");
-  if (decision.decision === "allow") assert.equal(decision.riskClass, "data");
+  if (decision.decision === "deny") assert.equal(decision.reason, "handoff_unavailable");
   assert.equal(
     decideAccess(
       {

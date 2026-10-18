@@ -23,27 +23,24 @@ Diese Regel gilt verbindlich für Dokumentation, Portfolio-Seite und Agent-Antwo
 
 Gnom-Hub-V1 ist die bestätigte visuelle Richtung für 4AllPass und die weiteren NetzwerkPunkt-Apps und -Tools. Gemeinsame Grundlage sind dunkles Grau, kompakte Abstände, Karten, Dialoge, Eingaben und Fokuszustände. Die Produkte bleiben technisch eigenständig und behalten eigene Namen und Logos.
 
-Quelle für den laufenden 4AllPass-Tresor ist `frontend/src/tokens.css`.
+Quelle: `frontend/src/networkpunkt.css` (gemeinsame Basis),
+`frontend/src/tokens.css` (Produktadapter), `brand/README.md` (AP4).
 
-| Token | Wert | Rolle |
-|---|---|---|
-| `--bg` | `#121316` | Hauptfläche |
-| `--bg-panel` | `#1a1b1f` | Header / Inputs |
-| `--bg-card` / `--panel` | `#1e1f24` | Karten |
-| `--bg-elev` | `#24262d` | angehobene Flächen |
-| `--text` | `#e2e4e9` | Haupttext |
-| `--text-muted` / `--muted` | `#8b909a` | Meta-Text |
-| `--border` | `#2e3138` | Kanten |
-| `--accent` / `--accent-hi` | `#8f98a8` / `#a1a8b3` | Aktionen / Fokus |
-| `--ok` / `--warn` / `--err` | `#3d9b6a` / `#c9a227` / `#dc7070` | Status |
+| Rolle | Gemeinsamer Wert |
+|---|---|
+| Canvas / Fläche | `#121316` / `#1a1c20` |
+| Text / Meta | `#edf0f4` / `#afb6c1` |
+| Grün / Gelb / Rot | `#7bdaa7` / `#e4be70` / `#f49b9b` plus Text/Symbol |
+| Schriftrollen | 12 / 14 / 16 / 24px |
+| Kontrolle / Touch | 40 / 44px, sichtbarer Tastaturfokus |
 
-Akzent und Fehlerfarbe sind so aufgehellt, dass normaler Text auch auf Karten lesbar bleibt. Gold bleibt als Teil des 4AllPass-Logos und als Warn-/Favoritenhinweis erlaubt, ist aber nicht mehr die allgemeine App-Chrome.
+Das aktuelle Logo ist das ausdrücklich freigegebene AP4-Rastermotiv. Originale,
+Hell/Dunkel, Größen und Native-Ableitungen sind in `brand/README.md` belegt.
+Die bestehende 4AllPass-Anordnung unter 820px und Touch-Regeln bleiben erhalten;
+keine allgemeine 1180px-Mindestbreite und kein pauschales Verstecken der Scrollbar.
+Produkte behalten eigene Identität und technische Eigenständigkeit.
 
-Logos bleiben produktspezifisch: 4AllPass-Elster, Gnom-Hub-V1-Marke und TollGate-Marke. Gemeinsame Gestaltung bedeutet keine Zusammenlegung der Apps.
-
-Aktuelles 4AllPass-Logo: Elster mit goldenem Schlüssel auf dem Schriftzug (`frontend/public/logo.png`). App-Icon: Elster allein (`icon-512.png`).
-
-## Logo-Brief 4AllPass
+## Historischer Logo-Brief 4AllPass (ersetzt, nicht mehr umsetzen)
 
 4AllPass bekommt ein eigenes Logo:
 
@@ -57,19 +54,19 @@ Symbolik: Elster = klug, sammelt glänzende Dinge → Passwörter / Keys / Secre
 Canva-Kandidaten (editierbar im Account):
 - [Modern '4AllPass' Logo with Alert Magpie](https://www.canva.com/d/TgTiGOX87wFWhrW)
 
-## Logo-Farbe vs. Chrome
+## Historische Logo-Farbe vs. Chrome (ersetzt durch AP4)
 
 Der goldene Schlüssel gehört zur 4AllPass-Marke. Warnungen und aktive Favoriten dürfen Gold nutzen; die allgemeine Desktop-Chrome folgt dem Gnom-Hub-V1-Grau.
 
 ## Logo netzwerkpunkt.de (neu)
 
 Portfolio-Logo wird separat entwickelt (siehe Canva / spätere Varianten).  
-Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, modern, KI-/Multi-Agent-tauglich, ohne Verwechslung mit 4AllPass-Elster.
+Konzept-Richtung: zentraler „Punkt“ / Node in einem Netzwerk – klar, modern, KI-/Multi-Agent-tauglich, ohne Verwechslung mit dem aktuellen AP4-Produktmotiv.
 
 ## Nächste Schritte
 
 1. Gnom-Hub-V1-Grau für die 4AllPass-App vollständig prüfen
-2. 4AllPass-Logo und Elster unverändert produktspezifisch halten
+2. Freigegebenes AP4-Logo unverändert produktspezifisch halten
 3. Dieselben Chrome-Grundregeln schrittweise auf weitere NetzwerkPunkt-Apps anwenden
 4. Optionaler Light-Mode nur als eigene, geprüfte Designentscheidung
 5. Korrekte Schreibweisen auf netzwerkpunkt.de und in den Repositories pflegen

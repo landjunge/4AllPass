@@ -5,6 +5,7 @@ import { App } from "./App.tsx";
 import { AppProvider } from "./state/app-state.tsx";
 import { CopyModeProvider } from "./state/copy-mode.tsx";
 import "./styles.css";
+import "./desktop.css";
 
 registerSW({ immediate: true });
 

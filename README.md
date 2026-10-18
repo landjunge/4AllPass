@@ -73,6 +73,8 @@ Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten brauch
 
 **All Rights Reserved.** Der Quellcode ist öffentlich einsehbar, aber neue Inhalte dürfen ohne vorherige schriftliche Erlaubnis nicht kopiert, verändert, weitergegeben, bereitgestellt oder verkauft werden. Frühere Revisionen behalten die Lizenzrechte, unter denen sie damals veröffentlicht wurden. Siehe [LICENSE](LICENSE).
 
+**Geplanter Lizenzwechsel:** 4AllPass soll dasselbe künftige Lizenzmodell wie KiraBridge erhalten: kostenlose private Nutzung; interne Firmennutzung, Weiterverkauf und kostenpflichtige Dienste nur mit gesonderter Erlaubnis beziehungsweise Lizenz des Rechteinhabers. Der endgültige Lizenztext ist noch nicht ausgewählt. Dies ist eine Ankündigung, keine bereits erteilte Nutzungserlaubnis; bis zur ausdrücklichen Umstellung gilt die oben verlinkte LICENSE. [Details zum Vorhaben](docs/licensing-plan.md).
+
 ---
 
 ## Installation
@@ -163,6 +165,8 @@ Import passwords from Chrome or Firefox, keep the vault on your device, and opti
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License. All Rights Reserved.** The source is publicly viewable, but new material may not be copied, modified, distributed, deployed, or sold without prior written permission. Historical revisions retain the license rights under which they were originally published. See [LICENSE](LICENSE).
+
+**Planned licensing change:** 4AllPass is intended to adopt the same future licensing model as KiraBridge: free private use; separate permission or a license from the rightsholder for internal business use, resale and paid services. The final license text has not been selected. This announcement does not grant usage rights; the linked LICENSE remains in effect until explicitly replaced. [Licensing plan](docs/licensing-plan.md).
 
 ---
 

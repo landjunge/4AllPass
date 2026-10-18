@@ -1,18 +1,13 @@
-# Geplante Lizenzangleichung / Planned licensing alignment
+# Lizenzangleichung / Licensing alignment
 
-Betreiberentscheidung vom 18.10.2026: 4AllPass soll künftig dasselbe Lizenzmodell wie KiraBridge erhalten.
+Stand 18.10.2026: 4AllPass und KiraBridge verwenden im aktuellen Quellstand dieselbe individuelle **Netzwerkpunkt Personal Use License 1.0**. Maßgeblich ist [LICENSE](../LICENSE), deutsche Fassung mit englischer Übersetzung.
 
-## Gewünschtes Modell
+Private Nutzung ist kostenlos erlaubt; interne Firmennutzung, beruflicher Einsatz, Weiterverkauf und kostenpflichtige Dienste benötigen eine gesonderte schriftliche Erlaubnis beziehungsweise Lizenz. Keine allgemeine Weiterverteilungserlaubnis. Historische Lizenzrechte bleiben erhalten. Dies ist keine Open-Source-Standardlizenz und keine anwaltlich geprüfte Fassung.
 
-- Private Nutzung kostenlos erlauben.
-- Interne Firmennutzung nur mit gesonderter Erlaubnis beziehungsweise Lizenz des Rechteinhabers.
-- Weiterverkauf und kostenpflichtiges Anbieten als Dienst nur mit gesonderter Erlaubnis beziehungsweise Lizenz.
-- Noch keine konkrete Standardlizenz oder endgültige Vertragsfassung ausgewählt. Diese Notiz ist keine Nutzungserlaubnis und ersetzt die geltende LICENSE nicht.
-
-Die aktuelle LICENSE enthält einen All-rights-reserved-/Source-available-Hinweis und eine gesonderte historische Lizenzgrenze. Diese Grenze bei der Ausarbeitung ausdrücklich erhalten; keine rückwirkende Änderung bereits erteilter Rechte behaupten. Nach Auswahl und Prüfung des endgültigen Texts LICENSE, README, Downloads und Projektseite konsistent aktualisieren. Keine juristische Prüfung als bereits erfolgt ausgeben.
+Die Umstellung betrifft den aktuellen Quellstand. Bereits veröffentlichte Pakete, Tags und Projektseiten werden dadurch nicht automatisch verändert; deren tatsächlich beigefügte Bedingungen sind getrennt zu beachten. Keine historischen Releases umschreiben.
 
 ## English
 
-The owner intends 4AllPass to use the same future licensing model as KiraBridge: free private use; separate permission or a license from the rightsholder for internal business use, resale and paid hosted services.
+As of 18 October 2026, the current 4AllPass and KiraBridge source versions use the same custom **Netzwerkpunkt Personal Use License 1.0**. See [LICENSE](../LICENSE); the German text governs. Private use is free; business/professional use, resale and paid services require separate written permission or a license. No general redistribution right is granted. Historical rights remain intact. These are custom source-available terms, not an open-source standard license or a legally reviewed text.
 
-No final license text has been selected. This planning note grants no usage rights and does not replace the current LICENSE. Preserve the historical licensing boundary stated there. Update the license, README, downloads and project site consistently once the final terms have been selected and reviewed.
+Existing release packages, tags and project sites are not automatically updated by this source change. Preserve their historical terms.

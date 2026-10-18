@@ -2,7 +2,7 @@
   "name": "4allpass",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
-  "version": "0.1.2-rc.1",
+  "version": "0.1.2-rc.2",
   "type": "module",
   "workspaces": [
     "packages/*",

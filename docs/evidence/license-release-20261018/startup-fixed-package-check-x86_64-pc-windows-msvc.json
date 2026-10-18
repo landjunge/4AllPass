@@ -1,0 +1,14 @@
+{
+  "version": "0.1.2-rc.1",
+  "source_commit": "2767afba7c96585b69e810d7ad0538e2214972e2",
+  "platform": "Windows-AMD64",
+  "license_sha256": "d0f53544fd171d127016f7ed08010a41968266dd99942a1572879d347235a524",
+  "sidecar_embedded_license": true,
+  "uses_personal_vault_or_account": false,
+  "sidecar_sha256": "7dc9f1e1cb3496cbc842463e4ea481bff0608d6cc2cd3365042c94b2d26c091b",
+  "authenticode_status": "NotSigned",
+  "nsis_resources_license": true,
+  "isolated_packaged_sidecar_database_startup": true,
+  "startup_evidence_reused_for_identical_binary": "sidecar-preflight-x86_64-pc-windows-msvc.json",
+  "third_party_notice_inventory_in_resources": true
+}

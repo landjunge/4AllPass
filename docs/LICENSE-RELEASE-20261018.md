@@ -1,4 +1,4 @@
-# Neue lizenzierte Desktop-Pakete · 0.1.2-rc.1
+# Neue lizenzierte Desktop-Pakete · 0.1.2-rc.2
 
 ## Deutsch
 
@@ -9,7 +9,7 @@ kein OSI-Standard und nicht anwaltlich geprüft. Fremdlizenzen und historische
 Rechte bleiben bestehen. Frühere Tags, Pakete, Signaturen und Hashes werden
 nicht ersetzt und nicht nachträglich als neu lizenziert dargestellt.
 
-Neuer Paketstand0.1.2-rc.1: LICENSE im App-Ressourcenbündel, im Python-Sidecar,
+Neuer Paketstand0.1.2-rc.2: LICENSE im App-Ressourcenbündel, im Python-Sidecar,
 auf dem Mac-DMG und als separates Release-Asset. Windows verwendet die
 Lizenzdatei außerdem im NSIS-Installationsablauf. Cargo verweist auf die Datei;
 die eigenen npm-Workspaces auf den tatsächlichen relativen LICENSE-Pfad.
@@ -37,8 +37,6 @@ aktualisiert: brace-expansion, source-map-js und fast-uri. Kein pauschales
 `npm audit fix`; kein neuer direkter Baustein. Der neue Lockstand meldet0
 npm-Auditbefunde. Das ist keine Garantie gegen unbekannte Schwachstellen.
 
-## English
-
 ## Durch die Paketprobe gefundene Fehler
 
 Die ARM-macOS-Paketprobe scheiterte vor Datenbankbereitschaft, weil `greenlet`
@@ -59,7 +57,7 @@ erhalten; unklare Starts werden nicht als Erfolg markiert.
 
 ## English
 
-New0.1.2-rc.1 packages carry the operator-adopted Netzwerkpunkt Personal Use
+New0.1.2-rc.2 packages carry the operator-adopted Netzwerkpunkt Personal Use
 License1.0 in application resources, the Python sidecar, the macOS disk image
 and a separate release asset. German governs; English is a translation.
 Custom source-available terms, not an OSI standard or legal review. Third-party
@@ -77,3 +75,33 @@ Three existing build dependency audit findings were addressed with scoped
 updates within existing ranges: brace-expansion, source-map-js and fast-uri.
 No new direct dependency or blanket audit fix. The resulting npm audit has no
 reported findings, without implying permanent security.
+
+## Paket-Startfehler abgeschlossen, danach AP4
+
+Windows-Lauf 39129234492 (2767afb) besteht nach begrenztem Beenden des eigenen
+PyInstaller-Prozessbaums vollständig. Der vorherige Prüflauf hatte nur den
+Onefile-Elternprozess beendet; sein Kind hielt die synthetische Datenbankdatei
+offen (WinError32). Keine fremden Prozesse werden beendet. ARM-macOS, Intel-
+macOS und Linux bestehen im Lauf39128882517 (3165954); dessen Windows-Teil ist
+der erhaltene Fehlerbeleg vor der Prozessbaumkorrektur.
+
+Diese CI-Pakete ohne AP4 werden nicht veröffentlicht. Der neue Kandidat
+0.1.2-rc.2 enthält die am18.10. freigegebenen Originale und bereitgestellten
+Größen; Herkunft, Hashes und feste native Dark-Wahl stehen in brand/README.md.
+Die isolierte Browserprobe zeigt beide Varianten bei16/24/32/48/64/96/128px
+in echter CSS-Größe (DPR1) und das tatsächliche App-Kopfzeilenbild. Bei16px
+bleiben die feinen Raster-/Konturdetails naturgemäß schwer erkennbar; kein
+vereinfachtes Ersatzmotiv wird eingeführt. Paketprüfungen kontrollieren zusätzlich
+die nativen AP4-Icons sowie Icons und LICENSE der eingebetteten Erweiterungen.
+
+Der Windows-Vorläufer hatte durch Git-Checkout CRLF statt LF in LICENSE.
+Der Wortlaut war gleich, der Bytehash abweichend. Die neue gezielte
+.gitattributes-Regel erzwingt LF; der Freigabecheck verlangt den gemeinsamen
+Originalhash3316d5ed…2021ec. Vorläuferbelege bleiben unverändert erhalten.
+
+The startup corrections are evidenced by the completed native package checks
+above. Those pre-AP4 candidates are not published. Candidate0.1.2-rc.2 uses the
+approved, hash-preserved raster assets. Small-size detail is limited at16px;
+no automatic simplification. Native theme choice and original provenance are
+recorded in brand/README.md. LICENSE now retains identical LF bytes on Windows
+as well, with an explicit original-hash guard.

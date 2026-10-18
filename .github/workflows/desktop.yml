@@ -41,6 +41,7 @@ jobs:
         run: |
           set -eu
           python3 scripts/check-release-license.py
+          python3 scripts/sync-approved-icons.py --check
           python3 - <<'PY'
           import json, os
           targets = [

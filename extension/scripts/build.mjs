@@ -37,6 +37,7 @@ await esbuild.build({
 
 cpSync(join(root, "src/popup.html"), join(staging, "popup.html"));
 cpSync(join(root, "src/popup.css"), join(staging, "popup.css"));
+cpSync(join(root, "../LICENSE"), join(staging, "LICENSE"));
 if (existsSync(join(root, "icons"))) {
   cpSync(join(root, "icons"), join(staging, "icons"), { recursive: true });
 }

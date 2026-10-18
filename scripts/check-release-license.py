@@ -20,8 +20,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def package_icon_checks(folder, result):
+    expected = (ROOT / "extension/icons/icon48.png").read_bytes()
+    copies = [p for p in folder.rglob("icon48.png") if p.read_bytes() == expected]
+    assert len(copies) >= 2, (
+        "AP4 icons missing from bundled Chromium/Firefox extensions"
+    )
+    for path in copies:
+        assert (path.parent.parent / "LICENSE").read_bytes() == (
+            ROOT / "LICENSE"
+        ).read_bytes()
+    result["bundled_extension_ap4_icons_and_license"] = True
+
+
 def source_checks():
     license_bytes = (ROOT / "LICENSE").read_bytes()
+    assert hashlib.sha256(license_bytes).hexdigest() == (
+        "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec"
+    ), "Adopted LICENSE bytes differ (check checkout line endings)"
     text = license_bytes.decode()
     assert text.startswith("Netzwerkpunkt Personal Use License 1.0")
     assert "DEUTSCH — maßgebliche Fassung" in text and "ENGLISH — translation" in text
@@ -85,6 +101,12 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
         if not sidecar_only and sys.platform == "darwin":
             app = ROOT / "src-tauri/target/release/bundle/macos/4AllPass.app"
             same_license(app / "Contents/Resources", license_bytes)
+            package_icon_checks(app / "Contents/Resources", result)
+            assert any(
+                p.read_bytes() == (ROOT / "src-tauri/icons/icon.icns").read_bytes()
+                for p in (app / "Contents/Resources").glob("*.icns")
+            ), "Native AP4 ICNS missing"
+            result["native_ap4_icon"] = True
             subprocess.run(
                 ["codesign", "--verify", "--deep", "--strict", str(app)],
                 check=True,
@@ -92,7 +114,7 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             )
             result["macos_code_signature_valid"] = True
             signature = subprocess.run(
-                ["codesign", "-dv", str(app)], capture_output=True, text=True
+                ["codesign", "-dv", str(app)], check=True, capture_output=True, text=True
             )
             result["signing"] = (
                 "ad-hoc"
@@ -135,6 +157,15 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
                 timeout=90,
             )
             same_license(tmp / "squashfs-root", license_bytes)
+            package_icon_checks(tmp / "squashfs-root", result)
+            expected_icons = {
+                p.read_bytes() for p in (ROOT / "brand/ap4/dark").glob("*.png")
+            }
+            assert any(
+                p.read_bytes() in expected_icons
+                for p in (tmp / "squashfs-root/usr/share/icons").rglob("*.png")
+            ), "Native AP4 AppImage icon missing"
+            result["native_ap4_icon"] = True
             result["appimage_resources_license"] = True
         elif not sidecar_only and sys.platform == "win32":
             installer = next(
@@ -148,6 +179,30 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
                 timeout=90,
             )
             same_license(tmp / "extracted", license_bytes)
+            package_icon_checks(tmp / "extracted", result)
+            import pefile
+
+            exe = next(
+                p
+                for p in (tmp / "extracted").rglob("*.exe")
+                if p.stem.lower() in ("4allpass", "fourallpass")
+            )
+            pe = pefile.PE(str(exe))
+            expected_icons = {
+                p.read_bytes() for p in (ROOT / "brand/ap4/dark").glob("*.png")
+            }
+            frames = []
+            for kind in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+                if kind.id == 3:  # RT_ICON; compare embedded unchanged PNG frames.
+                    for icon in kind.directory.entries:
+                        for language in icon.directory.entries:
+                            data = language.data.struct
+                            frames.append(pe.get_data(data.OffsetToData, data.Size))
+            assert any(frame in expected_icons for frame in frames), (
+                "Native AP4 PE icon missing"
+            )
+            pe.close()
+            result["native_ap4_icon"] = True
             signed = subprocess.check_output(
                 [
                     "pwsh",
@@ -210,7 +265,7 @@ def startup_check(sidecar, tmp, result):
                 distributions = re.findall(
                     r"No package metadata was found for ([a-zA-Z0-9_.-]+)", raw
                 )
-                types = re.findall(r"^([a-zA-Z0-9_.]*(?:Error|Exception)):", raw, re.M)
+                types = re.findall(r"^([a-zA-Z0-9_.]*(?:Error|Exception)):", raw, re.MULTILINE)
                 diagnostic = {
                     "exit_code": proc.returncode,
                     "missing_modules": modules,

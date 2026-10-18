@@ -1,6 +1,6 @@
 [package]
 name = "fourallpass"
-version = "0.1.2-rc.1"
+version = "0.1.2-rc.2"
 description = "4AllPass desktop shell — UI is this webview, not a browser tab"
 authors = ["landjunge"]
 edition = "2021"

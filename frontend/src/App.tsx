@@ -38,7 +38,8 @@ export function App(): ReactNode {
     <div className="app">
       <header>
         <span className="brand">
-          <img src="/logo.png" alt="4AllPass" />
+          <img src="/logo.png" width="36" height="36" alt="" />
+          <strong>4AllPass</strong>
         </span>
         <LanguageSwitch />
         {email ? (

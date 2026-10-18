@@ -1,8 +1,10 @@
 # 4AllPass
 
 <p align="center">
-  <img src="brand/mark.svg" alt="4AllPass Elster mit goldenem Schlüssel" width="300"><br>
-  <img src="brand/wordmark.svg" alt="4AllPass" width="460">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="brand/ap4/light/4allpass-light-256.png">
+    <img src="brand/ap4/dark/4allpass-dark-256.png" alt="4AllPass — AP4" width="192" height="192">
+  </picture>
 </p>
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>

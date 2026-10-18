@@ -1,0 +1,18 @@
+{
+  "source_base": "82bf0f8",
+  "isolation": "synthetic temporary SQLite on 8798 and Vite 4188; no personal vault",
+  "path": "isolated synthetic local vault unlock \u2192 Access EN/DE \u2192 640px/150%/reduced-motion \u2192 narrow human vault \u2192 1440px keyboard focus",
+  "allow_button_absent": true,
+  "errors": [],
+  "checked_at": "2026-10-18T16:57:00.031Z",
+  "shared_body_px": 14,
+  "portable_css_git_blob": "673f4e265c8c46618ba86d9e98f8da09fd0bf107",
+  "no_forced_1180px_width": true,
+  "narrow_single_column_preserved": true,
+  "keyboard_focus_and_40px_control": true,
+  "committed_playwright_test": {
+    "file": "frontend/e2e/local/shared-desktop.spec.ts",
+    "result": "1 passed (16.1s)",
+    "runtime": "isolated existing temporary SQLite 8798 / Vite 4188; no native bundle"
+  }
+}

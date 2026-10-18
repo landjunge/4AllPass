@@ -35,7 +35,7 @@ export function App(): ReactNode {
   }
 
   return (
-    <div className="app">
+    <div className="app np-ui">
       <header>
         <span className="brand">
           <img src="/logo.png" width="36" height="36" alt="" />
@@ -60,7 +60,7 @@ export function App(): ReactNode {
               </span>
             ) : null}
             {lockState === "UNLOCKED" ? (
-              <button type="button" className="primary" onClick={lock} data-testid="lock">
+              <button type="button" className="secondary" onClick={lock} data-testid="lock">
                 {t({ de: "Sperren", en: "Lock" })}
               </button>
             ) : null}

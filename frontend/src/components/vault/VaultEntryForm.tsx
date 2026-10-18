@@ -49,7 +49,7 @@ export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void 
           title={t({ de: "Token oder API-Key", en: "Token or API key" })}
         >
           <strong>{t({ de: "API-Key", en: "API key" })}</strong>
-          <span>{t({ de: "Token für Programme. Erlauben bleibt nötig.", en: "Token for programs. Allow is still required." })}</span>
+          <span>{t({ de: "API-Schlüssel für deine Nutzung. KI-Zugriff ist gesperrt.", en: "API keys for your use. AI access is blocked." })}</span>
         </button>
         <button
           type="button"

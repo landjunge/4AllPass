@@ -195,3 +195,10 @@ Import-Review zeigt Art (Login / API-Key / Server) · Host oder Provider · User
 
 Neue Fläche? Erst hier eine Nummer, dann Code. Tokens: [`architecture.md`](architecture.md) §3.
 
+## Gemeinsame Bedienbasis / shared foundation (FP-D01)
+
+`frontend/src/networkpunkt.css` is the unchanged portable foundation from PR216,
+Git blob `673f4e265c8c46618ba86d9e98f8da09fd0bf107`; `tokens.css` adapts its roles.
+4AllPass keeps AP4, existing narrow-window stacking below 820px and 44px touch
+controls. The old PR216 blanket 1180px minimum/hidden scrollbars/removal of touch
+rules is not adopted. New blocked machine access states remain truthful in DE/EN.

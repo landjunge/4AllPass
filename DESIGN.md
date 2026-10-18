@@ -25,23 +25,18 @@ All projects, apps and websites live under **netzwerkpunkt.de** as the central p
 
 ## 4AllPass Design
 
-**Ist-Palette:** `frontend/src/tokens.css` (Golden Magpie). Do not copy colors from this file into CSS.
+**Current authority / maßgeblich:** `frontend/src/networkpunkt.css` (portable
+NetzwerkPunkt foundation) and `frontend/src/tokens.css` (4AllPass adapter). Canvas
+#121316, surface #1a1c20, primary text #edf0f4, muted #afb6c1; 12/14/16/24px type
+roles, 40px controls and 44px touch controls. Existing 4AllPass narrow-window
+behavior stays; this does not impose a new global mobile/desktop composition.
 
-- **BG:** `#0A0E1A`
-- **Panel:** `#12182B`
-- **Accent / Gold:** `#C9A227` / `#D4AF37`
-- **Text:** `#F8F4EC`
-- **Muted:** `#A89F8C`
-- **OK:** `#3DDC97`
+### Approved product icon
 
-### Logo Brief (4AllPass)
-
-- Wordmark: "4AllPass"
-- Magpie (Elster) sitting on the lettering, front view
-- Holds a golden key in its beak
-- Style: elegant, modern, trustworthy
-
-Canva designs already generated and partially saved.
+The AP4 raster/grid originals approved 18 October 2026 live in `brand/ap4/`.
+`brand/README.md` documents source hashes, light/dark selection and native
+conversion. No new logo is needed. The former magpie/golden-key and blue/gold
+brief is historical and must not drive current product assets or palette.
 
 ## netzwerkpunkt.de Logo (new request)
 
@@ -56,11 +51,11 @@ Ideas:
 
 Style: modern, clean, slightly experimental but professional. Should feel like the parent brand above 4AllPass, Tollgate and Gnom-Hub-V1.
 
-Color suggestion: Deep dark base + soft teal / indigo or warm gold accents to stay related but distinct from the pure Golden Magpie of 4AllPass.
+Historical portfolio color brainstorming is not a current 4AllPass palette instruction; the shared grey/AP4 sources above govern the product.
 
 ## Next Steps
 
-- [ ] Finalize 4AllPass logo + apply Golden Magpie colors
+- [x] Approved AP4 assets are in main; shared grey product roles adopted in source (see docs/DESIGN-ALIGNMENT-20261018.md).
 - [ ] Create and approve netzwerkpunkt.de logo
 - [ ] Add 4AllPass + Gnom-Hub-V1 correctly to the portfolio site
 - [ ] Keep naming locked: only Gnom-Hub-V1

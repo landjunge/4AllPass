@@ -31,6 +31,11 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > tested with synthetic data; production secret use and protected browser sessions
 > are not connected. Existing v0.1.2-rc.2 downloads are unchanged and do not contain
 > this source fix. See [boundary and evidence](docs/PROTECTED-ACCESS-20261018.md).
+> Bedienbasis / UI foundation: Die vorhandene np-Gestaltung ist im Quellstand
+> mit AP4 und bestehenden schmalen/Touch-Ansichten abgeglichen. / Source adopts
+> the existing np foundation while preserving AP4 and narrow/touch behavior.
+> [Design evidence](docs/DESIGN-ALIGNMENT-20261018.md); unchanged downloads remain
+> separately pinned.
 
 ## Für Nutzer
 

@@ -21,7 +21,7 @@ Vor jeder Änderung am Tresor: lies
 und die bestehenden Komponenten unter `frontend/src/components/vault/`.
 
 - Wiederverwenden statt neu erfinden.
-- Palette: `frontend/src/tokens.css` (Golden Magpie), nicht Gnom-Hub und nicht die alte Blau-Tabelle in DESIGN.md.
+- Palette: `frontend/src/tokens.css` adaptiert die gemeinsame `networkpunkt.css`-Bedienbasis; AP4 aus `brand/README.md` bleibt Produktlogo. Alte Blau-/Elster-Angaben sind historisch.
 - Keine neuen Dependencies, keine Crypto-Änderungen.
 - Typecheck + Tests im frontend-Workspace vor dem Commit.
 - Keine Secrets im Diff.

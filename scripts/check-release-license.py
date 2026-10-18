@@ -195,6 +195,9 @@ def startup_check(sidecar, tmp, result):
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=log,
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+        if sys.platform == "win32"
+        else 0,
     )
     try:
         success = False
@@ -237,7 +240,17 @@ def startup_check(sidecar, tmp, result):
         assert success, "Packaged sidecar database startup failed"
         result["isolated_packaged_sidecar_database_startup"] = True
     finally:
-        proc.terminate()
+        if sys.platform == "win32" and proc.poll() is None:
+            # PyInstaller onefile has an owned parent + child. Killing only the
+            # parent leaves the child holding the synthetic SQLite file open.
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                check=True,
+                capture_output=True,
+                timeout=15,
+            )
+        elif proc.poll() is None:
+            proc.terminate()
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:

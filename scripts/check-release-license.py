@@ -150,7 +150,7 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
             same_license(tmp / "extracted", license_bytes)
             signed = subprocess.check_output(
                 [
-                    "powershell",
+                    "pwsh",
                     "-NoProfile",
                     "-Command",
                     "(Get-AuthenticodeSignature -LiteralPath $env:FOURALLPASS_SIGN_CHECK_PATH).Status.ToString()",

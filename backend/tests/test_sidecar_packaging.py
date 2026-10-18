@@ -23,3 +23,10 @@ def test_print_triple_is_a_known_host():
         "-unknown-linux-gnu"
     )
     assert "fourallpass-core" not in out
+
+
+def test_async_database_runtime_is_explicit_on_apple_silicon():
+    root = SCRIPT.parent.parent
+    assert "sqlalchemy[asyncio]==" in (root / "backend/requirements.txt").read_text()
+    assert '"greenlet"' in SCRIPT.read_text()
+    assert "LICENSE" in SCRIPT.read_text()

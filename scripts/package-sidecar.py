@@ -107,6 +107,8 @@ def main() -> int:
         "--hidden-import",
         "aiosqlite",
         "--hidden-import",
+        "greenlet",
+        "--hidden-import",
         "app.main",
         "--hidden-import",
         "app.local",

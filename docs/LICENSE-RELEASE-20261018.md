@@ -39,6 +39,26 @@ npm-Auditbefunde. Das ist keine Garantie gegen unbekannte Schwachstellen.
 
 ## English
 
+## Durch die Paketprobe gefundene Fehler
+
+Die ARM-macOS-Paketprobe scheiterte vor Datenbankbereitschaft, weil `greenlet`
+in der tatsächlichen Pip-Installation fehlte (nicht nur eine vermutete fehlende
+PyInstaller-Erkennung). Vorheriger Buildpin a13c3fb, kompakter Beleg im CI-Lauf
+39128531456. Die bereits verwendete SQLAlchemy-Asyncio-Laufzeit wird deshalb
+ausdrücklich mit `sqlalchemy[asyncio]` installiert und beim Verpacken aufgenommen.
+Kein neuer Datenbankweg und keine Kryptografieänderung.
+[SQLAlchemy: Installation einschließlich Apple M1](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#asyncio-platform-installation-notes-including-apple-m1).
+
+Die Windows-Paketprüfung hatte bereits den eingebetteten LICENSE-Inhalt geprüft,
+scheiterte danach am Autoload des Signaturmoduls in Windows PowerShell5 unter der
+PowerShell7-Umgebung des Runners. Der Prüfhelfer verwendet jetzt dessen vorhandenes
+`pwsh`. Ein Fehler wird nicht als „unsigniert“ umgedeutet. Laufzeitprüfung erfolgt
+vor dem teuren nativen Bündeln; bei identischem Sidecar-Hash wird ihr Beleg im
+nachfolgenden Paketcheck wiederverwendet. Kompakte Fehler bleiben als Beleg
+erhalten; unklare Starts werden nicht als Erfolg markiert.
+
+## English
+
 New0.1.2-rc.1 packages carry the operator-adopted Netzwerkpunkt Personal Use
 License1.0 in application resources, the Python sidecar, the macOS disk image
 and a separate release asset. German governs; English is a translation.

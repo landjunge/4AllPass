@@ -1,6 +1,6 @@
 # Protected-operation binding core / Bindungskern
 
-Private source preparation; **no production host, secret transfer, protected browser
+Unreleased source preparation; **no production host, secret transfer, protected browser
 session, new API or service is available**. Human vault/import/autofill/recovery,
 cryptography, LICENSE, AP4 and existing downloads are untouched. FP-C02/FP-C03
 remain productively open. This slice hardens a building block, not an OS boundary.

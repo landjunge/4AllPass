@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-18T16:14:27.979418+00:00",
+  "tags_unchanged": {
+    "desktop": "1859101b0016565cfd4da1dcb56a06c337201bce",
+    "v0.1.0": "ef0bb7f0e13befdc2c6438e0a97ebbf3bb63f04d",
+    "v0.1.1": "03a3b9790c6cc70736054ec0827a56f26d5dda84"
+  },
+  "releases": [
+    {
+      "id": 375371777,
+      "tag": "desktop",
+      "asset_records_unchanged": true,
+      "asset_count": 8
+    },
+    {
+      "id": 374650474,
+      "tag": "v0.1.1",
+      "asset_records_unchanged": true,
+      "asset_count": 3
+    },
+    {
+      "id": 374642509,
+      "tag": "v0.1.0",
+      "asset_records_unchanged": true,
+      "asset_count": 0
+    }
+  ],
+  "historical_assets_not_relicensed_or_overwritten": true
+}

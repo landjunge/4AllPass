@@ -4,7 +4,7 @@
 #
 # curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.sh | sh
 #
-# Channel: GitHub release tag `desktop` (override: FOURALLPASS_RELEASE=tag).
+# Channel: GitHub release tag `v0.1.2-rc.2` (override: FOURALLPASS_RELEASE=tag).
 # SHA-256 sidecar is required. Not notarized. Alternative: save this file,
 # read it, then: sh install.sh
 #
@@ -13,7 +13,7 @@
 set -eu
 
 REPO="landjunge/4AllPass"
-CHANNEL="${FOURALLPASS_RELEASE:-desktop}"
+CHANNEL="${FOURALLPASS_RELEASE:-v0.1.2-rc.2}"
 API="https://api.github.com/repos/${REPO}/releases/tags/${CHANNEL}"
 VAULT_MAC="${HOME}/Library/Application Support/4AllPass"
 VAULT_LINUX="${HOME}/.local/share/4allpass"

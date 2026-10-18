@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-18T16:15:39.662594+00:00",
+  "url": "https://4allpass.netzwerkpunkt.de/",
+  "release": "https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2",
+  "scope": "only this product index and four unique AP4 PNG assets; no other sites/audio/DNS/provider settings",
+  "before_sha256": "5f009149f30b8a28744b9f6611902bf88c8df4aa09d0cf81b9ec909e6f20e6a6",
+  "after_sha256": "1f7ce9c75344ef88587e759c4c85ed8ad53e095f921ac2d30c288a59155691a5",
+  "http_content_matches_deployed_bytes": true,
+  "ftp_readback_matches": true,
+  "shared_publishing_source_same_bytes": true,
+  "shared_source_file_mode_preserved": true,
+  "unrelated_dirty_repository_changes_not_committed": true,
+  "assets": {
+    "ap4-dark-128-v1.png": "67ef70247ad91a5b4402f8ba0a5b338be92bc17bd0236ad6ee1db876e50bc44d",
+    "ap4-dark-32-v1.png": "a6f74b8281bfeb05254a9fec61d62a02b41ae0ec517db27ef85da1e41224c512",
+    "ap4-light-128-v1.png": "58a008c4ac9a3f1b2cca4c02b43b3b46ffb5f10a94e725c09fcad693473c5151",
+    "ap4-light-32-v1.png": "1fa6d8bf3ec2117735f4f8b888615876ecc40e22b954d06407bdeb8ae82a2a86"
+  },
+  "historical_assets_not_removed": true
+}

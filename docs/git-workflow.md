@@ -66,7 +66,7 @@ Auf **diesem** Mac: `scripts/install-git-hooks.sh` setzt einen `post-commit`-Hoo
 
 ## Releases
 
-- Tag `desktop` = rolling Prerelease (Desktop-Builds via `workflow_dispatch` oder täglich 04:00 UTC, nur wenn `main` sich geändert hat).
+- Historischer Tag `desktop` bleibt unverändert. Neue Pakete erhalten eindeutige versionierte Tags; die Desktop-Pipeline baut seit18.10.2026 nur ausdrücklich per `workflow_dispatch` gepinnte Kandidaten und veröffentlicht nicht automatisch.
 - Tags `v*` = versionierte Releases.
 - Desktop-Builds laufen bewusst **nicht** auf jedem PR (zu langsam).
 - Apple-Notarisierung bleibt pausiert, bis das Developer-Abo läuft.

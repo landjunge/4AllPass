@@ -1,11 +1,11 @@
 # 4AllPass Windows install. Not SmartScreen-clean (no certificate).
 # irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 # Does not touch %APPDATA%\4AllPass\. Unlock is still the vault password.
-# Channel: GitHub tag `desktop` (override: $env:FOURALLPASS_RELEASE).
+# Channel: GitHub tag `v0.1.2-rc.2` (override: $env:FOURALLPASS_RELEASE).
 
 $ErrorActionPreference = "Stop"
 $repo = "landjunge/4AllPass"
-$channel = if ($env:FOURALLPASS_RELEASE) { $env:FOURALLPASS_RELEASE } else { "desktop" }
+$channel = if ($env:FOURALLPASS_RELEASE) { $env:FOURALLPASS_RELEASE } else { "v0.1.2-rc.2" }
 $api = "https://api.github.com/repos/$repo/releases/tags/$channel"
 Write-Host "4AllPass install"
 Write-Host "Channel $channel · GitHub $repo"

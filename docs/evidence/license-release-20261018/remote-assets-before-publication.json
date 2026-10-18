@@ -1,0 +1,115 @@
+{
+  "at": "2026-10-18T16:13:46.283920+00:00",
+  "all_27_assets_match_local_sha256": true,
+  "source_commit": "60eef0a7cc522c83dd13842c82c63a4430eb256f",
+  "assets": [
+    {
+      "name": "4AllPass_0.1.2-rc.2_aarch64.dmg",
+      "sha256": "f92435ba51e2f397270252dce040a7408423751821d9c47a8158ebda61162df0"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_aarch64.dmg.sha256",
+      "sha256": "56d37905e8b266fec97bdaa28365d692e88e125809dd1fccdcf16f91c1c7df39"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_amd64.AppImage",
+      "sha256": "71056c618f464441a8fc080503bfab1c5f06ae2cb7ae4a82a2f670594b02a57e"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_amd64.AppImage.sha256",
+      "sha256": "4044f3c54e58f5d9f95dc61518f77b1bf266006a3a351af6088b0d39ccc2e30c"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_x64-setup.exe",
+      "sha256": "a95f730dd9df89fb45cf7ef8b01011febbbadacfdb36845acad67c7f87c8cfa1"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_x64-setup.exe.sha256",
+      "sha256": "4849e7e5214a4778b2a2f009d719b896ce97175d02828fccd13f985ac6d281d8"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_x64.dmg",
+      "sha256": "5ff19d4b30c0aae98a8c166ef676d2896f827efc6a7428d2193d04799c68b318"
+    },
+    {
+      "name": "4AllPass_0.1.2-rc.2_x64.dmg.sha256",
+      "sha256": "611e3f494c5f05948bb3d701ed7c9d4d14e608fbcab9eda9475aab5276f585e5"
+    },
+    {
+      "name": "LICENSE",
+      "sha256": "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec"
+    },
+    {
+      "name": "SHA256SUMS",
+      "sha256": "f9510409cf58a6c7771a9fd73be91d029c0f8f64486a6d98676a9820d3960760"
+    },
+    {
+      "name": "package-check-aarch64-apple-darwin.json",
+      "sha256": "00e2b5b3fa04edbc5bb5fc8ab739ff4e7d046fa66dc31c6db47167aaa89b60e6"
+    },
+    {
+      "name": "package-check-x86_64-apple-darwin.json",
+      "sha256": "e284e270058017ff6e55433564c738b69194fc52fe53fa0b986eef3f05d22e87"
+    },
+    {
+      "name": "package-check-x86_64-pc-windows-msvc.json",
+      "sha256": "0729b3f6aa16a33cd103bd350784ef92ae50bf470941c055ebed9bd67327254e"
+    },
+    {
+      "name": "package-check-x86_64-unknown-linux-gnu.json",
+      "sha256": "d4e856ec1dae576c0418eadc819e5ec410a15521a7ad1a85e5999925d1894720"
+    },
+    {
+      "name": "release-manifest.json",
+      "sha256": "d9abdb42830f0237283e3b9918bcef8d6ddfe9dc7ff21c9bba911c2ff32e17ce"
+    },
+    {
+      "name": "sidecar-preflight-aarch64-apple-darwin.json",
+      "sha256": "8d84c4b3b80137ad7a36690bf8172f47af3ae481b7f27ae939d4ffce7239acc9"
+    },
+    {
+      "name": "sidecar-preflight-x86_64-apple-darwin.json",
+      "sha256": "09a43c014c9fb1d50f281958387e4d971e723afa0d8d0ca2b08b4a1de01e4925"
+    },
+    {
+      "name": "sidecar-preflight-x86_64-pc-windows-msvc.json",
+      "sha256": "30ad1586c032c4d3828cda0ef6734f74ccc0dffe9d61dacd4f9fed9f06137b81"
+    },
+    {
+      "name": "sidecar-preflight-x86_64-unknown-linux-gnu.json",
+      "sha256": "2bd8013a0d124d8e72b9fbdeb3ebd7349b35ed64392b137b89e94bf4f1b85913"
+    },
+    {
+      "name": "source-Linux.json",
+      "sha256": "ee37dd825dbcc0a9481d7b9fb240ae474b39006f1805f8cbb9fd187e263bcaba"
+    },
+    {
+      "name": "source-Windows.json",
+      "sha256": "733e0926408a581e9cce1e6a464d5b03cb2c6cfc34ff1593c871706c875481f4"
+    },
+    {
+      "name": "source-macOS-Intel.json",
+      "sha256": "49b8a37b9d92ddbb0525a5602dff5e3418d17747020923f6cc8c131b8496e547"
+    },
+    {
+      "name": "source-macOS.json",
+      "sha256": "bb623d3635cf24f2d0d0497fda9e4274efef8547eb7ca195613be47d24e625f0"
+    },
+    {
+      "name": "third-party-notices-Linux.zip",
+      "sha256": "5e8abe3018cbd9f10d952c75d764e4d438a9397cb15e33de38d14597ca294f83"
+    },
+    {
+      "name": "third-party-notices-Windows.zip",
+      "sha256": "f1c60268442ff9f2e005649b5d204545aca8fe657c4eaa1648ae1e3d8677b1cc"
+    },
+    {
+      "name": "third-party-notices-macOS-Intel.zip",
+      "sha256": "68564e569bbe0074c2170a72c2b00f0691e8b862379f3de523acc2378cc84427"
+    },
+    {
+      "name": "third-party-notices-macOS.zip",
+      "sha256": "4d2fb2e5d5ed3f95aeeecfdbde8c3f799ae45dc733323e3b2edc768b0203e78b"
+    }
+  ]
+}

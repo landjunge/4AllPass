@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-18T16:15:30.194707+00:00",
+  "release": "v0.1.2-rc.2",
+  "shell_syntax": true,
+  "fixture_body_older_asset_regression": true,
+  "default_channel_matches_new_public_release": true,
+  "live_asset_selection": true,
+  "native_mac_intel_dry_run_asset": "4AllPass_0.1.2-rc.2_x64.dmg",
+  "powershell_syntax": true,
+  "powershell_execution_host": "PowerShell7 on macOS, not a Windows installation",
+  "powershell_actual_installer_script_mocked_download_and_launch": true,
+  "powershell_selects_public_windows_asset": true,
+  "powershell_checksum_mismatch_prevents_launch": true,
+  "synthetic_installer_files_removed": true,
+  "personal_vault_or_account_used": false,
+  "failed_harness_observation": "Initial PowerShell probe used script-scoped variables invisible to the invoked script; corrected to uniquely named process-global probe variables. Installer code itself was not changed for that harness error.",
+  "native_builds_repeated": false
+}

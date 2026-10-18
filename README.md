@@ -47,7 +47,7 @@ Du installierst sie, legst deinen Tresor an und übernimmst deine Passwörter au
 2. **Übernehmen** – Passwörter aus Chrome oder Firefox prüfen und importieren.
 3. **Anmelden** – Autofill auf einer Webseite ausprobieren.
 
-[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/desktop) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
+[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
 
 ### Was wir bewusst nicht machen
 
@@ -96,7 +96,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 ~~~
 
-Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **desktop** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht.
+Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht.
 
 Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsklick → Öffnen** nötig sein.
 
@@ -167,7 +167,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/desktop). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
 

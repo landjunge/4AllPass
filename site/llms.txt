@@ -11,7 +11,7 @@ Recovery kit is mandatory — no server-side reset.
 - Hub entry: https://netzwerkpunkt.de/4allpass
 - Docs / GitHub Pages: https://landjunge.github.io/4AllPass/
 - Source: https://github.com/landjunge/4AllPass
-- Desktop builds: https://github.com/landjunge/4AllPass/releases/tag/desktop
+- Desktop builds: https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2
 
 ## Future domain
 When budget allows: 4allpass.de (preferred) or 4allpass.com — then 301 from the subdomain.

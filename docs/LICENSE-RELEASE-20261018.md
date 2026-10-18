@@ -146,3 +146,64 @@ format conversion adds opaque alpha without changing decoded pixels or size;
 originals and web/extension images stay unchanged. The early gate now checks
 native RGBA and pixel equality before compiling. Existing failed-run evidence
 is retained; no unverified native package is published.
+
+## Tatsächlich veröffentlicht ·18.10.2026
+
+[Vorabversion v0.1.2-rc.2](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2)
+ist öffentlich, draft=false/prerelease=true. Gebauter Quellpin
+`60eef0a7cc522c83dd13842c82c63a4430eb256f`, in main über PR218/83d111d
+integriert. Der Squash-Commit wird nicht fälschlich als gebauter Pin ausgegeben.
+Alle vier nativen Pakete bestehen im CI39131820841; alle27 hochgeladenen
+Assets stimmen mit den lokalen SHA-256-Werten überein. Separate LICENSE wurde
+zusätzlich öffentlich abgerufen:6373Bytes, gemeinsamer Hash3316d5ed…2021ec.
+
+| Plattform | Neues Paket | SHA-256 |
+|---|---|---|
+| macOS Apple Silicon | [DMG](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg) | f92435ba51e2f397270252dce040a7408423751821d9c47a8158ebda61162df0 |
+| macOS Intel | [DMG](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg) | 5ff19d4b30c0aae98a8c166ef676d2896f827efc6a7428d2193d04799c68b318 |
+| Windows x64 | [NSIS](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe) | a95f730dd9df89fb45cf7ef8b01011febbbadacfdb36845acad67c7f87c8cfa1 |
+| Linux x64 | [AppImage](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage) | 71056c618f464441a8fc080503bfab1c5f06ae2cb7ae4a82a2f670594b02a57e |
+
+[LICENSE](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/LICENSE),
+[SHA256SUMS](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/SHA256SUMS)
+und [Manifest](https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/release-manifest.json)
+stehen neben je vier Plattform-/Paket-/Vorabstartbelegen und Drittanbieter-
+Hinweisarchiven. Historische Tags und Release-Assetdatensätze sind gegen den
+vorher gespeicherten Bestand abgeglichen, ohne Änderungen an alten Hashes,
+Signaturen oder Lizenzzuordnung.
+
+Abnahme: Paket-Lizenz, native AP4-/eingebettete Erweiterungsicons, temporäre
+synthetische Datenbank, ausgeliefertes HTML und exaktes AP4-Favicon. Die native
+PNG-Konvertierung ist pixelgleich nachgewiesen. Kleine Größen16–128px und
+App-/Popupdarstellung wurden isoliert im Browser dokumentiert. Keine neue
+native Voll-GUI-/Autofill-Abnahme, keine Prüfung aller älteren OS-Versionen oder
+zusätzlicher Architekturen. macOS ad-hoc signiert/nicht notarisiert; Windows
+unsigniert. Linux-BuildumgebungUbuntu22.04. Keine persönlichen Tresore geöffnet.
+Drittanbieterinventar ist kein vollständiges Gutachten sämtlicher OS-Bibliotheken
+und keine rechtliche Kompatibilitätsgarantie.
+
+Nach bestätigter vollständiger Veröffentlichung lenkt dieser Integrationsstand
+die bestehenden Installer, README und Downloadseiten auf genau diesen Tag. Die
+4AllPass-Produktseite ist über den vorhandenen begrenzten FTP-Weg aktualisiert;
+HTTPS-Seite und vier neue PNG-Dateien stimmen mit den ausgelesenen FTP-Inhalten
+überein. Gemeinsame lokale Publishingquelle gezielt nachgezogen, Dateimodus
+erhalten; fremde Änderungen dieses anderen Repos nicht mitcommittet. Andere
+Produktseiten, Audio, Provider-/DNS-Einstellungen bleiben unangetastet. Die konkrete öffentliche Prüfung und der Rückweg stehen in den
+zugehörigen Veröffentlichungsbelegen unter `docs/evidence/license-release-20261018/`.
+
+English: The linked prerelease is public and built from60eef0a on all four
+listed targets. Every uploaded asset matches its local SHA-256; the separate
+LICENSE was read publicly and retains the adopted exact bytes. Historical
+assets/tags remain unchanged. Checks cover packaging, icons and synthetic
+sidecar/database/HTML/favicon startup, not complete native GUI/autofill or every
+OS version. macOS is ad-hoc signed/not notarized; Windows is unsigned. Existing
+vaults and cryptography were untouched. Installer/download targets switch only
+after complete checked publication. License inventory is not a legal opinion.
+
+
+Rückweg: Standard-Downloadtag in diesem Integrationscommit gezielt zurücknehmen;
+keine historischen Releases überschreiben. Vor einer Rücknahme der Produktseite
+aktuellen Hash gegen `product-page-publication.json` abgleichen und ausschließlich
+die gesicherte vorherige Produkt-HTML-Datei wiederherstellen. Ein späterer fremder
+Stand darf dabei nicht überschrieben werden. Die vier eindeutig benannten neuen
+PNG-Dateien können erhalten bleiben; keine pauschale Löschung.

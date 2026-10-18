@@ -432,10 +432,11 @@ hibernation-safe: the event has to reach the WKWebView process, and if the
 machine suspends first the lock lands on wake instead — before the vault is
 usable again, but after VK has spent the sleep in RAM. Sleep-lock raises the
 bar for a stolen sleeping laptop; it does not defeat a RAM attack on one.
-An access request opens a small always-on-top prompt with Allow / Deny;
-that window receives only application / provider / scope / TTL. The grant
-material is issued in the unlocked main webview after the prompt event. The
-prompt is not a second crypto context.
+Historically, a v1 access request opened a small always-on-top Allow / Deny
+prompt containing only application / provider / scope / TTL; the unlocked main
+webview then issued material. That is not the current source behavior. Current
+machine requests are denied before a credential request can enter the queue
+(§7); the remaining historical prompt is not a protected executor.
 
 ---
 
@@ -497,3 +498,23 @@ production secret isolation. Browser/DOM/cookie/session export protection FP-C03
 remains unimplemented; do not give an agent an unrestricted browser with secrets.
 
 See [the cause and acceptance record](PROTECTED-ACCESS-20261018.md).
+
+### Package release guard — source preparation, 19 October 2026
+
+The existing `scripts/check-release-license.py --sidecar` startup check now also
+requires eight actual loopback requests to the started candidate: omitted,
+`raw_secret`, and `mediated` handoffs must return only the fixed
+`denied` / `handoff_unavailable` response. Missing/wrong pairing tokens and
+foreign, `null`, or same-origin browser origins must remain rejected. Additional
+fields, material, redirects and malformed/oversized responses fail the check;
+provider bodies and exception text are not printed. Requests bypass environment
+proxies and use bounded reads/deadlines, a fixed synthetic pairing token, minimal
+child environment and temporary data directory/cwd, not a user's `.env` or keys.
+
+`packaged_machine_handoff_deny_v1=true` and all eight named checks are recorded
+only after the probe succeeds. Reused evidence must match source, binary and
+LICENSE hashes **and** contain this new check; old health/UI/favicon-only records
+do not qualify. This guard is not itself a freshly built/released artifact,
+protected login, OS isolation, human autofill/recovery test or third-party audit.
+Historical release records are retained. Public `v0.1.2-rc.2` / `60eef0a` does not
+gain this behavior from a source change. See the [current short check](two-minute-demo.md).

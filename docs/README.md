@@ -4,6 +4,12 @@
 
 A new reader should need **this page plus five links**, not twenty files.
 
+**19.10.2026 — aktueller Quellstand / current source:** Maschinenzugriff bleibt
+ohne geschützten Produktionshost gesperrt; kein Allow-/Rohgeheimnis-Demoweg.
+Prüfweg: [Sperre prüfen](two-minute-demo.md), [Grenze](security-boundary.md#7-machine-access-fail-closed).
+Public downloads `v0.1.2-rc.2` (`60eef0a`) still contain the historical handoff;
+merged source hardening (`a983814` and later) does not update installed copies.
+
 **Lebende Roadmap (eine Datei, Status hier pflegen):** [../ROADMAP.md](../ROADMAP.md) – Grok Build liest zuerst `grok-build-plan.md`, dann die Roadmap.
 
 | Question | Read |
@@ -71,9 +77,9 @@ Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix t
 | Self-host FastAPI | Exists (compose) | URL field in the client |
 | Managed hosting | **Not offered** | Same protocol, different endpoint |
 | Autofill | Chromium + Firefox + Safari wrapper | Shadow DOM / multi-step later |
-| Agent access | String `n8n` + pairing token + human Allow | MAIP verify, then local policy, signed tokens (Phase 4) |
+| Agent access | Machine requests denied; no production protected host. Human vault/autofill remains separate | Protected, target/task-bound use after verified host/OS boundary |
 | Agent identity | **Not cryptographic** | [MAIP v0.1](specs/maip-v0.1.md) experimental |
-| Grant | `handoff: "raw_secret"`; TTL does not un-know a copy | Mediated proxy ([secret-access-layer.md](secret-access-layer.md)) |
+| Grant | No new raw-secret handoff; legacy TTL cannot recall an old copy | Metadata-only protected core exists; production host/vault transfer still unavailable |
 | Multi-device sync | Snapshot CAS, 409, pin | No CRDT; 409 → reload |
 | Mobile apps | 0 % (PWA first) | Same vault protocol; native Android/iOS skeletons are prep only |
 | Team Mode | Spec only | Not PAM |

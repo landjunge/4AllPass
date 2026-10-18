@@ -1,4 +1,64 @@
-# Two-minute demo — agent credential access
+# Maschinenzugriff prüfen / Check machine-access denial
+
+## Aktueller Prüfweg — 19.10.2026 / Current check
+
+**DE.** Seit dem Quell-Hardening aus PR #222/#224 (`a983814` als integrierte Basis)
+ist die alte Allow-/Rohgeheimnis-Demo nicht mehr verfügbar. Öffentliche Pakete
+`v0.1.2-rc.2` aus `60eef0a` enthalten noch den historischen Weg; sie sind durch
+diese Quelldokumentation nicht aktualisiert. Keine eigenen API-Schlüssel für
+die Demo anlegen, in einen Chat kopieren oder in einen alten Allow-Weg geben.
+
+1. Nur in einer **isolierten eigenen Testinstallation des aktuellen Quellstands**
+   einen synthetischen Tresor verwenden. Keine persönlichen Browserprofile importieren.
+2. Access öffnen: Der Status erklärt den gesperrten Maschinenzugriff. Kein
+   Allow- und kein „Übungs-Eintrag anlegen“-Button soll angeboten werden.
+3. DE/EN umschalten: Beide Sprachen beschreiben denselben gesperrten Zustand.
+   Menschliches Öffnen, Importreview, Autofill und Recovery sind eigene Wege;
+   diese kleine Prüfung nimmt sie nicht erneut ab.
+4. Kein geschützter Produktionshost vorhanden heißt **nicht verfügbar**. Die
+   synthetische API-Core-Probe ist keine echte Anmeldung und keine OS-Isolation.
+
+**EN.** Current source denies machine credential requests before queueing, also
+after an old Allow. In an isolated synthetic current-source installation, open
+Access and check the blocked status in DE/EN with no Allow or demo-seed control.
+Do not use personal vaults, browser profiles, real keys or provider accounts.
+Human vault/import/autofill/recovery remain separate. Historical downloads have
+not been updated; synthetic tests are not protected production login.
+
+### Paketprüfer / Package maintainers
+
+Für einen **bereits vorhandenen, bewusst gebauten Kandidaten** im passenden
+Quellcheckout (kein Build-/Download-/Veröffentlichungsbefehl):
+
+```sh
+python scripts/check-release-license.py --sidecar
+```
+
+The existing package check starts only that candidate with a temporary data
+directory/cwd, minimal process environment and fixed synthetic pairing token.
+It checks database/UI/favicon plus eight bounded requests: omitted, raw_secret,
+mediated → exact `denied/handoff_unavailable`; missing/wrong token →401;
+foreign/null/local browser Origin →403. No redirects, generic response fields,
+secret output or inherited user pairing token. An old candidate with the raw
+handoff must fail, not receive a new passing label. Missing binary/build tooling
+is a prerequisite failure; this command does not build or release anything.
+
+Evidence is written by the existing checker under `dist/release-checks/`, pinned
+to source/binary/LICENSE. A new `packaged_machine_handoff_deny_v1` marker and the
+eight exact named checks are required before prior identical-binary startup
+evidence can be reused. Local handler/harness tests do not claim a fresh binary
+check. See [security boundary](security-boundary.md#7-machine-access-fail-closed)
+and [FP-V01 evidence](evidence/package-machine-deny-20261019/STATUS.md).
+
+---
+
+## Historischer Ablauf — nicht für den aktuellen Quellstand
+
+**DE.** Der nachstehende ursprüngliche Text bleibt als historische Beschreibung
+des früheren Rohmaterialwegs erhalten. Buttons, Allow und n8n-Anleitung sind
+keine aktuellen Bedienanweisungen und keine Geheimnisfreiheitszusage.
+**EN.** Original pre-hardening instructions below are historical only, not a
+current supported workflow or a promise that agents never received secrets.
 
 Each Allow/Deny shows a **Why** (policy reason, DE+EN, no secrets). Security status is on the Access tab. FastAPI still mints nothing.
 

@@ -16,6 +16,10 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
   fixtures can run tests. No real host/secret transfer is implemented.
 - The synthetic API core/TollGate tests do not prove OS isolation, protected
   browser login, third-party audit or a deployed product integration.
+- The package startup guard now requires actual machine-handoff denials plus
+  token/origin negatives from the candidate. Old health-only evidence cannot
+  satisfy its new marker. Adding this guard or passing its local handler tests
+  does not build/release a candidate or update historical downloads.
 
 ## Desktop / Tauri
 

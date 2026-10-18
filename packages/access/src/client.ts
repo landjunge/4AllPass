@@ -23,7 +23,7 @@ export interface AccessRequestInput {
   capabilities?: readonly string[];
   credential?: string;
   application?: string;
-  /** Omitted = v1 raw_secret. `mediated` is sent as asked; policy denies until a proxy exists. */
+  /** Omitted requests mediated. Legacy raw-secret replies are always rejected. */
   handoff?: "raw_secret" | "mediated";
 }
 
@@ -83,13 +83,12 @@ function parseBody(value: unknown): AccessResult {
   }
   const row = value as Record<string, unknown>;
   if (row.status === "approved") {
-    if (typeof row.access_token !== "string" || typeof row.expires_in !== "number") {
-      throw new AccessClientError("malformed_response", "approved response missing grant fields");
-    }
-    return { status: "approved", accessToken: row.access_token, expiresIn: row.expires_in };
+    // A stale broker may still return raw material. Never expose it to callers.
+    return { status: "denied", reason: "handoff_unavailable" };
   }
   if (row.status === "denied") {
-    const reason = typeof row.reason === "string" && row.reason ? row.reason : "denied";
+    const reasons = new Set(["handoff_unavailable", "malformed_request", "application_not_allowed", "vault_locked", "broker_timeout", "scope_not_permitted", "denied_by_user", "expired"]);
+    const reason = typeof row.reason === "string" && reasons.has(row.reason) ? row.reason : "denied";
     return { status: "denied", reason };
   }
   throw new AccessClientError("malformed_response", "broker returned an unknown status");
@@ -123,7 +122,7 @@ export function fourAllPass(options: ClientOptions = {}): FourAllPassClient {
       scope,
       ttl: input.ttl,
     };
-    if (input.handoff) body.handoff = input.handoff;
+    body.handoff = input.handoff ?? "mediated";
     let response: Response;
     try {
       response = await fetchImpl(`${base}/v1/access/request`, {
@@ -136,11 +135,9 @@ export function fourAllPass(options: ClientOptions = {}): FourAllPassClient {
         signal: AbortSignal.timeout(timeoutMs),
         redirect: "error",
       });
-    } catch (error) {
-      const message = redactSecrets(error instanceof Error ? error.message : String(error), [
-        token,
-      ]);
-      throw new AccessClientError("network", message);
+    } catch {
+      // Network implementations can include Authorization or bodies in errors.
+      throw new AccessClientError("network", "broker transport failed; outcome unknown");
     }
     let json: unknown = null;
     try {

@@ -9,9 +9,9 @@
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
-Lokaler Passwort-Manager. Autofill. Zero-Knowledge. Agenten nur nach Allow/Deny.
+Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 
-Local-first password manager. Autofill. Zero-knowledge. Agents only after Allow/Deny.
+Local-first password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
 
 4AllPass speichert Passwörter und Zugänge auf deinem Gerät. Ein Anbieter oder Server soll sie nicht lesen können. Das gilt für die **App auf dem Gerät**. Eine vom Storage-Server gelieferte PWA kann der Betreiber tauschen — das ist kein Zero-Knowledge gegen ihn.
 
@@ -20,6 +20,17 @@ Local-first password manager. Autofill. Zero-knowledge. Agents only after Allow/
 ### 🛠️ [Für Entwickler – Code, Tests und Spezifikationen](#für-entwickler)
 
 ---
+
+> **Quellstand / Source status, 18.10.2026:** Der alte Maschinenweg gab nach Allow
+> das echte Tresorgeheimnis als `access_token` zurück. In diesem Quellstand ist
+> dieser Weg auf Core-, UI-, Client- und Relay-Ebene gesperrt. Ein geschützter
+> API-Kern wird mit synthetischen Daten geprüft; produktive Geheimnisnutzung und
+> geschützte Browser-Sitzungen sind noch nicht angeschlossen. / The legacy machine
+> path returned the actual vault secret as `access_token` after Allow. This source
+> disables that path across core, UI, client and relay. A protected API core is
+> tested with synthetic data; production secret use and protected browser sessions
+> are not connected. Existing v0.1.2-rc.2 downloads are unchanged and do not contain
+> this source fix. See [boundary and evidence](docs/PROTECTED-ACCESS-20261018.md).
 
 ## Für Nutzer
 
@@ -163,7 +174,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 ## English
 
-4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. Agents get access only after Allow/Deny.
+4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 

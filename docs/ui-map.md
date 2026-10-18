@@ -19,7 +19,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 
 | # | Tut |
 |---|---|
-| 1 | Wordmark 4AllPass (Elster + Schlüssel). |
+| 1 | 4AllPass mit freigegebenem AP4-Rastermotiv (brand/README.md). |
 | 2 | Tresor offen/gesperrt; Sperren; Abmelden nur mit Account. |
 | 3 | `error` / `notice`. Schließen räumt die Meldung. Offener Tresor + Einträge noch auf `local@`: Passwort einmal, Merge hierher. Nicht abmelden, nicht sperren. |
 | 4 | Eine der Views V1–V8. |
@@ -144,20 +144,13 @@ Handy: Spalten unter 820 px untereinander.
 
 ## V6 Zugriff
 
-```
-┌──────────────────────────┐
-│ 1 Eine Frage: welches    │
-│   Programm darf was?     │
-│ 2 Allow / Deny           │
-└──────────────────────────┘
-```
+Die bestehende Zugriff-Fläche erklärt die Sperre für Maschinenzugriff, weil kein
+geschützter produktiver Nutzungsweg verbunden ist. Kein Allow-Knopf, keine
+Rohmaterial-Demo und kein Secret-Verbindungsrezept. Normale Tresor-/Browser-/
+Einstellungs-Tabs bleiben erhalten. DE/EN, kompakte Card, semantischer Status.
 
-| # | Tut |
-|---|---|
-| 1 | Demo + echte Broker-Anfrage. Kein Roh-Passwort ohne Allow. |
-| 2 | Mensch entscheidet. TTL holt eine Kopie nicht zurück. |
-
-> Wireframe: [v6-access.html](screenshots/v6-access.html)
+Historische Wireframes unter screenshots/v6-access.html zeigen den alten
+Raw-Secret-Entwurf und sind keine Zusage des aktuellen Quellstands.
 
 ---
 
@@ -201,3 +194,4 @@ Import-Review zeigt Art (Login / API-Key / Server) · Host oder Provider · User
 ---
 
 Neue Fläche? Erst hier eine Nummer, dann Code. Tokens: [`architecture.md`](architecture.md) §3.
+

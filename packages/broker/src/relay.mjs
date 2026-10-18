@@ -214,9 +214,9 @@ export function createBroker(opts) {
           }
           waiting.delete(id);
           clearTimeout(row.timer);
-          send(row.res, 200, body && typeof body === "object" ? body : { status: "denied", reason: "malformed_request" });
+          send(row.res, 200, { status: "denied", reason: "handoff_unavailable" });
           send(res, 200, { ok: true }, cors);
-          log.info("decide", typeof body?.status === "string" ? body.status : "unknown");
+          log.info("decide", "denied");
         })
         .catch(() => send(res, 400, { status: "denied", reason: "malformed_request" }, cors));
       return;
@@ -237,15 +237,8 @@ export function createBroker(opts) {
             send(res, 200, { status: "denied", reason: "malformed_request" });
             return;
           }
-          if (!poller && queue.length === 0 && waiting.size === 0) {
-            send(res, 200, { status: "denied", reason: "vault_locked" });
-            return;
-          }
-          const id = `req_${randomBytes(8).toString("hex")}`;
-          const timer = setTimeout(() => denyWaiting(id, "broker_timeout"), ACCESS_WAIT_MS);
-          waiting.set(id, { res, timer });
-          queue.push({ id, body });
-          flushPoller();
+          // Never queue a raw-secret request; no protected mediator is connected.
+          send(res, 200, { status: "denied", reason: "handoff_unavailable" });
         })
         .catch(() => send(res, 200, { status: "denied", reason: "malformed_request" }));
       return;

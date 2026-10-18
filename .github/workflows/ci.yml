@@ -174,3 +174,5 @@ jobs:
       - name: Pytest (SQLite default)
         working-directory: backend
         run: pytest
+      - name: Protected executor contract (no real credentials)
+        run: python -m pytest -q protected_executor/tests/test_core.py

@@ -26,10 +26,6 @@ export function evaluatePolicy(
   if (!isTrustedApplication(request.application)) {
     return { decision: "deny", requestId, reason: "application_not_allowed" };
   }
-  const handoff = request.handoff ?? "raw_secret";
-  if (!handoffIsAvailable(handoff)) {
-    return { decision: "deny", requestId, reason: "handoff_unavailable" };
-  }
   if (!request.provider.trim()) {
     return { decision: "deny", requestId, reason: "unknown_provider" };
   }
@@ -50,6 +46,10 @@ export function evaluatePolicy(
     !request.scope.every((scope) => match.capabilities.includes(scope))
   ) {
     return { decision: "deny", requestId, reason: "scope_not_permitted" };
+  }
+  // Neither legacy raw-secret export nor an unconnected mediator is available.
+  if (!handoffIsAvailable(request.handoff ?? "mediated")) {
+    return { decision: "deny", requestId, reason: "handoff_unavailable" };
   }
   return {
     decision: "allow",

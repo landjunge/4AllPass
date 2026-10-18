@@ -36,14 +36,11 @@ function req(over: Partial<AccessRequest> = {}): AccessRequest {
   };
 }
 
-test("1 repository.read is policy-allow (pending human, not auto-handoff)", () => {
+test("1 repository.read is blocked until protected execution is connected", () => {
   const decision = evaluatePolicy(req(), [github()]);
-  assert.equal(decision.decision, "allow");
-  if (decision.decision === "allow") {
-    assert.equal(decision.credentialId, "entry_github");
-    assert.equal(decision.risk, false);
-  }
-  assert.equal(decideAccess(req(), [github()]).status, "pending");
+  assert.equal(decision.decision, "deny");
+  if (decision.decision === "deny") assert.equal(decision.reason, "handoff_unavailable");
+  assert.equal(decideAccess(req(), [github()]).status, "denied");
 });
 
 test("2 repository.delete is denied", () => {
@@ -63,7 +60,7 @@ test("provider substring git does not match GitHub", () => {
   assert.equal(decision.decision, "deny");
   if (decision.decision === "deny") assert.equal(decision.reason, "no_credential");
   assert.equal(evaluatePolicy(req({ provider: "hub" }), [github()]).decision, "deny");
-  assert.equal(evaluatePolicy(req({ provider: "GitHub" }), [github()]).decision, "allow");
+  assert.equal(evaluatePolicy(req({ provider: "GitHub" }), [github()]).decision, "deny");
 });
 
 test("4 ttl <= 0 is malformed; expired grant is invalid", () => {
@@ -96,8 +93,8 @@ test("6 expired grant is invalid", () => {
 test("explainAccess pending is human Allow, not auto-handoff, and omits secrets", () => {
   const verdict = decideAccess(req(), [github()]);
   const why = explainAccess(verdict);
-  assert.equal(why.code, "pending_human_allow");
-  assert.ok(why.why.includes("Allow"));
+  assert.equal(why.code, "handoff_unavailable");
+  assert.ok(why.why.includes("blocked"));
   assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
 });
 
@@ -110,7 +107,7 @@ test("explainAccess unknown app DENY names the rule without secrets", () => {
   assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
 });
 
-test("omitted handoff is raw_secret and still pending human Allow", () => {
+test("omitted handoff requests mediated and remains blocked", () => {
   const parsed = parseAccessBody({
     application: "n8n",
     provider: "GitHub",
@@ -119,8 +116,8 @@ test("omitted handoff is raw_secret and still pending human Allow", () => {
   });
   assert.ok(!("status" in parsed));
   if ("status" in parsed) return;
-  assert.equal(parsed.handoff, "raw_secret");
-  assert.equal(decideAccess(parsed, [github()]).status, "pending");
+  assert.equal(parsed.handoff, "mediated");
+  assert.equal(decideAccess(parsed, [github()]).status, "denied");
 });
 
 test("mediated handoff is denied, not silently turned into raw_secret", () => {
@@ -162,7 +159,7 @@ test("explainAccess mediated deny names the rule without secrets", () => {
   const verdict = decideAccess(req({ handoff: "mediated" }), [github()]);
   const why = explainAccess(verdict);
   assert.equal(why.code, "handoff_unavailable");
-  assert.match(why.why, /Mediated access is not in v1/);
+  assert.match(why.why, /Machine access blocked/);
   assert.equal(whyContainsSecret(why, "ghp_live-secret-must-not-log"), false);
 });
 
@@ -171,7 +168,7 @@ test("7 core works without browser APIs", () => {
   assert.equal(g.window, undefined);
   assert.equal(g.document, undefined);
   const verdict = decideAccess(req(), [github()]);
-  assert.equal(verdict.status, "pending");
+  assert.equal(verdict.status, "denied");
   const row = auditLine(req(), "APPROVED");
   assert.equal(auditContainsSecret(row, "ghp_live-secret-must-not-log"), false);
 });

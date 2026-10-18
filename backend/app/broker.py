@@ -128,10 +128,9 @@ async def broker_decide(request: Request) -> Response:
     fut = hub.waiting.get(req_id)
     if fut is None or fut.done():
         return denied("malformed_request", 404)
-    status = body.get("status") if isinstance(body, dict) else None
-    log.info("decide %s", status if isinstance(status, str) else "unknown")
-    if not isinstance(body, dict):
-        body = {"status": "denied", "reason": "malformed_request"}
+    # Never relay arbitrary UI data or legacy raw-secret grants to a machine.
+    body = {"status": "denied", "reason": "handoff_unavailable"}
+    log.info("decide denied")
     fut.set_result(body)
     try:
         from app.authority_emit import emit_from_decide
@@ -164,19 +163,6 @@ async def access_request(request: Request) -> Response:
         body = await request.json() if raw else {}
     except Exception:
         return denied("malformed_request")
-    if not hub._has_listener():
-        return denied("vault_locked")
-    req_id = f"req_{secrets.token_hex(8)}"
-    loop = asyncio.get_running_loop()
-    fut: asyncio.Future = loop.create_future()
-    hub.waiting[req_id] = fut
-    await hub.queue.put(
-        {"v": 1, "id": req_id, "method": "POST /v1/access/request", "body": body}
-    )
-    try:
-        result = await asyncio.wait_for(fut, timeout=ACCESS_WAIT_SECONDS)
-    except asyncio.TimeoutError:
-        return denied("broker_timeout")
-    finally:
-        hub.waiting.pop(req_id, None)
-    return JSONResponse(result, headers={"cache-control": "no-store"})
+    # No protected executor is connected here. A human Allow is not permission
+    # to disclose credentials. Keep the endpoint fail-closed for old clients.
+    return denied("handoff_unavailable")

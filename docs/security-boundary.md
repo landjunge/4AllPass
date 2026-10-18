@@ -2,7 +2,7 @@
 
 **Status:** Implemented (this file). Highest authority for “what runs.”  
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-08-28  
+**Date:** 2026-10-18 (source change; released packages remain separately pinned)
 **Index:** [README.md](README.md)
 
 This document describes what the **running backend + PWA / local app** actually enforce.
@@ -12,7 +12,7 @@ It does not restate the crypto protocol. If a sentence here disagrees with
 **Standing rules**
 
 1. The server stores the vault. The client owns the vault.
-2. Agents receive capabilities, not the vault. **Today** that is still a raw-secret handoff after human Allow; TTL does not un-know a copy already given. Mediated proxy is **later**.
+2. Machine-facing raw-secret handoffs are disabled, including after human Allow. No protected production executor is connected. Human vault/import/autofill/recovery remain separate. Previously disclosed credentials are not recalled.
 3. Identity is shared (later: MAIP). Authorization stays local. **Today** `application: "n8n"` is **not** cryptographic identity.
 4. Small core, strict guarantees, optional extensions.
 
@@ -23,7 +23,7 @@ It does not restate the crypto protocol. If a sentence here disagrees with
 | Browser extension | limited (unlocked fill) | local only | host match |
 | Vault server | no | no | storage auth only |
 | Hosting provider | no | no | no (placement only; **no Hosted SKU today**) |
-| Agent | normally no; v1 grant may copy a secret | no | no |
+| Agent | no new material through the changed broker path; historical releases copied raw material | no | no |
 | Tollgate / Gnom-Hub / MCP | no | no | their domain only; they do not unwrap VK |
 
 Public copy must not exceed this file: **Local-first. Sync optional. Server deiner Wahl.** Desktop = client. Self-host = placement.
@@ -439,70 +439,49 @@ prompt is not a second crypto context.
 
 ---
 
-## 7. Local access broker (not FastAPI)
+## 7. Machine access: fail closed
 
-The Access tab and `/agent-request.html` implement `POST /v1/access/request` on
-the **unlocked page** via `BroadcastChannel` `4allpass-access-v1`. The local
-profile also serves the **same relay** on this process
-(`POST /v1/access/request` on `http://127.0.0.1:8788`). That route is a pairing
-queue, not a token mint: the server never decrypts, never invents a GitHub
-secret, and only forwards a body the unlocked UI posted to `/v1/broker/decide`.
-Optional G5: `FOURALLPASS_AUTHORITY_EVENTS=1` appends capability granted/denied/revoked
-metadata to JSONL. The envelope must not contain `access_token`, passwords, or vault
-bytes. Off under pytest unless that flag is set.
-Browser `Origin` on the grant path is 403, including `Origin: null`. Pairing token required.
-`GET /v1/broker/poll` returns 204 if the UI disconnects. A closed tab must not
-dequeue the next grant. The unlocked UI aborts its poll fetch on unmount.
-`GET /api/v1/local/broker` returns that pairing token only after **e-mail**
-storage auth on the local profile **and** that account owns a vault with an
-**active snapshot**. A passwordless `local@127.0.0.1` session is **404**
-(same as missing). Throwaway `register` or empty `POST /vaults` is the same
-404. The **server** profile does not mount these routes. Grants live in page
-memory. Policy evaluation is `@4allpass/core` (`evaluatePolicy` / `decideAccess`):
-unknown app DENY, missing scope DENY. `handoff: "mediated"` is **denied**
-(`handoff_unavailable`) — v1 has no proxy that uses the secret on the agent's
-behalf. Omitted or `raw_secret` stays the n8n path. `decision: "allow"` means
-the request is eligible for a **human** Allow — it is not auto-handoff. Core
-grants have no secret; the unlocked UI still attaches `material` for the
-existing broker response. Unknown applications are denied. Audit rows omit the secret.
-**PAIRING TOKEN ≠ AGENT IDENTITY.** `application: "n8n"` is policy metadata,
-not authentication. The pairing token proves *this process knows the secret*,
-not *this is n8n*. Treat it as the **local root-of-access for agents**
-(mode 0600 file; also `GET /api/v1/local/broker` after e-mail storage auth
-**and** a vault with an active snapshot). A
-stolen token plus the string `n8n` is still eligible for a human Allow. That
-is V1. Cryptographic agent keys are
-[`architecture/adr/ADR-008-agent-identity.md`](architecture/adr/ADR-008-agent-identity.md)
-and are **not** built yet. The later profile is [`specs/maip-v0.1.md`](specs/maip-v0.1.md) (experimental draft).
-A library prototype for protocol-agnostic requester signatures lives in
-`packages/crypto` (`enrollRequester` / `verifyRequesterSignature`). It does
-**not** wrap a Vault Key and is **not** wired into the sidecar. Standing
-auto-handoff (`decideStandingAccess` in `@4allpass/core`) is the same: policy
-only. The running broker still waits for a human Allow. Actuation credentials
-never auto-approve on that path.
+In this source, both the Python sidecar and Node development relay deny
+`POST /v1/access/request` with `handoff_unavailable` after existing token/origin
+checks. Omitted, `raw_secret` and `mediated` requests cannot queue a credential
+handoff. The core policy exposes no available handoff mode. The frontend grant
+adapter never reads `entry.password`; reading or approving even a stale grant
+returns a denial. A stale UI decision is projected to a fixed denial before relay
+output, and the access client rejects old `approved`/`access_token` responses.
+The Access tab explains this blocked state in DE/EN. Human copying/autofill is
+not silently converted into an agent access channel.
 
-**TTL is a 4AllPass grant clock, not a provider-token clock.** `ttl` /
-`expires_in` stop *later handoffs from this process*. After Allow, n8n already
-holds a copy of the vault secret (e.g. a GitHub PAT). 4AllPass does not rotate
-or expire that provider credential. A copy already given is not un-known.
-The loopback relay is **one-shot**: `waiting[id]` is removed when `decide`
-completes. A second `decide` on the same id is 404. The agent cannot re-poll
-the same grant. `parseAccessBody` rejects `ttl` above 86400 seconds
-(`ttl_too_large`); `issueGrant` also clamps. That still does not expire a
-copy already given.
+The historical v1 implementation attached the actual vault entry password as
+`access_token`. This was not a newly minted short-lived provider token. TTL only
+limited later handoffs; neither this change nor TTL revokes a provider copy or
+session already issued. Public v0.1.2-rc.2 artifacts are pinned to `60eef0a` and
+still contain that historical implementation. This source change is not a new
+release or evidence that installed copies have changed.
 
-See [`two-minute-demo.md`](two-minute-demo.md) and
-[`local-access-broker.md`](local-access-broker.md).
+### Protected executor building block (not a running product connection)
 
-Vite-only dev can still run the Node relay (`npm run broker` → `@4allpass/broker` on `:8787`).
-That package queues HTTP; it does not call `evaluatePolicy`. The sidecar
-(`backend/app/broker.py`) is what the desktop app starts.
+`protected_executor/` implements one fixed synthetic `demo.quota.read` contract,
+G-01 project/workflow/task/actor/consumer/attempt/content binding, private grant
+expiry/revocation checks, a real TollGate local dispatch adapter and a strict
+positive response schema. No caller URL, headers, method, export, echo or generic
+provider payload is accepted. Only bounded integer `remaining` and enum `window`
+can leave the core; redirect/unknown/duplicate fields and unbounded bodies fail.
+Transport exceptions and provider bodies never become general tool errors.
+It has no production HTTP/CLI/server entry point, credential file or vault bridge.
 
-`@4allpass/access` (`fourAllPass.request({ provider, capability, ttl })`) is a
-Node client for that relay. It refuses non-loopback URLs, does not set
-`Origin`, and redacts grant material in helper output. It is not FastAPI, not
-a second policy engine, and not an n8n marketplace node. Application name is
-still a string the vault may DENY. The Access tab also copies an **n8n HTTP
-Request** recipe (POST JSON, pairing token only in `Authorization`, displayed
-curl redacts that token). n8n-in-Docker must not treat container `127.0.0.1`
-as the host. See [`local-access-broker.md`](local-access-broker.md).
+**Unmet production prerequisite:** a secret execution boundary inaccessible to
+the connected agent, including its file, shell, process/debug and descendant
+paths, plus a trusted vault-to-executor transfer and KB-C02 origin binding. The
+current local runtime shares the human macOS UID and grants shell/project access;
+a second process or a mode-0600 file under that UID does not prove isolation.
+No new OS account, sudo, broad permission change or plaintext backend store was
+created. The normal opaque vault backend still never decrypts entries.
+
+The actual TollGate core orders dispatch with its persistent workflow stop and
+reservations. Its zero-cost quote here is exclusively synthetic, not a paid
+provider budget promise. A disconnected gate denies before reading material.
+Dummy tests prove this limited building block, not protected browser login or
+production secret isolation. Browser/DOM/cookie/session export protection FP-C03
+remains unimplemented; do not give an agent an unrestricted browser with secrets.
+
+See [the cause and acceptance record](PROTECTED-ACCESS-20261018.md).

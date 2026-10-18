@@ -3,7 +3,7 @@ import { clickAndType, reachUnlockedLocalApp, VAULT_PASSWORD } from "../live/act
 
 const DEMO_SECRET = "ghp_demo-not-a-real-key";
 
-test("Welcome → vault → Access allow without showing the secret", async ({ page }) => {
+test("Create → vault → machine access blocked without exposing a secret", async ({ page }) => {
   await page.goto("/");
   const create = page.getByTestId("create-vault");
   const unlock = page.getByTestId("master-password");
@@ -35,25 +35,10 @@ test("Welcome → vault → Access allow without showing the secret", async ({ p
   await expect(page.getByTestId("uninstall-hint")).toContainText("löscht den Tresor nicht");
 
   await page.getByTestId("tab-access").click();
-  await expect(page.getByTestId("n8n-http-body")).toContainText("repository.read");
-  await expect(page.getByTestId("n8n-http-body")).not.toContainText("ghp_");
-  await expect(page.getByTestId("n8n-http-curl")).not.toContainText("Origin");
-  await expect(page.getByTestId("n8n-http-curl")).toContainText("••••");
-  await expect(page.getByTestId("n8n-docker-note")).toContainText("host.docker.internal");
-  await expect(page.getByTestId("demo-scene")).toContainText("Need a GitHub credential");
-  await page.getByTestId("demo-seed").click();
-  await expect(page.getByTestId("demo-scene")).toContainText("n8n asks GitHub repository.read", {
-    timeout: 60_000,
-  });
-
-  await page.getByTestId("demo-n8n-read").click();
-  await page.getByTestId("access-allow").click();
-  await expect(page.getByTestId("access-flash")).toContainText("ACCESS GRANTED");
-  const grant = page.getByTestId("demo-grant-status");
-  await expect(grant).toContainText("n8n");
-  await expect(grant).toContainText("s left");
-  await expect(grant).not.toContainText("ghp_");
-  await expect(grant).not.toContainText(DEMO_SECRET);
+  await expect(page.getByRole("status")).toContainText("Machine access is blocked");
+  await expect(page.getByTestId("access-allow")).toHaveCount(0);
+  await expect(page.getByTestId("demo-seed")).toHaveCount(0);
+  await expect(page.getByTestId("access-security-status")).not.toContainText(DEMO_SECRET);
 
   const brokerStatus = await page.evaluate(async () => {
     const token = sessionStorage.getItem("4allpass.session");

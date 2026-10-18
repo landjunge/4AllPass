@@ -39,7 +39,7 @@ frontend/src/pages/            Auth, Create, Unlock, Restore, Vault
 7. **Reuse.** `frontend/src/components/vault/*`. No second desk chrome. No new npm dependencies.
 8. **Narrow viewport:** columns stack under 820 px.
 9. **Empty / error:** one primary action + cancel. Banner can be dismissed. Empty desk offers Login anlegen / Import, not a blank card.
-10. Access overlay: Allow copies a **raw secret** in v1. Do not write “the password stays in the vault” after Allow.
+10. Access view: show machine access blocked until a protected executor is connected. Historical v1 Allow copied raw material; never imply old downloads gained protection.
 
 ## How to change UI
 

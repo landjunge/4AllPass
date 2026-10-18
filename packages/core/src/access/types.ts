@@ -12,7 +12,7 @@ export interface AccessRequest {
   credential: string;
   scope: string[];
   ttlSeconds: number;
-  /** Omitted = `raw_secret` (v1 n8n path). `mediated` is denied until a proxy exists. */
+  /** Omitted = mediated request. Both legacy modes are currently unavailable. */
   handoff?: HandoffMode;
   reason?: string;
   createdAt?: number;

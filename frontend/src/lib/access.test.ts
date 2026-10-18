@@ -60,20 +60,14 @@ test("scope not on the entry is DENY", () => {
   if (verdict.status === "denied") assert.equal(verdict.reason, "scope_not_permitted");
 });
 
-test("n8n GitHub read can be approved then expires", () => {
+test("raw material never enters a machine grant, even if policy is bypassed", () => {
   const entry = github();
   const request = req({ ttlSeconds: 10 });
-  const verdict = decideAccess(request, [entry]);
-  assert.equal(verdict.status, "pending");
+  assert.equal(decideAccess(request, [entry]).status, "denied");
   const grant = issueGrant(request, entry, 1_000);
-  const live = readGrant(grant, 1_000);
-  assert.ok("material" in live);
-  if ("material" in live) assert.equal(live.material, secret);
-  const dead = readGrant(grant, 1_000 + 10_000);
-  assert.equal(dead.status, "denied");
-  if (dead.status === "denied") assert.equal(dead.reason, "expired");
-  const wiped = wipeGrant(grant);
-  assert.equal(wiped.material, "");
+  assert.equal(grant.material, "");
+  assert.deepEqual(readGrant({ ...grant, material: secret }, 1_000), { status: "denied", reason: "handoff_unavailable" });
+  assert.equal(JSON.stringify(approvedResponse({ ...grant, material: secret }, 1_000)).includes(secret), false);
 });
 
 test("empty provider is unknown_provider", () => {
@@ -106,15 +100,9 @@ test("ttl above the hard max is DENY, not a silent clamp in the parser", () => {
   if (bad.status === "denied") assert.equal(bad.reason, "ttl_too_large");
 });
 
-test("approved response shape matches the access API", () => {
-  const entry = github();
-  const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);
-  const body = approvedResponse(grant, 1_000);
-  assert.equal(body.status, "approved");
-  if (body.status === "approved") {
-    assert.equal(body.access_token, secret);
-    assert.equal(body.expires_in, 10);
-  }
+test("stale approved response is denied rather than returning access_token", () => {
+  const grant = issueGrant(req(), github(), 1_000);
+  assert.deepEqual(approvedResponse({ ...grant, material: secret }, 1_000), { status: "denied", reason: "handoff_unavailable" });
 });
 
 test("TTL expires later 4AllPass handoffs; the vault secret is not rotated", () => {
@@ -122,8 +110,8 @@ test("TTL expires later 4AllPass handoffs; the vault secret is not rotated", () 
   const grant = issueGrant(req({ ttlSeconds: 10 }), entry, 1_000);
   const expired = approvedResponse(grant, 1_000 + 10_000);
   assert.equal(expired.status, "denied");
-  if (expired.status === "denied") assert.equal(expired.reason, "expired");
-  assert.deepEqual(readGrant(grant, 1_000 + 10_000), { status: "denied", reason: "expired" });
+  if (expired.status === "denied") assert.equal(expired.reason, "handoff_unavailable");
+  assert.deepEqual(readGrant(grant, 1_000 + 10_000), { status: "denied", reason: "handoff_unavailable" });
   assert.equal(entry.password, secret);
   const wiped = wipeGrant(grant);
   assert.equal(wiped.material, "");
@@ -139,7 +127,7 @@ test("mediated handoff is denied and never copies the secret", () => {
 
 test("application n8n is policy metadata, not proof of process identity", () => {
   const spoofed = decideAccess(req({ application: "n8n" }), [github()]);
-  assert.equal(spoofed.status, "pending");
+  assert.equal(spoofed.status, "denied");
   const unknown = decideAccess(req({ application: "malicious-agent" }), [github()]);
   assert.equal(unknown.status, "denied");
 });
@@ -157,5 +145,5 @@ test("explainAccess why never contains the vault secret", () => {
   assert.equal(whyContainsSecret(why, secret), false);
   assert.equal(why.why.includes(secret), false);
   const pending = decideAccess(req(), [github()]);
-  assert.equal(explainAccess(pending).code, "pending_human_allow");
+  assert.equal(explainAccess(pending).code, "handoff_unavailable");
 });

@@ -75,10 +75,8 @@ test("request POSTs JSON with Bearer and no Origin", async () => {
     capability: GitHub.repositoryRead,
     ttl: 15,
   });
-  assert.equal(result.status, "approved");
-  if (result.status !== "approved") throw new Error("expected approved");
-  assert.equal(result.accessToken, "ghp_demo-not-a-real-key");
-  assert.equal(result.expiresIn, 15);
+  assert.deepEqual(result, { status: "denied", reason: "handoff_unavailable" });
+  assert.equal(JSON.stringify(result).includes("ghp_"), false);
   assert.equal(seen?.url, "http://127.0.0.1:8788/v1/access/request");
   const headers = new Headers(seen?.init.headers);
   assert.equal(headers.get("Authorization"), "Bearer pairing-token-test");
@@ -92,6 +90,7 @@ test("request POSTs JSON with Bearer and no Origin", async () => {
     credential: "personal",
     scope: ["repository.read"],
     ttl: 15,
+    handoff: "mediated",
   });
 });
 
@@ -190,4 +189,13 @@ test("capability list maps to scope; empty provider is refused", async () => {
     client.request({ provider: "  ", capability: GitHub.repositoryRead, ttl: 15 }),
     (error: unknown) => error instanceof AccessClientError && error.code === "malformed_request",
   );
+});
+
+test("untrusted denial reasons and transport errors never become tool output", async () => {
+  const synthetic = "synthetic-credential-do-not-return";
+  const input = { provider: "GitHub", capability: "repository.read", ttl: 15 };
+  const denied = fourAllPass({ token: "dummy-pairing", fetch: async () => jsonResponse(200, {status:"denied",reason:synthetic}) });
+  assert.deepEqual(await denied.request(input), {status:"denied",reason:"denied"});
+  const broken = fourAllPass({ token: "dummy-pairing", fetch: async () => {throw new Error(synthetic);} });
+  await assert.rejects(broken.request(input), (error: unknown) => error instanceof AccessClientError && error.code === "network" && !error.message.includes(synthetic));
 });

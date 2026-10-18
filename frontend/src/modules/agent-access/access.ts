@@ -93,7 +93,7 @@ export function issueGrant(request: AccessRequest, entry: VaultEntry, now = Date
     entryId: meta.credentialId,
     scope: meta.scope,
     expiresAt: meta.expiresAt,
-    material: entry.password,
+    material: "", // Never copy vault material into a machine grant.
     handoff: "raw_secret",
   };
 }
@@ -101,9 +101,10 @@ export function issueGrant(request: AccessRequest, entry: VaultEntry, now = Date
 export function readGrant(
   grant: AccessGrant,
   now = Date.now(),
-): { material: string } | { status: "denied"; reason: "expired" } {
-  if (now >= grant.expiresAt) return { status: "denied", reason: "expired" };
-  return { material: grant.material };
+): { material: string } | { status: "denied"; reason: "expired" | "handoff_unavailable" } {
+  void grant;
+  void now;
+  return { status: "denied", reason: "handoff_unavailable" };
 }
 
 export function wipeGrant(grant: AccessGrant): AccessGrant {
@@ -111,10 +112,10 @@ export function wipeGrant(grant: AccessGrant): AccessGrant {
 }
 
 export function approvedResponse(grant: AccessGrant, now = Date.now()): AccessApiResponse {
-  const live = readGrant(grant, now);
-  if ("status" in live) return { status: "denied", reason: "expired" };
-  const expiresIn = Math.max(0, Math.floor((grant.expiresAt - now) / 1000));
-  return { status: "approved", access_token: live.material, expires_in: expiresIn };
+  // Reject even a legacy in-memory grant created before this policy change.
+  void grant;
+  void now;
+  return { status: "denied", reason: "handoff_unavailable" };
 }
 
 export function deniedResponse(reason: DenyReason): AccessApiResponse {

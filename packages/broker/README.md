@@ -1,5 +1,12 @@
 # `@4allpass/broker`
 
+Current source: machine requests fail closed with `handoff_unavailable`; raw
+material is never queued or relayed. / Aktueller Quellstand: Maschinenanfragen
+werden mit `handoff_unavailable` abgewiesen; kein Rohmaterial wird weitergegeben.
+Historical usage descriptions below do not enable protected production use.
+See ../../docs/PROTECTED-ACCESS-20261018.md.
+
+
 **Dev relay**, not the product broker.
 
 | How you run | Process | Port |

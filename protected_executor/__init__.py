@@ -1,5 +1,6 @@
-"""Protected API building block; no CLI/server or production secret handoff.
+"""Fixed synthetic API building block; production host unavailable.
 
-Only a separately trusted host may instantiate this core. Keeping this module in
-another process under the same OS user is NOT an isolation guarantee.
+Normal calls without a supported host fail closed before grant lookup. Only an
+explicit fixed-secret SyntheticHostCapability exists for synthetic tests. This
+module is neither a protected OS boundary nor a real vault-transfer connector.
 """

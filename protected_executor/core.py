@@ -1,59 +1,34 @@
 """Fixed, bounded quota-read operation. Not a generic credential proxy."""
+
 from __future__ import annotations
 
-import hashlib
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Protocol
+from typing import Protocol
 
+from .capability import require_synthetic_host
+from .contracts import (
+    Binding,
+    Grant,
+    ProtectedGrant,
+    Rejected,
+    UseRequest,
+    validate_grant,
+    validate_request,
+)
 
-class Rejected(Exception):
-    """Only stable codes escape; never include transport exceptions or bodies."""
-
-
-@dataclass(frozen=True)
-class Binding:
-    project_id: str
-    workflow_id: str
-    task_id: str
-    actor_id: str
-    consumer_id: str
-    attempt_id: str
-    request_hash: str
-
-
-@dataclass(frozen=True)
-class UseRequest:
-    binding: Binding
-    grant_ref: str
-    operation: str = "demo.quota.read"
-    target_id: str = "demo-quota-v1"
-
-    def content_hash(self) -> str:
-        # This exact shape is what the caller must bind as G-01 content hash.
-        fields = {"grant_ref": self.grant_ref, "operation": self.operation,
-                  "target_id": self.target_id, "project_id": self.binding.project_id,
-                  "workflow_id": self.binding.workflow_id, "task_id": self.binding.task_id,
-                  "actor_id": self.binding.actor_id, "consumer_id": self.binding.consumer_id,
-                  "attempt_id": self.binding.attempt_id}
-        return hashlib.sha256(json.dumps(fields, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-
-
-@dataclass(frozen=True)
-class Grant:
-    reference: str
-    project_id: str
-    workflow_id: str
-    task_id: str
-    actor_id: str
-    target_id: str
-    expires_at: float
-    # Granted material is provided only by the private trusted host, never from
-    # an agent request or a generic tool return. No key in repr/diagnostic output.
-    secret: str = field(repr=False)
-    operation: str = "demo.quota.read"
-    revoked: bool = False
+__all__ = [
+    "Binding",
+    "ExecutorCore",
+    "Grant",
+    "ProtectedGrant",
+    "ProviderReply",
+    "Rejected",
+    "UseRequest",
+    "project_reply",
+]
 
 
 @dataclass(frozen=True)
@@ -70,63 +45,88 @@ class Gate(Protocol):
 class ExecutorCore:
     """Host-side core with NO default gate, transport, URL, file store or server.
 
+    Only an explicit fixed-secret SyntheticHostCapability can run dummy tests.
+    No production host capability exists; DTOs/booleans/legacy callbacks fail closed.
     The operation has one operator-owned target and no caller URL, method,
     headers, payload or response-field selector. The host must prove process/
     filesystem/debug isolation before connecting real material. Dummy tests
     do not meet that production prerequisite.
     """
-    def __init__(self, grant_lookup: Callable[[str], Grant],
-                 transport: Callable[[str], ProviderReply], gate: Gate | None = None):
-        self._lookup, self._transport, self._gate = grant_lookup, transport, gate
+
+    def __init__(
+        self,
+        grant_lookup: Callable[[str], Grant] | None = None,
+        transport: Callable[[str], ProviderReply] | None = None,
+        gate: Gate | None = None,
+        *,
+        host: object = None,
+    ):
+        # Legacy material callbacks cannot become a trusted host. No production
+        # capability is supported; only an explicit fixed-secret test fixture.
+        self._legacy_lookup = grant_lookup is not None
+        self._transport, self._gate, self._host = transport, gate, host
 
     def execute(self, request: UseRequest) -> dict:
+        host = require_synthetic_host(self._host)
+        if self._legacy_lookup:
+            raise Rejected("protected_host_unavailable")
         if self._gate is None:
             raise Rejected("gate_unavailable")
-        if request.operation != "demo.quota.read" or request.target_id != "demo-quota-v1":
-            raise Rejected("unsupported_operation")
-        if request.binding.request_hash != request.content_hash():
-            raise Rejected("content_conflict")
-        try:
-            grant = self._lookup(request.grant_ref)
-        except Exception:
-            raise Rejected("grant_unavailable") from None
-        for name in ("project_id", "workflow_id", "task_id", "actor_id"):
-            if getattr(grant, name) != getattr(request.binding, name):
-                raise Rejected("grant_binding_mismatch")
-        if (grant.reference != request.grant_ref or grant.target_id != request.target_id
-                or grant.operation != request.operation or grant.revoked
-                or time.time() >= grant.expires_at):
-            raise Rejected("grant_unavailable")
+        if self._transport is None:
+            raise Rejected("transport_unavailable")
+        validate_request(request)
+        grant = host._lookup(request.grant_ref)
+        validate_grant(request, grant, time.time())
         result: dict = {}
+        callback_attempted = False
 
         def send() -> dict:
+            nonlocal callback_attempted
+            if callback_attempted:
+                raise Rejected("duplicate_dispatch_callback")
+            callback_attempted = True
             # Recheck expiry/revocation at actual dispatch, after gate ordering.
-            current = self._lookup(request.grant_ref)
-            if current != grant or current.revoked or time.time() >= current.expires_at:
+            current = host._lookup(request.grant_ref)
+            validate_grant(request, current, time.time())
+            if current != grant:
                 raise Rejected("grant_unavailable")
             try:
-                reply = self._transport(current.secret)
+                reply = self._transport(host._synthetic_material(current))
                 projected = project_reply(reply)
-            except Exception:
+            except Exception:  # noqa: BLE001 - sanitize arbitrary trusted-adapter errors
                 # Do not expose exceptions (which may contain headers/body/URL).
                 raise Rejected("provider_outcome_unverified") from None
             result.update(projected)
             return {"operation": "demo.quota.read", "response_validated": True}
 
         try:
-            state = self._gate.dispatch(request, send)
-        except Exception:
+            self._gate.dispatch(request, send)
+        except Exception:  # noqa: BLE001 - sanitize arbitrary trusted-adapter errors
             raise Rejected("dispatch_outcome_unverified") from None
         if not result:
             # A replay reads the gate state; it never triggers another send and
             # cannot recreate data kept only in the previous process's memory.
-            return {"status": "unverified", "outcome": "read_existing_gate_record", "project_completion_verified": False}
-        return {"status": "delivered_unverified", "result": result, "cost_settled": False, "project_completion_verified": False}
+            return {
+                "status": "unverified",
+                "outcome": "read_existing_gate_record",
+                "execution_scope": "synthetic_test_only",
+                "production_host_available": False,
+                "project_completion_verified": False,
+            }
+        return {
+            "status": "delivered_unverified",
+            "result": result,
+            "cost_settled": False,
+            "execution_scope": "synthetic_test_only",
+            "production_host_available": False,
+            "project_completion_verified": False,
+        }
 
 
 def project_reply(reply: ProviderReply) -> dict:
     if reply.status != 200 or reply.redirected or len(reply.body) > 4096:
         raise Rejected("response_rejected")
+
     def unique(pairs):
         obj = {}
         for key, value in pairs:
@@ -134,6 +134,7 @@ def project_reply(reply: ProviderReply) -> dict:
                 raise ValueError("duplicate_field")
             obj[key] = value
         return obj
+
     try:
         body = json.loads(reply.body, object_pairs_hook=unique)
         if not isinstance(body, dict) or set(body) != {"remaining", "window"}:
@@ -142,6 +143,6 @@ def project_reply(reply: ProviderReply) -> dict:
             raise ValueError("count")
         if body["window"] not in ("day", "month"):
             raise ValueError("window")
-    except Exception:
+    except Exception:  # noqa: BLE001 - sanitize arbitrary trusted-adapter errors
         raise Rejected("response_rejected") from None
     return {"remaining": body["remaining"], "window": body["window"]}

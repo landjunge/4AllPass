@@ -22,3 +22,17 @@ boundary and trusted vault transfer plus KB-C02 origin binding are verified.
 Browser login/session/DOM export protection is a distinct unfinished FP-C03.
 
 See ../../PROTECTED-ACCESS-20261018.md for actual checks and source/release limits.
+
+## Binding follow-up, 18 October 2026
+
+Private metadata DTOs alone cannot authenticate the absent protected host. The
+source now denies normal host-less execution before lookup; arbitrary callbacks,
+booleans or dictionaries cannot enable it. Explicit synthetic fixtures use only
+a fixed public dummy value. This is not a new authorization service or OS guard.
+
+Grant/use metadata now bind consumer, configured origin/principal, exact request
+hash and grant version in addition to G-01/operation/target. Strict finite lifetime
+and lifecycle validation repeat inside the actual TollGate callback. No plaintext
+field exists in the public Grant DTO. Real host/consent source and its monotonic
+version/revoke history, vault transfer and OS isolation remain prerequisites;
+FP-C02/FP-C03 stay productively open. No human vault or cryptography change.

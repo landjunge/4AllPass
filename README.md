@@ -35,7 +35,10 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > mit AP4 und bestehenden schmalen/Touch-Ansichten abgeglichen. / Source adopts
 > the existing np foundation while preserving AP4 and narrow/touch behavior.
 > [Design evidence](docs/DESIGN-ALIGNMENT-20261018.md); unchanged downloads remain
-> separately pinned.
+> separately pinned. Der [Bindungskern](protected_executor/README.md) verweigert
+> fehlende Produktionshosts vor Zugriff; positive Proben bleiben explizit
+> synthetisch. / The [binding core](protected_executor/README.md) denies missing
+> production hosts before lookup; positive probes remain explicitly synthetic.
 
 ## Für Nutzer
 

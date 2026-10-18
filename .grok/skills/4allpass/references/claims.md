@@ -5,15 +5,14 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 
 ## Access / agents
 
-| Easy to write | What is true |
-|---|---|
-| Agents never need the password | **Goal.** v1 after human Allow copies a **raw secret** (`handoff: "raw_secret"`). |
-| Zeitlich begrenzte Freigabe widerruft den Key | TTL stops *later 4AllPass handoffs*. A GitHub PAT already copied stays valid until GitHub says otherwise. The loopback grant is **one-shot** (second `decide` → 404); TTL is not a re-poll window. |
-| `application: "n8n"` is identity | String + pairing token. Pairing token ≠ agent identity. Unknown app = DENY. |
-| `handoff: "mediated"` | Typed. **Denied** in v1 (`handoff_unavailable`). No silent fallback to raw_secret. |
-| FastAPI mints provider tokens | It does not. Broker is loopback; Origin 403 on the grant path. |
-| Any `/auth/local` session can fetch the broker pairing token | **No.** `GET /local/broker` is 404 for `local@127.0.0.1`, a throwaway `register`, and an e-mail account whose vault has **no** active snapshot. Empty `POST /vaults` is not enough. |
-| Robots get credentials without a human | **Library only.** `decideStandingAccess` can auto-approve a **data** credential for a verified `requesterId`. The sidecar still waits for live Allow. Actuation never auto-approves. 4AllPass does not drive a device protocol. Vault Device envelopes are not agent identity. |
+- Changed source denies machine credential handoffs, including raw_secret and
+  old Allow responses. No protected production executor is connected.
+- Historical v0.1.2-rc.2 downloads returned actual material as access_token. They
+  are not silently updated or relabeled by this source change.
+- Pairing token and application strings are not authenticated model identity.
+- TTL never recalls previous credential copies or provider sessions.
+- The synthetic API core/TollGate tests do not prove OS isolation, protected
+  browser login, third-party audit or a deployed product integration.
 
 ## Desktop / Tauri
 

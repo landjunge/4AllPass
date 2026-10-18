@@ -12,8 +12,9 @@ description: >
 # 4AllPass
 
 Device-centric ZK vault. Humans: effortless auth (import + reliable autofill).
-Machines: **controlled** access (Allow/Deny). v1 after Allow still copies a
-**raw secret**; TTL does not un-know a copy. Not a nicer Bitwarden. Not Tollgate.
+Machines: fail closed without protected execution. Current source blocks the
+legacy raw-secret channel; historical releases after Allow copied material.
+TTL does not un-know an old copy. Not a nicer Bitwarden. Not Tollgate.
 
 **What runs:** `docs/security-boundary.md`. Specs win over PR text. If code and
 `packages/crypto` disagree, the library and its tests win.

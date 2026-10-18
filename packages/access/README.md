@@ -1,5 +1,14 @@
 # `@4allpass/access`
 
+**DE/EN, current source 18 October 2026:** Maschinenzugriff ist ohne geschützten
+Nutzungsweg gesperrt. Legacy-`approved`/`access_token`-Antworten werden abgewiesen,
+nicht an den Aufrufer zurückgegeben. / Machine access is blocked without a
+protected executor. Legacy `approved`/`access_token` responses are denied rather
+than returned to the caller. Historical examples below describe the old API and
+must not be used as a raw-secret workaround. No productive mediated service is
+connected. See ../../docs/PROTECTED-ACCESS-20261018.md.
+
+
 **DE.** Kleines Node-SDK für Agenten: `fourAllPass.request({ provider, capability, ttl })`. Spricht mit dem lokalen Relay auf `127.0.0.1`, nicht mit FastAPI. FastAPI minted keine Tokens. Das ist kein n8n-Marketplace-Node.
 
 **EN.** Tiny Node SDK for agents: `fourAllPass.request({ provider, capability, ttl })`. Talks to the local loopback relay, not FastAPI. FastAPI never mints tokens. This is not an n8n marketplace node.

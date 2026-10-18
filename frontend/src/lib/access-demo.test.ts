@@ -38,31 +38,17 @@ test("empty vault starts on setup; GitHub read credential starts on read", () =>
   assert.equal(startingScene([]), "setup");
   assert.equal(hasGithubReadCredential([]), false);
   const entry = seeded();
-  assert.equal(hasGithubReadCredential([entry]), true);
-  assert.equal(startingScene([entry]), "read");
+  assert.equal(hasGithubReadCredential([entry]), false);
+  assert.equal(startingScene([entry]), "setup");
 });
 
-test("Allow n8n GitHub read → works → delete DENY → expire → unknown DENY", () => {
+test("legacy demo cannot hand a dummy credential to a machine", () => {
   const entry = seeded();
   const read = demoReadRequest();
-  assert.equal(decideAccess(read, [entry]).status, "pending");
+  assert.equal(decideAccess(read, [entry]).status, "denied");
   const grant = issueGrant(read, entry, 1_000);
-  assert.equal(grant.handoff, "raw_secret");
-  const live = readGrant(grant, 1_000);
-  assert.ok("material" in live);
-  if ("material" in live) assert.equal(live.material, DEMO_DUMMY_TOKEN);
-
-  const del = decideAccess(demoDeleteRequest(), [entry]);
-  assert.equal(del.status, "denied");
-  if (del.status === "denied") assert.equal(del.reason, "scope_not_permitted");
-
-  const dead = readGrant(grant, 1_000 + DEMO_TTL_SECONDS * 1000);
-  assert.equal(dead.status, "denied");
-  if (dead.status === "denied") assert.equal(dead.reason, "expired");
-
-  const unknown = decideAccess(demoUnknownRequest(), [entry]);
-  assert.equal(unknown.status, "denied");
-  if (unknown.status === "denied") assert.equal(unknown.reason, "application_not_allowed");
+  assert.equal(grant.material, "");
+  assert.deepEqual(readGrant(grant, 1_000), { status: "denied", reason: "handoff_unavailable" });
 });
 
 test("demo seed is read-only and is not a live GitHub PAT", () => {

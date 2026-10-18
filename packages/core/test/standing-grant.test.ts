@@ -67,7 +67,7 @@ function rule(over: Partial<StandingRule> = {}): StandingRule {
   };
 }
 
-test("live n8n path is unchanged: policy-allow is still pending human", () => {
+test("live n8n transport is disabled pending a protected executor", () => {
   const decision = evaluatePolicy(
     {
       application: "n8n",
@@ -78,7 +78,7 @@ test("live n8n path is unchanged: policy-allow is still pending human", () => {
     },
     [github()],
   );
-  assert.equal(decision.decision, "allow");
+  assert.equal(decision.decision, "deny");
   if (decision.decision === "allow") assert.equal(decision.riskClass, "data");
   assert.equal(
     decideAccess(
@@ -91,11 +91,11 @@ test("live n8n path is unchanged: policy-allow is still pending human", () => {
       },
       [github()],
     ).status,
-    "pending",
+    "denied",
   );
 });
 
-test("actuation credential is high-risk and still pending on the live path", () => {
+test("actuation credential cannot bypass the disabled live transport", () => {
   const decision = evaluatePolicy(
     {
       application: "n8n",
@@ -106,11 +106,8 @@ test("actuation credential is high-risk and still pending on the live path", () 
     },
     [valve()],
   );
-  assert.equal(decision.decision, "allow");
-  if (decision.decision === "allow") {
-    assert.equal(decision.riskClass, "actuation");
-    assert.equal(decision.risk, true);
-  }
+  assert.equal(decision.decision, "deny");
+  if (decision.decision === "deny") assert.equal(decision.reason, "handoff_unavailable");
 });
 
 test("standing data grant auto-approves with clamped TTL", () => {

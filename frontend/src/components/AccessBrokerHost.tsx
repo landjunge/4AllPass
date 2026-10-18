@@ -183,8 +183,8 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
               <strong>{pending.request.provider}</strong>{" "}
               <code>{pending.request.scope.join(", ")}</code>{" "}
               {t({
-                de: `für ${pending.request.ttlSeconds} Sekunden. Nach Erlauben bekommt das Programm das Secret (raw_secret). Die Zeitbegrenzung holt eine Kopie nicht zurück.`,
-                en: `for ${pending.request.ttlSeconds} seconds. After Allow the program receives the secret (raw_secret). TTL cannot recall a copy.`,
+                de: `für ${pending.request.ttlSeconds} Sekunden. Maschinenzugriff ist ohne geschützten Nutzungsweg gesperrt.`,
+                en: `for ${pending.request.ttlSeconds} seconds. Machine access is blocked without a protected execution path.`,
               })}
             </p>
             <p className="hint">

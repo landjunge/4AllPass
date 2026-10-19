@@ -1,0 +1,169 @@
+{
+  "schema": "4allpass-rc3-independent-artifact-review-v1",
+  "reviewed_at": "2026-10-19T03:13:08.550411+00:00",
+  "task": "seven-tools-build-20261018-1833 continuation; FP-V01 artifact review only",
+  "repository": "landjunge/4AllPass",
+  "pull_request": "https://github.com/landjunge/4AllPass/pull/226",
+  "build_url": "https://github.com/landjunge/4AllPass/actions/runs/39175745620",
+  "build_attempt": 1,
+  "build_reported_conclusion": "success",
+  "candidate_source_commit": "16ca6b91aced4121f55bb08b57c934bd612da3d3",
+  "candidate_version": "0.1.2-rc.3",
+  "documentation_base_after_PR226": "3ee541a9a01c5b9cfc75e00b43e90f3a41b0d93f",
+  "documentation_commit_is_not_a_new_binary_pin": true,
+  "review_verdict": "all_four_existing_candidate_archives_and_installer_hashes_match_source_bound_evidence",
+  "license_sha256": "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec",
+  "required_deny_cases": [
+    "omitted_handoff",
+    "raw_secret",
+    "mediated",
+    "missing_token",
+    "wrong_token",
+    "foreign_origin",
+    "null_origin",
+    "local_browser_origin"
+  ],
+  "artifacts": [
+    {
+      "artifact_name": "4AllPass-macOS",
+      "artifact_id": 12154336916,
+      "archive_sha256": "d87bb398a5f02bb497cf709255c64379e59525ea6566c12e1f79eff16323400d",
+      "archive_digest_verified": true,
+      "reported_sidecar_platform": "Darwin-arm64",
+      "reported_sidecar_sha256": "d5739d1bb7a78d51b6df3f2f54eed885327f861eaba6bd20f950d3c9eb0ecdf2",
+      "source_and_preflight_and_package_pins_match": true,
+      "packaged_eight_case_deny_evidence_verified": true,
+      "installer": {
+        "name": "4AllPass_0.1.2-rc.3_aarch64.dmg",
+        "sha256": "2188e07c4db203b82bb4bd2850dcd19c0438025283bbf6dbe506db968a25160e"
+      },
+      "installer_sha256_independently_verified": true,
+      "license_matches_current_source": true,
+      "package_ap4_evidence": {
+        "bundled_extension_icons_and_license": true,
+        "native_icon": true
+      },
+      "deny_case_count": 8,
+      "independent_static_review": {
+        "dmg_integrity_verified": true,
+        "read_only_mount": true,
+        "bundle_version": "0.1.2-rc.3",
+        "binary_architecture": "arm64",
+        "codesign_deep_strict_verified": true,
+        "signing": "ad-hoc",
+        "root_and_app_licenses_match": true,
+        "native_ap4_icns_matches": true,
+        "bundled_extension_ap4_and_license_matches": true
+      }
+    },
+    {
+      "artifact_name": "4AllPass-macOS-Intel",
+      "artifact_id": 12154757809,
+      "archive_sha256": "39f8a38584871112a7c5cdde84dc7b34bab7a26019648b677389dc822309d9d8",
+      "archive_digest_verified": true,
+      "reported_sidecar_platform": "Darwin-x86_64",
+      "reported_sidecar_sha256": "2c2590dceea3cc8b7e86a551f52d6a8f811d6d5f44c588b3b4defc474dffb36e",
+      "source_and_preflight_and_package_pins_match": true,
+      "packaged_eight_case_deny_evidence_verified": true,
+      "installer": {
+        "name": "4AllPass_0.1.2-rc.3_x64.dmg",
+        "sha256": "b5588333fb43d6d71d316062b52b01093b782b2b0e32b5397f989b1500b2a314"
+      },
+      "installer_sha256_independently_verified": true,
+      "license_matches_current_source": true,
+      "package_ap4_evidence": {
+        "bundled_extension_icons_and_license": true,
+        "native_icon": true
+      },
+      "deny_case_count": 8,
+      "independent_static_review": {
+        "dmg_integrity_verified": true,
+        "read_only_mount": true,
+        "bundle_version": "0.1.2-rc.3",
+        "binary_architecture": "x86_64",
+        "codesign_deep_strict_verified": true,
+        "signing": "ad-hoc",
+        "root_and_app_licenses_match": true,
+        "native_ap4_icns_matches": true,
+        "bundled_extension_ap4_and_license_matches": true
+      }
+    },
+    {
+      "artifact_name": "4AllPass-Windows",
+      "artifact_id": 12154815637,
+      "archive_sha256": "3553763ca8e16ad6590c3f08ec807f2b8db9ed0dac49d09dca80dfbccfde279f",
+      "archive_digest_verified": true,
+      "reported_sidecar_platform": "Windows-AMD64",
+      "reported_sidecar_sha256": "92bb183a3e6c7755a9dbb63532eb7fa7ac16654fccf06644123b88d5d09a873b",
+      "source_and_preflight_and_package_pins_match": true,
+      "packaged_eight_case_deny_evidence_verified": true,
+      "installer": {
+        "name": "4AllPass_0.1.2-rc.3_x64-setup.exe",
+        "sha256": "c7bebc636ad3419e4c364e0a1c78a223ec33e6d813499136e1278838b405706e"
+      },
+      "installer_sha256_independently_verified": true,
+      "license_matches_current_source": true,
+      "package_ap4_evidence": {
+        "bundled_extension_icons_and_license": true,
+        "native_icon": true
+      },
+      "deny_case_count": 8,
+      "architecture_basis": "Windows-AMD64 as reported by source-bound actual packaged-sidecar preflight/package checks; no independent NSIS payload architecture extraction on this Mac",
+      "signing": "NotSigned"
+    },
+    {
+      "artifact_name": "4AllPass-Linux",
+      "artifact_id": 12154377771,
+      "archive_sha256": "6bb8044308adf3ab52757368bfec237e44682c7b9e15869cfb6b8c5975f1631c",
+      "archive_digest_verified": true,
+      "reported_sidecar_platform": "Linux-x86_64",
+      "reported_sidecar_sha256": "0ccd5b67c84c21baa3b9af1e3895a99ea8f52ddac81afcd5150f953e99b3cfc2",
+      "source_and_preflight_and_package_pins_match": true,
+      "packaged_eight_case_deny_evidence_verified": true,
+      "installer": {
+        "name": "4AllPass_0.1.2-rc.3_amd64.AppImage",
+        "sha256": "e23a785a1e40d39b9837d9b201823cc39ea866e9679011880e73b6a22d6524a5"
+      },
+      "installer_sha256_independently_verified": true,
+      "license_matches_current_source": true,
+      "package_ap4_evidence": {
+        "bundled_extension_icons_and_license": true,
+        "native_icon": true
+      },
+      "deny_case_count": 8,
+      "independent_static_review": {
+        "architecture": "x86_64",
+        "appimage_type": 2,
+        "basis": "Actual installer ELF header from digest-verified archive; no local execution"
+      }
+    }
+  ],
+  "proof_scope": {
+    "archive_and_installer_bytes_independently_hashed": true,
+    "all_four_source_preflight_package_pins_checked": true,
+    "all_eight_actual_ci_candidate_denial_case_records_checked": true,
+    "denial_requests_repeated_locally": false,
+    "macos_dmg_integrity_architecture_signature_and_packaged_license_ap4_checked_read_only": true,
+    "linux_elf_header_checked_without_execution": true,
+    "windows_linux_inner_resource_license_ap4_based_on_source_bound_ci_checks": true,
+    "producer_evidence_is_not_independent_identity_or_effect_attestation": true,
+    "new_builds_or_workflow_reruns": 0,
+    "project_test_suites_repeated": 0,
+    "gui_or_candidate_sidecar_executed_locally": false,
+    "user_vaults_accounts_or_credentials_accessed": false,
+    "kira_source_runtime_tasks_changed": false,
+    "public_release_tag_download_or_installer_changed": false,
+    "foreign_dirty_worktree_modified": false
+  },
+  "actual_limits": [
+    "These are already-built candidate artifacts, not a published RC3 release or update of installed copies.",
+    "Public RC2 remains the historical60eef0a build with the old raw-secret path; download/installer defaults were not changed.",
+    "Both macOS candidates are ad-hoc signed; no notarization acceptance. Windows evidence reports NotSigned.",
+    "No new complete native GUI/import/autofill/recovery, stranger-Mac, independent third-party audit or legal acceptance.",
+    "FP-C02/C03 production still require an agent-inaccessible OS/file/shell/debug/browser boundary, trusted vault transfer, authentic consent/revocation lifecycle and concrete controlled action; current same-UID shell is not isolation.",
+    "Eight denials are verified existing actual CI binary records, not freshly repeated requests on this Mac.",
+    "No RC3 publication authorization appears in reviewed PR226 body/reviews/comments or its release-note file; build authorization is separate."
+  ],
+  "user_accepted": false,
+  "public_release_authorized_by_this_review": false
+}

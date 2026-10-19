@@ -1,0 +1,43 @@
+{
+  "checked_at": "2026-10-19T03:20:17.306Z",
+  "scope": "Actual UnlockPage and CopyModeProvider rendered in isolated Chrome with synthetic app context; no backend/vault/provider; no exact-word assertion or permanent test added.",
+  "results": [
+    {
+      "language": "de",
+      "actual_component": "frontend/src/pages/UnlockPage.tsx",
+      "failed_unlock_then_explicit_null_search_rendered": true,
+      "calls": {
+        "unlock": 1,
+        "search": 1,
+        "restore": 0
+      },
+      "console_page_errors": []
+    },
+    {
+      "language": "en",
+      "actual_component": "frontend/src/pages/UnlockPage.tsx",
+      "failed_unlock_then_explicit_null_search_rendered": true,
+      "calls": {
+        "unlock": 1,
+        "search": 1,
+        "restore": 0
+      },
+      "console_page_errors": []
+    }
+  ],
+  "schema": "4allpass-unlock-search-copy-review-v1",
+  "candidate_source_commit_unchanged": "16ca6b91aced4121f55bb08b57c934bd612da3d3",
+  "frontend_typecheck": "passed",
+  "existing_frontend_unit_files": [
+    "frontend/src/lib/vault-session.history.test.ts",
+    "frontend/src/lib/vault-session.head-recovery.test.ts"
+  ],
+  "existing_frontend_unit_result": {
+    "passed": 9,
+    "failed": 0,
+    "duration_ms": 12452.241336
+  },
+  "copy_only_no_logic_crypto_or_dependency_change": true,
+  "new_native_build_or_publication": false,
+  "claim": "Failed search is inconclusive about password correctness; missing/unreadable history and transport/access failures can also produce no recovery result."
+}

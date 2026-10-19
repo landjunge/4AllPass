@@ -370,14 +370,12 @@ pins the server integers; after the first verified manifest that path is closed.
   range API: only the first 5 hex chars of SHA-1(password), with `Add-Padding`.
   The 4AllPass server never receives the password or the hash. Offline, the
   “leaked” category is skipped. This is not a cryptographic proof.
-- No restore-old-revision UI. §5 inserts a new immutable snapshot row per
-  commit and only moves `active_snapshot_id` — the previous row is not
-  deleted, so an accidentally-deleted entry's ciphertext likely still exists
-  in an older revision row. There is today no client feature to browse or
-  restore a prior revision; the bytes outlive the mistake, but nothing in
-  the UI can reach them. Recovery would mean a direct DB read of an older
-  `(vault_id, revision)` row, decrypted by hand under the VK that revision
-  used — not a supported flow.
+- Earlier-state review and forward restore are available under **Settings →
+  Security → Earlier states** (§5) while the vault is unlocked. The preview
+  shows titles and usernames, never passwords; restoring writes revision N+1
+  and preserves previous snapshots. A revision sealed under a different Vault
+  Key cannot be opened with the current key; the panel reports it as unreadable.
+  This panel is separate from the damaged-head recovery action below.
 - A stolen **account session** (Bearer token) can wipe access to a vault
   without ever knowing the vault password. `POST …/snapshots` (§5) requires
   `sealedManifest` to be *present*, but the server stores it opaque and
@@ -386,12 +384,17 @@ pins the server integers; after the first verified manifest that path is closed.
   decrypt anything can still commit a syntactically valid, garbage/empty
   snapshot and CAS-flip `active_snapshot_id` to it. The legitimate owner's
   next open then correctly fails closed (`IntegrityError`, §6 above) rather
-  than showing tampered data — but the vault is now inaccessible until
-  someone manually recovers an older revision (see the point above; today
-  that is a direct DB operation, not a supported client flow). Fixing this
-  properly needs the server to demand some cryptographic proof tied to the
-  VK before accepting a commit, not just a well-formed request from a valid
-  session.
+  than showing tampered data. After a failed master-password unlock, the
+  Unlock page offers an explicit search for an intact older state, using
+  that state's own master envelope. The user must separately accept recovery,
+  which writes a new revision above the damaged head (ADR-015 §2), without
+  silently rewinding the freshness pin. This needs valid account/owner access,
+  an available intact revision decryptable with the entered master password,
+  and an accepted forward commit. Missing history or keys, a higher head
+  `vaultKeyVersion`, or a concurrent head change can prevent recovery. This
+  mitigates the impact; it does not prevent token-authorized writes or guarantee
+  restoration. Closing the write-authorization gap needs cryptographic proof
+  tied to the VK, not just a well-formed request from a valid session.
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See

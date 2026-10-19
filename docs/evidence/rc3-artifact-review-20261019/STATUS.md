@@ -25,6 +25,10 @@ Ein gestohlener Accountzugang kann weiterhin schädliche, syntaktisch gültige
 Snapshots schreiben. Die Korrektur behauptet weder VK-authentisierte Writes noch
 eine allgemeine Verfügbarkeits- oder Wiederherstellungsgarantie. Nur die beiden
 falschen History-/DB-only-Aussagen wurden an vorhandenen Code angeglichen.
+Zusätzlich nennt die bestehende Unlock-Oberfläche nach erfolgloser Suche jetzt
+die möglichen Passwort-, History- und Verbindungsursachen. Ein Null-Ergebnis oder
+abgefangener Suchfehler beweist kein falsches Passwort. Nur DE/EN-Text geändert;
+Such-, Fehler-, Schlüssel- und Wiederherstellungslogik bleiben unverändert.
 
 Die [minimierte JSON-Quittung](artifact-review.json) prüft die **bereits gebauten**
 vier RC3-Artefakte aus [Build 39175745620](https://github.com/landjunge/4AllPass/actions/runs/39175745620).
@@ -54,28 +58,41 @@ an available decryptable older snapshot and an accepted forward commit. Missing
 keys/history, head key-version increases and concurrent writes can prevent it;
 token-authorized denial of service remains possible. No cryptographic behavior
 or write-admission rule changed and no general recovery guarantee is claimed.
+The existing failed-search message no longer diagnoses a wrong password from a
+null result or caught lookup failure: DE/EN copy names password, missing/unreadable
+history and connection problems as possible causes. No control flow changed.
 
 All four **existing** RC3 archives and installer hashes match source-bound
 preflight/package evidence for 16ca6b9. Eight actual CI denial records per platform
 were inspected, not rerun locally. Both macOS images additionally passed read-only
 architecture/signature/LICENSE/AP4 inspection; Linux ELF architecture was read.
 Windows payload/resource and Linux inner-resource checks remain CI evidence,
-clearly separated from local inspection. No application or sidecar ran locally.
+clearly separated from local inspection. No candidate application or packaged
+sidecar ran locally.
 This is candidate review, not publication, installed-copy updates, notarization,
 stranger-Mac testing, independent audit or user acceptance. Historical RC2 and its
 download targets remain unchanged.
 
-Documentation validation passed: all 16 local links in this record resolve,
+Documentation validation passed: all 17 local links in this record resolve,
 the minimized JSON agrees with the review source and four-platform/eight-case
 invariants, `python3.11 scripts/check-release-license.py` passes with unchanged
 LICENSE SHA256 `3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec`,
-and `git diff --check` passes. Exact changed-file scope is documentation only;
-no unchanged product suite or native build was repeated.
+and `git diff --check` passes. These were the initial documentation-only checks.
+
+For the subsequent two-string UI correction, frontend typecheck passed and the
+nine existing history/head-recovery unit cases passed (12.45s). The actual
+`UnlockPage`/`CopyModeProvider` source was also rendered in isolated Chrome with
+a synthetic app context: one failed unlock and one explicit null-result search
+in each language, zero restore calls or page errors. No backend, vault, account,
+provider, candidate package or private browser profile was used. This bounded
+component exercise is not a complete-product/browser acceptance test. No exact
+wording assertion or permanent new test was added. [Scoped UI receipt](unlock-search-copy.json).
 
 ## Existing implementation and test references
 
-These files were read for the documentation correction; their suites and browser
-scenarios were **not rerun** for a docs-only change:
+These files were read for the correction. Only the two frontend history and
+head-recovery unit files were executed after the additional UI copy change;
+the backend suite and existing full-product browser scenarios were **not rerun**:
 
 - [VaultSettings](../../../frontend/src/components/vault/VaultSettings.tsx) and
   [VaultHistoryPanel](../../../frontend/src/components/vault/VaultHistoryPanel.tsx):

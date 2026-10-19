@@ -190,8 +190,8 @@ export function UnlockPage(): ReactNode {
             ) : recoverable === null ? (
               <p className="error-text" data-testid="no-recovery">
                 {t({
-                  de: "Kein älterer Stand lässt sich mit diesem Passwort öffnen. Dann war es das Passwort — bitte erneut versuchen oder den Recovery-Schlüssel nehmen.",
-                  en: "No earlier state opens with this password. So it was the password — try again, or use the recovery key.",
+                  de: "Kein früherer Stand konnte geöffnet werden. Möglich sind ein falsches Passwort, fehlende oder unlesbare Stände oder ein Verbindungsproblem. Bitte erneut versuchen oder den Recovery-Schlüssel nutzen.",
+                  en: "No earlier state could be opened. Possible causes include an incorrect password, missing or unreadable states, or a connection problem. Try again or use the recovery key.",
                 })}
               </p>
             ) : (

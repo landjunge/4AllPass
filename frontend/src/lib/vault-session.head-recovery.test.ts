@@ -13,6 +13,7 @@ import { afterEach, test } from "node:test";
 
 import {
   ARGON2ID_PROFILES,
+  IntegrityError,
   buildManifest,
   deriveMasterKey,
   encodeVaultSnapshot,
@@ -26,11 +27,11 @@ import {
   type EncryptedEntry,
 } from "@4allpass/crypto";
 
-import { api, type VaultRevisionSummary } from "./api.ts";
+import { api, ApiError, type VaultRevisionSummary } from "./api.ts";
 import { encodeEntryPlaintext, type VaultEntry } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
-import { findRecoverableRevision, restoreRecoveredRevision } from "./vault-session.ts";
+import { CommitConflict, findRecoverableRevision, restoreRecoveredRevision } from "./vault-session.ts";
 
 const PASSWORD = "head-recovery-master-password";
 const profile = ARGON2ID_PROFILES.mobile_safe;
@@ -211,4 +212,65 @@ test("restoreRecoveredRevision commits above the broken head, never back at it",
   // 5, not 3: forward from the damaged head, so the pin can only go up.
   assert.equal(sent!.revision, 5);
   assert.equal(sent!.expectedRevision, 4);
+});
+
+for (const change of ["envelope", "entries", "missing-manifest", "manifest", "signed-fork", "revision"] as const) {
+  test(`restore rejects a changed refetch (${change}) before commit or pin`, async () => {
+    const original = goodRevision(2, [ENTRY]);
+    stubServer(4, [row(2)], { 2: original });
+    const pinned = { vaultId: VAULT_ID, revision: 4, vaultKeyVersion: 1, cryptoProtocolVersion: 1 as const };
+    savePin(pinned);
+    const found = await findRecoverableRevision(VAULT_ID, PASSWORD);
+    assert.ok(found);
+    const changed = structuredClone(original);
+    if (change === "envelope") {
+      // The master still opens: corruption is in another envelope the old
+      // confirmation used to copy into a newly authenticated manifest.
+      changed.envelopes.push({ ...changed.envelopes[0]!, type: "recovery", kdf: undefined });
+    } else if (change === "entries") changed.entries = [];
+    else if (change === "missing-manifest") delete changed.sealedManifest;
+    else if (change === "manifest") {
+      const manifest = changed.sealedManifest!;
+      manifest.tag = (manifest.tag[0] === "A" ? "B" : "A") + manifest.tag.slice(1);
+    } else if (change === "signed-fork") {
+      Object.assign(changed, goodRevision(2, [ENTRY]));
+    } else changed.revision = 3;
+    api.getRevision = async () => changed;
+    let commits = 0;
+    api.commitSnapshot = async (vaultId, payload) => {
+      commits++;
+      return { ...payload, vaultId };
+    };
+    await assert.rejects(() => restoreRecoveredRevision(VAULT_ID, PASSWORD, found), IntegrityError);
+    assert.equal(commits, 0);
+    assert.deepEqual(loadPin(VAULT_ID), pinned);
+  });
+}
+
+test("history lookup refuses a revision different from the requested listing row", async () => {
+  stubServer(4, [row(2)], { 2: goodRevision(3, [ENTRY]) });
+  assert.equal(await findRecoverableRevision(VAULT_ID, PASSWORD), null);
+});
+
+test("history confirmation preserves manifestless legacy recovery as a forward commit", async () => {
+  const legacy = goodRevision(2, [ENTRY]);
+  delete legacy.sealedManifest;
+  stubServer(4, [row(2)], { 2: legacy });
+  const found = await findRecoverableRevision(VAULT_ID, PASSWORD);
+  assert.ok(found);
+  api.commitSnapshot = async (vaultId, payload) => ({ ...payload, vaultId });
+  const restored = await restoreRecoveredRevision(VAULT_ID, PASSWORD, found);
+  assert.equal(restored.revision, 5);
+  assert.equal(restored.entries[0]?.title, ENTRY.title);
+});
+
+test("history confirmation keeps CAS conflict and the existing pin intact", async () => {
+  stubServer(4, [row(2)], { 2: goodRevision(2, [ENTRY]) });
+  const pinned = { vaultId: VAULT_ID, revision: 4, vaultKeyVersion: 1, cryptoProtocolVersion: 1 as const };
+  savePin(pinned);
+  const found = await findRecoverableRevision(VAULT_ID, PASSWORD);
+  assert.ok(found);
+  api.commitSnapshot = async () => { throw new ApiError(409, { currentRevision: 5 }); };
+  await assert.rejects(() => restoreRecoveredRevision(VAULT_ID, PASSWORD, found), CommitConflict);
+  assert.deepEqual(loadPin(VAULT_ID), pinned);
 });

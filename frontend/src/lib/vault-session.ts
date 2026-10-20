@@ -80,6 +80,8 @@ import {
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 import { isOfflineError, snapshotCache } from "./snapshot-cache.ts";
+import { assertHistoricSelection, openHistoricSnapshot, type HistoricSelection } from "./historic-snapshot.ts";
+export { HistoricRevisionUnreadable } from "./historic-snapshot.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
 
@@ -369,16 +371,6 @@ async function acceptSnapshot(
   return vault;
 }
 
-export class HistoricRevisionUnreadable extends Error {
-  readonly revision: number;
-
-  constructor(revision: number) {
-    super(`revision ${String(revision)} was sealed under an earlier vault key`);
-    this.name = "HistoricRevisionUnreadable";
-    this.revision = revision;
-  }
-}
-
 /**
  * Decrypt one superseded revision for review or restore.
  *
@@ -395,47 +387,10 @@ export function openHistoricEntries(
   snapshot: VaultSnapshot,
   vault: UnlockedVault,
 ): VaultEntry[] {
-  if (snapshot.vaultId !== vault.vaultId) {
-    throw new IntegrityError("historic snapshot belongs to a different vault");
-  }
-  // A revision sealed under an earlier Vault Key is unreadable by design after
-  // a rotation. Say so plainly instead of surfacing a decrypt failure.
-  if (snapshot.vaultKeyVersion !== vault.vaultKeyVersion) {
-    throw new HistoricRevisionUnreadable(snapshot.revision);
-  }
-  let entriesToOpen = snapshot.entries;
-  if (snapshot.sealedManifest) {
-    const verified = verifySnapshotManifest(
-      snapshot.sealedManifest,
-      { entries: snapshot.entries, envelopes: snapshot.envelopes },
-      {
-        vaultKey: vault.vaultKey,
-        vaultId: snapshot.vaultId,
-        revision: snapshot.revision,
-        vaultKeyVersion: snapshot.vaultKeyVersion,
-      },
-    );
-    entriesToOpen = verified.entries;
-  }
-  return verifySnapshot({
-    vaultId: snapshot.vaultId,
-    vaultKey: vault.vaultKey,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    entries: entriesToOpen,
-  })
-    .map((entry) => {
-      try {
-        return decodeEntryPlaintext(entry.id, entry.plaintext);
-      } finally {
-        zeroize(entry.plaintext);
-      }
-    })
-    .sort((a, b) => a.title.localeCompare(b.title));
+  return openHistoricSnapshot(snapshot, vault).entries;
 }
 
-export interface HeadRecovery {
-  /** The newest revision that still opens under this master password. */
-  revision: number;
+export interface HeadRecovery extends HistoricSelection {
   createdAt: string;
   entries: VaultEntry[];
   /** The unopenable head this would be committed on top of. */
@@ -471,7 +426,7 @@ export async function findRecoverableRevision(
     let vaultKey: Uint8Array | null = null;
     try {
       const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, row.revision));
-      if (snapshot.vaultId !== vaultId) continue;
+      if (snapshot.vaultId !== vaultId || snapshot.revision !== row.revision) continue;
       const masterEnvelope = masterEnvelopeOf(snapshot);
       masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
       vaultKey = unwrapVaultKey(masterEnvelope, {
@@ -480,16 +435,13 @@ export async function findRecoverableRevision(
         expectType: "master",
         expectVaultKeyVersion: snapshot.vaultKeyVersion,
       });
-      const entries = openHistoricEntries(snapshot, {
+      const opened = openHistoricSnapshot(snapshot, {
         vaultId,
-        revision: snapshot.revision,
         vaultKeyVersion: snapshot.vaultKeyVersion,
         vaultKey,
-        envelopes: snapshot.envelopes,
-        entries: [],
-        unlockedWith: "master_password",
       });
-      return { revision: row.revision, createdAt: row.createdAt, entries, brokenRevision };
+      return { vaultId, revision: snapshot.revision, vaultKeyVersion: snapshot.vaultKeyVersion,
+        manifestDigest: opened.manifestDigest, createdAt: row.createdAt, entries: opened.entries, brokenRevision };
     } catch {
       // This revision is not the way back. Keep walking down.
       continue;
@@ -513,28 +465,35 @@ export async function restoreRecoveredRevision(
   recovery: HeadRecovery,
 ): Promise<UnlockedVault> {
   const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, recovery.revision));
+  assertHistoricSelection(snapshot, recovery, vaultId);
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
+  let vaultKey: Uint8Array | null = null;
+  let transferredVaultKey = false;
   try {
-    const vaultKey = unwrapVaultKey(masterEnvelope, {
+    vaultKey = unwrapVaultKey(masterEnvelope, {
       wrappingKey: masterKey,
       vaultId,
       expectType: "master",
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
+    const opened = openHistoricSnapshot(snapshot, { vaultId, vaultKeyVersion: snapshot.vaultKeyVersion, vaultKey });
     const staged: UnlockedVault = {
       vaultId,
       // Commit on top of the broken head, not on top of the revision we read.
       revision: recovery.brokenRevision,
       vaultKeyVersion: snapshot.vaultKeyVersion,
       vaultKey,
-      envelopes: snapshot.envelopes,
+      envelopes: opened.envelopes,
       entries: [],
       unlockedWith: "master_password",
     };
-    return await commitEntries(staged, recovery.entries);
+    const updated = await commitEntries(staged, opened.entries);
+    transferredVaultKey = true;
+    return updated;
   } finally {
     zeroize(masterKey);
+    if (!transferredVaultKey && vaultKey) zeroize(vaultKey);
   }
 }
 

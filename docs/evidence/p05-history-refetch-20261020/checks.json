@@ -1,0 +1,24 @@
+{
+  "scope": "P05/R06 historical recovery confirmation only",
+  "baselineExistingTargetsPassed": 43,
+  "baselineNewIndependentNegativeCasesFailed": 2,
+  "oldRuntimeExpandedHeadTests": {
+    "passed": 6,
+    "failed": 7
+  },
+  "candidateTargetedTestsPassed": 52,
+  "candidateHeadTestsIncludedInTargetedTotal": 13,
+  "unchangedOriginalHistoryProbePassed": 1,
+  "hardRevokeProbeClaimedFixed": false,
+  "compiledChromiumLocalJourneyPassed": 1,
+  "frontendTypecheck": "pass",
+  "moduleBoundaries": "pass",
+  "independentReview": "pending",
+  "newCryptoBackendDepsPermissions": false,
+  "nativeHardwarePackageAcceptance": false,
+  "sourceSha256File": "SHA256SUMS",
+  "testedBase": "f638540869c1323bdeae8f50be115ee1007fffc6",
+  "base": "fb14e34443da421032331d537605d5b6d5abfd2c",
+  "testedRuntimePin": "c840f974066a0d25eb6c5076887107ed7262d6ec",
+  "runtimeAndTestsByteIdenticalAfterRebase": true
+}

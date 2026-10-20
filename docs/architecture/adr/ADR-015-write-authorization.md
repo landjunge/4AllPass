@@ -91,6 +91,12 @@ and restoring it is the ordinary forward commit. This converts the attack from
 "vault destroyed" to "vault has an annoying bad revision on top", using the
 read routes that already exist. It is the highest value per line of code here.
 
+Selection and confirmation are separate reads. Confirmation must bind the
+refetched historic revision to the locally verified selection and recheck its
+manifest and contents before copying any envelope into the forward commit.
+Use the normalized records returned by the existing verifier. This repairs
+step2's existing integrity rule; it adds no server write proof or crypto scheme.
+
 **3. Signed writes — designed, not built.** When built, it is:
 
 - An Ed25519 keypair per vault-key generation, seed = `HKDF-SHA256(VK, …)`

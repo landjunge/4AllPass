@@ -6,12 +6,6 @@
 </picture>
 
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="brand/ap4/light/4allpass-light-256.png">
-    <img src="brand/ap4/dark/4allpass-dark-256.png" alt="4AllPass — AP4" width="192" height="192">
-  </picture>
-</p>
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
@@ -45,6 +39,14 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > fehlende Produktionshosts vor Zugriff; positive Proben bleiben explizit
 > synthetisch. / The [binding core](protected_executor/README.md) denies missing
 > production hosts before lookup; positive probes remain explicitly synthetic.
+
+## Aktueller Funktionsstand / Current capabilities
+
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.
+
+**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet.
+
+Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. / Source and distributed downloads are separate: existing v0.1.2-rc.2 packages do not automatically include the later source correction. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
 
 ## Für Nutzer
 
@@ -88,7 +90,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Ablage | Local-first; Synchronisierung optional; kein angebotener Hosted-Dienst |
 | Import | Chrome und Firefox; Prüfung ohne sichtbare Passwörter in der Liste |
 | Autofill | Chromium, Firefox und Safari-Wrapper; kein automatisches Absenden |
-| Zugriffsfreigabe | Zugriffe müssen lokal bestätigt werden |
+| KI-Zugriff | Im aktuellen Quellstand gesperrt; geschützter Produktionsweg fehlt |
 | Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
 | WebAuthn PRF | Im Protokoll beschrieben; in der Desktop-Webview noch nicht bewiesen |
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |

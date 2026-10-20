@@ -38,10 +38,14 @@ before it reaches Argon2id:
 | `algorithm` | exactly `argon2id` | variant substitution (argon2i / argon2d) |
 | `version` | exactly `0x13` | derivation under an older, weaker Argon2 |
 | `hashLen` | exactly 32 | short Master Key |
-| `memory` | ≥ 32 MiB (production floor) and ≤ 1 GiB | KDF downgrade / client memory exhaustion |
-| `iterations` | 1…16 | KDF downgrade / CPU exhaustion |
+| `memory` | ≥ 32 MiB (production floor) and ≤ 512 MiB | KDF downgrade / client memory exhaustion |
+| `iterations` | 3…16 | KDF downgrade / CPU exhaustion |
 | `parallelism` | 1…16 | KDF downgrade / resource exhaustion |
 | `salt` | exactly 16 or 32 bytes | ambiguous or degenerate salt |
+
+The accepted memory ceiling is distinct from the fixed 1 GiB Argon2 allocator
+backstop (`ARGON2_MAXMEM_BYTES`); that backstop does not authorize a 1 GiB KDF
+parameter. Bounds are enforced by [the current constants](../../packages/crypto/src/constants.ts).
 
 The `ci` profile is below the production floor and is only accepted when the caller
 explicitly opts in (`allowTestProfile: true`), which production code never does.

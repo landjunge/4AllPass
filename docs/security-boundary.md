@@ -439,11 +439,14 @@ still follows successful opening and remains best-effort.
   securely zeroize strings. iOS Safari Web Extension and system Password
   AutoFill are not shipped.
 - Native browser import copies Login Data / key4.db into an owner-only temp
-  dir (`0700`), overwrites those files before unlink, and zeroizes Keychain /
+  dir (`0700`), removes the copy tree without following symbolic links or
+  overwriting hardlink targets, and zeroizes Keychain /
   Firefox key material after use. `BrowserLogin` Debug prints `***` for the
   password. JavaScript still receives plaintext passwords over Tauri IPC for
-  the import-review UI (no password column in the list). SSD wear-leveling
-  means overwrite is best-effort.
+  the import-review UI (no password column in the list). Temporary-tree removal
+  is best-effort, not physical secure erasure. It uses `std::fs::remove_dir_all`
+  instead of a custom path-following overwrite walk; same-user manipulation is
+  not an OS isolation boundary.
 - AES-GCM nonce budget (`SEALS_PER_KEY_MAX` ≈ 2^32) is **policy**, not a
   persistent per-VK counter. Human-scale edits are far below it. Automated
   high-volume writers must rotate the Vault Key themselves (F-25).

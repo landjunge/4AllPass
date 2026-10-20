@@ -49,6 +49,10 @@ Normalreise mit exakt zwei Network-Keys für Parent/Core grün10.992s, acht
 native Signatur-Gegenprüfungen grün. Drei CS-Ausnahmen entfernt; neuer
 Release-/Installationsbeleg und weitere Mac-Profile bleiben gesondert offen.
 
+P06 native Temp-Bereinigung: [Link-Zielschutz](docs/evidence/p06-temp-cleanup-20261020.md)
+ersetzt den überschreibenden Pfadwalk durch Standard-No-Follow-Entfernung.
+Sechs Mac-Rust-Fälle grün; unabhängiger Review/CI und neue Pakete folgen.
+
 Pro Unterpunkt werden Commit, Dateien, konkrete Tests und das unabhängige Prüfurteil,
 verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
 Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege

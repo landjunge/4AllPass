@@ -6,6 +6,9 @@ setup, child/descendant ownership check, tray/sleep initialization and exit
 cleanup. It adds no product API, crypto operation, capability or dependency.
 It does not install or publish an app.
 
+The dated [source-test evidence](evidence/native-normal-journey-20261020/STATUS.md)
+records the actual normal journey and its separate engine check.
+
 The current supported fresh **desktop** path is account signup through the
 existing UI, then Create → recovery-kit download/acknowledgement → manual Lock
 → master-password Unlock → synthetic CSV preview/confirm → Lock/Unlock and

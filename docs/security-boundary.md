@@ -461,6 +461,12 @@ still follows successful opening and remains best-effort.
   is best-effort, not physical secure erasure. It uses `std::fs::remove_dir_all`
   instead of a custom path-following overwrite walk; same-user manipulation is
   not an OS isolation boundary.
+- CSV file import reads complete logical records before building its review.
+  Quoted line breaks, escaped quotes and significant password whitespace remain
+  field content. Malformed quotes or records with a different column count
+  refuse the entire file with fixed DE/EN feedback that does not echo input;
+  an accepted prefix is not offered as a partial import. Byte-size ceilings and
+  actual native browser-profile import acceptance remain separate P06 work.
 - AES-GCM nonce budget (`SEALS_PER_KEY_MAX` ≈ 2^32) is **policy**, not a
   persistent per-VK counter. Human-scale edits are far below it. Automated
   high-volume writers must rotate the Vault Key themselves (F-25).

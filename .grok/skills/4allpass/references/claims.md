@@ -71,6 +71,11 @@ proof and does not change the existing unlock mechanism's security rank.
 
 ## User-facing copy
 
+CSV review follows complete logical-record parsing. Multiline password fields
+do not become visible extra rows; malformed quotes or inconsistent columns
+refuse the whole file with fixed DE/EN errors. This does not establish file-size
+limits or native browser-profile acceptance.
+
 Prefer “Zugriffe müssen lokal bestätigt werden” over “zeitlich begrenzte Freigaben” unless the TTL limit is also stated honestly.
 
 ## Optional connection status

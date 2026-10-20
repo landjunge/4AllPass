@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-20",
+  "base": "f547b3bcc1c9ed02e37da08274d3f7fe7b0ce5dd",
+  "scope": "PWA openSnapshot pin commit timing only; no crypto primitive/protocol/dependency changes",
+  "runtime": {
+    "node": "25.9.0",
+    "python_runner": "system python3; no backend runtime used"
+  },
+  "isolation": "Private HOME/TMP; browser localStorage/sessionStorage shim and synthetic API snapshots; no product profiles/services/releases",
+  "red": {
+    "command": "node --import tsx --test src/lib/vault-session.pin-content.test.ts",
+    "source": "unchanged base before applying openSnapshot fix",
+    "tests": 9,
+    "passed": 3,
+    "failed": 6,
+    "exit_code": 1,
+    "seconds": 3.0393344289999997,
+    "fixture_note": "Test formatting/comments changed after the red run; the nine behavioral cases and fixtures remain equivalent."
+  },
+  "green": {
+    "command": "npm test -w @4allpass/frontend",
+    "tests": 215,
+    "passed": 215,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 84.351777977,
+    "includes_new_regressions": 9,
+    "overlap": "Nine new cases are included in215; counts are not additive."
+  },
+  "typecheck": {
+    "command": "npm run typecheck -w @4allpass/frontend",
+    "exit_code": 0,
+    "seconds": 30.320243258
+  },
+  "regression_matrix": [
+    "legacy failed AEAD/JSON/sort does not move pin; original honest revision still opens",
+    "valid manifest followed by failed AEAD/JSON/sort does not move verified pin; original honest revision still opens",
+    "valid higher legacy state advances existing tuple; actual rollback denied",
+    "valid higher manifest state advances exact verified digest; actual rollback denied",
+    "missing manifest after digest pin remains IntegrityError without pin change"
+  ],
+  "preserved_paths": [
+    "manifest-verified record copies and digest source",
+    "historical no-pin/no-cache reads",
+    "offline fallback rules and best-effort cache save after opening",
+    "master/recovery/device unwrap expectations and key cleanup"
+  ],
+  "limits": [
+    "Legacy revision metadata remains unauthenticated",
+    "No atomic cross-tab pin CAS",
+    "No native/browser/hardware/package acceptance or full E03/P01 claim"
+  ],
+  "review": {
+    "author": "native Codex td_e02_inventory",
+    "independent_reviewer": "Root; pending",
+    "Grok": "No review claimed; explicit user override after quota exhaustion"
+  },
+  "source_hashes_file": "SHA256SUMS",
+  "integration": {
+    "base": "a65ab122731d9b7a1055de4bc2d290df45cd9de7",
+    "tested_commit": "cb206b061799b7cfc883a31ea3ce297f07dfd3be",
+    "runtime_and_test_bytes_equal": true,
+    "resolution": "ROADMAP status; upstream R05 retained; tested source and regression file unchanged",
+    "final_ci": "pending; no full-suite repeat for identical tested runtime"
+  }
+}

@@ -319,12 +319,23 @@ The server does not open the sealed manifest. It stores the client-supplied
 object and returns it unchanged. The client verifies it under VK
 (`verifySnapshotManifest`) before pinning `revisionFromManifest`.
 
+The PWA saves that prepared pin only after the complete entry integrity pass,
+plaintext decoding and sorting succeed. A failed open does not advance the
+revision or manifest digest and does not prevent retrying the previous honest
+state. The digest comes from the exact verified manifest result; the content
+pass uses its verified record copies. Valid higher states still advance the pin
+and actual rollback remains refused. The final local freshness check is not an
+atomic cross-tab compare-and-set.
+
 Once the local pin stores a `manifestDigest`, a later `GET` that omits
 `sealedManifest` is `IntegrityError` — even if the claimed `revision` is
 higher. That is not an advance. The pin is not rewritten. Unlock decrypts the
 records `verifySnapshotManifest` returned, not a second copy of the GET
 payload. A first pin without a digest (legacy snapshot, no manifest yet) still
-pins the server integers; after the first verified manifest that path is closed.
+pins the server integers only after successful content opening; those legacy
+integers are not cryptographically authenticated. After the first verified
+manifest that path is closed. History does not write the pin; cache persistence
+still follows successful opening and remains best-effort.
 
 ---
 

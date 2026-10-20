@@ -1,0 +1,6 @@
+61713a74aa2e65e2e4fff1f11cea4bc84dda838e5182761bd61d2f9c78ff7dcb  frontend/src/lib/vault-session.ts
+8ec53593eefd95f6170568fe5f926cf1406705ca30a42a9ce9ab29f66b15c333  frontend/src/lib/vault-session.pin-content.test.ts
+f262bf8501a3ce9c5f7e567cb49dd91e0684dc0a251bf08cecfcde4d973bc190  docs/vault-revision.md
+453e091e31fa09f3ee238cdfdd78315febedcea0cd8f691cd4495a3943dee5d0  docs/security-boundary.md
+1eb8949580d19a96d4735be9c5555dc3a9448a6f80923fba3c8dcee862792780  .grok/skills/4allpass/references/claims.md
+b45691ea444426693c5215a669fd732757ff05a0b3a53afaf4b52b2843fc3129  ROADMAP.md

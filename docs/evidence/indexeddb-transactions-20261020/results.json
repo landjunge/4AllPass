@@ -1,0 +1,110 @@
+{
+  "scope": "E03/P02-P04 local store transaction completion; no authenticator, product install or power-loss acceptance",
+  "baseCommit": "262917f0a5a1e2bebe136c4710d58522b29e5fd4",
+  "environment": {
+    "system": "Darwin",
+    "architecture": "x86_64",
+    "node": "v25.9.0",
+    "npm": "11.12.1",
+    "rootTypescript": "5.9.3",
+    "frontendTypescript": "6.0.3"
+  },
+  "sourceSha256": {
+    "frontend/src/lib/snapshot-cache.ts": "7ab661856ee1f6f289e452e27670c47461ff4a47c6e545b69ac303993bf6c2d2",
+    "frontend/src/lib/snapshot-cache.indexeddb.test.ts": "b8fa1e7d2b8ed632d7369feed70a5dc2ff59a2cbbee5a643f2a4141b7cd03d55",
+    "packages/webauthn/src/store.ts": "692b285ebd5677cea3e45e86ab5634196237ebc85aa3526b0f92fe003521afcf",
+    "packages/webauthn/test/store.indexeddb.test.ts": "c03e51213a08c350fb54f5ed5bba6d1e94be4a1dad20e38890ed9545d704dfa6",
+    "scripts/verify-indexeddb-transactions.mjs": "88a5b243d47b2549b5d4dd115354ebaac0c6b139fd841fb80ac5641a6ef2330c"
+  },
+  "lockfileSha256": "59a98c102dce55674b7bcf05ea046bd25c770797eee6298f168e796129105623",
+  "checks": [
+    {"name": "targeted-baseline262","command": ["node","--experimental-strip-types","--test","--test-reporter=tap","frontend/src/lib/snapshot-cache.test.ts","frontend/src/lib/snapshot-cache.indexeddb.test.ts","packages/webauthn/test/store.indexeddb.test.ts"],"startedUtc": "2026-10-20T14:46:09.300235+00:00","durationSeconds": 13.458,"exitCode": 1,"logSha256": "3d81f7cbdca7c5c26b2db9d73f87e8ff0775ca78d5c8107520ff2ebdd8059323","counts": {"tests": 39,"pass": 9,"fail": 30,"cancelled": 0,"skipped": 0,"todo": 0},"scope": "Isolated copies of the two store modules at 262917f, with exactly the current regression test files; expected red result"},
+    {"name": "targeted-tests","command": ["node","--import","tsx","--test","frontend/src/lib/snapshot-cache.test.ts","frontend/src/lib/snapshot-cache.indexeddb.test.ts","packages/webauthn/test/store.indexeddb.test.ts"],"startedUtc": "2026-10-20T14:45:30.652731+00:00","durationSeconds": 1.074,"exitCode": 0,"logSha256": "43a0fdc4c92eee566872f1412dbe7c027db32b9e2220727066258475124d55ac","counts": {"tests": 39,"pass": 39,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0}},
+    {"name": "frontend-tests","command": ["npm","test","-w","@4allpass/frontend"],"startedUtc": "2026-10-20T14:43:56.503580+00:00","durationSeconds": 48.84,"exitCode": 0,"logSha256": "dc0929c08dfc4439a997aa227200739703b133505bab1357e8f03b99252ae4ce","counts": {"tests": 202,"pass": 202,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0}},
+    {"name": "webauthn-tests","command": ["npm","run","test:webauthn"],"startedUtc": "2026-10-20T14:43:56.511012+00:00","durationSeconds": 4.795,"exitCode": 0,"logSha256": "2e954a8152d6e1b373c7d0c4c59d0e1e9a27b3adcf9fbb59ecf1831e066aa7e6","counts": {"tests": 44,"pass": 44,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0}},
+    {"name": "frontend-typecheck","command": ["npm","run","typecheck","-w","@4allpass/frontend"],"startedUtc": "2026-10-20T14:43:56.504589+00:00","durationSeconds": 12.37,"exitCode": 0,"logSha256": "39e4ef212d2d46fd13dc00f91b7a5d1e90045e5afbe8475f909670542d5586c2"},
+    {"name": "webauthn-typecheck","command": ["npm","run","typecheck","-w","@4allpass/webauthn"],"startedUtc": "2026-10-20T14:44:22.126271+00:00","durationSeconds": 12.461,"exitCode": 0,"logSha256": "fecc76de5ceb8e202da1ae7570fe387cb336a5589313bbdb2a27113f5523543f"},
+    {"name": "frontend-lint","command": ["npm","run","lint","-w","@4allpass/frontend"],"startedUtc": "2026-10-20T14:44:22.124262+00:00","durationSeconds": 4.233,"exitCode": 0,"logSha256": "af6444abebc16848b122f84a07ffcab92153f8dcb93a44e05daa9e0257a4751b"}
+  ],
+  "browserBaseline": {
+    "sourceRef": "262917f0a5a1e2bebe136c4710d58522b29e5fd4",
+    "sourceSha256": {
+      "frontend/src/lib/snapshot-cache.ts": "f521607beb75b60d2728a202e13e6fb6ef3460cec0c1c386c20b7e5cca9a602f",
+      "packages/webauthn/src/store.ts": "22105abea71aea09c62235c28882cc0fa3128a60eedb2a598f8037946be73786"
+    },
+    "browser": "155.0.8059.85",
+    "headless": true,
+    "freshContextPerCase": true,
+    "network": "All page requests fulfilled locally or aborted; no HTTP server or app/backend started",
+    "source": {
+      "snapshot": "frontend/src/lib/snapshot-cache.ts",
+      "device": "packages/webauthn/src/store.ts"
+    },
+    "tests": 12,
+    "passed": 0,
+    "failed": 12,
+    "results": [
+      {"kind": "snapshot","operation": "save","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "snapshot","operation": "save","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false},
+      {"kind": "snapshot","operation": "load","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "snapshot","operation": "load","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false},
+      {"kind": "snapshot","operation": "remove","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "snapshot","operation": "remove","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false},
+      {"kind": "device","operation": "save","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "device","operation": "save","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false},
+      {"kind": "device","operation": "load","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "device","operation": "load","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false},
+      {"kind": "device","operation": "remove","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": false},
+      {"kind": "device","operation": "remove","abort": true,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": false,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": false}
+    ],
+    "command": [
+      "node",
+      "scripts/verify-indexeddb-transactions.mjs",
+      "262917f0a5a1e2bebe136c4710d58522b29e5fd4"
+    ],
+    "startedUtc": "2026-10-20T14:45:30.645782+00:00",
+    "durationSeconds": 31.966,
+    "exitCode": 1,
+    "logSha256": "3167436e3458fc22ac902f313aa200c36d7a4abb07b1a77502db8ff3540a8fa3"
+  },
+  "browserCandidate": {
+    "sourceRef": "working-tree",
+    "sourceSha256": {
+      "frontend/src/lib/snapshot-cache.ts": "7ab661856ee1f6f289e452e27670c47461ff4a47c6e545b69ac303993bf6c2d2",
+      "packages/webauthn/src/store.ts": "692b285ebd5677cea3e45e86ab5634196237ebc85aa3526b0f92fe003521afcf"
+    },
+    "browser": "155.0.8059.85",
+    "headless": true,
+    "freshContextPerCase": true,
+    "network": "All page requests fulfilled locally or aborted; no HTTP server or app/backend started",
+    "source": {
+      "snapshot": "frontend/src/lib/snapshot-cache.ts",
+      "device": "packages/webauthn/src/store.ts"
+    },
+    "tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "results": [
+      {"kind": "snapshot","operation": "save","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "snapshot","operation": "save","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": true},
+      {"kind": "snapshot","operation": "load","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "snapshot","operation": "load","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": false,"events": ["request-success","abort"],"passed": true},
+      {"kind": "snapshot","operation": "remove","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "snapshot","operation": "remove","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": true},
+      {"kind": "device","operation": "save","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "device","operation": "save","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": true},
+      {"kind": "device","operation": "load","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "device","operation": "load","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": false,"events": ["request-success","abort"],"passed": true},
+      {"kind": "device","operation": "remove","abort": false,"rejected": false,"errorName": null,"timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","complete"],"passed": true},
+      {"kind": "device","operation": "remove","abort": true,"rejected": true,"errorName": "Error","timedOut": false,"transactionEndedWhenSettled": true,"persistedMatches": true,"resultMatches": true,"events": ["request-success","abort"],"passed": true}
+    ],
+    "command": [
+      "node",
+      "scripts/verify-indexeddb-transactions.mjs"
+    ],
+    "startedUtc": "2026-10-20T14:45:30.646649+00:00",
+    "durationSeconds": 31.832,
+    "exitCode": 0,
+    "logSha256": "7b52a199576fbe82f0ad68cf57216eee5760cb5bc2398db112ce70174c3dc329"
+  }
+}

@@ -42,6 +42,14 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 
 Foreign vault or device id → **404**, never 403.
 
+## Local persistence
+
+IndexedDB request success is not transaction completion. Snapshot-cache and
+device-record operations wait for completion and reject aborts/errors. This
+does not guarantee storage against eviction, disk loss or power failure;
+online snapshot-cache writes remain best-effort. It adds no device-possession
+proof and does not change the existing unlock mechanism's security rank.
+
 ## User-facing copy
 
 Prefer “Zugriffe müssen lokal bestätigt werden” over “zeitlich begrenzte Freigaben” unless the TTL limit is also stated honestly.

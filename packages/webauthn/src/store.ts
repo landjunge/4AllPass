@@ -56,8 +56,12 @@ function transact<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, mode);
+    let value: T;
+    tx.oncomplete = () => resolve(value);
+    tx.onabort = () => reject(tx.error ?? new Error("indexedDB transaction aborted"));
+    tx.onerror = () => reject(tx.error ?? new Error("indexedDB transaction failed"));
     const request = action(tx.objectStore(STORE_NAME));
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => { value = request.result; };
     request.onerror = () => reject(request.error ?? new Error("indexedDB request failed"));
   });
 }

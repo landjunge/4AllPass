@@ -27,7 +27,7 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E02.1–2 | ThreadDesk TD-01/TD-02 | Getrennte Reparaturen für Backup/Restore und lokale Web-Schreibgrenze in Arbeit; geführt in ThreadDesk `docs/TEAMPLAN.md`. |
 | E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
 | E02.4 / AP-02 | Überlanger stockender Stream F4 | Quellreparatur `3951697` unabhängig von Grok mit `ship` freigegeben, eigener isolierter Lauf 11/11. Auf AP01-main ohne Laufzeitänderung neu aufgesetzt; PR #230 wird mit frischer CI integriert. Noch kein neues Paket und keine Aktivierung. |
-| E03 | P01–P05, R02–R07/R12, AP-04 | Offen: Krypto, Snapshot, Konto/Sitzung, Geräte, Recovery, Identitätsvertrag; vorhandene Tests eng wiederverwenden. |
+| E03 | P01–P05, R02–R07/R12, AP-04 | In Arbeit: kleiner P02/P04-Persistenzkandidat für IndexedDB-Transaktionsabschluss in Snapshotcache und Geräteaufnahme; Gegenproben und Grenzen unten. Krypto-/Identitäts-/Recovery-Gesamtabnahme und H1 bleiben getrennt offen. |
 | E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | Offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
 | E05 | UI-01 | Offen: bestehende Icons, gemeinsame kompakte App-Leiste und frische bestätigte Statusadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
 | E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
@@ -61,6 +61,26 @@ Quellpin `3951697` unabhängig: `ship`, eigener isolierter Body-Lauf 11/11 in
 Die Laufzeitdateien bleiben beim Neuaufsetzen auf AP01-main bytegleich.
 Neue CI für den integrierbaren PR-Stand folgt. Installierte Pakete sind
 dadurch nicht geändert; ihre Abnahme gehört weiterhin zu AP-03/E04.
+
+## E03 / P02 und P04 – lokale IndexedDB-Abschlüsse (20.10.2026)
+
+Ein erfolgreicher IndexedDB-Request konnte bisher vor dem Transaktionsabschluss
+Erfolg melden, selbst wenn anschließend ein Abort das Schreiben oder Entfernen
+zurückrollte. Beide bestehenden Storehelfer warten jetzt auf `oncomplete` und
+weisen `onabort`/Fehler zurück. Snapshotcache und Device-Unlock-Record behalten
+getrennte lokale Helfer; weder Krypto noch Schlüssel-/Geräteverträge ändern sich.
+
+Unveränderte Basis `262917f`: Die gezielten privaten Ereignisproben hatten
+30 Fehler bei 39 Fällen; mit der Korrektur bestanden 39/39. Die echte isolierte
+Chrome-IndexedDB-Probe prüft beide Stores mit save/load/remove und Commit/Abort:
+12/12 mit Korrektur, 0/12 für den bisherigen Abschlussvertrag. Sie verwendet
+synthetische Records und frische Browserkontexte, keine Authenticator-Ceremony.
+Wiederholbar: `node scripts/verify-indexeddb-transactions.mjs [Quellcommit]`.
+Frontend 202/202, WebAuthn 44/44 und beide Workspace-Typechecks bestanden;
+gezielte Ereignisproben 39/39. Beleg: [Persistenzprüfung](docs/evidence/indexeddb-transactions-20261020/STATUS.md).
+Groks unabhängiges Commitreview, Integration und Paketabnahme stehen aus. E03 ist nicht insgesamt
+abgeschlossen. Online-Cache bleibt best-effort; Eviction, Disk-/Stromausfall
+sind dadurch nicht ausgeschlossen.
 
 ## 0. Sofort (Grok Build, kein Warten)
 

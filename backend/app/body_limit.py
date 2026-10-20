@@ -9,12 +9,17 @@ from app.core.limits import REQUEST_BODY_MAX
 _TOO_LARGE = b'{"detail":"payload too large"}'
 
 
-async def _reject(send: Send) -> None:
+async def _reject(scope: Scope, send: Send) -> None:
+    headers = [(b"content-type", b"application/json")]
+    if scope.get("http_version", "1.1") in {"1.0", "1.1"}:
+        # Let the HTTP server close an unread HTTP/1 request. Never wait for
+        # its remainder here, or emit a forbidden Connection header on HTTP/2.
+        headers.append((b"connection", b"close"))
     await send(
         {
             "type": "http.response.start",
             "status": 413,
-            "headers": [(b"content-type", b"application/json")],
+            "headers": headers,
         }
     )
     await send({"type": "http.response.body", "body": _TOO_LARGE})
@@ -36,10 +41,10 @@ class BodyLimitMiddleware:
         if raw:
             try:
                 if int(raw) > self.max_bytes:
-                    await _reject(send)
+                    await _reject(scope, send)
                     return
             except ValueError:
-                await _reject(send)
+                await _reject(scope, send)
                 return
         received = 0
         chunks: list[bytes] = []
@@ -54,11 +59,7 @@ class BodyLimitMiddleware:
             body = message.get("body") or b""
             received += len(body)
             if received > self.max_bytes:
-                while message.get("more_body"):
-                    message = await receive()
-                    if message.get("type") != "http.request":
-                        break
-                await _reject(send)
+                await _reject(scope, send)
                 return
             chunks.append(body)
             more = bool(message.get("more_body"))

@@ -44,6 +44,19 @@ Ausbau eine fachliche Entscheidung; lokale Reparaturen laufen unabhängig weiter
 
 ---
 
+## E02 / AP-02 – gestoppte übergroße Uploads (20.10.2026)
+
+Der beauftragte Gesamtplan liegt vollständig in ThreadDesk, Thread `6b5b73b9de36`.
+AP-02 ist als kleiner Quellcode-Kandidat umgesetzt: Nach Überschreiten des
+Body-Limits folgt sofort HTTP 413, ohne auf den restlichen Upload zu warten.
+Der isolierte echte HTTP/1-Test lässt den Upload absichtlich unvollständig;
+Antwort und Verbindungsende treffen innerhalb von zwei Sekunden ein.
+
+Gezielte Body-Tests und der vollständige Backend-Lauf sind grün: 156 bestanden,
+ein ausdrücklich Postgres-spezifischer Migrationstest mangels isolierter
+Postgres-Datenbank übersprungen. Grok-Prüfung, CI und Aktivierung dieses
+Kandidaten stehen noch aus. Installierte Pakete sind dadurch nicht geändert.
+
 ## 0. Sofort (Grok Build, kein Warten)
 
 1. **Supply-Chain** – Phasen 1–3 auf `main` (2026-08-28). Pinning, CI-Audits, Crypto-Allowlist, SBOM. Private Registry bleibt offen.

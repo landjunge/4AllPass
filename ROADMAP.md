@@ -53,6 +53,12 @@ P06 native Temp-Bereinigung: [Link-Zielschutz](docs/evidence/p06-temp-cleanup-20
 ersetzt den überschreibenden Pfadwalk durch Standard-No-Follow-Entfernung.
 Sechs Mac-Rust-Fälle grün; unabhängiger Review/CI und neue Pakete folgen.
 
+P06 CSV-Review: [logische Records vor der Vorschau](docs/evidence/p06-csv-records-20261020/STATUS.md)
+erhalten gequotete Zeilenumbrüche und Passwort-Leerzeichen; beschädigte Records
+werden als ganze Datei mit festen DE/EN-Fehlern verweigert. 43 gezielte Fälle,
+Typecheck und zwei echte isolierte Browserproben grün. Review/CI folgen;
+Dateigrößenlimit und native Browserprofile bleiben gesondert offen.
+
 Pro Unterpunkt werden Commit, Dateien, konkrete Tests und das unabhängige Prüfurteil,
 verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
 Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege

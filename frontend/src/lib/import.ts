@@ -8,6 +8,7 @@ import {
   looksLikeEnvFile,
 } from "./import-classify.ts";
 import { looksLikeSharePackage } from "./share.ts";
+import { csvRecords, invalidCsv } from "./csv-records.ts";
 
 export type ImportFormat =
   | "bitwarden-json"
@@ -107,9 +108,11 @@ export function mergeImportedLogins(existing: VaultEntry[], incoming: VaultEntry
 }
 
 function parseCsv(text: string): ImportResult {
-  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.length > 0);
-  if (lines.length < 2) return { format: "csv", entries: [], skipped: 0 };
-  const header = splitCsvLine(lines[0]!).map((cell) => cell.trim().toLowerCase());
+  const records = csvRecords(text);
+  if (records.length < 2) return { format: "csv", entries: [], skipped: 0 };
+  const header = records[0]!.map((cell) => cell.trim().toLowerCase());
+  // Validate the whole file before classifying any row for the review.
+  if (records.some((record) => record.length !== header.length)) throw invalidCsv();
   const col = (names: string[]): number => header.findIndex((h) => names.includes(h));
   const title = col(["title", "name", "account", "entry"]);
   const username = col(["username", "user", "login name", "login", "email"]);
@@ -118,12 +121,14 @@ function parseCsv(text: string): ImportResult {
   const url = col(["url", "uri", "website", "web site", "login_uri"]);
   const notes = col(["notes", "note", "comments", "comment"]);
   if (title < 0 && username < 0 && password < 0 && token < 0) {
-    throw new Error("CSV needs a Title, Username, Password, or Token column");
+    throw new LineError({
+      de: "Die CSV-Datei braucht eine Spalte für Titel, Benutzername, Passwort oder Token. Es wurde nichts übernommen.",
+      en: "The CSV file needs a title, username, password, or token column. Nothing was imported.",
+    });
   }
   const entries: VaultEntry[] = [];
   let skipped = 0;
-  for (const line of lines.slice(1)) {
-    const cells = splitCsvLine(line);
+  for (const cells of records.slice(1)) {
     const secret = (password >= 0 ? cells[password] ?? "" : "") || (token >= 0 ? cells[token] ?? "" : "");
     const entry = asEntry({
       title: title >= 0 ? cells[title] ?? "" : "",
@@ -140,28 +145,6 @@ function parseCsv(text: string): ImportResult {
     entries.push(entry);
   }
   return { format: "csv", entries, skipped };
-}
-
-function splitCsvLine(line: string): string[] {
-  const out: string[] = [];
-  let current = "";
-  let quoted = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i]!;
-    if (quoted) {
-      if (ch === '"' && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else if (ch === '"') quoted = false;
-      else current += ch;
-    } else if (ch === '"') quoted = true;
-    else if (ch === ",") {
-      out.push(current);
-      current = "";
-    } else current += ch;
-  }
-  out.push(current);
-  return out;
 }
 
 function parseBitwarden(data: unknown): ImportResult | null {
@@ -445,5 +428,5 @@ export function parsePlaintextExport(text: string): ImportResult {
     const entries = entriesFromEnvText(trimmed);
     return { format: "env", entries, skipped: 0 };
   }
-  return parseCsv(trimmed);
+  return parseCsv(text);
 }

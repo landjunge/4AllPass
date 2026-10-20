@@ -55,6 +55,7 @@ import type {
   EncryptedEntry,
   KeyEnvelope,
   VaultSnapshot,
+  VaultRevision,
 } from "@4allpass/crypto";
 import {
   browserWebAuthnClient,
@@ -294,6 +295,7 @@ function openSnapshot(
   let vaultKeyVersion = snapshot.vaultKeyVersion;
   let entriesToOpen = snapshot.entries;
   let envelopesToKeep = snapshot.envelopes;
+  let acceptedPin: VaultRevision;
   if (snapshot.sealedManifest) {
     const verified = verifySnapshotManifest(
       snapshot.sealedManifest,
@@ -305,7 +307,7 @@ function openSnapshot(
         vaultKeyVersion: snapshot.vaultKeyVersion,
       },
     );
-    savePin(revisionFromManifest(verified));
+    acceptedPin = revisionFromManifest(verified);
     revision = verified.manifest.revision;
     vaultKeyVersion = verified.manifest.vaultKeyVersion;
     entriesToOpen = verified.entries;
@@ -316,12 +318,12 @@ function openSnapshot(
         `revision ${pin.revision} was pinned with a verified manifest; incoming state has none`,
       );
     }
-    savePin({
+    acceptedPin = {
       vaultId: snapshot.vaultId,
       revision: snapshot.revision,
       vaultKeyVersion: snapshot.vaultKeyVersion,
       cryptoProtocolVersion: 1,
-    });
+    };
   }
   const entries: VaultEntry[] = verifySnapshot({
     vaultId: snapshot.vaultId,
@@ -336,13 +338,18 @@ function openSnapshot(
       zeroize(entry.plaintext);
     }
   });
+  const sortedEntries = entries.sort((a, b) => a.title.localeCompare(b.title));
+  // A failed integrity pass, plaintext decode or sort must leave the old pin intact.
+  // Keep the digest from the exact verified manifest, never re-read its wire blob.
+  assertFreshSnapshot(loadPin(snapshot.vaultId), acceptedPin);
+  savePin(acceptedPin);
   return {
     vaultId: snapshot.vaultId,
     revision,
     vaultKeyVersion,
     vaultKey,
     envelopes: envelopesToKeep,
-    entries: entries.sort((a, b) => a.title.localeCompare(b.title)),
+    entries: sortedEntries,
     unlockedWith,
   };
 }

@@ -120,9 +120,10 @@ written from numbers the server merely asserted:
 2. unwrap an envelope → VK                 (against explicit expectations)
 3. verified = verifySnapshotManifest(sealed, contents, claimed metadata)
                                            → revision and the record set are authenticated
-4. apply verified.entries / verified.envelopes, not the fetched objects
-5. evaluateRevision(pin, revisionFromManifest(verified))
-6. on accept: store that pin locally
+4. verify/decrypt verified.entries and applicable envelopes, not the fetched objects
+5. decode every plaintext entry and finish sorting the accepted entries
+6. evaluateRevision(current local pin, revisionFromManifest(verified))
+7. on accept: store that prepared pin locally, then return the opened vault
 ```
 
 Step 4 is not cosmetic. Verification commits to the bytes it read; if the client then
@@ -131,6 +132,19 @@ something else (an accessor, a lazily-decoding wrapper) puts a stale record back
 the vault after the check passed. `revisionFromManifest` likewise takes the whole
 verification result, so the pinned digest can only ever be the digest of the blob that
 was authenticated.
+
+The PWA prepares that exact verified revision and digest before the content pass,
+but does not save them until every entry has decrypted, decoded and sorted.
+A failed AEAD pass, invalid plaintext JSON or sorting failure leaves the previous
+pin intact, so retrying the previous honest snapshot is still possible. A valid
+higher snapshot still advances the pin; a later genuine rollback is refused.
+The final freshness check rereads the local pin before saving. This is not an
+atomic compare-and-set across browser tabs.
+
+The manifestless legacy path uses the same late pin commit, but its revision
+numbers remain server-asserted. This timing repair does not authenticate legacy
+metadata. Once a verified digest was pinned, a later manifestless snapshot remains
+an integrity failure, even when its claimed revision is higher.
 
 `revision` and `vault_key_version` are bounded to the uint32 range they are encoded
 in. Without that bound, a single hostile answer to a fresh client (`revision =

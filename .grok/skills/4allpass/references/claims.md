@@ -51,6 +51,11 @@ Foreign vault or device id → **404**, never 403.
 
 ## Local persistence
 
+The PWA commits its freshness pin only after entry integrity, plaintext decoding
+and sorting succeed. Failed content opens leave the old pin intact. This does
+not authenticate manifestless legacy revision numbers or add atomic cross-tab
+pin updates.
+
 IndexedDB request success is not transaction completion. Snapshot-cache and
 device-record operations wait for completion and reject aborts/errors. This
 does not guarantee storage against eviction, disk loss or power failure;

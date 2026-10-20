@@ -21,7 +21,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 |---|---|
 | 1 | 4AllPass mit freigegebenem AP4-Rastermotiv (brand/README.md). |
 | 2 | Tresor offen/gesperrt; Sperren; Abmelden nur mit Account. |
-| 3 | `error` / `notice`. Schließen räumt die Meldung. Offener Tresor + Einträge noch auf `local@`: Passwort einmal, Merge hierher. Nicht abmelden, nicht sperren. |
+| 3 | `error` / `notice`. Schließen räumt die Meldung. Nach bestätigtem Hard-Revoke-Commit bleibt der DE/EN-Teilabschluss mit „Geräteentzug prüfen“ auch gesperrt sichtbar; prüft nur ausstehendes DELETE/GET, nie eine zweite Rotation. Dieser Abgleich endet beim Abmelden/Neuladen. Offener Tresor + Einträge noch auf `local@`: Passwort einmal, Merge hierher. Nicht abmelden, nicht sperren. |
 | 4 | Eine der Views V1–V8. |
 
 > Wireframe: [v0-chrome.html](screenshots/v0-chrome.html)

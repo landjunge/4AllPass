@@ -129,6 +129,23 @@ Adapter und authentisierter frischer Peer-/User-/Vaultstatus bleiben offen;
 dieser Pollstatus darf Ring/Unlockpuls nicht begründen. Beleg:
 `docs/evidence/broker-connection-state-20261020/STATUS.md`.
 
+## E03 / P05 und R06 – Hard-Revoke nach bestätigtem Commit (20.10.2026)
+
+Der Client liefert den verifizierten CAS-Stand vor Metadaten-DELETE/GET zurück,
+zeroisiert den alten VK und übernimmt den neuen Stand beziehungsweise sperrt
+sich selbst. Fehler danach bleiben als DE/EN-Teilabschluss sichtbar; der
+Wiederabgleich führt nur ausstehendes DELETE/GET aus, keine zweite Rotation.
+Abmelden verwirft ausstehende Rückmeldungen, ein inzwischen gesperrter oder
+gewechselter Tresor wird nicht erneut geöffnet. Der Abgleich ist nur im
+Arbeitsspeicher; keine dauerhafte Aufgabe oder Behandlung unbestätigter
+CAS-Antworten. Alte Kopien werden nicht gelöscht.
+
+Gezielte Core-/Callerprüfungen und eine echte isolierte Chromium-/SQLite-Reise
+sind unter [Nachweis](docs/evidence/p05-hard-revoke-postcommit-20261020/STATUS.md)
+zugeordnet. Unabhängiger Review, CI und Integration stehen aus. Vollständiges
+P05, Recovery-Key→neues Masterpasswort sowie native/hardware-/Paketabnahmen
+bleiben offen.
+
 ## E03 / AP-04 prerequisite – explizite Assertion-Gerätebindung (20.10.2026)
 
 Ein gültig signierendes Credential B konnte die ausdrücklich für Gerät A

@@ -1,19 +1,23 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { api, type DeviceSummary } from "../../lib/api.ts";
 import { deviceId } from "../devices/index.ts";
 import {
   enableDeviceUnlockForVault,
-  hardRevokeDevice,
   revokeDevice,
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { feedbackError, type NoticeCode } from "../feedback/index.ts";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
+import { createHardRevokeCoordinator, type RevokeProgress } from "./hard-revoke-coordinator.ts";
+
+export type { RevokeProgress } from "./hard-revoke-coordinator.ts";
+
 type RunWithStatus = <T>(action: () => Promise<T>, success?: NoticeCode) => Promise<T>;
 
 export interface UseDeviceManagementOptions {
   runWithStatus: RunWithStatus;
+  showNotice(code: NoticeCode): void;
   getActiveVaultId(): string | null;
   getAccountEmail(): string | null;
   currentVault(): UnlockedVault | null;
@@ -23,6 +27,8 @@ export interface UseDeviceManagementOptions {
 
 export interface DeviceManagement {
   devices: DeviceSummary[];
+  revokeProgress: RevokeProgress | null;
+  reconcileHardRevoke(): Promise<void>;
   refreshDevices(): Promise<void>;
   clearDevices(): void;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -36,14 +42,31 @@ export interface DeviceManagement {
 
 export function useDeviceManagement(options: UseDeviceManagementOptions): DeviceManagement {
   const [devices, setDevices] = useState<DeviceSummary[]>([]);
+  const [revokeProgress, setRevokeProgress] = useState<RevokeProgress | null>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const coordinatorRef = useRef<ReturnType<typeof createHardRevokeCoordinator> | null>(null);
+  if (!coordinatorRef.current) {
+    coordinatorRef.current = createHardRevokeCoordinator(() => ({
+      ...optionsRef.current, setDevices, progress: setRevokeProgress,
+    }));
+  }
+  const coordinator = coordinatorRef.current;
+  const deviceGeneration = useRef(0);
 
   const refreshDevices = useCallback(async () => {
     const activeVaultId = options.getActiveVaultId();
     if (!activeVaultId) return;
-    setDevices(await api.listDevices(activeVaultId));
+    const ticket = deviceGeneration.current;
+    const next = await api.listDevices(activeVaultId);
+    if (ticket === deviceGeneration.current && optionsRef.current.getActiveVaultId() === activeVaultId) setDevices(next);
   }, [options]);
 
-  const clearDevices = useCallback(() => setDevices([]), []);
+  const clearDevices = useCallback(() => {
+    deviceGeneration.current++;
+    coordinator.clear();
+    setDevices([]);
+  }, [coordinator]);
 
   const enableBiometrics = useCallback(async (): Promise<DeviceUnlockMechanism> => {
     const current = options.currentVault();
@@ -74,26 +97,8 @@ export function useDeviceManagement(options: UseDeviceManagementOptions): Device
     masterPassword: string,
     recoveryKeyText?: string,
   ) => {
-    const current = options.currentVault();
-    if (!current) throw feedbackError("vault_locked");
-    await options.runWithStatus(async () => {
-      const next = await hardRevokeDevice(current, {
-        targetDeviceId,
-        masterPassword,
-        ...(recoveryKeyText ? { recoveryKeyText } : {}),
-      });
-      setDevices(await api.listDevices(current.vaultId));
-      if (targetDeviceId === deviceId()) {
-        options.replaceUnlockedVault(null);
-        options.setDeviceUnlockAvailable(false);
-      } else {
-        options.replaceUnlockedVault(next);
-        if (!next.envelopes.some((env) => env.type === "device" && env.deviceId === deviceId())) {
-          options.setDeviceUnlockAvailable(false);
-        }
-      }
-    }, "vault_key_rotated");
-  }, [options]);
+    await options.runWithStatus(() => coordinator.hardRevoke(targetDeviceId, masterPassword, recoveryKeyText));
+  }, [options, coordinator]);
 
-  return { devices, refreshDevices, clearDevices, enableBiometrics, revoke, hardRevoke };
+  return { devices, revokeProgress, reconcileHardRevoke: coordinator.reconcile, refreshDevices, clearDevices, enableBiometrics, revoke, hardRevoke };
 }

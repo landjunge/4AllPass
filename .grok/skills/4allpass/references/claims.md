@@ -40,6 +40,11 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | `DELETE /devices` erases the key | `revocation: "metadata_only"`. Hard revoke = client `hardRevokeDevice` (VK++). |
 | Server verified the passkey / PRF | `cose_verified` is ceremony integrity (`fmt=none`). Server never sees PRF. |
 
+A verified hard-revoke commit is adopted/self-locked before metadata DELETE/GET.
+A failed metadata step is visible as partial completion; reconciliation retries
+only metadata, not a second rotation. Old copies remain readable; pending intent
+is memory-only, and lost CAS responses/native recovery are separate limits.
+
 ## Account registration
 
 New central account passwords:15–256 code points and a pinned offline whole-value

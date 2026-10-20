@@ -246,8 +246,8 @@ Soft revocation (device not believed compromised) is still “delete that device
 
 **PWA:** Soft revoke is `revokeDevice` (metadata DELETE, then omit envelope, same
 VK). Hard revoke is `hardRevokeDevice` (VK+1, re-encrypt, omit target, sealed
-manifest, CAS, then metadata DELETE). The server rejects re-attached revoked
-device envelopes and requires `sealedManifest` once `current_revision >= 1`.
+manifest, verified CAS receipt/caller adoption, then metadata DELETE). The
+server rejects re-attached revoked device envelopes and requires `sealedManifest` once `current_revision >= 1`.
 Device unlock on other browsers is re-enrolled with the master password after
 rotation; this client does not run a WebAuthn ceremony inside hard revoke.
 

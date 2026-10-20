@@ -24,7 +24,7 @@ import {
   type NoticeFeedback,
 } from "../feedback/index.ts";
 import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
-import { useDeviceManagement } from "../device-management/index.ts";
+import { useDeviceManagement, type RevokeProgress } from "../device-management/index.ts";
 import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
 import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
@@ -43,6 +43,7 @@ interface AppState {
   lockState: LockState;
   vault: UnlockedVault | null;
   devices: DeviceSummary[];
+  revokeProgress: RevokeProgress | null;
   deviceUnlockAvailable: boolean;
   thisDeviceId: string;
   error: ErrorFeedback | null;
@@ -77,6 +78,7 @@ interface AppActions {
   replaceTrustedRecovery(oldRecoveryKeyText: string): Promise<void>;
   rotateCompromisedRecovery(masterPassword: string, previousRecoveryKeyText?: string): Promise<void>;
   refreshDevices(): Promise<void>;
+  reconcileHardRevoke(): Promise<void>;
   dismissRecoveryKey(): void;
   clearMessages(): void;
 }
@@ -146,9 +148,11 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
 
   const getActiveVaultId = useCallback(() => vaultLifecycle.activeVaultId, [vaultLifecycle.activeVaultId]);
   const getAccountEmail = useCallback(() => accountRef.current?.email ?? null, []);
+  const showDeviceNotice = useCallback((code: NoticeCode) => dispatchFeedback({ type: "notice", code }), []);
   const deviceManagementOptions = useMemo(
     () => ({
       runWithStatus: withStatus,
+      showNotice: showDeviceNotice,
       getActiveVaultId,
       getAccountEmail,
       currentVault: vaultLifecycle.currentVault,
@@ -156,6 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
     }),
     [
+      showDeviceNotice,
       getAccountEmail,
       getActiveVaultId,
       vaultLifecycle.currentVault,
@@ -271,6 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         await recoveryManagement.rotateCompromisedRecovery(masterPassword, previousRecoveryKeyText);
       },
       refreshDevices: deviceManagement.refreshDevices,
+      reconcileHardRevoke: deviceManagement.reconcileHardRevoke,
       dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
       clearMessages() {
         dispatchFeedback({ type: "clear" });
@@ -290,6 +296,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       lockState: vaultLifecycle.lockState,
       vault: vaultLifecycle.vault,
       devices: deviceManagement.devices,
+      revokeProgress: deviceManagement.revokeProgress,
       deviceUnlockAvailable: vaultLifecycle.deviceUnlockAvailable,
       thisDeviceId: deviceId(),
       error: feedback.error,
@@ -304,6 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       account.email,
       vaultLifecycle,
       deviceManagement.devices,
+      deviceManagement.revokeProgress,
       feedback,
       actions,
     ],

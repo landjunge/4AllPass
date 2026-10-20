@@ -149,6 +149,11 @@ geschützter produktiver Nutzungsweg verbunden ist. Kein Allow-Knopf, keine
 Rohmaterial-Demo und kein Secret-Verbindungsrezept. Normale Tresor-/Browser-/
 Einstellungs-Tabs bleiben erhalten. DE/EN, kompakte Card, semantischer Status.
 
+Der getrennt vorhandene optionale `LocalBrokerConnect`-Baustein zeigt vor der
+ersten akzeptierten Poll-Antwort „verbindet“ und bei Transportfehlern verständliche
+DE/EN-Hinweise. Das ist keine neue Freigabe oder Wiedereinführung in die gesperrte
+Zugriff-Fläche und kein authentisierter Verbund-/Tresorstatus.
+
 Historische Wireframes unter screenshots/v6-access.html zeigen den alten
 Raw-Secret-Entwurf und sind keine Zusage des aktuellen Quellstands.
 

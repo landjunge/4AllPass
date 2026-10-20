@@ -63,7 +63,7 @@ export function LocalBrokerConnect(): ReactNode {
             ? t({ de: "verbunden — Tresor hört auf diesem Rechner", en: "live — vault is polling 127.0.0.1" })
             : snap.status === "connecting"
               ? t({ de: "verbindet…", en: "connecting…" })
-              : snap.error || t({ de: "Fehler", en: "error" })}
+              : t({ de: "Verbindung unterbrochen. Adresse und Koppel-Code prüfen.", en: "Connection interrupted. Check the address and pairing code." })}
       </p>
     </section>
   );

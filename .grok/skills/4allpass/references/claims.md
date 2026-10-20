@@ -65,3 +65,11 @@ proof and does not change the existing unlock mechanism's security rank.
 ## User-facing copy
 
 Prefer “Zugriffe müssen lokal bestätigt werden” over “zeitlich begrenzte Freigaben” unless the TTL limit is also stated honestly.
+
+## Optional connection status
+
+The frontend broker helper waits for an accepted poll before reporting live,
+rejects failed/malformed responses and suppresses stopped-session deliveries.
+This only describes last observed transport availability. It provides no fresh
+suite-peer or user/vault-bound unlock proof and must not drive the shared
+connection ring or pulse. The current blocked machine-access page stays blocked.

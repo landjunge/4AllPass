@@ -1,20 +1,20 @@
 # Grok Build – Ausführungsplan
 
 > **Status:** aktiv. Dieses Dokument ist der **Einstiegspunkt für Grok Build**.
-> Lies es zuerst, dann `docs/supply-chain-security.md`, dann `ROADMAP.md` für den Gesamtstatus, dann die Phasen unten.
+> Lies zuerst `docs/security-boundary.md`, dann `ROADMAP.md` für den aktuellen E01–E09-Gesamtauftrag und dieses Dokument. Datierte Phasen unten sind keine neue Freigabe für gesperrte Materialwege.
 
 ---
 
 ## 0. Sofort-Anweisung (Pflicht)
 
-Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
+Du bist Grok Build. Prüfe zuerst den tatsächlichen Stand und bereits erledigte Arbeit:
 
-**Supply-Chain-Sicherheit sofort umsetzen** – kein Warten, kein „später", keine Diskussion.
+**Aktueller Auftrag:** E01–E09 nach `ROADMAP.md`, konkrete abgegrenzte Pakete mit Codex abstimmen. Die unten bereits abgeschlossene Lieferkettenarbeit nicht erneut starten. AP-01 korrigiert aktive Anweisungen; dafür ist keine neue Quelldatei erforderlich.
 
 **Arbeitsreihenfolge (strikt):**
 
-1. Lies `docs/grok-build-plan.md` (dieses Dokument).
-2. Lies `ROADMAP.md` – lebende Roadmap, eine Datei, Status hier pflegen.
+1. Lies `docs/security-boundary.md` (implementierte Grenzen), dann dieses Dokument.
+2. Lies `ROADMAP.md` – lebende Roadmap, aktuelle E01–E09-Zuordnung hier pflegen.
 3. Lies `docs/supply-chain-security.md` komplett – das ist der ausführbare Plan mit Phasen 1–3.
 4. Lies `docs/security-boundary.md` (Trust-Boundaries, Crypto-Kern).
 5. Lies `docs/audit-scope.md` Modul **M6**.
@@ -22,9 +22,9 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
    - `Cargo.lock`, `package-lock.json`, `requirements*.txt`, `libs.versions.toml`
    - `.github/workflows/ci.yml`
    - `packages/crypto` Dependency-Baum
-7. Setze **Phase 1** um: Pinning + CI-Audits. Ein Commit pro logischer Einheit.
-8. Setze **Phase 2** um: Crypto-Kern-Audit + Minimalismus.
-9. Setze **Phase 3** um: SBOM + Incident-Runbook.
+7. Gleiche **Phase 1** ab: Pinning + CI-Audits; bereits belegte Arbeit übernehmen.
+8. Gleiche **Phase 2** ab: Crypto-Kern-Audit + Minimalismus; offene Nachweise dem aktuellen Auftrag zuordnen.
+9. Gleiche **Phase 3** ab: SBOM + Incident-Runbook; keine abgeschlossenen Schritte doppelt starten.
 10. Aktualisiere die Checkliste in `docs/supply-chain-security.md` §6: ☐ → ☑ mit Datum und Notiz.
 11. Öffne **keinen** PR, der die CI rot macht. Finding blockiert CI → fixen oder als `allow` mit Begründung dokumentieren.
 
@@ -60,7 +60,7 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 | Future Readiness | `docs/future-readiness.md` | offen |
 | Lebende Roadmap | `ROADMAP.md` | Status hier pflegen |
 
-**Reihenfolge:** Supply-Chain (done) → Code-Hygiene (done) → Secret Access Layer vorbereiten → Mobile (PWA → Android → iOS). MAIP nicht in dieser Sequenz. Status: `ROADMAP.md`.
+**Datierter Teilablauf:** Supply-Chain (done) → Code-Hygiene (done) → spätere Zugangs-/Mobile-Ziele. Die aktuelle E01–E09-Folge steht in `ROADMAP.md`; ein Zielbild aktiviert weder Materialzugriff noch native Mobile-Arbeit.
 
 **Zuerst der Mensch** (kein Grok-Code): `ROADMAP.md` §0b. Offen: `@4allpass` auf npmjs (F-26). Node-Broker `timingSafeEqual` ist auf `main` (F-28) — nicht nochmal bauen.
 
@@ -86,10 +86,10 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 ## 1c. Produkt-Reihenfolge (Code vor Docs)
 
 > Nach Supply-Chain und Phase 4: **Tresor → Broker → PWA → schauen, was fehlt.**
-> Keine neuen Docs, solange nicht mindestens eine Datei im `src/`-Ordner dazukommt.
+> Bestehende Anweisungen dürfen gezielt ohne Codeänderung korrigiert werden. Die aktuelle Baufolge steht in `ROADMAP.md`; keine neue Roadmap anlegen.
 
 1. **Tresor** – Vault anlegen, Passwörter rein, speichern, wieder abrufen. Kern, den jeder Nutzer zuerst testet.
-2. **Broker (Loopback)** – Agent fragt an → Allow/Deny → TTL läuft ab. Zettel-Türsteher, kein Ausweis.
+2. **Broker (Loopback)** – Machine-DENY erhalten; historische Allow/TTL-Übergabe nicht wieder aktivieren. Produktive geschützte Ausführung braucht E07 samt Hostnachweis.
 3. **PWA** – Login, Homescreen-Icon, offline-fähig. Kein App Store.
 4. **Schauen, was fehlt** – erst dann Autofill / native Apps entscheiden.
 
@@ -97,9 +97,8 @@ Du bist Grok Build. Deine erste Aufgabe in diesem Repo:
 
 ## 2. Phase 4 — Secret Access Layer (Zielbild)
 
-> **Status heute:** Loopback-Broker mit String-Identität + Pairing-Token + human Allow.
-> Pairing-Token ≠ Agent-Identität. Grant-Handoff ist `raw_secret`; TTL stoppt nur *zukünftige* Handoffs, nicht bereits kopierte Secrets.
-> **Ziel:** signierte Tokens, kryptografische Agent-Identität, Provider-Templates. Default off, device-local, FastAPI sieht nie Grants oder Klartext.
+> **Status am 20.10.2026:** Aktueller Python-/Node-Broker, Frontend und Client verweigern maschinelle Materialübergaben auch nach Allow. Pairing-Token ≠ Agent-Identität. Historische RC2-Pakete enthielten Rohmaterial; ihre Kopien werden weder durch TTL noch diesen Dokumentabgleich zurückgerufen.
+> **Ziel, noch nicht produktiv:** begrenzte geschützte Ausführung nach E03/E07 mit bestätigter Identität, Freigabe und echter Host-/Vaulttransfergrenze. Kein raw-secret-Fallback. FastAPI bleibt Speicherbackend ohne Tresorklartext.
 
 **Autoritative Specs (lies alle vor dem Bau):**
 
@@ -119,17 +118,18 @@ Agent
   → 4AllPass Policy (Allow/Deny, Capability, TTL)
   → signiertes, zeitlich begrenztes Token
   → Provider-Template (Gmail / GitHub / Stripe / …) sagt, WIE zugegriffen wird
-  → mediated proxy bevorzugt; raw_secret nur als expliziter Fallback
+  → geschützter Host führt die genau freigegebene Operation aus
+  → nur begrenztes Ergebnis; ohne Hostnachweis DENY, kein Rohmaterial-Fallback
 ```
 
 **Phasen (strikt in dieser Reihenfolge, keine Sprünge):**
 
 1. **Phase A – Auto-Detection:** Erkenne, was der User einrichtet (n8n→OpenAI, github.com→GitHub). Frage, fülle nie still.
 2. **Phase B – Browser Secret Fill:** Extension schlägt vor, User klickt. Kein Auto-Submit.
-3. **Phase C – Local Secret Broker:** Loopback-Request → Policy-Anzeige → in-memory Handoff. Kein Env-Export als Happy Path.
+3. **Phase C – Local Secret Broker:** vorhandenes Machine-DENY erhalten; kein Material-Handoff. E07 verbindet erst nach tatsächlichem Hostnachweis eine begrenzte Operation.
 4. **Phase D – Application Identity:** Code-Signatur / Bundle-ID als Identität. Ohne D kein „always allow".
 5. **Phase E – Capabilities:** Grant-Records (App × Provider × Credential × Purpose × Expiry), lokal, ciphertext.
-6. **Phase F – Agent Secrets:** Agent bekommt Capability, nie den ganzen Vault. Expiry = keine weiteren Handoffs.
+6. **Phase F – Geschützte Nutzung:** Agent erhält nur das begrenzte Operationsergebnis; Ablauf und Entzug verhindern weitere autorisierte Starts. Vorhandene Kopien oder Anbietersitzungen werden damit nicht zurückgerufen.
 
 **Harte Regeln (non-negotiable):**
 
@@ -144,7 +144,7 @@ Agent
 **Definition of Done (Phase 4):**
 
 - [x] Mindestens Phase A+B als Extension-UX auf bestehendem Host-Fill. (2026-08-28: `detectSetup` + Popup-Frage, Fill nur nach Klick; C–F offen)
-- [ ] Phase C als Loopback-Broker mit Policy-Overlay, in-memory Handoff, kein Env-Default.
+- [ ] Phase C nur nach E07-Host-/Ursprungs-/Vaulttransfer-Abnahme verbinden; kein Material-/Env-Fallback.
 - [ ] Phase D: OS-Identität (code signature / bundle id) als first-class Objekt; unknown DENY erzwungen.
 - [ ] Phase E: Grant-Records lokal + ciphertext, lesbar in der UI.
 - [ ] Tests: Unknown-Agent-Deny, TTL-Expiry, Locked-Vault-Deny, Origin-403 auf Grant-Path.
@@ -166,13 +166,12 @@ Agent
 ```text
 security-boundary.md          was der Code erzwingt
         ↓
-supply-chain-security.md      Regeln für die Lieferkette (ausführbar)
+ROADMAP.md                    aktuelle E01–E09-Folge und Status
         ↓
-secret-access-layer.md        Zielbild Agent-Zugriff (ausführbar, Phase 4)
+dieses Dokument               abgeglichener Einstieg für Grok Build
         ↓
-dieses Dokument               Einstieg für Grok Build
-        ↓
-ROADMAP.md                    lebende Roadmap (eine Datei)
+supply-chain-security.md      vorhandene Lieferkettenregeln
+secret-access-layer.md        datiertes Zielbild; kein Rohmaterial-Bauauftrag
 ```
 
 Wenn hier was steht, das über `security-boundary.md` hinausgeht: Defekt. Nicht umgekehrt.

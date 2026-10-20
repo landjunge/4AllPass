@@ -3,13 +3,15 @@ from uuid import UUID
 
 from pydantic import EmailStr, Field
 
-from app.core.limits import ACCOUNT_PASSWORD_CHARS_MAX
+from app.core.limits import ACCOUNT_PASSWORD_CHARS_MAX, ACCOUNT_PASSWORD_CHARS_MIN
 from app.schemas.common import CamelModel, WriteModel
 
 
 class RegisterRequest(WriteModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=ACCOUNT_PASSWORD_CHARS_MAX)
+    password: str = Field(
+        min_length=ACCOUNT_PASSWORD_CHARS_MIN, max_length=ACCOUNT_PASSWORD_CHARS_MAX
+    )
 
 
 class LoginRequest(WriteModel):

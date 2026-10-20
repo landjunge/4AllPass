@@ -51,9 +51,9 @@ test("registration, logout, and login run in the order a new user experiences th
     },
   });
 
-  await commands.signUp("new@example.test", "account-one");
+  await commands.signUp("new@example.test", "synthetic-account-one");
   assert.equal(email, "new@example.test");
-  assert.equal(rememberedPassword, "account-one");
+  assert.equal(rememberedPassword, "synthetic-account-one");
 
   await commands.signOut();
   assert.equal(email, null);
@@ -110,7 +110,7 @@ test("registration conflicts remain visible to the sign-up screen", async () => 
     afterSignOut() {},
   });
 
-  await assert.rejects(commands.signUp("known@example.test", "password"), (error) => {
+  await assert.rejects(commands.signUp("known@example.test", "synthetic-account-password"), (error) => {
     return error === conflict && (error as { status: number }).status === 409;
   });
 });

@@ -1,0 +1,308 @@
+{
+  "date": "2026-10-20",
+  "base": "262917f0a5a1e2bebe136c4710d58522b29e5fd4",
+  "scope": "H1/R03 registration only; no package/runtime activation or full E03 acceptance",
+  "runtime": {
+    "python": "3.12.13",
+    "node": "25.9.0"
+  },
+  "backend_red": {
+    "failed": 12,
+    "passed": 12,
+    "source_auth_equivalent_to_base": true,
+    "exit_code": 1
+  },
+  "backend_full": {
+    "command": "python -m pytest -p no:cacheprovider -q",
+    "passed": 181,
+    "skipped": 1,
+    "exit_code": 0,
+    "environment": "cleared inherited FOURALLPASS variables, new temp SQLite/data directory, memory sessions",
+    "skip_reason": "migration round-trip is Postgres-only; SQLite uses create_all"
+  },
+  "backend_final_targeted": {
+    "command": "python -m pytest -p no:cacheprovider -q tests/security/test_registration_password.py -rs",
+    "passed": 25,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "frontend": {
+    "command": "npm test -w @4allpass/frontend",
+    "passed": 188,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "typecheck": {
+    "command": "npm run typecheck -w @4allpass/frontend",
+    "exit_code": 0
+  },
+  "lint": {
+    "command": "npm run lint -w @4allpass/frontend",
+    "exit_code": 0,
+    "existing_warnings_in_untouched_files": 12
+  },
+  "module_boundaries": {
+    "command": "npm run check:module-boundaries",
+    "exit_code": 0
+  },
+  "offline_generator": {
+    "command": "python scripts/generate-account-password-blocklist.py --source <pinned-public-source> --check",
+    "source_rows": 100000,
+    "eligible_source_rows": 72,
+    "unique_keys": 70,
+    "exit_code": 0
+  },
+  "chromium_before": {
+    "scope": "actual AuthPage/account-command/feedback component with synthetic context; no backend/vault/native/package acceptance",
+    "variant": "before",
+    "sourceBase": "262917f0a5a1e2bebe136c4710d58522b29e5fd4",
+    "results": [
+      {
+        "id": "short-ascii-14",
+        "lang": "de",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-codepoints-14",
+        "lang": "de",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": false
+      },
+      {
+        "id": "max-codepoints-257",
+        "lang": "de",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": false
+      },
+      {
+        "id": "allowed-codepoints-15",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "allowed-codepoints-256",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "blocklist-reason",
+        "lang": "de",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": false,
+        "feedbackCode": "invalid_request"
+      },
+      {
+        "id": "old-login-12",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-ascii-14",
+        "lang": "en",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-codepoints-14",
+        "lang": "en",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": false
+      },
+      {
+        "id": "max-codepoints-257",
+        "lang": "en",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": false
+      },
+      {
+        "id": "allowed-codepoints-15",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "allowed-codepoints-256",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "blocklist-reason",
+        "lang": "en",
+        "passed": false,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": false,
+        "feedbackCode": "invalid_request"
+      },
+      {
+        "id": "old-login-12",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      }
+    ],
+    "pageErrors": [],
+    "passed": 6,
+    "failed": 8
+  },
+  "chromium_after": {
+    "scope": "actual AuthPage/account-command/feedback component with synthetic context; no backend/vault/native/package acceptance",
+    "variant": "after",
+    "sourceBase": "262917f0a5a1e2bebe136c4710d58522b29e5fd4",
+    "results": [
+      {
+        "id": "short-ascii-14",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-codepoints-14",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_too_short"
+      },
+      {
+        "id": "max-codepoints-257",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_too_long"
+      },
+      {
+        "id": "allowed-codepoints-15",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "allowed-codepoints-256",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "blocklist-reason",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_blocklisted"
+      },
+      {
+        "id": "old-login-12",
+        "lang": "de",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-ascii-14",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "short-codepoints-14",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_too_short"
+      },
+      {
+        "id": "max-codepoints-257",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 0,
+        "expectedRequests": 0,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_too_long"
+      },
+      {
+        "id": "allowed-codepoints-15",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "allowed-codepoints-256",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      },
+      {
+        "id": "blocklist-reason",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true,
+        "feedbackCode": "account_password_blocklisted"
+      },
+      {
+        "id": "old-login-12",
+        "lang": "en",
+        "passed": true,
+        "actualRequests": 1,
+        "expectedRequests": 1,
+        "hasExpectedPolicyText": true
+      }
+    ],
+    "pageErrors": [],
+    "passed": 14,
+    "failed": 0
+  },
+  "source_hashes_file": "SHA256SUMS"
+}

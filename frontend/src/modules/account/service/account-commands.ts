@@ -1,3 +1,5 @@
+import { checkRegistrationPasswordLength } from "./registration-password.ts";
+
 export interface AccountSession {
   email: string;
 }
@@ -46,6 +48,7 @@ export function createAccountCommands(effects: AccountCommandEffects): AccountCo
 
     async signUp(email, password) {
       await effects.runWithStatus(async () => {
+        checkRegistrationPasswordLength(password);
         const session = await effects.gateway.register(email, password);
         effects.rememberPassword(password);
         effects.setEmail(session.email);

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, get_session_store
 from app.api.rate_limit import enforce_rate_limit
+from app.core.account_password_policy import registration_password_blocklisted
 from app.core.config import get_settings
 from app.core.security import (
     hash_account_password,
@@ -99,6 +100,12 @@ async def register(
     existing = await db.execute(select(User.id).where(func.lower(User.email) == email))
     if existing.scalar_one_or_none() is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email already registered")
+
+    if registration_password_blocklisted(payload.password, email):
+        raise HTTPException(
+            status_code=422,
+            detail="account_password_blocklisted",
+        )
 
     user = User(email=email, account_password_hash=hash_account_password(payload.password))
     db.add(user)

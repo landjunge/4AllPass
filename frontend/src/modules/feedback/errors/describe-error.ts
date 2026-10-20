@@ -1,6 +1,10 @@
 import type { Line } from "../../../lib/copy-mode.ts";
 
 export type FeedbackErrorCode =
+  | "account_password_too_short"
+  | "account_password_too_long"
+  | "account_password_blocklisted"
+  | "account_password_invalid"
   | "authentication_failed"
   | "conflict"
   | "device_unlock_unavailable"
@@ -34,6 +38,22 @@ export interface ErrorFeedback {
 }
 
 const ERROR_TEXT: Record<FeedbackErrorCode, Line> = {
+  account_password_too_short: {
+    de: "Das neue Konto-Passwort braucht mindestens 15 Zeichen. Wähle ein längeres Passwort.",
+    en: "A new account password needs at least 15 characters. Choose a longer password.",
+  },
+  account_password_too_long: {
+    de: "Das Konto-Passwort darf höchstens 256 Zeichen haben. Es wurde nichts gekürzt.",
+    en: "The account password can contain at most 256 characters. Nothing was truncated.",
+  },
+  account_password_blocklisted: {
+    de: "Dieses Konto-Passwort ist zu leicht zu erraten oder als unsicher bekannt. Wähle ein anderes, langes Passwort oder lass eines erzeugen; ändere nicht nur ein Zeichen.",
+    en: "This account password is easy to guess or known to be unsafe. Choose a different, long password or generate one; do not just change one character.",
+  },
+  account_password_invalid: {
+    de: "Das Konto-Passwort konnte nicht gelesen werden. Bitte neu eingeben oder ein anderes Passwort erzeugen.",
+    en: "The account password could not be read. Enter it again or generate a different password.",
+  },
   authentication_failed: {
     de: "Anmeldung, Passwort oder Schlüssel stimmt nicht. Bitte erneut versuchen.",
     en: "Sign-in, password, or key did not match. Please try again.",
@@ -151,6 +171,18 @@ function errorName(error: unknown): string {
 
 function classify(error: unknown, status: number | undefined): FeedbackErrorCode {
   if (error instanceof UserFeedbackError) return error.feedbackCode;
+  if (status === 422 && errorName(error) === "ApiError" && "body" in (error as object)) {
+    const body = (error as { body?: unknown }).body;
+    const detail = body && typeof body === "object" && "detail" in body
+      ? (body as { detail?: unknown }).detail : undefined;
+    switch (detail) {
+      case "account_password_too_short":
+      case "account_password_too_long":
+      case "account_password_blocklisted":
+      case "account_password_invalid":
+        return detail;
+    }
+  }
   if (status === 401) return "authentication_failed";
   if (status === 403) return "permission_denied";
   if (status === 404) return "not_found";

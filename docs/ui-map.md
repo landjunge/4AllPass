@@ -42,7 +42,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | # | Tut |
 |---|---|
 | 1 | Eine Frage: Konto anlegen oder anmelden. Öffnet den Tresor nicht. |
-| 2–3 | Account, nicht Master-Passwort. |
+| 2–3 | Account, nicht Master-Passwort. Neue Registrierung:15–256 Unicode-Zeichen, offline bekannte/erwartete Gesamtwerte verweigern; feste DE/EN-Fehler. Bestehende Anmeldung behält ihre bisherige Passwortprüfung. |
 | 4 | `auth-submit`. 409 → Anmelden. |
 | 5 | Wechselt den Modus. |
 

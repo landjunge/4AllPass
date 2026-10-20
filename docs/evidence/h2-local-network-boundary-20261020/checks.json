@@ -13,7 +13,7 @@
   "tightWebsocketRequests": 0,
   "tightCspViolations": 6,
   "nativeExitCodeEach": 0,
-  "ordinaryFeatureRustTestsPassed": 40,
+  "ordinaryFeatureRustTestsPassed": 41,
   "newTransportTestsPassed": 6,
   "originalBodyRedControl": {
     "passed": 2,
@@ -33,11 +33,17 @@
   "sourceSha256File": "SHA256SUMS",
   "rebasedOnto": "2bfe0c677ceda1352db98201dc568067600dccfe",
   "testedSourcePin": "9caf825e53d1e1eb28f540a0899b996ef9d7d85f",
-  "nativeTreeByteIdenticalAfterRebase": true,
   "secretScan": {
     "version": "8.24.3",
     "scope": "entire own PR history",
     "findings": 0,
     "exitCode": 0
-  }
+  },
+  "fixtureDelayedHeadersRegression": {
+    "beforeExitCode": 101,
+    "afterExitCode": 0,
+    "delayMs": 30
+  },
+  "productAndNativeProbeByteIdenticalTo41866db": true,
+  "testFixtureChangedAfterReview": true
 }

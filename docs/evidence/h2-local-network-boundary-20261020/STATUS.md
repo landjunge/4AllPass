@@ -41,8 +41,8 @@ proper HTTP/1.1 handshake, and both final modes satisfy their complete oracle.
 
 ## Transport and compatibility evidence
 
-- Ordinary feature build (no native test feature), real Rust tests:40 passed,
-  including prior34 and6 new transport tests. Synthetic own-listener tests cover
+- Ordinary feature build (no native test feature), real Rust tests:41 passed,
+  including prior34,6 new transport tests and the delayed-header fixture regression. Synthetic own-listener tests cover
  301/302/303/307/308 GET/POST without second-listener/auth disclosure, relative
  redirects,200/204/401, raw/encoded dot escapes, encoded separators/backslashes,
  fragments/substrings, regular base64url credential paths, encoded UTF-8/percent
@@ -73,9 +73,27 @@ package/H4 limits: [desktop network contract](../../desktop-network-boundary.md)
 ## Rebase identity
 
 Rebased onto AP04/KDF-doc main `2bfe0c677ceda1352db98201dc568067600dccfe`.
-The complete src-tauri tree and both network Python files remain byte-identical
+Before the fixture correction below, the complete src-tauri tree and both network Python files remained byte-identical
 to tested source pin `9caf825e53d1e1eb28f540a0899b996ef9d7d85f`; frontend is
 also unchanged. SHA256SUMS matches committed files. Only documentation conflict
 context was reconciled, preserving main's other milestone rows. No native rerun
 is inferred from a docs rebase. Official Gitleaks8.24.3 over the entire own PR
 history reports zero findings/exit0; no scan rules or exclusions changed.
+
+## Independent-review fixture correction
+
+Root's first parallel normal-feature run exposed37 passes/3 fixture failures
+(UnexpectedEOF/status-line EINVAL), while a serial6-test run passed. Root then
+measured Darwin accepted-socket flags: O_NONBLOCK inherited from the listener.
+This was test-harness instability, not a product-network defect. The fixture now
+explicitly sets accepted sockets blocking before read_timeout.
+
+The regression connects an owned TCP client, delays headers30ms and requires
+a complete200 fixture response. Compiling the actual std-only fixture/test with
+only that fix line removed fails exit101; the fixed file passes exit0. The full
+normal-feature suite now passes41/41 in parallel. Private before/after and
+parallel logs: h2-fixture-delayed-headers. All product/native-probe/command/ACL/
+CSP files and both network scripts remain byte-identical to41866db; only the
+unit-only fixture and evidence changed. SHA256SUMS updates that one test file.
+Independent review and fresh PR CI remain required; no new native run or package
+acceptance is inferred from this fixture-only repair.

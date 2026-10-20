@@ -39,6 +39,9 @@ impl Server {
                     thread::sleep(Duration::from_millis(5));
                     continue;
                 };
+                // Darwin inherits O_NONBLOCK from the listener. read_timeout
+                // alone does not clear it; a delayed header must not become EOF.
+                stream.set_nonblocking(false).unwrap();
                 stream
                     .set_read_timeout(Some(Duration::from_secs(2)))
                     .unwrap();
@@ -95,5 +98,43 @@ impl Drop for Server {
         if let Some(thread) = self.thread.take() {
             thread.join().unwrap();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Reply, Server};
+    use std::{
+        io::{Read, Write},
+        net::TcpStream,
+        thread,
+        time::Duration,
+    };
+
+    #[test]
+    fn accepted_socket_waits_for_delayed_headers() {
+        let server = Server::start(|_| Reply {
+            status: 200,
+            location: None,
+            body: "synthetic delayed headers",
+        });
+        let mut client = TcpStream::connect(server.address).unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        // A nonblocking accepted socket would read WouldBlock, then close the
+        // fixture connection before these deliberately delayed bytes arrive.
+        thread::sleep(Duration::from_millis(30));
+        client
+            .write_all(b"GET /synthetic-delayed HTTP/1.1\r\nHost: fixture\r\n\r\n")
+            .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        assert!(
+            response.starts_with("HTTP/1.1 200 Fixture\r\n"),
+            "{response:?}"
+        );
+        assert!(response.ends_with("synthetic delayed headers"));
+        assert_eq!(server.count(), 1);
     }
 }

@@ -130,6 +130,18 @@ the `fmt=none` attestation with the create challenge; the server extracts the
 COSE key. That is ceremony integrity. It is **not** PRF verification and is
 not mixed into HKDF.
 
+
+When a signed assertion is consumed, every explicit device selector (the
+server-stored challenge binding and any consume `deviceId`) must match the
+stored credential's device in this owned vault. Mismatch is the existing 404,
+before `signCount` or `last_used_at` changes. The challenge has already been
+consumed, so a failed assertion cannot be retried with a different credential.
+A legacy challenge with neither selector still supports an assertion from a
+non-revoked credential in the owned vault. Consume without assertion fields
+remains one-time challenge hygiene and does not update credential usage.
+Neither kind of 204 response is an AP04 team-device admission result. See
+[the exact device-binding boundary](device-assertion-binding.md).
+
 ---
 
 ### 2.5 Deployment origin and embedding policy

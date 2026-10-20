@@ -134,6 +134,8 @@ async def consume_challenge(
         cred is None
         or cred.revoked_at is not None
         or cred.device.revoked_at is not None
+        or (record.device_id is not None and cred.device.device_id != record.device_id)
+        or (payload.device_id is not None and cred.device.device_id != payload.device_id)
     ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="credential not found")
     if cred.public_key is None:

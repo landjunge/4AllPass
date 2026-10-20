@@ -1,0 +1,3 @@
+0cd5e9e88091722fac1ded53588c2562c781cd3c73502be48dca45d2e0fdba45  backend/app/api/routes/webauthn.py
+cdaa9fbbb4594f790cd60ae28625258c77c557b5d965738767e1ffc1dcf993fc  backend/tests/test_webauthn_device_binding.py
+4bf288718882a2aac477a83f4fb6323b0f63d4231fa020c63abde75181e0c46f  docs/device-assertion-binding.md

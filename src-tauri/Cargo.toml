@@ -6,10 +6,21 @@ authors = ["landjunge"]
 edition = "2021"
 license-file = "../LICENSE"
 publish = false
+default-run = "fourallpass"
 
 [lib]
 name = "fourallpass_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+# Opt-in separate binary: never enters normal sidecar/tray setup.
+native-acl-probe = []
+
+[[bin]]
+name = "fourallpass-acl-probe"
+path = "src/bin/acl_probe.rs"
+required-features = ["native-acl-probe"]
 
 [build-dependencies]
 tauri-build = { version = "=2.6.3", features = [] }

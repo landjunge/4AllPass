@@ -2,13 +2,23 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Main 4AllPass window. UI is the bundled frontendDist, not the sidecar origin.",
-  "windows": ["main", "access-prompt"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "notification:default",
     "core:event:default",
     "autostart:allow-enable",
     "autostart:allow-disable",
-    "autostart:allow-is-enabled"
+    "autostart:allow-is-enabled",
+    "allow-access-prompt",
+    "allow-access-dismiss",
+    "allow-sidecar-http",
+    "allow-list-browser-profiles",
+    "allow-extension-install",
+    "allow-open-browser-for-extension",
+    "allow-open-autofill-demo",
+    "allow-import-browser-logins"
   ]
 }

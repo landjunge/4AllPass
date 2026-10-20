@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "access-prompt",
+  "description": "Bundled prompt may submit a decision only. No import, sidecar, event or autostart APIs.",
+  "windows": [
+    "access-prompt"
+  ],
+  "permissions": [
+    "allow-access-decide"
+  ]
+}

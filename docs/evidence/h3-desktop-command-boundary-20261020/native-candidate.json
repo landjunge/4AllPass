@@ -1,0 +1,243 @@
+{
+  "browserFixtureEmpty": true,
+  "commands": [
+    "access_prompt",
+    "access_decide",
+    "access_dismiss",
+    "sidecar_http",
+    "list_browser_profiles",
+    "extension_install",
+    "open_browser_for_extension",
+    "open_autofill_demo",
+    "import_browser_logins"
+  ],
+  "decisionEvent": "{\"requestId\":\"h3-synthetic\",\"allow\":false}",
+  "native": "WKWebView",
+  "normalSetupCalled": false,
+  "passed": true,
+  "persistentWebviewStore": false,
+  "windows": {
+    "access-prompt": {
+      "done": true,
+      "label": "access-prompt",
+      "origin": "tauri://localhost",
+      "passed": true,
+      "rows": [
+        {
+          "allowed": false,
+          "command": "access_prompt",
+          "outcome": "access_prompt not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-access-prompt",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "access_decide",
+          "outcome": "invalid args `requestId` for command `access_decide`: command access_decide missing required key requestId",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "access_dismiss",
+          "outcome": "access_dismiss not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-access-dismiss",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "sidecar_http",
+          "outcome": "sidecar_http not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-sidecar-http",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "list_browser_profiles",
+          "outcome": "list_browser_profiles not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-list-browser-profiles",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "extension_install",
+          "outcome": "extension_install not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-extension-install",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "open_browser_for_extension",
+          "outcome": "open_browser_for_extension not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-open-browser-for-extension",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "open_autofill_demo",
+          "outcome": "open_autofill_demo not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-open-autofill-demo",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "import_browser_logins",
+          "outcome": "import_browser_logins not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-import-browser-logins",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "plugin:event|listen",
+          "outcome": "event.listen not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local], [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-listen || capability: default, permission: allow-listen",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "plugin:event|emit",
+          "outcome": "event.emit not allowed on window \"access-prompt\", webview \"access-prompt\", URL: local\n\nallowed on: [windows: \"main\", URL: local], [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-emit || capability: default, permission: allow-emit",
+          "passed": true
+        }
+      ]
+    },
+    "h3-untrusted": {
+      "done": true,
+      "label": "h3-untrusted",
+      "origin": "tauri://localhost",
+      "passed": true,
+      "rows": [
+        {
+          "allowed": false,
+          "command": "access_prompt",
+          "outcome": "access_prompt not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-access-prompt",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "access_decide",
+          "outcome": "access_decide not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"access-prompt\", URL: local]\n\nreferenced by: capability: access-prompt, permission: allow-access-decide",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "access_dismiss",
+          "outcome": "access_dismiss not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-access-dismiss",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "sidecar_http",
+          "outcome": "sidecar_http not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-sidecar-http",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "list_browser_profiles",
+          "outcome": "list_browser_profiles not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-list-browser-profiles",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "extension_install",
+          "outcome": "extension_install not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-extension-install",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "open_browser_for_extension",
+          "outcome": "open_browser_for_extension not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-open-browser-for-extension",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "open_autofill_demo",
+          "outcome": "open_autofill_demo not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-open-autofill-demo",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "import_browser_logins",
+          "outcome": "import_browser_logins not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-import-browser-logins",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "plugin:event|listen",
+          "outcome": "event.listen not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local], [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-listen || capability: default, permission: allow-listen",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "plugin:event|emit",
+          "outcome": "event.emit not allowed on window \"h3-untrusted\", webview \"h3-untrusted\", URL: local\n\nallowed on: [windows: \"main\", URL: local], [windows: \"main\", URL: local]\n\nreferenced by: capability: default, permission: allow-emit || capability: default, permission: allow-emit",
+          "passed": true
+        }
+      ]
+    },
+    "main": {
+      "done": true,
+      "label": "main",
+      "origin": "tauri://localhost",
+      "passed": true,
+      "rows": [
+        {
+          "allowed": true,
+          "command": "access_prompt",
+          "outcome": "invalid args `requestId` for command `access_prompt`: command access_prompt missing required key requestId",
+          "passed": true
+        },
+        {
+          "allowed": false,
+          "command": "access_decide",
+          "outcome": "access_decide not allowed on window \"main\", webview \"main\", URL: local\n\nallowed on: [windows: \"access-prompt\", URL: local]\n\nreferenced by: capability: access-prompt, permission: allow-access-decide",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "access_dismiss",
+          "outcome": "resolved",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "sidecar_http",
+          "outcome": "invalid args `method` for command `sidecar_http`: command sidecar_http missing required key method",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "list_browser_profiles",
+          "outcome": "resolved",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "extension_install",
+          "outcome": "invalid args `browserId` for command `extension_install`: command extension_install missing required key browserId",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "open_browser_for_extension",
+          "outcome": "invalid args `browserId` for command `open_browser_for_extension`: command open_browser_for_extension missing required key browserId",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "open_autofill_demo",
+          "outcome": "invalid args `browserId` for command `open_autofill_demo`: command open_autofill_demo missing required key browserId",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "import_browser_logins",
+          "outcome": "invalid args `browserId` for command `import_browser_logins`: command import_browser_logins missing required key browserId",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "plugin:event|listen",
+          "outcome": "invalid args `event` for command `listen`: command listen missing required key event",
+          "passed": true
+        },
+        {
+          "allowed": true,
+          "command": "plugin:event|emit",
+          "outcome": "invalid args `event` for command `emit`: command emit missing required key event",
+          "passed": true
+        }
+      ]
+    }
+  }
+}

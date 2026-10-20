@@ -18,14 +18,36 @@ mod tray;
 use loopback::{prepare_loopback_core, wait_our_core};
 use process::{kill_core, spawn_core, CoreProcess};
 use prompts::{deny_closed_prompt, PromptState};
-use sidecar_http::sidecar_http;
 use sleep::watch_desktop_lock;
 use tray::show_main;
+
+include!("command_contract.rs");
+
+macro_rules! command_handler {
+    ($($module:ident::$command:ident),* $(,)?) => {
+        tauri::generate_handler![$($module::$command),*]
+    };
+}
+
+fn app_command_handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'static {
+    app_commands!(command_handler)
+}
+
+#[cfg(feature = "native-acl-probe")]
+mod native_acl_probe;
+#[cfg(feature = "native-acl-probe")]
+pub use native_acl_probe::run as run_native_acl_probe;
 
 fn start_hidden() -> bool {
     std::env::args().any(|arg| arg == "--hidden")
 }
 
+#[cfg(feature = "native-acl-probe")]
+pub fn run() {
+    panic!("native-acl-probe is test-only; use fourallpass-acl-probe");
+}
+
+#[cfg(not(feature = "native-acl-probe"))]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -36,17 +58,7 @@ pub fn run() {
         ))
         .manage(CoreProcess(Mutex::new(None)))
         .manage(PromptState(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![
-            prompts::access_prompt,
-            prompts::access_decide,
-            prompts::access_dismiss,
-            sidecar_http,
-            browsers::list_browser_profiles,
-            browsers::extension_install,
-            browsers::open_browser_for_extension,
-            browsers::open_autofill_demo,
-            browser_passwords::import_browser_logins
-        ])
+        .invoke_handler(app_command_handler())
         .setup(|app| {
             if start_hidden() {
                 if let Some(window) = app.get_webview_window("main") {

@@ -1,0 +1,19 @@
+{
+  "base": "45331a3716d6fa77747ac93c35fcceffec1db879",
+  "nativeFramework": "actual WKWebView",
+  "nativeRowsPassed": 33,
+  "nativeRowsTotal": 33,
+  "actualPromptDecisionEvent": true,
+  "negativeControlRowsFailed": 20,
+  "negativeControlExitCode": 1,
+  "candidateExitCode": 0,
+  "ordinaryFeatureRustTestsPassed": 34,
+  "frontendTestsPassed": 202,
+  "frontendTypecheck": 0,
+  "CspChanged": false,
+  "entitlementsChanged": false,
+  "dependenciesAdded": false,
+  "packageAcceptance": false,
+  "normal8788StartupExecuted": false,
+  "sourceSha256File": "SHA256SUMS"
+}

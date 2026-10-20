@@ -145,6 +145,12 @@ profile; existing HTTPS blocking is not removed. Browser PWA, optional broker
 CORS, normal startup, package and H4 entitlements require separate acceptance.
 See [the exact H2 profile and isolated checks](desktop-network-boundary.md).
 
+The macOS source profile removes three broad code-signing exceptions after a
+private actual WKWebView journey with runtime-signed parent and core. The
+package gate checks effective runtime flags and exceptions on both final
+executables. This does not upgrade historical adhoc installations or establish
+notarization/OS isolation. See [H4 evidence and limits](desktop-runtime-boundary.md).
+
 Local first-run in a **normal browser** skips email and account password.
 `POST /api/v1/auth/local` mints a storage session for a singleton row
 (`local@127.0.0.1`, no account password hash). That is **authentication for the

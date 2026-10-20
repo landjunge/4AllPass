@@ -74,3 +74,10 @@ rejects failed/malformed responses and suppresses stopped-session deliveries.
 This only describes last observed transport availability. It provides no fresh
 suite-peer or user/vault-bound unlock proof and must not drive the shared
 connection ring or pulse. The current blocked machine-access page stays blocked.
+
+## Device assertion selectors
+
+Explicit challenge/consume device selectors must match the signed credential's
+stored device; mismatch returns 404 before usage stamps. An unbound legacy or
+unsigned hygiene 204 is still no AP04 team-device admission, current person
+binding, hardware/PRF proof or authorization for sensitive team operations.

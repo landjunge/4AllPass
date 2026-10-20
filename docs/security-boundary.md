@@ -186,6 +186,14 @@ COSE public key, and sets `verification: "cose_verified"`. A later `consume` of
 an assertion verifies the signature against that key and the issued challenge,
 and bumps `signCount`.
 
+For a signed assertion, both the server-stored challenge device binding and
+any explicitly supplied consume device selector must match the credential's
+stored device. Otherwise the route returns the existing 404 before updating
+usage. Unbound legacy assertions and unsigned hygiene consumes remain supported;
+a 204 alone is not a device-admission receipt. No team-device admission state,
+fresh person reauthentication or operation-bound team authorization is added.
+See [device assertion binding](device-assertion-binding.md).
+
 `fmt=none` is not hardware attestation. `cose_verified` means **ceremony
 integrity**, not “the server unlocked the vault” and not “PRF was checked.”
 Rows posted without an attestation remain `client_asserted` / `serverVerified:

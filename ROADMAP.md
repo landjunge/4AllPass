@@ -29,8 +29,8 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
 | E02.4 / AP-02 | Überlanger stockender Stream F4 | Im Quellumfang abgeschlossen: PR #230 als `262917f`, Grok ship mit eigenem 11/11-Lauf, PR- und Main-CI grün. SQLite156+1 Postgres-Skip und echter Postgres157. Keine neue Paket-/Installationsbehauptung. |
 | E03 | P01–P05, R02–R07/R12, AP-04 | IndexedDB PR #231 als `45331a3`, H1 PR #232 als `f547b3b` und R05 PR #233 als `a65ab12` integriert; unabhängige Abnahmen und PR-/main-Prüfungen grün. Pin-content PR #235 als `3715120` integriert, unabhängiges Codex ship mit 15/15 Zieltests, PR-Prüfungen grün; main-Prüfungen laufen. AP04, übrige Krypto-, Recovery- und Betriebsabnahmen bleiben gesondert offen. |
-| E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | H3 eigener Command-/Fenster-ACL-Slice: echte isolierte native Gegenprobe und unabhängiger Codex-Lauf33/33, ship; Integration folgt; H2/CSP und H4/Entitlements getrennt offen. Weiter offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
-| E05 | UI-01 | Vorbereitender Pollstatus-Slice PR #234 unabhängig geprüft: 213 Frontend-Tests, 11 Zieltests und DE/EN-Komponenten 8/8; Rebase behält diese Produktbytes bei, frische CI folgt. Offen: bestehendes KiraBridge-Icon, gemeinsame kompakte App-Leiste und frische bestätigte Status-/Openadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
+| E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | H3 PR #236 als `49256b3` integriert: getrennt Autor/Root echte WKWebView-ACL 33/33 + Prompt-Deny, Normalfeature Rust 34/34, PR-Prüfungen grün, main-Prüfungen laufen. H2/H4, normale native Tresor-/Importwege, neue Pakete und Hardware-/Fremdmac-/Signierung bleiben offen. |
+| E05 | UI-01 | Vorbereitender Pollstatus PR #234 als `71c5be4` integriert, unabhängiges Codex ship und PR-/main-Prüfungen grün. Die gemeinsame Leiste benötigt weiterhin das freigegebene KiraBridge-Icon und frische authentisierte Status-/Openadapter; Pollstatus begründet keinen Ring/Unlockpuls. |
 | E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
 | E07 | AP-05–AP-07, P09/R13–R14 | Offen: begrenzte Grants, echte Host-/Vaulttransfer-/Ursprungsgrenze und eine freigegebene reale Anbieteroperation mit bestehendem TollGate-Adapter. |
 | E08 | TD-07 | Offen: berechtigte Inhaltssuche und separater optionaler Bridge-Dateiindex mit Messung. |
@@ -111,6 +111,18 @@ Das ist keine fertige App-Leiste. Assetzuordnung KiraBridge, enger Open/Fokus-
 Adapter und authentisierter frischer Peer-/User-/Vaultstatus bleiben offen;
 dieser Pollstatus darf Ring/Unlockpuls nicht begründen. Beleg:
 `docs/evidence/broker-connection-state-20261020/STATUS.md`.
+
+## E03 / AP-04 prerequisite – explizite Assertion-Gerätebindung (20.10.2026)
+
+Ein gültig signierendes Credential B konnte die ausdrücklich für Gerät A
+angegebene Challenge bedienen und B-Nutzungsstempel ändern. Der bestehende
+404-Pfad prüft jetzt beide expliziten Geräteselektoren gegen das Credential-Gerät,
+bevor Stempel geändert werden. Sieben echte synthetische HTTP-Fälle zeigen
+auf unverändertem main zwei Fehler/fünf bestanden, danach 56 betroffene Fälle
+grün und vollständiges isoliertes SQLite-Backend 228 bestanden/ein expliziter
+Postgres-only Skip. Ungebundene/unsignierte Legacy-204 bleiben Diagnostik,
+keine Geräteaufnahme. Vertrag und noch offene AP04-Zulassung:
+`docs/device-assertion-binding.md`. Unabhängiges Codex ship auf 99b6372: eigene 56 Zieltests und sieben weitere HTTP-Gegenfälle grün; deren Baseline fünf Fehler/zwei bestanden. Rebase auf H3-main erhält die geprüften Backendbytes; finale CI und Integration folgen.
 
 ## 0. Sofort (Grok Build, kein Warten)
 

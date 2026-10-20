@@ -105,6 +105,8 @@ jobs:
         run: rustc --edition 2021 --test src-tauri/src/core_bind.rs -o core-bind && ./core-bind
       - name: Loopback process inspect parsers
         run: rustc --edition 2021 --test src-tauri/src/process_inspect.rs -o process-inspect && ./process-inspect
+      - name: Temporary browser copies never overwrite link targets
+        run: rustc --edition 2021 --test src-tauri/src/secret_fs.rs -o secret-fs && ./secret-fs
 
   python:
     name: Backend tests

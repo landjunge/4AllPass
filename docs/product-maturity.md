@@ -2,10 +2,14 @@
 
 Stand: 2026-08-28. **v3.** Kein Core-Rewrite, kein zweites Tauri, kein Tollgate. Audit-Freeze `#123` und Security Freeze #2 auf `main`. P0–P1 Code + UI-Hierarchie (Tresor · Browser · Zugriff · Einstellungen) auf `main`. Was der laufende Code erzwingt: [`security-boundary.md`](security-boundary.md).
 
+Abgleich aktiver Maschinenzugriffs-Anweisungen: 20.10.2026, AP-01.
+Aktuelle Ausführungsfolge E01–E09: [`ROADMAP.md`](../ROADMAP.md).
+Historische Release-/Paketbelege behalten ihren jeweiligen Quellstand.
+
 > **4AllPass makes authentication effortless for humans and controlled for machines.**  
 > DE: Anmeldung soll für Menschen einfach sein. Maschinen bekommen Zugang nur kontrolliert.
 
-FastAPI gibt **keine** Tokens aus. Launch-Posts nicht auto-publishen.
+FastAPI gibt **keine Anbieter-/Tresorzugriffstokens** aus. Kontositzungen autorisieren nur den verschlüsselten Speicher. Launch-Posts nicht auto-publishen.
 
 v3 ersetzt v2 nicht in der Reihenfolge. v3 macht die Reihenfolge **zukunftssicher**: eine Credential-Engine für Mensch und Maschine, gebaut gegen die Stellen, an denen die Konkurrenz 2026 die meiste Kritik bekommt.
 
@@ -32,7 +36,7 @@ Nicht: nächster Bitwarden/1Password. Differenzierung ist **Vault + zuverlässig
 3. Storage secure (ZK, this device).
 4. Access controllable.
 5. **Goal:** agents should not need the underlying long-lived secret.  
-   **Current v1:** human-approved raw-secret handoff. TTL limits future handoffs, not a copied credential.
+   **Current source:** machine material handoffs are denied, including after Allow; no production protected host is connected. Historical credential copies remain outside recall.
 
 **Reliability before expansion.** Keine 20 neuen Features, solange Install, Import, Provider, Autofill, Vault nicht zuverlässig sind.
 
@@ -50,7 +54,7 @@ Die meiste Kritik sitzt nicht an der Krypto. Sie sitzt am Alltag, am Preis, an R
 | **KeePassXC** | Sync/Backup selbst, Mobile-Splitter, Passkeys holprig | App ist das Produkt, nicht eine `.kdbx`-Datei |
 | **LastPass** | Recovery vs. Zero-Knowledge, Vertrauensbruch | Kit erzwungen, kein Server-Reset |
 | **Vaultwarden** | Du bist Ops (Backup, Uptime), unaudited | Desktop-App, nicht Postgres-Pflicht |
-| **Alle (2026)** | Agenten brauchen Keys, bekommen Dauer-Secrets | Allow/Deny + TTL. Ziel: kein langlebiges Roh-Secret. Heute: Roh-Secret nach Allow; TTL holt eine Kopie nicht zurück |
+| **Alle (2026)** | Agenten brauchen Keys, bekommen Dauer-Secrets | Aktuelle Quelle verweigert Materialübergaben; geschützte Nutzung braucht echte Hostabnahme. Historische Rohmaterialkopien holt TTL nicht zurück |
 
 Drei Muster, die der Plan abdeckt:
 
@@ -76,7 +80,7 @@ Eine Schicht, drei Konsumenten. Agent-Zugang wird später kein zweites Produkt.
            ┌───────────────┼───────────────┐
            ▼                 ▼                 ▼
         Mensch              App              Agent
-     Autofill/Import     (später)        Allow/Deny + TTL
+     Autofill/Import     (später)       derzeit Material-DENY
 ```
 
 Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent = DENY.
@@ -92,7 +96,7 @@ Website bekommt **nie** den Vault. FastAPI sieht **nie** Klartext. Unknown Agent
 | Browser-Karten + Chrome/Firefox-Import + Review | auf `main` — [`browser-sync.md`](browser-sync.md) |
 | Provider-Resolver (Domain ≠ Provider, Confidence) | `@4allpass/providers` — [`provider-resolution.md`](provider-resolution.md) |
 | Extension Chromium + Firefox + Safari-Wrapper | auf `main` — Field Intelligence + Safe Fill + Provider-Match (`autofill-v1.md`) |
-| Access-Policy, Broker, Allow/Deny | auf `main`, **nicht** erster Bildschirm |
+| Access-Policy und Broker | auf `main`, Material-DENY, **nicht** erster Bildschirm; kein produktiver Executor |
 | Apple-Notarisierung | CI `#111`, **pausiert** (~99 USD/Jahr, [#112](https://github.com/landjunge/4AllPass/issues/112)) |
 | Terminal-Install | `scripts/install.sh` + rolling Tag `desktop` + SHA-256. Auf diesem Intel-Mac: Befehl → Fenster (2026-08-24). Vault unangetastet. |
 
@@ -159,7 +163,7 @@ Passkeys/OTP/SSO **nach** stabilem Password-Autofill. Passkeys nicht selbst simu
 - [x] Why an jeder Entscheidung (`explainAccess`, DE+EN, keine Secrets).
 - [x] Simulator = Access-Tab-Demo (dieselbe Policy wie der Broker, nicht FastAPI).
 - [x] Security-Status auf dem Access-Tab (Loopback, Origin 403, unknown DENY, kein Auto-Handoff).
-- Access ist nicht der erste Bildschirm. Unknown = DENY. **Current v1:** human-approved `handoff: "raw_secret"`. TTL limits future handoffs, not a copied credential. Mediated access is later.
+- Access ist nicht der erste Bildschirm. Aktuelle Quelle verweigert Maschinenmaterial einschließlich alter Allow-Antworten. Ein geschützter produktiver Host ist noch nicht angebunden; das synthetische Executor-Modul ersetzt dessen Abnahme nicht. Historische `raw_secret`-Kopien werden nicht durch TTL oder diese Quelländerung zurückgerufen. Maßgeblich: `security-boundary.md` §7 und E07 in der Roadmap.
 
 ### P3 — Passkeys / OTP (bewusst spät)
 
@@ -263,7 +267,7 @@ Recovery:
 
 ## Nächster Schritt (genau einer)
 
-**Code dieser Reihenfolge ist auf `main`.** Install, Import-Review (CI), Autofill V1, Access Allow/Deny, TOTP, Freeze #2, UI eine Frage pro Screen.
+**Code dieser Reihenfolge ist auf `main`.** Install, Import-Review (CI), Autofill V1, aktuelle Access-Materialverweigerung, TOTP, Freeze #2, UI eine Frage pro Screen. Dies ersetzt keine native Paket-/Geräteabnahme.
 
 Was **kein Code** mehr ist (P0 menschlich):
 

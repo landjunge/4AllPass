@@ -1,7 +1,46 @@
 # 4AllPass – Roadmap (lebende Datei)
 
 > **Status:** aktiv. Das ist die **eine** Roadmap-Datei. Keine neuen Spezial-Pläne anlegen – hier rein, Status updaten, fertig.
-> Grok Build: Lies zuerst `docs/grok-build-plan.md`, dann diese Datei für den Gesamtstatus.
+> Maßgeblich für implementierte Zusicherungen: `docs/security-boundary.md`.
+> Grok Build liest danach diese Roadmap und `docs/grok-build-plan.md`.
+
+## Gesamtauftrag E01–E09, 20. Oktober 2026
+
+Der ausdrücklich beauftragte Gesamtplan führt diese Roadmap fort; ältere
+Reihenfolgen unten sind historische Teilpläne. Keine zweite Roadmap anlegen.
+Original: ThreadDesk `6b5b73b9de36`, Revision 3,
+„Gesamtplan ThreadDesk & 4AllPass – 20.10.2026“, zehn geordnete Anlagen,
+107935 UTF-8-Bytes, SHA256
+`4b8ac493add0b76bd1a353d59d13152bbb5ec62bc956c1def9f1ccc1aa211ca8`.
+Vollständige Fach-API-Nachlese bestätigt. Codex koordiniert abgegrenzte native
+Teamaufgaben, Grok prüft konkrete Commits unabhängig in seiner bestehenden
+sichtbaren Sitzung. Groks Teamfähigkeit und neue Abnahmen sind noch offen;
+sein RC11-Review wartete bei `desktop_locked` ohne Eingabe und wurde danach
+im zugeordneten bestehenden Fenster authentifiziert empfangsquittiert. Die bereits
+übernommene Bridge-Nachricht `7a7a268e-09c2-4a0f-a333-031cd7fc094c` erzeugt
+keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückgestellt.
+
+| Etappe | Zugeordneter Umfang | Aktueller Stand / nächster Nachweis |
+| --- | --- | --- |
+| E01 | P00/R01, RC9/RC10 und ST-01–ST-05 | Hauptstände und vorhandene Belege erfasst; isolierte Umgebungen werden aufgebaut. Bridge-Codex-Kandidat `2062055` geprüft, noch nicht aktiviert/Grok-abgenommen. Echter Kira→Codex→Kira-Test offen. |
+| E02.1–2 | ThreadDesk TD-01/TD-02 | Getrennte Reparaturen für Backup/Restore und lokale Web-Schreibgrenze in Arbeit; geführt in ThreadDesk `docs/TEAMPLAN.md`. |
+| E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Drei aktive Anweisungsdateien werden an bestehendes Machine-DENY angeglichen. Aktuelle Basis `905e6b5`. PR #217 ist offen, seine drei Lockfile-Zielversionen sind bereits auf main; kein blinder Altmerge. PR #216 bleibt Draft gegen dessen alten Branch, keine pauschale Designübernahme. Unabhängiges Review offen. |
+| E02.4 / AP-02 | Überlanger stockender Stream F4 | Offen: sofortige begrenzte 413 ohne nächsten Bodychunk, reguläre Streams/Disconnects erhalten. |
+| E03 | P01–P05, R02–R07/R12, AP-04 | Offen: Krypto, Snapshot, Konto/Sitzung, Geräte, Recovery, Identitätsvertrag; vorhandene Tests eng wiederverwenden. |
+| E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | Offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
+| E05 | UI-01 | Offen: bestehende Icons, gemeinsame kompakte App-Leiste und frische bestätigte Statusadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
+| E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
+| E07 | AP-05–AP-07, P09/R13–R14 | Offen: begrenzte Grants, echte Host-/Vaulttransfer-/Ursprungsgrenze und eine freigegebene reale Anbieteroperation mit bestehendem TollGate-Adapter. |
+| E08 | TD-07 | Offen: berechtigte Inhaltssuche und separater optionaler Bridge-Dateiindex mit Messung. |
+| E09 | AP-08/TD-09, P10–P12, R01–R17/H1–H6/T01–T22 | Offen: einschlägige Nachweise, Nutzerwege, Paketherkunft, Installation/Update/Recovery und benannte Grenzen. |
+
+Pro Unterpunkt werden Commit, Dateien, konkrete Tests, Groks unabhängiges Urteil,
+verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
+Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege
+werden nicht neuen Paketbytes zugerechnet; öffentliche RC2-Downloads bleiben
+unverändert. Restrolle beim Transfer, Manager-/Abnahmerechte, Stellvertretung
+und Executor-Betriebsprofil/erste Operation benötigen vor ihrem jeweiligen
+Ausbau eine fachliche Entscheidung; lokale Reparaturen laufen unabhängig weiter.
 
 ---
 
@@ -9,12 +48,12 @@
 
 1. **Supply-Chain** – Phasen 1–3 auf `main` (2026-08-28). Pinning, CI-Audits, Crypto-Allowlist, SBOM. Private Registry bleibt offen.
 2. **Code-Hygiene** – completed 2026-08-28. Nicht mehr in der offenen Reihenfolge.
-3. **Secret Access Layer vorbereiten** (jetzt, nicht MAIP) – A+B im Code: `detectSetup` fragt, Extension füllt nur nach Klick. Raw-secret semantics, mediated interface, policy. C–F (Broker-Identität, Capabilities) offen. Spec: `docs/secret-access-layer.md`. Was heute läuft: `docs/security-boundary.md` §7 und `docs/local-access-broker.md`.
+3. **Secret Access Layer, datierter Teilplan** – A+B im Code: `detectSetup` fragt, Extension füllt nur nach Klick. Aktueller Maschinenweg verweigert Materialübergaben, auch nach Allow; kein raw-secret-Fallback. Synthetischer Protected-Executor ist kein produktiver Host. Weiterer Ausbau nur im zugeordneten E03/E07-Umfang nach `docs/security-boundary.md` §7.
 4. **Mobile** – **PWA zuerst**, dann native. Android-Skelett (`docs/android-skeleton-grok-build.md`) und iOS-Skelett (`docs/ios-skeleton-grok-build.md`) sind nur Prompt-Vorlagen – **kein** Freifahrtschein, native Apps vor der PWA zu bauen. Reihenfolge: PWA → Android → iOS.
 
 **Später (nicht jetzt):** MAIP-Implementierung – kryptografische Agent-Identität, Enrollment, signierte Requests, Revocation. Spec: `docs/specs/maip-v0.1.md` (Experimental Draft). `docs/architecture/agent-access.md` bleibt Proposed.
 
-**Headless / Roboter:** Library-Prototyp 2026-08-30 (`packages/crypto` requester signatures, `@4allpass/core` `riskClass` + `decideStandingAccess`). Sidecar bleibt Live-Allow. Kein Geräte-Protokoll. Vault-Device-Envelopes sind **nicht** Agent-Identität. Spec: `docs/architecture/agent-access.md` § Headless.
+**Headless / Roboter:** Library-Prototyp 2026-08-30 (`packages/crypto` requester signatures, `@4allpass/core` `riskClass` + `decideStandingAccess`). Er aktiviert keinen Sidecar-Zugriff: aktuelle Python-/Node-Broker und der Client verweigern maschinelles Material. Kein Geräte-Protokoll. Vault-Device-Envelopes sind **nicht** Agent-Identität. Spec: `docs/architecture/agent-access.md` § Headless.
 
 ---
 
@@ -63,7 +102,7 @@ Autofill V1 nicht weiter auf Verdacht ausbauen. Spec bleibt `docs/autofill-v1.md
 **Konkrete nächste Schritte (Code vor Docs):**
 
 1. **Tresor** – Vault anlegen, Passwörter rein, speichern, wieder abrufen. Der Kern, den jeder Nutzer als Erstes testet.
-2. **Broker (Loopback)** – Agent fragt an, du sagst ja oder nein, TTL läuft ab. Zettel-Türsteher, kein Ausweis.
+2. **Broker (Loopback)** – bestehendes Machine-DENY erhalten. Historisches Allow/TTL ist kein freigegebener Materialkanal; geschützte Ausführung benötigt E07-Nachweise.
 3. **PWA** – Login, Homescreen-Icon, offline-fähig. Kein App Store, kein Review.
 4. **Schauen, was fehlt** – erst dann entscheiden, ob Autofill / native Apps überhaupt noch nötig sind.
 
@@ -72,7 +111,7 @@ Autofill V1 nicht weiter auf Verdacht ausbauen. Spec bleibt `docs/autofill-v1.md
 | Tresor, Crypto, Hard-Revoke, CAS | auf `main` – nicht anfassen |
 | Desktop (Tauri) | auf `main` |
 | Extension Chromium + Firefox + Safari-Wrapper | auf `main` |
-| Access-Policy, Broker, Allow/Deny | auf `main` |
+| Access-Policy und Broker | auf `main`; Maschinenmaterial wird verweigert, kein produktiver Executor |
 | Apple-Notarisierung | pausiert (~99 USD/Jahr) |
 | Unabhängiges Dritt-Audit | offen (#38) |
 | Fremder-Mac-Test | offen (#120, übersprungen) |

@@ -73,3 +73,23 @@ test("feedback state keeps existing notice semantics and clears both banners", (
   assert.equal(nextAction.notice?.code, "entries_saved");
   assert.deepEqual(feedbackReducer(nextAction, { type: "clear" }), initialFeedbackState);
 });
+
+test("registration policy errors select safe DE/EN text without reflecting API input", () => {
+  for (const code of [
+    "account_password_too_short", "account_password_too_long",
+    "account_password_blocklisted", "account_password_invalid",
+  ]) {
+    const failure = Object.assign(new Error("synthetic-hidden-password"), {
+      name: "ApiError", status: 422,
+      body: { detail: code, input: "synthetic-hidden-password" },
+    });
+    const feedback = describeError(failure);
+    assert.equal(feedback.code, code);
+    assert.ok(feedback.userText.de && feedback.userText.en);
+    assert.equal(JSON.stringify(feedback).includes("synthetic-hidden-password"), false);
+  }
+  const unknown = Object.assign(new Error("synthetic-hidden-password"), {
+    name: "ApiError", status: 422, body: { detail: "synthetic-hidden-password" },
+  });
+  assert.equal(describeError(unknown).code, "invalid_request");
+});

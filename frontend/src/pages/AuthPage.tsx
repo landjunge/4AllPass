@@ -131,14 +131,18 @@ export function AuthPage(): ReactNode {
             autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            minLength={mode === "sign-up" ? 12 : 1}
+            minLength={mode === "sign-up" ? 15 : 1}
             required
           />
         </label>
         <p className="hint">
           {t({
-            de: "Nicht das Tresor-Passwort.",
-            en: "Not the vault password.",
+            de: mode === "sign-up"
+              ? "15 bis 256 Zeichen. Wähle ein langes, eigenes Passwort oder lass eines erzeugen. Nicht das Tresor-Passwort."
+              : "Nicht das Tresor-Passwort.",
+            en: mode === "sign-up"
+              ? "15 to 256 characters. Choose a long, unique password or generate one. Not the vault password."
+              : "Not the vault password.",
           })}
         </p>
         <button type="submit" className="primary" disabled={busy} data-testid="auth-submit">

@@ -38,6 +38,13 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | `DELETE /devices` erases the key | `revocation: "metadata_only"`. Hard revoke = client `hardRevokeDevice` (VK++). |
 | Server verified the passkey / PRF | `cose_verified` is ceremony integrity (`fmt=none`). Server never sees PRF. |
 
+## Account registration
+
+New central account passwords:15–256 code points and a pinned offline whole-value
+blocklist; safe fixed errors in DE/EN. Existing account login/local bootstrap and
+vault passwords are unchanged. No runtime third-party lookup, composition rule,
+periodic reset or general NIST-conformity claim. See docs/account-password-policy.md.
+
 ## HTTP / ownership
 
 Foreign vault or device id → **404**, never 403.

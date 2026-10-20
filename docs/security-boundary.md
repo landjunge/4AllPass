@@ -59,6 +59,15 @@ entries / notes / credentials. Request schemas do not accept those fields.
 
 ## 2. Sessions (Bearer is retained)
 
+New central account registrations require 15–256 Unicode code points and a
+whole-password check against a pinned, offline common-password snapshot plus
+expected whole service/account values. Policy failures return fixed codes,
+never the submitted password; the UI explains them in DE/EN. Existing account
+login (including older short or listed passwords), local bootstrap and vault
+passwords are unchanged. No periodic reset, composition rule, hash migration or
+online password lookup is introduced. See [H1 policy/provenance](account-password-policy.md).
+This bounded change is not an overall NIST-conformance claim.
+
 The browser sends `Authorization: Bearer <token>` and `X-Device-Id`. The token
 is a `secrets.token_urlsafe(32)` value. Redis (or the in-memory test store)
 keeps only `HMAC-SHA256(session_secret, token)` → `{user_id, email, device_id}`

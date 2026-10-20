@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.limits import ACCOUNT_PASSWORD_CHARS_MIN
 
 class Settings(BaseSettings):
     """Runtime configuration, loaded from environment variables / .env.
@@ -46,7 +47,9 @@ class Settings(BaseSettings):
     webauthn_challenge_rate_limit: int = 20
     webauthn_challenge_rate_window_seconds: int = 60
 
-    auth_min_password_length: int = 12
+    # Legacy configuration compatibility only. Registration enforces the fixed
+    # policy in RegisterRequest; overriding this field cannot lower that limit.
+    auth_min_password_length: int = ACCOUNT_PASSWORD_CHARS_MIN
     auth_login_rate_limit: int = 10
     auth_login_rate_window_seconds: int = 60
     # Snapshot writes, device create, credential metadata. Separate from login

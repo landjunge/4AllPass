@@ -3,6 +3,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import FastAPI
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -184,6 +186,22 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    @app.exception_handler(RequestValidationError)
+    async def registration_validation_error(request, error):
+        # FastAPI's default validation payload includes the rejected input.
+        # Restrict this projection to account registration, preserving all
+        # unrelated endpoint behavior and never returning a password value.
+        if request.scope.get("endpoint") is auth.register:
+            errors = [item for item in error.errors() if item.get("loc") == ("body", "password")]
+            code = "invalid_registration"
+            if errors:
+                code = {
+                    "string_too_short": "account_password_too_short",
+                    "string_too_long": "account_password_too_long",
+                }.get(errors[0]["type"], "account_password_invalid")
+            return JSONResponse({"detail": code}, status_code=422)
+        return await request_validation_exception_handler(request, error)
 
     cors_origins = list(settings.cors_origins)
     if settings.is_local():

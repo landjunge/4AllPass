@@ -1,0 +1,82 @@
+{
+  "base": "fe5e67b24485862025c8032054a78085b2c0225b",
+  "sourceManifest": "SHA256SUMS",
+  "baseline": {
+    "coreTests": 8,
+    "passed": 5,
+    "failed": 3,
+    "browserJourneys": 1,
+    "browserFailed": 1,
+    "engine": "exact git-exported fb14 engine",
+    "fault": "acknowledged CAS followed by injected metadata DELETE503"
+  },
+  "candidate": {
+    "targetFiles": 8,
+    "tests": 61,
+    "passed": 61,
+    "seconds": 40.87,
+    "peakOwnedRssKiB": 262140,
+    "coreHardRevokeSubset": 8,
+    "productiveCallerSubset": 11,
+    "feedbackSubset": 6,
+    "counts": "Subsets overlap this 61-case run; do not add them or previous 43/60-case runs.",
+    "actualCompiledBrowserJourneys": 1,
+    "actualCompiledBrowserPassed": 1,
+    "browserSeconds": 19.482,
+    "browserPeakOwnedRssKiB": 1447356,
+    "browserCleanup": "own server stopped; owned temporary directory removed; ephemeral listener absent",
+    "typecheck": "pass",
+    "moduleBoundaries": "pass",
+    "frontendLint": "exit0; existing warnings",
+    "copyLanguageScript": "absent; attempted invocation not a pass"
+  },
+  "limits": {
+    "targetCpuSecondsPerProcess": 120,
+    "targetWallSeconds": 120,
+    "targetOwnedRssMiB": 768,
+    "nodeOldSpaceMiB": 256,
+    "testConcurrency": 1,
+    "browserCpuSecondsPerProcess": 120,
+    "browserWallSeconds": 150,
+    "browserOwnedRssMiB": 1536
+  },
+  "isolation": "fresh private HOME/TMP/SQLite and ephemeral loopback, exact listener PID checked before HTTP; external browser requests blocked; no8788",
+  "open": [
+    "independent review and CI",
+    "durable reconciliation across reload/signout",
+    "lost/unverified CAS response",
+    "recovery-key unlock new-master offer",
+    "native/hardware/PRF and package/user acceptance",
+    "full P05/E03"
+  ],
+  "originalTestBase": "fb14e34443da421032331d537605d5b6d5abfd2c",
+  "original61CaseTestPin": "e2b611ca7fb560c4bf204d70a59e3b80f85a3c8b",
+  "rebase": {
+    "inherited": "reviewed History PR243 and H4 PR244 from main",
+    "hardRevokeFunctionAndDocByteIdentical": true,
+    "other10ManifestFilesByteIdentical": true,
+    "vaultSessionOutsideHardEqualsMainExceptReceiptTypeImport": true,
+    "baselineHardScopeIdenticalBetweenOriginalAndCurrentMain": true,
+    "privateDetailedProof": "rebase-runtime-proof.json",
+    "focusedCoreCallerTests": 19,
+    "focusedPassed": 19,
+    "seconds": 29.038,
+    "peakOwnedRssKiB": 261072,
+    "freshCompiledBrowserPassed": 1,
+    "freshBrowserSeconds": 25.094,
+    "freshBrowserPeakOwnedRssKiB": 1473480,
+    "typecheck": "pass",
+    "moduleBoundaries": "pass",
+    "counts": "19-case repeat is a subset of prior61; browser is a repeat of the same journey. Do not add counts."
+  },
+  "postIndependentReviewRebase": {
+    "reviewPin": "725fdefeb026488d02fe37800f08c9bc946e6b40",
+    "previousBase": "ab7e8e6af3da8cd36bc63a5e023361c9b8bd007a",
+    "all11ManifestFilesByteIdentical": true,
+    "inherited": "mainPR245 cleanup only; both ROADMAP/security-boundary sections preserved",
+    "rootReportedIndependentVerdict": "SHIP:25/25(19repo+6new);8SSRrenderchecks green",
+    "privateProof": "post-review-rebase-byte-proof.json",
+    "newRuntimeTestsOrBuilds": "none needed for byte-identical pure rebase",
+    "finalCI": "pending"
+  }
+}

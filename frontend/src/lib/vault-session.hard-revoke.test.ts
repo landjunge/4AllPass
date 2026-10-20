@@ -1,5 +1,5 @@
 /**
- * hardRevokeDevice: VK rotation, omit target, CAS before DELETE.
+ * hardRevokeDevice: VK rotation, omit target, committed receipt before metadata.
  */
 import "./test-storage-shim.ts";
 
@@ -27,6 +27,7 @@ import { memoryDeviceUnlockStore } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import { setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
+import { loadPin } from "./revision-pin.ts";
 import {
   CommitConflict,
   consumeFailureNote,
@@ -190,17 +191,21 @@ async function seedLocalDeviceStore(vaultId: string, deviceKey: Uint8Array): Pro
   setDeviceUnlockStoreForTests(store);
 }
 
-test("hardRevokeDevice rotates VK, omits target, seals manifest, then DELETE", async () => {
+test("hardRevokeDevice rotates VK, omits target, seals manifest and returns before metadata", async () => {
   const { vault, recoveryKeyText } = buildUnlocked();
   const { calls, committedPayload } = mockApis();
 
-  const updated = await hardRevokeDevice(vault, {
+  const committed = await hardRevokeDevice(vault, {
     targetDeviceId: TARGET,
     masterPassword: PASSWORD,
     recoveryKeyText,
   });
 
-  assert.deepEqual(calls, ["commit", "delete"]);
+  const updated = committed.vault;
+  assert.equal(committed.selfRevoked, false);
+  assert.equal(committed.targetDeviceId, TARGET);
+  assert.ok(vault.vaultKey.every((byte) => byte === 0));
+  assert.deepEqual(calls, ["commit"]);
   assert.ok(committedPayload.current);
   assert.equal(committedPayload.current.vaultKeyVersion, 2);
   assert.equal(committedPayload.current.revision, 2);
@@ -217,6 +222,8 @@ test("hardRevokeDevice rotates VK, omits target, seals manifest, then DELETE", a
 
   assert.equal(updated.vaultKeyVersion, 2);
   assert.equal(updated.revision, 2);
+  assert.equal(loadPin(vault.vaultId)?.revision, 2);
+  assert.equal(loadPin(vault.vaultId)?.vaultKeyVersion, 2);
   assert.ok(!updated.envelopes.some((env) => env.type === "device" && env.deviceId === TARGET));
   assert.equal(updated.entries.length, 1);
   assert.equal(updated.entries[0]?.password, "secret");
@@ -245,6 +252,8 @@ test("hardRevokeDevice does not DELETE when CAS returns 409", async () => {
     (error: unknown) => error instanceof CommitConflict,
   );
   assert.deepEqual(calls, ["commit"]);
+  assert.ok(vault.vaultKey.some((byte) => byte !== 0));
+  assert.equal(vault.entries[0]?.password, "secret");
 });
 
 test("hardRevokeDevice includes local device envelope when uv_gated_local and entitled", async () => {
@@ -258,7 +267,7 @@ test("hardRevokeDevice includes local device envelope when uv_gated_local and en
     recoveryKeyText,
   });
 
-  assert.deepEqual(calls, ["commit", "delete"]);
+  assert.deepEqual(calls, ["commit"]);
   assert.ok(committedPayload.current);
   const deviceIds = committedPayload.current.envelopes
     .filter((env) => env.type === "device")
@@ -340,4 +349,23 @@ test("hardRevokeDevice does not rewrap when self envelope absent despite local D
     .filter((env) => env.type === "device")
     .map((env) => env.deviceId);
   assert.equal(deviceIds.length, 0);
+});
+
+
+test("committed self-revoke zeroizes both keys and plaintext before any metadata call", async () => {
+  const { vault, recoveryKeyText } = buildUnlocked({ includeSelfDevice: true });
+  const { calls } = mockApis();
+  api.revokeDevice = async () => { throw new ApiError(503, {}); };
+  const committed = await hardRevokeDevice(vault, {
+    targetDeviceId: SELF, masterPassword: PASSWORD, recoveryKeyText,
+  });
+  assert.equal(committed.selfRevoked, true);
+  assert.equal(committed.vault.revision, 2);
+  assert.equal(loadPin(vault.vaultId)?.revision, 2);
+  assert.equal(loadPin(vault.vaultId)?.vaultKeyVersion, 2);
+  assert.ok(vault.vaultKey.every((byte) => byte === 0));
+  assert.ok(committed.vault.vaultKey.every((byte) => byte === 0));
+  assert.ok(!vault.entries[0]?.password);
+  assert.ok(!committed.vault.entries[0]?.password);
+  assert.deepEqual(calls, ["commit"]);
 });

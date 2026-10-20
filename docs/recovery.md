@@ -152,6 +152,14 @@ key is supplied.
 
 Device hard-revoke (`hardRevokeDevice`) is a **different** path: it keeps the
 existing recovery kit and rewraps it under VK₂ because the kit is still trusted.
+The client returns its verified CAS receipt and adopts the committed vault or
+self-locks before metadata revocation/list refresh. A DE/EN partial-success
+notice offers only metadata reconciliation, never a second rotation as a retry.
+After DELETE is acknowledged, reconciliation repeats only GET. This pending
+intent is local memory, not persisted across sign-out/reload; old backups and
+previously copied keys remain usable for their old snapshots. A lost/unverified
+CAS response and recovery-key unlock followed by choosing a new master password
+remain separate open user flows.
 
 ---
 

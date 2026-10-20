@@ -259,6 +259,20 @@ The PWA implements both layers:
 | **Compromised recovery** `rotateCompromisedRecovery` | Verify master → VK+1 → **new** recovery key → re-encrypt → CAS | Stolen print unwraps VK₁ only; it must not wrap VK₂ |
 | **Trusted kit replace** `replaceTrustedRecoveryKey` | Old key must unwrap current recovery envelope → new print, **same** VK | Convenience; not for a stolen kit |
 
+A hard-revoke CAS acknowledged and verified by this client returns a local
+`CommittedHardRevoke` receipt before any metadata DELETE/GET. The previous VK
+is zeroized; self-revoke also wipes both unlocked entry sets and locks the
+returned vault. Local device-record removal is best-effort hygiene. The
+productive caller adopts the new vault (or self-locks) before metadata I/O and
+clears the rotation form. A metadata failure leaves a fixed DE/EN partial-success
+banner visible even while locked. Its check action retries only DELETE/GET;
+after an acknowledged DELETE, only GET is repeated. Another hard rotation is
+blocked while that reconciliation is pending. Account clear invalidates pending
+callbacks; a changed/locked vault context is never reopened by the receipt.
+This reconciliation intent is in-memory only and cleared on sign-out/reload;
+it is not a durable task or a guarantee for a lost/unverified CAS response.
+DELETE remains metadata-only and cannot erase earlier snapshots or copied keys.
+
 Foreign Device Keys are never available to the acting client. This device’s DK is
 only rewrapped when it is already recoverable from local material (no new
 WebAuthn `get` inside hard revoke). Otherwise the rotated snapshot has no

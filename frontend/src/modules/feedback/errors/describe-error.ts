@@ -8,6 +8,7 @@ export type FeedbackErrorCode =
   | "authentication_failed"
   | "conflict"
   | "device_unlock_unavailable"
+  | "hard_revoke_pending"
   | "empty_share"
   | "integrity_failed"
   | "invalid_request"
@@ -65,6 +66,10 @@ const ERROR_TEXT: Record<FeedbackErrorCode, Line> = {
   device_unlock_unavailable: {
     de: "Geräte-Entsperren ist hier nicht verfügbar. Bitte das Tresor-Passwort verwenden.",
     en: "Device unlock is not available here. Use the vault password instead.",
+  },
+  hard_revoke_pending: {
+    de: "Ein Geräteentzug läuft oder sein Abgleich ist noch offen. Bitte den Geräteentzug prüfen; den Tresor-Schlüssel nicht erneut wechseln.",
+    en: "A device revocation is running or still needs reconciliation. Check device revocation; do not rotate the vault key again.",
   },
   empty_share: {
     de: "Die Share-Datei enthält keine Einträge.",

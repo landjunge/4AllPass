@@ -70,6 +70,7 @@ import type {
   DeviceUnlockStore,
 } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
+import type { CommittedHardRevoke } from "./hard-revoke-result.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
   decodeEntryPlaintext,
@@ -1043,7 +1044,8 @@ export async function rotateCompromisedRecovery(
  * revoke does not re-attach this device.
  *
  * Order is mandatory: CAS commit under VK₂ succeeds before metadata DELETE.
- * On 409, DELETE is not called.
+ * The local receipt is returned before the caller reconciles metadata.
+ * On 409, no receipt is returned and no metadata request is made.
  */
 export async function hardRevokeDevice(
   vault: UnlockedVault,
@@ -1052,7 +1054,7 @@ export async function hardRevokeDevice(
     masterPassword: string;
     recoveryKeyText?: string;
   },
-): Promise<UnlockedVault> {
+): Promise<CommittedHardRevoke> {
   const { targetDeviceId, masterPassword, recoveryKeyText } = options;
   const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
   if (!masterEnvelope) throw new Error("snapshot has no master envelope");
@@ -1173,18 +1175,19 @@ export async function hardRevokeDevice(
     });
     transferredVaultKey = true;
 
-    await api.revokeDevice(vault.vaultId, targetDeviceId);
+    // This is already committed. Never let metadata I/O hide this receipt.
     zeroize(previousKey);
-
-    if (targetDeviceId === currentId) {
-      try {
-        await store().remove(vault.vaultId, currentId);
-      } catch {
-        // Best-effort local clear; server metadata is already revoked.
-      }
+    const selfRevoked = targetDeviceId === currentId;
+    if (selfRevoked) {
+      lock(vault);
       lock(updated);
+      // The new snapshot already omits self. Storage hygiene must not delay
+      // returning the committed receipt and adopting the locked caller state.
+      try {
+        void store().remove(vault.vaultId, currentId).catch(() => undefined);
+      } catch { /* Local hygiene cannot hide an acknowledged commit. */ }
     }
-    return updated;
+    return { vault: updated, targetDeviceId, selfRevoked };
   } finally {
     zeroize(masterKey, masterKey2);
     if (!transferredVaultKey) zeroize(vaultKey2);

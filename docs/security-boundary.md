@@ -183,6 +183,16 @@ integrity**, not “the server unlocked the vault” and not “PRF was checked.
 Rows posted without an attestation remain `client_asserted` / `serverVerified:
 false`.
 
+The COSE verifier enforces the same-origin ceremony policy in
+`webauthn-prf.md` §2.5. A domain containing `localhost` is never rewritten into
+another allowed origin. Only local/development/testing profiles derive literal
+HTTP(S) loopback aliases; other server environments use the exact configured
+origins and RP ID. Cross-origin iframe ceremonies and foreign `topOrigin` are
+rejected for registration and assertion, even with otherwise valid software
+signatures. Same-origin responses, including older clients omitting
+`crossOrigin` and clients reporting the matching `topOrigin`, remain supported.
+These checks are not PRF verification or an enrollment/ownership proof.
+
 `serverVerified` is `true` only when a COSE public key was stored after a
 verified registration. It is not a passkey-login proof.
 

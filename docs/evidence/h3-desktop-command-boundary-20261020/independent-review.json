@@ -1,0 +1,12 @@
+{
+  "verdict": "ship",
+  "reviewer": "Codex root separate from author plan_contract_matrix",
+  "source_pin": "f633a6fe1375d562bdfd464bec5e1166fca5bd24",
+  "native_checks": 33,
+  "actual_prompt_deny": true,
+  "test_build_only": true,
+  "source_digests_checked": 23,
+  "production_setup_called": false,
+  "scope": "Explicit own-command AppManifest; shared handler/permission names; main8/prompt1/unknown0; real candidate WKWebView dispatch and JS event boundary, no sidecar/startup/import/private profile operation.",
+  "limits": "No product package/normal startup, real browser-profile import, H2/CSP/H4 entitlements, biometric or OS isolation claim. Main remains privileged human app context."
+}

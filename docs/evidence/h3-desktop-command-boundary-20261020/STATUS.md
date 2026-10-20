@@ -1,6 +1,6 @@
 # E04 / H3 — own commands bound to their windows
 
-20 October2026. Source slice; independent review/integration pending. No package,
+20 October2026. Source slice; independent Codex review **ship**, integration pending. No package,
 normal fixed-port startup, hardware, PRF or full E04 acceptance is claimed.
 
 The old Tauri build omitted an own-command AppManifest, so plugin capabilities
@@ -24,8 +24,8 @@ also invokes access_decide and Rust receives the synthetic decision.
 | --- | --- |
 | Native candidate, main/prompt/untrusted contexts | 33/33 ACL/dispatch rows, actual prompt decision event, empty fixture; exit0 |
 | Private original-policy negative control, identical probe | 20/33 rows fail as expected; oracle false, explicit exit1 |
-| Frontend regression suite on initial H3 base | 202 pass |
-| Frontend typecheck on initial H3 base | pass |
+| Frontend regression suite on E05-main71c5be49 | 226 pass (initial H3 base:202; H1/R05:206; Pin-main:215) |
+| Frontend typecheck before/after all main rebases | pass |
 | Ordinary Rust feature build without native-acl-probe + synthetic unit tests | 34 pass, including real SQLite/decryption fixture and ACL contract |
 
 macOS15.7.4 x86_64, Xcode16.0, rustc/cargo1.98.1; existing locked
@@ -59,3 +59,33 @@ not send HTTP, open a real browser or perform a user-data import. Existing nativ
 SQLite/decryption fixtures and frontend startup/unlock/import tests supply the
 separate regression evidence. Normal installed-app/sidecar startup on8788 and
 full end-to-end human flows remain E04/AP03 acceptance work.
+
+## Independent acceptance and source identity
+
+Codex root, separate from author plan_contract_matrix, reviewed code pin
+`f633a6fe1375d562bdfd464bec5e1166fca5bd24`: **ship**. Root independently
+built and ran the actual native WKWebView probe:33/33 expected ACL outcomes,
+real prompt Deny→Rust, exit0, empty fixture/Incognito/no normal setup. Root
+checked all23 then-recorded Rust/ACL/config digests against the files.
+`independent-review.json` records the exact narrow acceptance and limits.
+
+H3 was rebased from45331a3 onto H1/R05-main a65ab122 after its native checks;
+every recorded native/runtime/ACL/prompt source digest remained identical.
+No native-source or permission changes were made after the independent review.
+
+Final branch base: E05-main `71c5be494ac40a04de9164dec3cd0ec1ca80c884`.
+`git diff --exit-code f633a6fe -- src-tauri scripts/test-native-command-acl.py
+frontend/public/access-prompt.html frontend/public/access-prompt.js` passes: the
+entire native/ACL/probe tree is byte-identical to the independently reviewed
+pin. Only evidence/ROADMAP integration changed after that review. The latest
+frontend suite226/226 and typecheck were rerun on this base.
+
+## Evidence secret-scan correction
+
+Gitleaks8.24.3 flagged five JSON source-digest assignments as generic API keys.
+Each complete value was verified against its named Git source file. The own PR
+history now retains all full digests in standard `SHA256SUMS`; JSON refers to
+that file. No scan rule or exclusion changed. A fresh scan of the entire own PR
+history (first-parent/no-merges) reports zero findings, exit0. Original refs and
+a source bundle are retained privately. The native/runtime/probe bytes remain
+identical to the independently reviewed pin.

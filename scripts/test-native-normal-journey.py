@@ -143,6 +143,12 @@ def main():
         tables={row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         counts={name:connection.execute('SELECT count(*) FROM "'+name+'"').fetchone()[0]
                 for name in ['users','vaults','vault_snapshots','encrypted_entries'] if name in tables}
+        # Public KDF parameters only. Never include the salt, keys or envelopes.
+        kdf_metadata=[]
+        for (raw,) in connection.execute("SELECT kdf_params FROM key_envelopes WHERE type='master'"):
+            params=json.loads(raw)
+            kdf_metadata.append({key:params[key] for key in
+                ['algorithm','version','memory','iterations','parallelism','hashLen']})
     synthetic_markers=[b'Native fixture alpha',b'Native fixture beta',b'Synthetic file fixture only 2026!',
                        b'Native journey fixture password 2026!']
     opaque=all(marker not in db.read_bytes() for marker in synthetic_markers)
@@ -151,10 +157,14 @@ def main():
               'normalStartup':True,'nativeResult':result,'privateDbCounts':counts,
               'noSyntheticPlaintextInDb':opaque,'portReleased':True,'python':identity,
               'occupiedPortRefusedBeforeSpawnAndData':occupied_refused,
+              'kdfMetadataWithoutSalt':kdf_metadata,
+              'kdfImplementation':'@noble/hashes2.3.0 JavaScript Argon2id; UI mobile_safe',
+              'wasmProbePurpose':'separate synthetic engine compatibility; not the KDF',
               'binarySha256':digest(binary),'sidecarSha256':digest(sidecar),
               'inputSources':inputs,'tauriOverlaySha256':digest(build/'tauri-overlay.json'),
               'runtimeSources':{str(p.relative_to(ROOT)):digest(p) for p in sorted([
                   ROOT/'src-tauri/Cargo.toml',ROOT/'src-tauri/Cargo.lock',ROOT/'src-tauri/build.rs',
+                  ROOT/'src-tauri/tauri.conf.json',ROOT/'scripts/test-native-normal-journey.py',
                   ROOT/'package-lock.json',*(ROOT/'src-tauri/src').rglob('*.rs'),
                   *(ROOT/'src-tauri/tests').glob('native-normal-journey.js'),
                   *(ROOT/'src-tauri/capabilities').glob('*.json')])},

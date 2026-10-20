@@ -133,6 +133,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         })
         .build()?;
     let handle = app.handle().clone();
+    let configured_csp = app.config().app.security.csp.clone();
     std::thread::spawn(move || {
         let deadline = Instant::now() + Duration::from_secs(150);
         let mut outcome = json!({"done":false,"stage":"driver-timeout"});
@@ -181,6 +182,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             "normalChildOwnershipCheckPassed":true,"childPid":child_pid,"listenerPid":listener_pid,
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,
+            "configuredCsp":configured_csp,
             "testOnlyRestriction":"refuse any preexisting port occupant; normal reap policy not exercised"});
         fs::write(
             root().join("native-result.json"),

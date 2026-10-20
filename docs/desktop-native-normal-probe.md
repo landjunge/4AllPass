@@ -14,6 +14,20 @@ silent bootstrap is a separate profile; this test does not switch it on in
 the desktop or inject account/app context. See [desktop](desktop.md) and
 [security boundary](security-boundary.md).
 
+The actual UI KDF is `@noble/hashes2.3.0` JavaScript Argon2id with
+`mobile_safe` (32768KiB, t3, p1, version19,32-byte output). Create and both
+master unlocks exercise this path. A separate tiny `WebAssembly.instantiate`
+module returning42 checks engine compatibility; it is **not** the KDF or a
+crypto change. The private receipt projects only nonsecret KDF parameters,
+never salt, keys or passwords.
+
+The probe inherits the current [H2 network policy](desktop-network-boundary.md)
+without a CSP override: fixed8788/native API target, no redirects or arbitrary
+loopback/WebSocket access. Successful normal startup and vault operations do
+not establish optional broker CORS success, authenticated Suite status or
+hardened-runtime signing. Existing installed adhoc artifacts are not upgraded
+by this test. Any later H4 signing comparison uses a separate private copy.
+
 ## Run privately
 
 Prepare a **new private** Python3.12 venv with `backend/requirements.txt` and

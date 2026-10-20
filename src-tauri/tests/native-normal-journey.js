@@ -28,6 +28,15 @@
     await wait("master-unlock",unlocked); check("master-unlock");
   };
   (async()=>{
+    // Separate engine compatibility only: the product KDF remains JS Argon2id.
+    result.stage="separate-wasm42-engine-check";
+    const wasm=await WebAssembly.instantiate(new Uint8Array([
+      0,97,115,109,1,0,0,0,1,5,1,96,0,1,127,3,2,1,0,
+      7,10,1,6,97,110,115,119,101,114,0,0,10,6,1,4,0,65,42,11,
+    ]));
+    if (wasm.instance.exports.answer()!==42) throw new Error("engine-check-failed");
+    result.engineCompatibility={wasmInstantiate42:true};
+    check("separate-wasm42-engine-check");
     await wait("normal-first-run",()=>byId("vault-password") || byId("auth-submit"));
     if (byId("auth-submit")) {
       // Current desktop startup intentionally requires account authentication.

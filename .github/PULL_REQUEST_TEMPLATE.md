@@ -20,7 +20,7 @@
 - [ ] Server still never sees master password, VK, DK, DWK, PRF output, or plaintext entries
 - [ ] Foreign vault/device ids stay **404**, not 403
 - [ ] FastAPI still mints **no** provider tokens
-- [ ] Agent access remains Allow/Deny + TTL (never first screen, never permanent raw secret)
+- [ ] Machine material handoffs remain denied; no raw-secret fallback or unproven production host (never first screen)
 
 ## Claims vs code
 

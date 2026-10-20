@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import plistlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -29,12 +30,20 @@ class NativeSignaturePolicy(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.folder = Path(self.temporary.name)
 
-    def signed_copy(self, name, *, runtime=True, entitlements=None):
+    def signed_copy(self, name, *, runtime=True, entitlements=None, identifier=None):
         target = self.folder / name
-        shutil.copyfile("/usr/bin/true", target)
+        architectures = subprocess.check_output(["lipo", "-archs", "/usr/bin/true"], text=True).split()
+        host = next((a for a in architectures if a.startswith(platform.machine())), architectures[0])
+        if len(architectures) > 1:
+            subprocess.run(["lipo", "/usr/bin/true", "-thin", host, "-output", str(target)],
+                           check=True, capture_output=True)
+        else:
+            shutil.copyfile("/usr/bin/true", target)
         command = ["codesign", "--force", "--sign", "-", "--timestamp=none"]
         if runtime:
             command += ["--options", "runtime"]
+        if identifier is not None:
+            command += ["--identifier", identifier]
         if entitlements is not None:
             profile = target.with_suffix(".plist")
             profile.write_bytes(plistlib.dumps(entitlements))
@@ -65,6 +74,13 @@ class NativeSignaturePolicy(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             inspect_runtime(executable)
 
+    def test_runtime_flags_in_identifier_or_path_cannot_spoof_code_directory(self):
+        for name, identifier in [("identifier-spoof", "flags=0x10000"), ("flags=0x10000", None)]:
+            with self.subTest(name=name):
+                executable = self.signed_copy(name, runtime=False, identifier=identifier)
+                with self.assertRaisesRegex(RuntimeError, "Hardened runtime missing"):
+                    inspect_runtime(executable)
+
     def test_bundle_checks_final_core_independently(self):
         app = self.folder / "fixture.app"
         macos = app / "Contents/MacOS"
@@ -86,6 +102,16 @@ class NativeSignaturePolicy(unittest.TestCase):
         shutil.copyfile(self.signed_copy("good-core"), macos / "fourallpass-core")
         seal()
         self.assertEqual(set(inspect_bundle_runtime(app)), {"parent", "bundled_core"})
+
+    def test_universal_binary_is_explicitly_outside_profile(self):
+        if len(subprocess.check_output(["lipo", "-archs", "/usr/bin/true"], text=True).split()) < 2:
+            self.skipTest("universal native fixture unavailable")
+        target = self.folder / "universal"
+        shutil.copyfile("/usr/bin/true", target)
+        subprocess.run(["codesign", "--force", "--sign", "-", "--options", "runtime",
+                        "--timestamp=none", str(target)], check=True, capture_output=True)
+        with self.assertRaisesRegex(RuntimeError, "Universal executables are outside"):
+            inspect_runtime(target)
 
 
 if __name__ == "__main__":

@@ -22,10 +22,19 @@ plaintext markers absent. Incognito WK store and empty browser fixture, no
 real profile/credential/grant/project read. Port8788 released and owned process
 group empty. Hashes are listed in adjacent SHA256SUMS, not private kit values.
 
-Root's six native signature-policy test methods pass. First attempt failed:
+Root's eight signature-policy test methods pass. First attempt failed:
 codesign `--entitlements -` emitted display text and the synthetic app needed
 a proper Info.plist seal. Corrected guard uses `:-`; fixture signs its bundle
 before verification. Initial failures are not counted as passing evidence.
+
+Independent review then found two real gate counterexamples on initial93aa5ec:
+a signed Identifier containing `flags=0x10000` spoofed the unanchored parser;
+a mixed universal binary had a runtime host slice but unhardened second slice.
+The revised gate reads only one actual CodeDirectory line and refuses fat
+executables explicitly. Repository negatives cover signed identifier/path
+spoofs and a real universal fixture, alongside the original signature cases.
+Current release architecture profiles are separate thin executables; no
+universal acceptance is claimed. Private adverse evidence remains unchanged.
 
 Private debug probe, not release app/DMG/notarization/install. Test-only strict
 occupied-port refusal does not exercise ordinary orphan reaping. DOM File

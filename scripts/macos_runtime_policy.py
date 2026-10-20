@@ -19,6 +19,13 @@ CS_EXCEPTIONS = (
 
 def inspect_runtime(executable):
     executable = Path(executable)
+    architectures = subprocess.check_output(
+        ["lipo", "-archs", str(executable)], text=True,
+    ).split()
+    # Current Intel/Apple-Silicon releases are separate thin artifacts. Display
+    # without --architecture does not establish every slice of a fat binary.
+    if len(architectures) != 1:
+        raise RuntimeError(f"Universal executables are outside this runtime profile: {executable.name}")
     subprocess.run(
         ["codesign", "--verify", "--strict", str(executable)],
         check=True, capture_output=True,
@@ -27,8 +34,12 @@ def inspect_runtime(executable):
         ["codesign", "-dvv", str(executable)],
         check=True, capture_output=True, text=True,
     )
-    flags = re.search(r"\bflags=0x([0-9a-fA-F]+)\b", displayed.stderr)
-    if not flags or not int(flags[1], 16) & 0x10000:
+    flags = re.findall(
+        r"^CodeDirectory v=\d+ size=\d+ flags=0x([0-9a-fA-F]+)(?:\(|\s|$)",
+        displayed.stderr, re.MULTILINE,
+    )
+    # Identifier and executable-path text are not CodeDirectory evidence.
+    if len(flags) != 1 or not int(flags[0], 16) & 0x10000:
         raise RuntimeError(f"Hardened runtime missing: {executable.name}")
     extracted = subprocess.run(
         # The colon requests a plist, rather than codesign's display format.
@@ -42,7 +53,8 @@ def inspect_runtime(executable):
         raise RuntimeError(f"Unapproved code-signing exception: {executable.name}")
     return {
         "sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
-        "code_directory_flags": int(flags[1], 16),
+        "architecture": architectures[0],
+        "code_directory_flags": int(flags[0], 16),
         "hardened_runtime": True,
         "three_cs_exceptions_enabled": False,
         "signature_valid": True,

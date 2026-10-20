@@ -23,10 +23,18 @@ CodeDirectory runtime bit and none of the three enabled exceptions. Valid
 adhoc signing alone is insufficient. The pre-bundle PyInstaller input cannot
 satisfy the final bundled-core check.
 
-Six `scripts/test_macos_runtime_policy.py` methods use real codesign on private
+Eight `scripts/test_macos_runtime_policy.py` methods use real codesign on private
 copies: runtime acceptance, missing signature, adhoc without runtime, each of
 the three exceptions, and good parent/unhardened core. Mac desktop CI runs
-these before bundling. Other systems skip the five native methods.
+these before bundling. Other systems skip the seven native methods. Program
+identifiers and paths cannot supply the runtime flag: only one actual
+CodeDirectory line is accepted.
+
+This gate supports the current separate thin Intel and Apple Silicon artifacts.
+Universal/fat executables are explicitly refused: a default codesign display
+only describes the host architecture and cannot establish all slices. It does
+not silently accept another unhardened architecture. Universal support needs
+its own future per-architecture policy and native candidate acceptance.
 
 The gate records hashes and effective flags. It does not prove Developer ID,
 notarization, provenance, updates or an installed version. Historical installed

@@ -45,7 +45,7 @@ H4-Signatur-, Browser-/PRF- oder Suite-Statusabnahme.
 
 E04/H4: [reduziertes macOS-Quellprofil](docs/desktop-runtime-boundary.md) und
 Paket-Gate für beide tatsächlichen Runtime-Signaturen. Private echte
-Normalreise mit exakt zwei Network-Keys für Parent/Core grün10.992s, sechs
+Normalreise mit exakt zwei Network-Keys für Parent/Core grün10.992s, acht
 native Signatur-Gegenprüfungen grün. Drei CS-Ausnahmen entfernt; neuer
 Release-/Installationsbeleg und weitere Mac-Profile bleiben gesondert offen.
 

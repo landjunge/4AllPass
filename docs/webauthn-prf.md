@@ -132,6 +132,31 @@ not mixed into HKDF.
 
 ---
 
+### 2.5 Deployment origin and embedding policy
+
+The server COSE verifier uses the configured `cors_origins` as exact ceremony
+origins. It never substitutes `localhost` inside a domain, path or userinfo.
+For `profile=local` or an explicitly development/testing environment, it also
+accepts the literal HTTP(S) `localhost` / `127.0.0.1` counterpart at the same
+port. Other server environments require exact configured origins and RP ID;
+configure both origins explicitly if both are intended. Custom app schemes are
+kept exactly as configured. Noncanonical spellings (including whitespace, control
+characters and noncanonical ports) never grant a derived alias. This is no
+related-origin enrollment protocol.
+
+4AllPass supports same-origin ceremonies. `crossOrigin` may be absent for older
+clients; when present it must be the Boolean `false`. If `topOrigin` is present,
+it must equal the ceremony origin. Cross-origin iframe ceremonies have no
+approved embedding profile and are rejected for both registration and assertion,
+including otherwise valid software COSE responses. The library still verifies
+the actual expected origin, challenge, RP hash, user verification and signature.
+
+This is the relying-party policy described by WebAuthn Level 3 sections 7.1,
+7.2 and 13.4.9, not a claim of complete Level 3 conformance or hardware possession:
+[W3C WebAuthn Level 3](https://www.w3.org/TR/2026/REC-webauthn-3-20260825/).
+It does not turn a storage session, asserted device ID or `fmt=none` attestation
+into an approved ThreadDesk person/device or a Vault-Key proof.
+
 ## 3. HKDF (mandatory — never use raw PRF output as a key)
 
 ```

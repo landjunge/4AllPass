@@ -13,8 +13,9 @@ Original: ThreadDesk `6b5b73b9de36`, Revision 3,
 107935 UTF-8-Bytes, SHA256
 `4b8ac493add0b76bd1a353d59d13152bbb5ec62bc956c1def9f1ccc1aa211ca8`.
 Vollständige Fach-API-Nachlese bestätigt. Codex koordiniert abgegrenzte native
-Teamaufgaben, Grok prüft konkrete Commits unabhängig in seiner bestehenden
-sichtbaren Sitzung. Codex nutzt drei klar abgegrenzte native Unteragenten;
+Teamaufgaben. Groks abgeschlossene E02- und IndexedDB-Abnahmen bleiben gültig;
+nach Daniels ausdrücklichem Kontingenthinweis arbeiten und prüfen getrennte
+native Codex-Agenten ohne weitere Grok-Aufträge. Codex nutzt drei klar abgegrenzte native Unteragenten;
 Grok hat AP01/AP02 authentisiert angenommen und zwei native Review-Unteragenten
 gestartet. Seine eigene unabhängige Prüfung gibt beide Quellumfänge frei;
 die zusätzlichen Teamresultate werden nachgereicht. Die bereits
@@ -27,7 +28,7 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E02.1–2 | ThreadDesk TD-01/TD-02 | Im Quellumfang abgeschlossen: PR #78/#79 auf main `88a5b4d`, Grok ship, native CI grün. Echte WKWebView-Abnahme JSON8/8 + SQLite8/8; tatsächlicher Zweitgeräte-LAN-Client fehlt. Paket/Installation gesondert, siehe ThreadDesk `docs/TEAMPLAN.md`. |
 | E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
 | E02.4 / AP-02 | Überlanger stockender Stream F4 | Im Quellumfang abgeschlossen: PR #230 als `262917f`, Grok ship mit eigenem 11/11-Lauf, PR- und Main-CI grün. SQLite156+1 Postgres-Skip und echter Postgres157. Keine neue Paket-/Installationsbehauptung. |
-| E03 | P01–P05, R02–R07/R12, AP-04 | Teilumfang abgeschlossen: IndexedDB-Commit/Abort PR #231 als `45331a3` integriert, Grok ship und Main-CI grün. H1/R03 in Prüfung: 15–256 Unicode-Codepoints, Offline-Blocklist, geheimnisfreie DE/EN-Fehler, Bestandslogin erhalten; unabhängiges Codex-Review mit 68 gezielten Tests. [H1-Belege](docs/evidence/h1-account-password-20261020/STATUS.md). R05, Pin-Aufruferkorrektur und übrige Krypto-/Sitzungs-/Geräte-/Recovery-/Identitätsnachweise bleiben getrennt offen. |
+| E03 | P01–P05, R02–R07/R12, AP-04 | IndexedDB PR #231 als `45331a3` integriert, Grok ship und main-CI grün. H1 PR #232 als `f547b3b` integriert, unabhängiges Codex ship und PR-CI grün; main-CI läuft. R05 PR #233: unabhängiges Codex ship einschließlich 21 zusätzlicher Nachprüfungen, auf H1-main neu aufgesetzt; frische CI folgt. AP04, Pin-/Krypto-, Recovery- und Betriebsabnahmen bleiben gesondert offen. |
 | E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | Offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
 | E05 | UI-01 | Offen: bestehende Icons, gemeinsame kompakte App-Leiste und frische bestätigte Statusadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
 | E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
@@ -35,7 +36,7 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E08 | TD-07 | Offen: berechtigte Inhaltssuche und separater optionaler Bridge-Dateiindex mit Messung. |
 | E09 | AP-08/TD-09, P10–P12, R01–R17/H1–H6/T01–T22 | Offen: einschlägige Nachweise, Nutzerwege, Paketherkunft, Installation/Update/Recovery und benannte Grenzen. |
 
-Pro Unterpunkt werden Commit, Dateien, konkrete Tests, Groks unabhängiges Urteil,
+Pro Unterpunkt werden Commit, Dateien, konkrete Tests und das unabhängige Prüfurteil,
 verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
 Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege
 werden nicht neuen Paketbytes zugerechnet; öffentliche RC2-Downloads bleiben
@@ -81,6 +82,21 @@ gezielte Ereignisproben 39/39. Beleg: [Persistenzprüfung](docs/evidence/indexed
 Groks unabhängiges Commitreview, Integration und Paketabnahme stehen aus. E03 ist nicht insgesamt
 abgeschlossen. Online-Cache bleibt best-effort; Eviction, Disk-/Stromausfall
 sind dadurch nicht ausgeschlossen.
+
+## E03 / R05 – genaue WebAuthn-Origin und Ceremony-Kontext (20.10.2026)
+
+Der Software-COSE-Gegenversuch am Ausgangsstand `262917f` belegt zwei getrennte
+Policyfehler: Teilstring-Ersetzung erzeugt eine nicht konfigurierte Domain;
+`crossOrigin`/`topOrigin` werden nicht gemäß dem unterstützten Kontext geprüft.
+Die Korrektur begrenzt Loopback-Aliase auf tatsächliche Hostnamen und lokale
+bzw. Entwicklungsprofile. Fremde eingebettete Kontexte werden abgewiesen,
+gleiche Origin mit gültiger Signatur bleibt unterstützt. Vertrag:
+`docs/webauthn-prf.md` §2.5. Ein unabhängiger nativer Codex-Agent prüfte den
+Quellstand mit `ship-with-nits`; die kleinen Nachbefunde sind korrigiert
+(49 gezielte Prüfungen grün). Daniel hat nach Ausschöpfen des Grok-Kontingents
+die Fortsetzung ohne Grok angewiesen. Frische CI und Integration folgen;
+kein Paket, keine Hardwareceremony und kein produktiver AP04-Gerätevertrag
+werden dadurch als abgeschlossen geführt.
 
 ## 0. Sofort (Grok Build, kein Warten)
 

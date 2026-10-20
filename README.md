@@ -1,5 +1,11 @@
 # 4AllPass
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">
+  <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">
+</picture>
+
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="brand/ap4/light/4allpass-light-256.png">

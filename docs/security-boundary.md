@@ -2,7 +2,7 @@
 
 **Status:** Implemented (this file). Highest authority for “what runs.”  
 **Companion to:** `crypto-protocol.md`, `vault-revision.md`, `webauthn-prf.md`, `threat-model.md`  
-**Date:** 2026-10-18 (source change; released packages remain separately pinned)
+**Date:** 2026-10-20 (AP-02 streamed-body repair; released packages remain separately pinned)
 **Index:** [README.md](README.md)
 
 This document describes what the **running backend + PWA / local app** actually enforce.
@@ -132,6 +132,17 @@ secret or a prefix of it.
 key, then creates a **new** local vault (new VK, new recovery key) and commits
 the decrypted entries under that VK. The share key is not the recovery key.
 A printed recovery key without the encrypted blobs cannot recreate the store.
+
+**Streamed request ceiling (AP-02, 20 October 2026).** The body middleware
+counts ASGI request bytes before JSON parsing. After the ceiling is exceeded it
+sends the fixed 413 response immediately, without awaiting another body frame
+or passing the request to the application. HTTP/1.0 and HTTP/1.1 rejections ask
+the server to close the unread connection; HTTP/2 receives no hop-by-hop
+Connection header. The real local h11 test leaves a chunked upload incomplete
+and observes 413 plus EOF within two seconds. Accepted multichunk requests and
+transport disconnects retain their existing behavior. Idle/rate limits and
+other deployed server/proxy profiles require their own operational checks.
+This source repair does not update historical release or installed package bytes.
 
 ---
 

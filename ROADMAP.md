@@ -36,6 +36,13 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E08 | TD-07 | Offen: berechtigte Inhaltssuche und separater optionaler Bridge-Dateiindex mit Messung. |
 | E09 | AP-08/TD-09, P10–P12, R01–R17/H1–H6/T01–T22 | Offen: einschlägige Nachweise, Nutzerwege, Paketherkunft, Installation/Update/Recovery und benannte Grenzen. |
 
+E04-Normalprofil: [privater echter WKWebView-Quelltest](docs/evidence/native-normal-journey-20261020/STATUS.md)
+auf H5-main `f638540` mit unveränderter H2-CSP/Transport und Startfix: Signup,
+Create, Kitdownload, Lock/Unlock und synthetischer Dateiimport grün; normale
+Rust-Tests42/42. Separater WASM42-Enginecheck, tatsächlicher KDF weiterhin
+JavaScript-Argon2id `mobile_safe`. Slice im Review; keine neue Installation,
+H4-Signatur-, Browser-/PRF- oder Suite-Statusabnahme.
+
 Pro Unterpunkt werden Commit, Dateien, konkrete Tests und das unabhängige Prüfurteil,
 verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
 Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege

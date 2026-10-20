@@ -1,10 +1,11 @@
 include!("src/command_contract.rs");
 
 fn main() {
-    if std::env::var_os("CARGO_FEATURE_NATIVE_ACL_PROBE").is_some()
+    if (std::env::var_os("CARGO_FEATURE_NATIVE_ACL_PROBE").is_some()
+        || std::env::var_os("CARGO_FEATURE_NATIVE_NORMAL_JOURNEY_PROBE").is_some())
         && std::env::var("PROFILE").as_deref() == Ok("release")
     {
-        panic!("native-acl-probe is excluded from release builds");
+        panic!("native probes are excluded from release builds");
     }
     tauri_build::try_build(
         tauri_build::Attributes::new()

@@ -99,6 +99,17 @@ fn reap_our_core_chain(listen_pid: u32) {
 /// Occupied :8788 before *this* spawn. Never treat the occupant as the UI origin.
 /// Leftover our-core (UI crashed) is killed. Foreign / live instance: clean exit,
 /// not a Tauri setup panic (that was SIGABRT with no window).
+#[cfg(feature = "native-normal-journey-probe")]
+pub fn prepare_loopback_core() -> Result<(), String> {
+    // Test-only safety restriction: never enter the normal orphan/dev reap path.
+    // The ordinary post-spawn child/descendant ownership check is unchanged.
+    if core_up() || loopback_listen_pid(CORE_PORT).is_some() {
+        return Err("native normal probe refuses every occupied port before spawn".into());
+    }
+    Ok(())
+}
+
+#[cfg(not(feature = "native-normal-journey-probe"))]
 pub fn prepare_loopback_core() -> Result<(), String> {
     if !core_up() {
         return Ok(());

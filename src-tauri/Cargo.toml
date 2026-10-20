@@ -18,11 +18,18 @@ custom-protocol = ["tauri/custom-protocol"]
 native-acl-probe = []
 # Extends the same isolated ACL binary with owned-loopback CSP checks.
 native-network-probe = ["native-acl-probe"]
+# Opt-in private fixture/driver; exercises the real normal startup path.
+native-normal-journey-probe = []
 
 [[bin]]
 name = "fourallpass-acl-probe"
 path = "src/bin/acl_probe.rs"
 required-features = ["native-acl-probe"]
+
+[[bin]]
+name = "fourallpass-normal-journey-probe"
+path = "src/bin/normal_journey_probe.rs"
+required-features = ["native-normal-journey-probe"]
 
 [build-dependencies]
 tauri-build = { version = "=2.6.3", features = [] }

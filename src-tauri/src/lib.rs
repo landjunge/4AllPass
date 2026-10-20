@@ -31,8 +31,27 @@ macro_rules! command_handler {
 }
 
 fn app_command_handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'static {
-    app_commands!(command_handler)
+    #[cfg(not(feature = "native-normal-journey-probe"))]
+    return app_commands!(command_handler);
+    #[cfg(feature = "native-normal-journey-probe")]
+    {
+        let handler: fn(tauri::ipc::Invoke) -> bool = app_commands!(command_handler);
+        move |invoke| {
+            if !native_normal_journey_probe::record_command(invoke.message.command()) {
+                invoke.resolver.reject("command excluded from private normal journey");
+                return true;
+            }
+            handler(invoke)
+        }
+    }
 }
+
+#[cfg(all(feature = "native-acl-probe", feature = "native-normal-journey-probe"))]
+compile_error!("native probes must be built separately");
+#[cfg(feature = "native-normal-journey-probe")]
+mod native_normal_journey_probe;
+#[cfg(feature = "native-normal-journey-probe")]
+pub use native_normal_journey_probe::run as run_native_normal_journey_probe;
 
 #[cfg(feature = "native-acl-probe")]
 mod native_acl_probe;
@@ -55,6 +74,8 @@ pub fn run() {
 #[cfg(not(feature = "native-acl-probe"))]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(feature = "native-normal-journey-probe")]
+    native_normal_journey_probe::assert_initialized();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
@@ -86,6 +107,8 @@ pub fn run() {
                 std::process::exit(1);
             }
             if !start_hidden() {
+                #[cfg(feature = "native-normal-journey-probe")]
+                native_normal_journey_probe::attach(app, child_pid)?;
                 show_main(&app.handle());
             }
             // UI stays on the bundled frontendDist. Never navigate the webview

@@ -24,7 +24,7 @@ jobs:
     outputs:
       pages_configured: ${{ steps.pages.outputs.configured }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Check Pages configuration
         id: pages
         env:
@@ -47,13 +47,20 @@ jobs:
             exit 1
           fi
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
         if: steps.pages.outputs.configured == 'true'
+      # Avoid upload-pages-artifact's nested mutable upload-artifact@v4.
+      - name: Archive Pages artifact
+        if: steps.pages.outputs.configured == 'true'
+        run: bash scripts/package-pages.sh site "$RUNNER_TEMP/artifact.tar"
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: steps.pages.outputs.configured == 'true'
         with:
-          path: site
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
 
   deploy:
     needs: build
@@ -65,5 +72,5 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
 

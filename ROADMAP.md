@@ -43,6 +43,12 @@ Rust-Tests42/42. Separater WASM42-Enginecheck, tatsächlicher KDF weiterhin
 JavaScript-Argon2id `mobile_safe`. Slice im Review; keine neue Installation,
 H4-Signatur-, Browser-/PRF- oder Suite-Statusabnahme.
 
+E04/H4: [reduziertes macOS-Quellprofil](docs/desktop-runtime-boundary.md) und
+Paket-Gate für beide tatsächlichen Runtime-Signaturen. Private echte
+Normalreise mit exakt zwei Network-Keys für Parent/Core grün10.992s, acht
+native Signatur-Gegenprüfungen grün. Drei CS-Ausnahmen entfernt; neuer
+Release-/Installationsbeleg und weitere Mac-Profile bleiben gesondert offen.
+
 Pro Unterpunkt werden Commit, Dateien, konkrete Tests und das unabhängige Prüfurteil,
 verbleibende Grenzen und nächster Schritt ergänzt. Übergabe, Implementierung,
 Prüfung, Aktivierung und Produktfreigabe bleiben getrennt. Historische RC3-Belege

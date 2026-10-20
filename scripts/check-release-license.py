@@ -17,6 +17,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from macos_runtime_policy import inspect_bundle_runtime
+
 from package_machine_deny import (
     isolated_sidecar_environment,
     machine_handoff_deny_probe,
@@ -119,6 +121,7 @@ def built_checks(license_bytes, config, *, sidecar_only=False):
                 capture_output=True,
             )
             result["macos_code_signature_valid"] = True
+            result["macos_runtime_policy"] = inspect_bundle_runtime(app)
             signature = subprocess.run(
                 ["codesign", "-dv", str(app)],
                 check=True,

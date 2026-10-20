@@ -128,7 +128,7 @@ pub fn parse_proc_stat_ppid(stat: &str) -> Option<u32> {
 
 #[cfg(unix)]
 fn lsof_listen_pid(port: u16) -> Option<u32> {
-    let spec = format!("-iTCP:127.0.0.1:{port}");
+    let spec = format!("-iTCP@127.0.0.1:{port}");
     for bin in ["lsof", "/usr/sbin/lsof"] {
         let Ok(out) = Command::new(bin)
             .args(["-nP", &spec, "-sTCP:LISTEN", "-t"])
@@ -228,6 +228,15 @@ fn windows_parent_and_command(pid: u32) -> Option<(u32, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn actual_loopback_listener_reports_our_pid() {
+        // Fresh ephemeral listener, never port8788 or a product service.
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert_eq!(loopback_listen_pid(port), Some(std::process::id()));
+    }
 
     #[test]
     fn lsof_dash_t_first_pid() {

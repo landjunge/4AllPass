@@ -28,9 +28,9 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E02.1–2 | ThreadDesk TD-01/TD-02 | Im Quellumfang abgeschlossen: PR #78/#79 auf main `88a5b4d`, Grok ship, native CI grün. Echte WKWebView-Abnahme JSON8/8 + SQLite8/8; tatsächlicher Zweitgeräte-LAN-Client fehlt. Paket/Installation gesondert, siehe ThreadDesk `docs/TEAMPLAN.md`. |
 | E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
 | E02.4 / AP-02 | Überlanger stockender Stream F4 | Im Quellumfang abgeschlossen: PR #230 als `262917f`, Grok ship mit eigenem 11/11-Lauf, PR- und Main-CI grün. SQLite156+1 Postgres-Skip und echter Postgres157. Keine neue Paket-/Installationsbehauptung. |
-| E03 | P01–P05, R02–R07/R12, AP-04 | IndexedDB PR #231 als `45331a3` integriert, Grok ship und main-CI grün. H1 PR #232 als `f547b3b` integriert, unabhängiges Codex ship und PR-CI grün. R05 PR #233 als `a65ab12` integriert, unabhängiges Codex ship einschließlich 21 zusätzlicher Nachprüfungen; main-CI läuft. Der enge Pin-Aufruferfix ist im vorliegenden Quellumfang umgesetzt und mit Frontend215/215 plus Typecheck geprüft: erst nach Inhaltsprüfung, Decode und Sortierung pinnen; Legacy-Revisionszahlen bleiben unauthentisiert ([Pin-Belege](docs/evidence/pin-content-20261020/STATUS.md)). Root-Review, PR/CI und Integration dieses Fixes stehen aus. AP04, übrige Krypto-, Recovery- und Betriebsabnahmen bleiben offen; E03 ist nicht insgesamt abgeschlossen. |
+| E03 | P01–P05, R02–R07/R12, AP-04 | IndexedDB PR #231 als `45331a3`, H1 PR #232 als `f547b3b` und R05 PR #233 als `a65ab12` integriert; unabhängige Abnahmen und PR-/main-Prüfungen grün. Pin-content PR #235 als `3715120` integriert, unabhängiges Codex ship mit 15/15 Zieltests, PR-Prüfungen grün; main-Prüfungen laufen. AP04, übrige Krypto-, Recovery- und Betriebsabnahmen bleiben gesondert offen. |
 | E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | Offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
-| E05 | UI-01 | Offen: bestehende Icons, gemeinsame kompakte App-Leiste und frische bestätigte Statusadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
+| E05 | UI-01 | Vorbereitender Pollstatus-Slice PR #234 unabhängig geprüft: 213 Frontend-Tests, 11 Zieltests und DE/EN-Komponenten 8/8; Rebase behält diese Produktbytes bei, frische CI folgt. Offen: bestehendes KiraBridge-Icon, gemeinsame kompakte App-Leiste und frische bestätigte Status-/Openadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
 | E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
 | E07 | AP-05–AP-07, P09/R13–R14 | Offen: begrenzte Grants, echte Host-/Vaulttransfer-/Ursprungsgrenze und eine freigegebene reale Anbieteroperation mit bestehendem TollGate-Adapter. |
 | E08 | TD-07 | Offen: berechtigte Inhaltssuche und separater optionaler Bridge-Dateiindex mit Messung. |
@@ -97,6 +97,20 @@ Quellstand mit `ship-with-nits`; die kleinen Nachbefunde sind korrigiert
 die Fortsetzung ohne Grok angewiesen. Frische CI und Integration folgen;
 kein Paket, keine Hardwareceremony und kein produktiver AP04-Gerätevertrag
 werden dadurch als abgeschlossen geführt.
+
+## E05 / UI-01 – Voraussetzung: ehrlicher vorhandener Pollstatus (20.10.2026)
+
+Der bisherige optionale Brokerclient meldete live vor der ersten Antwort,
+behandelte einen HTTP 500 mit passendem Body als Nachricht und lieferte bereits
+laufend gelesene Antworten auch nach Trennen/Neuverbinden. Dieser getrennte
+kleine Schnitt korrigiert diese Zustandsübergänge; der unabhängige Codex-Review
+fand zusätzlich einen synchronen Disconnect im Statuscallback, ebenfalls
+korrigiert und nachgeprüft. Gegenprobe alt: fünf Fehler, vier bestanden; neue gezielte Prüfung 11/11,
+bestehende Komponenten in frischem Chrome DE/EN 8/8 ohne Seitenfehler.
+Das ist keine fertige App-Leiste. Assetzuordnung KiraBridge, enger Open/Fokus-
+Adapter und authentisierter frischer Peer-/User-/Vaultstatus bleiben offen;
+dieser Pollstatus darf Ring/Unlockpuls nicht begründen. Beleg:
+`docs/evidence/broker-connection-state-20261020/STATUS.md`.
 
 ## 0. Sofort (Grok Build, kein Warten)
 

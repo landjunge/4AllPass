@@ -553,6 +553,21 @@ remains unimplemented; do not give an agent an unrestricted browser with secrets
 
 See [the cause and acceptance record](PROTECTED-ACCESS-20261018.md).
 
+### Optional broker client status — 20 October 2026
+
+The existing optional frontend poll helper starts `connecting`, and reports
+`live` only after a successful empty 204 or a 200 response with the existing
+request envelope. Failed HTTP/malformed responses report an error; a successful
+retry clears it. Disconnect/reconnect suppresses old in-flight deliveries,
+including synchronous disconnect by a status subscriber. The existing component
+uses DE/EN connection guidance rather than displaying raw transport exceptions.
+
+This is transport availability from the last accepted poll, not fresh peer,
+model, person, device or vault-unlock authentication. A later stalled request
+has no freshness lease here; this state cannot authorize a suite connection
+ring or unlock pulse. It grants no access and does not replace the currently
+blocked machine-access surface with a connection recipe.
+
 ### Package release guard — source preparation, 19 October 2026
 
 The existing `scripts/check-release-license.py --sidecar` startup check now also

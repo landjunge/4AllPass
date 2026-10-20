@@ -68,7 +68,7 @@ export function connectLocalBroker(url: string, token: string): void {
     abort.abort();
   };
   session = { url: base, token: trimmed };
-  status = "live";
+  status = "connecting";
   lastError = "";
   emit();
 
@@ -87,11 +87,25 @@ export function connectLocalBroker(url: string, token: string): void {
           emit();
           return;
         }
-        if (res.status === 204) continue;
-        const msg = (await res.json()) as AccessWireRequest;
-        if (msg && msg.v === 1 && msg.method === "POST /v1/access/request") {
-          incoming?.(msg);
+        if (res.status === 204) {
+          status = "live";
+          lastError = "";
+          emit();
+          continue;
         }
+        if (res.status !== 200) {
+          throw new Error(`broker poll failed (HTTP ${res.status})`);
+        }
+        const msg = (await res.json()) as AccessWireRequest;
+        if (cancelled) return;
+        if (!msg || msg.v !== 1 || msg.method !== "POST /v1/access/request") {
+          throw new Error("invalid broker poll response");
+        }
+        status = "live";
+        lastError = "";
+        emit();
+        if (cancelled) return;
+        incoming?.(msg);
       } catch (error) {
         if (cancelled) return;
         status = "error";

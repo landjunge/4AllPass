@@ -4,6 +4,8 @@ Tauri2.11.5 / tauri-build2.6.3. This is a window permission boundary, not an
 unlocked-user proof, OS sandbox, hardware proof or new package approval.
 CSP (H2), macOS entitlements (H4), production host isolation and prompt request-ID
 binding remain separate work. The ordinary sidecar/tray/startup code is unchanged.
+The separate [H2 local network slice](desktop-network-boundary.md) extends this
+same isolated binary only when explicitly selected; plain H3 stays socket-free.
 
 `src-tauri/src/command_contract.rs` supplies both the build AppManifest command
 names and the actual runtime handler registration. All nine own commands are

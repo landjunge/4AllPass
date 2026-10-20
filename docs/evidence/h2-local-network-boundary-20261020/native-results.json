@@ -1,0 +1,209 @@
+{
+  "wildcard": {
+    "proof": {
+      "mode": "wildcard",
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'",
+      "nativeExitCode": 0,
+      "nativeOracle": true,
+      "ownedEphemeralPort": 54974,
+      "httpCount": 3,
+      "wsCount": 3,
+      "aclRowsPassed": 33,
+      "normalSetupCalled": false,
+      "browserFixtureEmpty": true,
+      "production8788Used": false,
+      "dependenciesAdded": false,
+      "binarySha256": "50edd9980ddbf5b76920d6153042c202cb99b3f7b00a504eca43a86865b022dc"
+    },
+    "decisionEvent": "{\"requestId\":\"h3-synthetic\",\"allow\":false}",
+    "persistentWebviewStore": false,
+    "windows": {
+      "access-prompt": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "body": "{\"synthetic\":\"h2-owned-listener\"}",
+            "ok": true
+          },
+          "violations": [],
+          "ws": {
+            "ok": true
+          }
+        }
+      },
+      "h3-untrusted": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "body": "{\"synthetic\":\"h2-owned-listener\"}",
+            "ok": true
+          },
+          "violations": [],
+          "ws": {
+            "ok": true
+          }
+        }
+      },
+      "main": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "body": "{\"synthetic\":\"h2-owned-listener\"}",
+            "ok": true
+          },
+          "violations": [],
+          "ws": {
+            "ok": true
+          }
+        }
+      }
+    },
+    "listenerRequests": [
+      {
+        "path": "/h2-synthetic?window=main",
+        "kind": "http",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      },
+      {
+        "path": "/h2-synthetic?window=main",
+        "kind": "ws",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      },
+      {
+        "path": "/h2-synthetic?window=h3-untrusted",
+        "kind": "http",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      },
+      {
+        "path": "/h2-synthetic?window=h3-untrusted",
+        "kind": "ws",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      },
+      {
+        "path": "/h2-synthetic?window=access-prompt",
+        "kind": "http",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      },
+      {
+        "path": "/h2-synthetic?window=access-prompt",
+        "kind": "ws",
+        "authorizationPresent": false,
+        "cookiePresent": false
+      }
+    ]
+  },
+  "tight": {
+    "proof": {
+      "mode": "tight",
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:8788; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'",
+      "nativeExitCode": 0,
+      "nativeOracle": true,
+      "ownedEphemeralPort": 54974,
+      "httpCount": 0,
+      "wsCount": 0,
+      "aclRowsPassed": 33,
+      "normalSetupCalled": false,
+      "browserFixtureEmpty": true,
+      "production8788Used": false,
+      "dependenciesAdded": false,
+      "binarySha256": "d6f51b8d9f10b6172f9106e77e2898e842b5c5b0fb81105f4c317f8a80b150e7"
+    },
+    "decisionEvent": "{\"requestId\":\"h3-synthetic\",\"allow\":false}",
+    "persistentWebviewStore": false,
+    "windows": {
+      "access-prompt": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "error": "TypeError: Load failed",
+            "ok": false
+          },
+          "violations": [
+            {
+              "blockedURI": "http://127.0.0.1:54974/h2-synthetic?window=access-prompt",
+              "directive": "connect-src"
+            },
+            {
+              "blockedURI": "ws://127.0.0.1:54974/h2-synthetic?window=access-prompt",
+              "directive": "connect-src"
+            }
+          ],
+          "ws": {
+            "error": "SecurityError: The operation is insecure.",
+            "ok": false
+          }
+        }
+      },
+      "h3-untrusted": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "error": "TypeError: Load failed",
+            "ok": false
+          },
+          "violations": [
+            {
+              "blockedURI": "http://127.0.0.1:54974/h2-synthetic?window=h3-untrusted",
+              "directive": "connect-src"
+            },
+            {
+              "blockedURI": "ws://127.0.0.1:54974/h2-synthetic?window=h3-untrusted",
+              "directive": "connect-src"
+            }
+          ],
+          "ws": {
+            "error": "SecurityError: The operation is insecure.",
+            "ok": false
+          }
+        }
+      },
+      "main": {
+        "origin": "tauri://localhost",
+        "passed": true,
+        "aclRows": 11,
+        "aclRowsPassed": 11,
+        "network": {
+          "http": {
+            "error": "TypeError: Load failed",
+            "ok": false
+          },
+          "violations": [
+            {
+              "blockedURI": "http://127.0.0.1:54974/h2-synthetic?window=main",
+              "directive": "connect-src"
+            },
+            {
+              "blockedURI": "ws://127.0.0.1:54974/h2-synthetic?window=main",
+              "directive": "connect-src"
+            }
+          ],
+          "ws": {
+            "error": "SecurityError: The operation is insecure.",
+            "ok": false
+          }
+        }
+      }
+    },
+    "listenerRequests": []
+  }
+}

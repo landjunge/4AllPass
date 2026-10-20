@@ -29,7 +29,7 @@ keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückge
 | E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
 | E02.4 / AP-02 | Überlanger stockender Stream F4 | Im Quellumfang abgeschlossen: PR #230 als `262917f`, Grok ship mit eigenem 11/11-Lauf, PR- und Main-CI grün. SQLite156+1 Postgres-Skip und echter Postgres157. Keine neue Paket-/Installationsbehauptung. |
 | E03 | P01–P05, R02–R07/R12, AP-04 | IndexedDB PR #231 als `45331a3`, H1 PR #232 als `f547b3b` und R05 PR #233 als `a65ab12` integriert; unabhängige Abnahmen und PR-/main-Prüfungen grün. Pin-content PR #235 als `3715120` integriert, unabhängiges Codex ship mit 15/15 Zieltests, PR-Prüfungen grün; main-Prüfungen laufen. AP04, übrige Krypto-, Recovery- und Betriebsabnahmen bleiben gesondert offen. |
-| E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | H3 PR #236 als `49256b3` integriert: getrennt Autor/Root echte WKWebView-ACL 33/33 + Prompt-Deny, Normalfeature Rust 34/34, PR-Prüfungen grün, main-Prüfungen laufen. H2/H4, normale native Tresor-/Importwege, neue Pakete und Hardware-/Fremdmac-/Signierung bleiben offen. |
+| E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | H3 PR #236 als `49256b3` integriert, unabhängiger Codex-Nativlauf33/33 und PR-Prüfungen grün. H2 lokaler Netzwerk-Slice: echte WKWebView-HTTP/WS-Gegenprobe mit weiter33/33 ACL, feste normalisierte API-Ziele und Redirectstopp; unabhängiger Review/CI/Integration folgen. H4/Entitlements, normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete offen; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
 | E05 | UI-01 | Vorbereitender Pollstatus PR #234 als `71c5be4` integriert, unabhängiges Codex ship und PR-/main-Prüfungen grün. Die gemeinsame Leiste benötigt weiterhin das freigegebene KiraBridge-Icon und frische authentisierte Status-/Openadapter; Pollstatus begründet keinen Ring/Unlockpuls. |
 | E06 | TD-03–TD-06/TD-08 mit AP-04 | Offen: bestätigte Personen/Geräte, Projektrollen, atomarer Transfer, Sync und gebundene Agentenaufträge. |
 | E07 | AP-05–AP-07, P09/R13–R14 | Offen: begrenzte Grants, echte Host-/Vaulttransfer-/Ursprungsgrenze und eine freigegebene reale Anbieteroperation mit bestehendem TollGate-Adapter. |
@@ -271,3 +271,21 @@ Vision (nicht implementieren): `docs/architecture/future-architecture.md`.
 ---
 
 *Zuletzt aktualisiert: 2026-08-30. Lebende Datei – Status hier pflegen, keine Parallel-Pläne.*
+
+## E04 / H2 – lokales gebündeltes Netzwerkprofil (20.10.2026)
+
+Die bisherige CSP ließ beliebige HTTP-/WS-Ports auf127.0.0.1 auch aus dem
+Freigabefenster zu. Die echte isolierte WKWebView-Gegenprobe erreicht den
+eigenen Zufallslistener mit der alten Richtlinie je dreimal per HTTP/WS; das
+enge lokale Profil erzeugt echte connect-src-Verletzungen und null Zugriffe.
+Beide Varianten behalten alle33 echten H3-ACL-Ausgänge und Deny→Rust bei.
+Der normale H3-Aufruf bleibt ohne Netzprobe.
+
+Der native Sidecartransport prüft jetzt das tatsächlich geparste feste
+Loopback-/Coreport-/API-Ziel nach Dotsegmentnormalisierung und folgt keinen
+Redirects. Echte synthetische Zweilistenertests trennen Pfad/Query, erhalten
+reguläre Credentialparameter und200/204/401, und verhindern3xx-Folgezugriffe.
+Keine neue HTTPS-/HIBP-Freigabe oder allgemeine Remoteplattform. Der lokale
+Profilumfang und die weiterhin offenen Remote-/Broker-CORS-/Paket-/H4-Grenzen
+stehen in `docs/desktop-network-boundary.md`; unabhängige Abnahme und Integration
+sind eigene Schritte.

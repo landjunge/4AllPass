@@ -1,0 +1,43 @@
+{
+  "base": "49256b3bf5a4a5d21a34bba985a43960b372a696",
+  "nativeFramework": "actual WKWebView",
+  "nativeModes": [
+    "original-wildcard-overlay",
+    "actual-product-tight"
+  ],
+  "aclRowsPassedEach": 33,
+  "actualPromptDecisionEach": true,
+  "wildcardHttpRequests": 3,
+  "wildcardWebsocketOpens": 3,
+  "tightHttpRequests": 0,
+  "tightWebsocketRequests": 0,
+  "tightCspViolations": 6,
+  "nativeExitCodeEach": 0,
+  "ordinaryFeatureRustTestsPassed": 40,
+  "newTransportTestsPassed": 6,
+  "originalBodyRedControl": {
+    "passed": 2,
+    "failed": 4,
+    "exitCode": 101
+  },
+  "frontendTestsPassed": 226,
+  "frontendTypecheckExitCode": 0,
+  "plainH3RowsPassed": 33,
+  "plainH3NetworkExtensionPresent": false,
+  "dependenciesAdded": false,
+  "permissionsAdded": false,
+  "entitlementsChanged": false,
+  "normal8788StartupExecuted": false,
+  "packageAcceptance": false,
+  "independentReview": "pending",
+  "sourceSha256File": "SHA256SUMS",
+  "rebasedOnto": "2bfe0c677ceda1352db98201dc568067600dccfe",
+  "testedSourcePin": "9caf825e53d1e1eb28f540a0899b996ef9d7d85f",
+  "nativeTreeByteIdenticalAfterRebase": true,
+  "secretScan": {
+    "version": "8.24.3",
+    "scope": "entire own PR history",
+    "findings": 0,
+    "exitCode": 0
+  }
+}

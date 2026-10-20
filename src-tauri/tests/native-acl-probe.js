@@ -38,7 +38,11 @@
       // Exercise the actual shipped access-prompt.js click handler, not a stub.
       document.getElementById("deny").click();
     }
-    state.passed = state.rows.every(row => row.passed);
+    // Optional extension exists only in the separately selected network probe.
+    // Plain H3 never creates network sockets.
+    const extraPassed = typeof window.__NETWORK_PROBE__ === "function"
+      ? await window.__NETWORK_PROBE__(state) : true;
+    state.passed = state.rows.every(row => row.passed) && extraPassed;
     state.done = true;
   })().catch(error => { state.error = String(error); state.done = true; });
 })();

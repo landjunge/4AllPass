@@ -134,6 +134,17 @@ for the matrix, isolated native checks and remaining H2/H4/package limits.
 The sidecar is the local API only. Local
 Host headers must be loopback (`127.0.0.1` / `localhost` / `::1`).
 
+The bundled desktop's production `connect-src` permits only its own origin,
+explicit Tauri IPC schemes and HTTP127.0.0.1:8788; arbitrary loopback ports and
+WebSockets are denied. Its main-only native API command separately checks the
+parsed, normalized fixed-host/core-port API target and refuses redirects.
+Query data and normal encoded credential/endpoint parameters remain supported;
+raw/encoded path escapes and fragments are rejected before a connection.
+Generic native remote/selfhost storage and HIBP are not accepted by this local
+profile; existing HTTPS blocking is not removed. Browser PWA, optional broker
+CORS, normal startup, package and H4 entitlements require separate acceptance.
+See [the exact H2 profile and isolated checks](desktop-network-boundary.md).
+
 Local first-run in a **normal browser** skips email and account password.
 `POST /api/v1/auth/local` mints a storage session for a singleton row
 (`local@127.0.0.1`, no account password hash). That is **authentication for the

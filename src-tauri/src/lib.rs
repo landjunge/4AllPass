@@ -12,6 +12,7 @@ mod process_inspect;
 mod prompts;
 mod secret_fs;
 mod sidecar_http;
+mod sidecar_target;
 mod sleep;
 mod tray;
 
@@ -35,6 +36,10 @@ fn app_command_handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 
 
 #[cfg(feature = "native-acl-probe")]
 mod native_acl_probe;
+#[cfg(feature = "native-network-probe")]
+mod native_network_probe;
+#[cfg(test)]
+mod test_http_fixture;
 #[cfg(feature = "native-acl-probe")]
 pub use native_acl_probe::run as run_native_acl_probe;
 

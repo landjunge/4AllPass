@@ -16,6 +16,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 custom-protocol = ["tauri/custom-protocol"]
 # Opt-in separate binary: never enters normal sidecar/tray setup.
 native-acl-probe = []
+# Extends the same isolated ACL binary with owned-loopback CSP checks.
+native-network-probe = ["native-acl-probe"]
 
 [[bin]]
 name = "fourallpass-acl-probe"

@@ -57,6 +57,8 @@ pub fn run() {
                 let script = include_str!("../tests/native-acl-probe.js")
                     .replace("__COMMAND_NAMES__", &commands)
                     .replace("__WINDOW_LABEL__", &serde_json::to_string(label)?);
+                #[cfg(feature = "native-network-probe")]
+                let script = crate::native_network_probe::extend(script);
                 WebviewWindowBuilder::new(app, label,
                     WebviewUrl::App("access-prompt.html?id=h3-synthetic&application=synthetic&provider=fixture&scope=none&ttl=1".into()))
                     .title(format!("4AllPass H3 probe — {label}"))

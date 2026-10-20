@@ -14,18 +14,19 @@ Original: ThreadDesk `6b5b73b9de36`, Revision 3,
 `4b8ac493add0b76bd1a353d59d13152bbb5ec62bc956c1def9f1ccc1aa211ca8`.
 Vollständige Fach-API-Nachlese bestätigt. Codex koordiniert abgegrenzte native
 Teamaufgaben, Grok prüft konkrete Commits unabhängig in seiner bestehenden
-sichtbaren Sitzung. Groks Teamfähigkeit und neue Abnahmen sind noch offen;
-sein RC11-Review wartete bei `desktop_locked` ohne Eingabe und wurde danach
-im zugeordneten bestehenden Fenster authentifiziert empfangsquittiert. Die bereits
+sichtbaren Sitzung. Codex nutzt drei klar abgegrenzte native Unteragenten;
+Grok hat AP01/AP02 authentisiert angenommen und zwei native Review-Unteragenten
+gestartet. Seine eigene unabhängige Prüfung gibt beide Quellumfänge frei;
+die zusätzlichen Teamresultate werden nachgereicht. Die bereits
 übernommene Bridge-Nachricht `7a7a268e-09c2-4a0f-a333-031cd7fc094c` erzeugt
 keinen zweiten Gesamtauftrag. Handy-/öffentlicher Tunnelzugang bleibt zurückgestellt.
 
 | Etappe | Zugeordneter Umfang | Aktueller Stand / nächster Nachweis |
 | --- | --- | --- |
-| E01 | P00/R01, RC9/RC10 und ST-01–ST-05 | Hauptstände und vorhandene Belege erfasst; isolierte Umgebungen werden aufgebaut. Bridge-Codex-Kandidat `2062055` geprüft, noch nicht aktiviert/Grok-abgenommen. Echter Kira→Codex→Kira-Test offen. |
+| E01 | P00/R01, RC9/RC10 und ST-01–ST-05 | Aktuelle Hauptstände, vorhandene Belege und isolierte Umgebungen erfasst. Bridge-Reparatur abgeschlossen: Code `956b0f8`, Architektur `41f4b89`, installierter Quellpin `cfad2a30…ceb7`. Vorhandener echter Kira→Codex→Kira-Test einschließlich getrenntem Einfügen/Return und beider authentisierten ACKs übernommen; Originaltest nicht wiederholt. Beleg: KiraBridge `docs/evidence/receiver-resilience-mac-20261020.json`. |
 | E02.1–2 | ThreadDesk TD-01/TD-02 | Getrennte Reparaturen für Backup/Restore und lokale Web-Schreibgrenze in Arbeit; geführt in ThreadDesk `docs/TEAMPLAN.md`. |
-| E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Drei aktive Anweisungsdateien werden an bestehendes Machine-DENY angeglichen. Aktuelle Basis `905e6b5`. PR #217 ist offen, seine drei Lockfile-Zielversionen sind bereits auf main; kein blinder Altmerge. PR #216 bleibt Draft gegen dessen alten Branch, keine pauschale Designübernahme. Unabhängiges Review offen. |
-| E02.4 / AP-02 | Überlanger stockender Stream F4 | Offen: sofortige begrenzte 413 ohne nächsten Bodychunk, reguläre Streams/Disconnects erhalten. |
+| E02.3 / AP-01 | Aktive Anweisungen und offene Arbeit | Abgeschlossen im Dokumentumfang: PR #229 (`ab1aba3`) als `7a9416d` auf main integriert, CI grün. Grok `ship`, Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`. Aktive Anweisungen entsprechen Machine-DENY; #217-Zielversionen bereits auf main, #216 nicht pauschal übernommen. |
+| E02.4 / AP-02 | Überlanger stockender Stream F4 | Quellreparatur `3951697` unabhängig von Grok mit `ship` freigegeben, eigener isolierter Lauf 11/11. Auf AP01-main ohne Laufzeitänderung neu aufgesetzt; PR #230 wird mit frischer CI integriert. Noch kein neues Paket und keine Aktivierung. |
 | E03 | P01–P05, R02–R07/R12, AP-04 | Offen: Krypto, Snapshot, Konto/Sitzung, Geräte, Recovery, Identitätsvertrag; vorhandene Tests eng wiederverwenden. |
 | E04 | P06–P08/P11–P12, R08–R11/R15–R17, AP-03 | Offen: normale Browser-/Desktopwege und tatsächlich geprüfte neue Pakete; Hardware-/Fremdmac-/Signierungsnachweise getrennt. |
 | E05 | UI-01 | Offen: bestehende Icons, gemeinsame kompakte App-Leiste und frische bestätigte Statusadapter; nur bestätigter 4AllPass-Unlock pulsiert sehr dezent. |
@@ -52,10 +53,14 @@ Body-Limits folgt sofort HTTP 413, ohne auf den restlichen Upload zu warten.
 Der isolierte echte HTTP/1-Test lässt den Upload absichtlich unvollständig;
 Antwort und Verbindungsende treffen innerhalb von zwei Sekunden ein.
 
-Gezielte Body-Tests und der vollständige Backend-Lauf sind grün: 156 bestanden,
-ein ausdrücklich Postgres-spezifischer Migrationstest mangels isolierter
-Postgres-Datenbank übersprungen. Grok-Prüfung, CI und Aktivierung dieses
-Kandidaten stehen noch aus. Installierte Pakete sind dadurch nicht geändert.
+Gezielte Body-Tests und Backend-CI sind grün: SQLite 156 bestanden und ein
+Postgres-spezifischer Migrationstest übersprungen; der getrennte echte
+Postgres-CI-Lauf besteht mit 157 Tests (Run `39408953555`). Grok prüfte den
+Quellpin `3951697` unabhängig: `ship`, eigener isolierter Body-Lauf 11/11 in
+0,37 Sekunden; authentisiertes Ergebnis `9784c6e6-3258-42ad-8295-a30ea114ee27`.
+Die Laufzeitdateien bleiben beim Neuaufsetzen auf AP01-main bytegleich.
+Neue CI für den integrierbaren PR-Stand folgt. Installierte Pakete sind
+dadurch nicht geändert; ihre Abnahme gehört weiterhin zu AP-03/E04.
 
 ## 0. Sofort (Grok Build, kein Warten)
 

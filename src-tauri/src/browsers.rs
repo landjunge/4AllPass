@@ -412,7 +412,9 @@ fn parse_firefox_ini(text: &str) -> Vec<BrowserProfile> {
 pub fn default_home() -> PathBuf {
     #[cfg(feature = "native-acl-probe")]
     return crate::native_acl_probe::fixture_home();
-    #[cfg(not(feature = "native-acl-probe"))]
+    #[cfg(feature = "native-normal-journey-probe")]
+    return crate::native_normal_journey_probe::fixture_home();
+    #[cfg(not(any(feature = "native-acl-probe", feature = "native-normal-journey-probe")))]
     std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
@@ -422,7 +424,9 @@ pub fn default_home() -> PathBuf {
 pub fn default_application_dirs() -> Vec<PathBuf> {
     #[cfg(feature = "native-acl-probe")]
     return vec![crate::native_acl_probe::fixture_home().join("Applications")];
-    #[cfg(not(feature = "native-acl-probe"))]
+    #[cfg(feature = "native-normal-journey-probe")]
+    return vec![crate::native_normal_journey_probe::fixture_home().join("Applications")];
+    #[cfg(not(any(feature = "native-acl-probe", feature = "native-normal-journey-probe")))]
     {
         let mut dirs = Vec::new();
         if cfg!(target_os = "macos") {

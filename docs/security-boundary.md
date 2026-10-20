@@ -337,6 +337,16 @@ pins the server integers; after the first verified manifest that path is closed.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
+  Snapshot-cache and device-unlock-record loads, saves and removals succeed
+  only after the IndexedDB transaction completes. A successful request alone
+  is not a commit: transaction aborts and errors reject the store operation.
+  Online unlock still treats snapshot-cache saves as best-effort; a cache
+  failure does not invalidate an already verified online snapshot. Failed
+  offline loads do not return a snapshot. This is a transaction-completion
+  guarantee, not protection against browser eviction, disk loss or power failure.
+  Device records keep their existing PRF/largeBlob/UV-local security rank.
+  See `scripts/verify-indexeddb-transactions.mjs` for the isolated real-browser
+  commit/abort probe; it does not perform an authenticator ceremony.
 - The Chromium, Firefox, and **macOS Safari** extension decrypts on-device via
   `@4allpass/crypto`. Unlock uses the same open order as the PWA: freshness pin
   (`chrome.storage.local`) → unwrap → sealed manifest → decrypt the records

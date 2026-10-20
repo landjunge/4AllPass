@@ -1,7 +1,7 @@
 # E03.3 / H1 / R03 — central account registration
 
 20 October 2026. Base `262917f0a5a1e2bebe136c4710d58522b29e5fd4`.
-Source change awaiting independent review; no package, installation or release.
+Source change independently reviewed by a separate native Codex agent; CI and integration remain separate gates. No package, installation or release.
 
 New account registration requires 15–256 Unicode code points and checks the
 entire candidate against a [pinned offline list](../../account-password-policy.md).
@@ -56,19 +56,22 @@ Private detailed logs and the Chromium harness are retained in the existing
 continuation evidence directory. The checked-in backend/frontend cases remain
 rerunnable through the normal repository test commands.
 
-Independent Grok review and CI remain separate gates. P01–P05, AP-04, broader
+Independent Codex review and CI are separate gates; the exhausted Grok quota is not a pending approval requirement. P01–P05, AP-04, broader
 E03, server deployment, hardware, packages and an overall NIST assessment remain
 outside this bounded H1 result. No general NIST-conformance claim is made.
 
 Source file digests are in `SHA256SUMS`; `checks.json` references that file.
-All nine digests were checked against the actual source bytes. This replaces
+The original nine digests were checked against the actual source bytes; the aligned legacy config is included as a tenth entry. This replaces
 a hash map whose auth/password path keys triggered six generic-key scanner
 findings; no credential, scanner rule or application code was changed.
 
 Independent native Codex review of d81ce56 found no functional/security blocker:
-68 targeted checks passed, including31 additional reviewer cases. Evidence-only
-head d6912eb preserved the reviewed code. After integration rebase onto45331a3,
-the unused legacy auth_min_password_length default is aligned with15 and clearly
+68 targeted checks passed, including 31 additional reviewer cases. Evidence-only
+head d6912eb preserved the reviewed code. After integration rebase onto 45331a3,
+the unused legacy auth_min_password_length default is aligned with 15 and clearly
 marked non-authoritative; registration still uses its fixed schema policy.
 Daniel explicitly directed continuation without Grok after quota exhaustion.
 The earlier Grok H1 receipt is not an independent approval.
+
+After the integration rebase and config alignment, the 25 affected H1 API
+cases passed again in a fresh isolated SQLite/memory-session environment.

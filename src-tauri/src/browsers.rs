@@ -410,6 +410,9 @@ fn parse_firefox_ini(text: &str) -> Vec<BrowserProfile> {
 }
 
 pub fn default_home() -> PathBuf {
+    #[cfg(feature = "native-acl-probe")]
+    return crate::native_acl_probe::fixture_home();
+    #[cfg(not(feature = "native-acl-probe"))]
     std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
@@ -417,12 +420,17 @@ pub fn default_home() -> PathBuf {
 }
 
 pub fn default_application_dirs() -> Vec<PathBuf> {
-    let mut dirs = Vec::new();
-    if cfg!(target_os = "macos") {
-        dirs.push(PathBuf::from("/Applications"));
-        dirs.push(default_home().join("Applications"));
+    #[cfg(feature = "native-acl-probe")]
+    return vec![crate::native_acl_probe::fixture_home().join("Applications")];
+    #[cfg(not(feature = "native-acl-probe"))]
+    {
+        let mut dirs = Vec::new();
+        if cfg!(target_os = "macos") {
+            dirs.push(PathBuf::from("/Applications"));
+            dirs.push(default_home().join("Applications"));
+        }
+        dirs
     }
-    dirs
 }
 
 #[tauri::command]

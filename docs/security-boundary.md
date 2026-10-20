@@ -123,6 +123,14 @@ to the sidecar. UI is the bundled `frontendDist`. Tauri IPC is not granted to
 refuses to start (foreign process). After spawn, TCP-up on 8788 is not trust:
 the listener must be the child we spawned (or a descendant). A bind that wins
 the window between the free-port check and our listen is the same refuse.
+Own Tauri commands use an explicit AppManifest in normal builds. The `main`
+window has the eight human-app commands; `access-prompt` has only `access_decide`.
+Other local windows have no own-command permission; no remote capability is
+configured. Prompt JS cannot call sidecar/import or emit decision events itself.
+The actual prompt submits its decision through Rust. This is a window boundary,
+not a device/unlock proof or OS isolation. See [desktop command boundary](desktop-command-boundary.md)
+for the matrix, isolated native checks and remaining H2/H4/package limits.
+
 The sidecar is the local API only. Local
 Host headers must be loopback (`127.0.0.1` / `localhost` / `::1`).
 

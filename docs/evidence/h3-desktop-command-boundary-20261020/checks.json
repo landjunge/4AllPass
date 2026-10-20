@@ -1,0 +1,30 @@
+{
+  "nativeFramework": "actual WKWebView",
+  "nativeRowsPassed": 33,
+  "nativeRowsTotal": 33,
+  "actualPromptDecisionEvent": true,
+  "negativeControlRowsFailed": 20,
+  "negativeControlExitCode": 1,
+  "candidateExitCode": 0,
+  "ordinaryFeatureRustTestsPassed": 34,
+  "frontendTestsPassed": 226,
+  "frontendTypecheck": 0,
+  "CspChanged": false,
+  "entitlementsChanged": false,
+  "dependenciesAdded": false,
+  "packageAcceptance": false,
+  "normal8788StartupExecuted": false,
+  "initialNativeBase": "45331a3716d6fa77747ac93c35fcceffec1db879",
+  "rebasedOnto": "71c5be494ac40a04de9164dec3cd0ec1ca80c884",
+  "reviewedCodePin": "f633a6fe1375d562bdfd464bec5e1166fca5bd24",
+  "independentCodexReview": "ship",
+  "independentNativeRowsPassed": 33,
+  "nativeTreeByteIdenticalToReviewedPin": true,
+  "sourceSha256File": "SHA256SUMS",
+  "secretScan": {
+    "version": "8.24.3",
+    "scope": "entire own PR history; first-parent/no-merges",
+    "findings": 0,
+    "exitCode": 0
+  }
+}

@@ -26,6 +26,7 @@ software enforces. Do not make README, overlay, or ROADMAP stronger than that.
 | Easy to write | What is true |
 |---|---|
 | Webview navigates to `http://127.0.0.1:8788` with Tauri IPC | UI is bundled `frontendDist`. Sidecar `:8788` is API-only. Remote localhost has **no** Tauri IPC. Occupied 8788 before spawn refuses. After spawn, a listener that is not our child (or a descendant) is the same refuse. TCP connect is not trust. |
+| All app windows may invoke import/sidecar | Own commands use AppManifest: main has eight; access-prompt only access_decide; other local windows deny. This is not unlock/device/OS isolation or package approval. See docs/desktop-command-boundary.md. |
 | Hide to tray locks the vault | It does not. Only the Lock button does. Sleep / App Nap / Chrome in front do not. |
 | PRF / Touch ID unlock in the desktop webview | Unproven. Master password and recovery kit are the supported paths. |
 | Account compromise never decrypts the vault | Only if account password ≠ vault password. Login still sends the account password. Hosted PWA: the code host can read the vault password. Bundled desktop is the active-server claim. |

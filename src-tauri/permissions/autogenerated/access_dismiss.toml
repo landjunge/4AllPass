@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-access-dismiss"
+description = "Enables the access_dismiss command without any pre-configured scope."
+commands.allow = ["access_dismiss"]
+
+[[permission]]
+identifier = "deny-access-dismiss"
+description = "Denies the access_dismiss command without any pre-configured scope."
+commands.deny = ["access_dismiss"]

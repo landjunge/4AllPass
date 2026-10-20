@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-sidecar-http"
+description = "Enables the sidecar_http command without any pre-configured scope."
+commands.allow = ["sidecar_http"]
+
+[[permission]]
+identifier = "deny-sidecar-http"
+description = "Denies the sidecar_http command without any pre-configured scope."
+commands.deny = ["sidecar_http"]

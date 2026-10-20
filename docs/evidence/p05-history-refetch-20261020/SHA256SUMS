@@ -1,0 +1,3 @@
+35b16ca889fa2139a0f288312367a4cd933796cf0dd66934414e3ee285e351f2  frontend/src/lib/historic-snapshot.ts
+76753f132ac6bef81e60bb8232c596777501eb863657ab274f31b73f8b6d0dae  frontend/src/lib/vault-session.ts
+8c548e64ca7071b46625a15e995acc847b99fd14617859a74fc264e7a57507dd  frontend/src/lib/vault-session.head-recovery.test.ts

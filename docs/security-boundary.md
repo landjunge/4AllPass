@@ -473,6 +473,14 @@ still follows successful opening and remains best-effort.
   mitigates the impact; it does not prevent token-authorized writes or guarantee
   restoration. Closing the write-authorization gap needs cryptographic proof
   tied to the VK, not just a well-formed request from a valid session.
+  The local recovery selection binds the requested vault/revision, key generation
+  and the digest of its verified historic manifest. Confirmation checks the
+  refetched revision against that selection, verifies the old manifest and all
+  entry contents again, then copies the verifier's normalized envelopes/entries
+  into the forward commit. A missing/changed selected manifest or tampered record
+  is rejected before writing; rejected checks do not move the pin/cache. Legacy history
+  without a manifest keeps its existing per-entry checks and has no authenticated
+  complete record-set commitment. No server write proof or new crypto is added.
 - Selective item share is a portable snapshot (`4allpass-share-v1`) plus a
   recovery-encoded share key. It is not uploaded. It does not wrap to a foreign
   Device Key. A copy already given cannot be remotely revoked. See

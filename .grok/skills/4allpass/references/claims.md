@@ -82,3 +82,13 @@ Explicit challenge/consume device selectors must match the signed credential's
 stored device; mismatch returns 404 before usage stamps. An unbound legacy or
 unsigned hygiene 204 is still no AP04 team-device admission, current person
 binding, hardware/PRF proof or authorization for sensitive team operations.
+
+## Historic recovery confirmation
+
+A damaged-head selection is local metadata, not authorization from the server.
+Confirmation binds the refetched vault/revision/VK generation and verified
+manifest digest, rechecks the actual historical records and uses the verifier's
+copies before a forward commit. Missing/changed manifest or tampered records
+fail before writing or changing a freshness pin. Legacy manifestless history
+still lacks a complete authenticated record set. This is not signed writes,
+a new master-password recovery flow, native/package approval or full P05 completion.

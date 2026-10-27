@@ -1,47 +1,47 @@
-# 4AllPass docs
+# 4AllPass-Dokumentation
 
-**Status:** Index. Not a spec.
+**Status:** Verzeichnis, keine Spezifikation.
 
-A new reader should need **this page plus five links**, not twenty files.
+Neue Leser sollen diese Seite und fünf weiterführende Links benötigen, nicht zwanzig Dateien.
 
-**19.10.2026 — aktueller Quellstand / current source:** Maschinenzugriff bleibt
-ohne geschützten Produktionshost gesperrt; kein Allow-/Rohgeheimnis-Demoweg.
-Prüfweg: [Sperre prüfen](two-minute-demo.md), [Grenze](security-boundary.md#7-machine-access-fail-closed).
-Public downloads `v0.1.2-rc.2` (`60eef0a`) still contain the historical handoff;
-merged source hardening (`a983814` and later) does not update installed copies.
+**19.10.2026 – aktueller Quellstand:** Maschinenzugriff bleibt ohne geschützten
+Produktionshost gesperrt; kein Allow-/Rohgeheimnis-Demoweg.
+Prüfweg: [Sperre prüfen](two-minute-demo.md),
+[Grenze](security-boundary.md#7-machine-access-fail-closed).
+Öffentliche Downloads `v0.1.2-rc.2` (`60eef0a`) enthalten weiterhin die historische
+Übergabe. Integrierte Quellhärtung ab `a983814` aktualisiert keine installierten Kopien.
 
-**Lebende Roadmap (eine Datei, Status hier pflegen):** [../ROADMAP.md](../ROADMAP.md) – Grok Build liest zuerst `grok-build-plan.md`, dann die Roadmap.
+**Lebende Roadmap:** [../ROADMAP.md](../ROADMAP.md). Status dort pflegen.
+Grok Build liest zuerst `grok-build-plan.md`, dann die Roadmap.
 
-| Question | Read |
-|---|---|
-| What is 4AllPass **today**? | [../README.md](../README.md) |
-| How is the vault shaped (5 min)? | [architecture.md](architecture.md) |
-| Where is each surface on screen? | [ui-map.md](ui-map.md) |
-| Opt-in UI walk (dummy vault)? | [UI_TEST_SUITE.md](UI_TEST_SUITE.md) |
-| What does the running software **enforce**? | [security-boundary.md](security-boundary.md) |
-| How is the vault stored and synced? | [vault-protocol.md](vault-protocol.md), [vault-storage.md](vault-storage.md) |
-| How are tools isolated on the VPS? | [../deploy/LAYOUT.md](../deploy/LAYOUT.md) |
-| How do agents access secrets **today**? | [security-boundary.md](security-boundary.md) §7, [local-access-broker.md](local-access-broker.md) |
-| How should agents access secrets **later**? | [architecture/agent-access.md](architecture/agent-access.md), [secret-access-layer.md](secret-access-layer.md) |
-| What is MAIP? | [specs/maip-v0.1.md](specs/maip-v0.1.md) — experimental draft, **not implemented** |
-| What do we build next? | [product-maturity.md](product-maturity.md) (v3) — code sequence done; remaining humans: stranger Mac, Apple, audit. **Later in that file:** own VPS as cloud simulation, then mobile as same-vault device. |
-| What is vision, not code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
-| Are our **dependencies** safe? | [supply-chain-security.md](supply-chain-security.md) — pinning, provenance, SBOM, crypto-core rules |
-| **Grok Build: what to do first?** | [grok-build-plan.md](grok-build-plan.md) — entry point, then supply-chain-security.md, then Code-Hygiene, then Phase 4 (Secret Access Layer) |
-| Are we ready for the **first real user**? | [future-readiness.md](future-readiness.md) — exit strategy, crypto-agility, legal |
-| Gesamtstatus / Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
-| How did we get here? | [entstehungslinie.md](entstehungslinie.md) |
-| Where do we position ourselves? | [positioning.md](positioning.md) (today + far-later target) |
-| How do we look on GitHub? | [github-sichtbarkeit.md](github-sichtbarkeit.md) |
-| How do we ship signed builds? | [distribution.md](distribution.md) |
-| Team mode (not now)? | [team-mode.md](team-mode.md) (spec + roadmap) |
-| Post-quantum? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
-| Mobile (PWA first, native later)? | [architecture.md](architecture.md) §5, [android-skeleton-grok-build.md](android-skeleton-grok-build.md), [ios-skeleton-grok-build.md](ios-skeleton-grok-build.md) |
-| Code hygiene (lib.rs, pinning, ps/lsof)? | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
+| Frage | Lesen |
+| --- | --- |
+| Was ist 4AllPass heute? | [../README.md](../README.md) |
+| Wie ist der Tresor aufgebaut? | [architecture.md](architecture.md) |
+| Wo liegt welche Oberfläche? | [ui-map.md](ui-map.md) |
+| Optionaler UI-Durchgang mit Testtresor? | [UI_TEST_SUITE.md](UI_TEST_SUITE.md) |
+| Was erzwingt die laufende Software? | [security-boundary.md](security-boundary.md) |
+| Wie wird der Tresor gespeichert und synchronisiert? | [vault-protocol.md](vault-protocol.md), [vault-storage.md](vault-storage.md) |
+| Wie sind Werkzeuge auf dem VPS getrennt? | [../deploy/LAYOUT.md](../deploy/LAYOUT.md) |
+| Wie greifen Agenten heute auf Geheimnisse zu? | [security-boundary.md](security-boundary.md) §7, [local-access-broker.md](local-access-broker.md) |
+| Wie sollen Agenten später auf Geheimnisse zugreifen? | [architecture/agent-access.md](architecture/agent-access.md), [secret-access-layer.md](secret-access-layer.md) |
+| Was ist MAIP? | [specs/maip-v0.1.md](specs/maip-v0.1.md), experimenteller Entwurf, nicht implementiert |
+| Was bauen wir als Nächstes? | [product-maturity.md](product-maturity.md) v3: Programmreihenfolge abgeschlossen; menschliche Restprüfungen fremder Mac, Apple, Audit. Später dort: eigener VPS als Cloud-Simulation, danach Mobilgerät am selben Tresor. |
+| Was ist Vision statt implementiertem Code? | [architecture/future-architecture.md](architecture/future-architecture.md) |
+| Wie sind Abhängigkeiten abgesichert? | [supply-chain-security.md](supply-chain-security.md): Pins, Herkunft, SBOM und Kryptografiekernregeln |
+| Grok Build: Was zuerst? | [grok-build-plan.md](grok-build-plan.md), danach Lieferkettensicherheit, Codepflege, Phase 4 mit Geheimniszugriffsschicht |
+| Bereit für den ersten echten Nutzer? | [future-readiness.md](future-readiness.md): Ausstieg, kryptografische Anpassbarkeit, Recht |
+| Gesamtstatus und Roadmap? | [../ROADMAP.md](../ROADMAP.md) |
+| Wie entstand das Projekt? | [entstehungslinie.md](entstehungslinie.md) |
+| Wie ist die Positionierung? | [positioning.md](positioning.md), heutiger und ferner Zielstand |
+| Wie treten wir auf GitHub auf? | [github-sichtbarkeit.md](github-sichtbarkeit.md) |
+| Wie werden signierte Builds ausgeliefert? | [distribution.md](distribution.md) |
+| Teammodus, noch nicht jetzt? | [team-mode.md](team-mode.md), Spezifikation und Roadmap |
+| Postquanten? | [post-quantum-roadmap.md](post-quantum-roadmap.md) |
+| Mobil zuerst PWA, später nativ? | [architecture.md](architecture.md) §5, [android-skeleton-grok-build.md](android-skeleton-grok-build.md), [ios-skeleton-grok-build.md](ios-skeleton-grok-build.md) |
+| Codepflege: lib.rs, Pins, ps/lsof? | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
 
----
-
-## Authority (conflicts)
+## Vorrang bei Widersprüchen
 
 ```text
 security-boundary.md          what the running code enforces
@@ -60,53 +60,62 @@ architecture/future-architecture.md   vision (NOT a build license)
 README / site                 must not out-claim the docs above
 ```
 
-If two documents disagree: **the higher one wins.**  
-If a spec disagrees with `packages/crypto`: **the library and its tests win.**
+Bei Widerspruch zweier Dokumente hat das höher eingeordnete Vorrang.
+Bei Widerspruch einer Spezifikation zu `packages/crypto` haben Bibliothek und
+Tests Vorrang.
 
-Public copy: **Local-first. Sync optional. Server deiner Wahl. Kein verpflichtender Cloud-Dienst.**  
-Desktop is the **client**. Self-hosting is a **storage placement**. Do not mix those words.
+Öffentliche Darstellung: **Lokal zuerst. Synchronisierung optional. Server deiner
+Wahl. Kein verpflichtender Cloud-Dienst.** Die Desktop-Anwendung ist der Client;
+Self-Hosting bezeichnet die Platzierung des Speichers. Diese Begriffe getrennt halten.
 
----
+## Umgesetzt und später vorgesehen
 
-## Implemented vs later
+Die Tabelle gibt den bisherigen Dokumentationsstand wieder; die deutsche
+Sprachfassung führt keine neue technische Abnahme durch.
 
-| Topic | Today | Later (do not build on „weiter") |
-|---|---|---|
-| Vault crypto | Client AES-GCM, envelopes | Unchanged |
-| Desktop | Tauri + local SQLite | Same client, optional remote URL |
-| Self-host FastAPI | Exists (compose) | URL field in the client |
-| Managed hosting | **Not offered** | Same protocol, different endpoint |
-| Autofill | Chromium + Firefox + Safari wrapper | Shadow DOM / multi-step later |
-| Agent access | Machine requests denied; no production protected host. Human vault/autofill remains separate | Protected, target/task-bound use after verified host/OS boundary |
-| Agent identity | **Not cryptographic** | [MAIP v0.1](specs/maip-v0.1.md) experimental |
-| Grant | No new raw-secret handoff; legacy TTL cannot recall an old copy | Metadata-only protected core exists; production host/vault transfer still unavailable |
-| Multi-device sync | Snapshot CAS, 409, pin | No CRDT; 409 → reload |
-| Mobile apps | 0 % (PWA first) | Same vault protocol; native Android/iOS skeletons are prep only |
-| Team Mode | Spec only | Not PAM |
-| Supply chain | Lockfiles exist; audit/SBOM not yet enforced in CI | [supply-chain-security.md](supply-chain-security.md) |
-| Code hygiene | Modules + pinned Cargo + `process_inspect` (2026-08-28) | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
+| Thema | Bisheriger Dokumentationsstand | Später; bei „weiter“ nicht ungeprüft umsetzen |
+| --- | --- | --- |
+| Tresorkryptografie | Client-AES-GCM, Hüllen | Unverändert |
+| Desktop | Tauri und lokales SQLite | Derselbe Client, optionale entfernte URL |
+| Selbst gehostetes FastAPI | Vorhanden, compose | URL-Feld im Client |
+| Verwaltetes Hosting | Nicht angeboten | Gleiches Protokoll, anderer Endpunkt |
+| Autofill | Chromium, Firefox und Safari-Wrapper | Später Shadow DOM und mehrstufige Abläufe |
+| Agentenzugriff | Maschinenanfragen verweigert; kein geschützter Produktionshost; menschlicher Tresor/Autofill getrennt | Geschützte, ziel-/aufgabengebundene Nutzung nach bestätigter Host-/OS-Grenze |
+| Agentenidentität | Nicht kryptografisch | [MAIP v0.1](specs/maip-v0.1.md), experimentell |
+| Freigabe | Keine neue Rohgeheimnisübergabe; frühere TTL holt keine alte Kopie zurück | Reiner Metadatenkern vorhanden; Produktionshost-/Tresortransfer weiterhin nicht verfügbar |
+| Mehrgerätesynchronisierung | Momentaufnahme-CAS, 409, Pin | Kein CRDT; bei 409 neu laden |
+| Mobile Anwendungen | 0 %, zuerst PWA | Gleiches Tresorprotokoll; native Android-/iOS-Grundgerüste sind nur Vorbereitung |
+| Teammodus | Nur Spezifikation | Kein PAM |
+| Lieferkette | Lockdateien vorhanden; laut bisheriger Tabelle Audit/SBOM noch nicht in CI erzwungen | [supply-chain-security.md](supply-chain-security.md) |
+| Codepflege | Module, gepinntes Cargo und `process_inspect`, 28.08.2026 | [architecture.md](architecture.md) §8, [../ROADMAP.md](../ROADMAP.md) §1b |
 
----
+## Erhaltene Dokumente
 
-## Keep (do not „consolidate away“)
+Kryptografie- und Sicherheitsbelege bleiben erhalten: `crypto-protocol.md`
+(Module unter `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`,
+`threat-model.md`, `adversarial-review*.md` (Module unter `reviews/`),
+`audit-scope.md`, `test-vectors*`, `architecture/adr/`,
+`supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`,
+`secret-access-layer.md`.
 
-Crypto and security records stay: `crypto-protocol.md` (modules in `crypto/`), `vault-revision.md`, `webauthn-prf.md`, `recovery.md`, `threat-model.md`, `adversarial-review*.md` (modules in `reviews/`), `audit-scope.md`, `test-vectors*`, `architecture/adr/`, `supply-chain-security.md`, `future-readiness.md`, `grok-build-plan.md`, `secret-access-layer.md`.
+Ferne Konzepte bleiben jeweils eine Datei und als nicht implementiert markiert:
+`team-mode.md` mit Roadmap, `capability-interface.md`, `secret-access-layer.md`,
+`post-quantum-roadmap.md`.
 
-Far-later concepts stay as **one file each**, marked not implemented: `team-mode.md` (now includes roadmap), `capability-interface.md`, `secret-access-layer.md`, `post-quantum-roadmap.md`.
+**Regel:** Keine neuen Plan- oder Roadmap-Dateien. Ergänzungen erfolgen in
+`../ROADMAP.md` oder der vorhandenen Spezifikation. Redundante Verweisdateien
+wurden am 28.08.2026 entfernt.
 
-**Regel ab jetzt:** Keine neuen Plan- oder Roadmap-Dateien. Alles in `../ROADMAP.md` oder die bestehende Spec. Redundante Pointer-Dateien wurden entfernt (2026-08-28).
+## Aufräumstatus vom 28.08.2026
 
----
+| Datei | Vorgang |
+| --- | --- |
+| `eight-week-agent-access.md` | Stub; Inhalt in `local-access-broker.md` und `secret-access-layer.md` |
+| `plan-rest.md` | Stub; Status in `ROADMAP.md` §1/§5 |
+| `roadmap.md` | Stub; lebende Roadmap ist `../ROADMAP.md` |
+| `README-HUMAN.md` | Stub; Inhalt in `../README.md` |
+| `positioning-target.md` | Stub; Inhalt in `positioning.md`, ferner Zielstand |
+| `team-roadmap.md` | Stub; Inhalt in `team-mode.md`, Roadmap |
 
-## Aufräum-Status (2026-08-28)
-
-| Datei | Aktion |
-|---|---|
-| `eight-week-agent-access.md` | Stub – Inhalt in `local-access-broker.md` + `secret-access-layer.md` |
-| `plan-rest.md` | Stub – Status in `ROADMAP.md` §1/§5 |
-| `roadmap.md` | Stub – lebende Roadmap ist `../ROADMAP.md` |
-| `README-HUMAN.md` | Stub – Inhalt in `../README.md` |
-| `positioning-target.md` | Stub – Inhalt in `positioning.md` (Far later) |
-| `team-roadmap.md` | Stub – Inhalt in `team-mode.md` (Roadmap) |
-
-Diese sechs sind bewusst **nicht gelöscht**, damit alte Links nicht 404en. Neu: nicht mehr verlinken, nicht mehr pflegen.
+Diese sechs Dateien bleiben erhalten, damit alte Links weiter funktionieren.
+Nicht neu verlinken und nicht weiter pflegen.

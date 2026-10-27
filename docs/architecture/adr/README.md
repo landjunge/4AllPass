@@ -1,21 +1,21 @@
 # ADRs
 
-| ADR | Title | Status |
+| ADR | Titel | Status |
 |---|---|---|
-| [001](ADR-001-vault-as-cryptographic-domain.md) | Vault as cryptographic domain | accepted |
-| [002](ADR-002-principal-identity.md) | Principal identity | proposed |
-| [003](ADR-003-device-identity.md) | Device identity | accepted (envelopes) |
-| [004](ADR-004-capability-based-access.md) | Capability-based access | accepted (v1 policy) |
-| [005](ADR-005-crypto-agility.md) | Crypto agility | accepted |
-| [006](ADR-006-sync-protocol.md) | Sync protocol | accepted (snapshot CAS) |
-| [007](ADR-007-vault-connections.md) | Vault connections | proposed — do not build |
-| [008](ADR-008-agent-identity.md) | Agent identity | proposed beyond string |
-| [009](ADR-009-mobile-client.md) | Mobile client | proposed — 0 % now |
-| [010](ADR-010-post-quantum-readiness.md) | Post-quantum readiness | accepted as non-implementation |
-| [011](ADR-011-credential-model.md) | Credential model | accepted as wide JSON |
-| [012](ADR-012-proof-and-signature-layer.md) | Proof and signature layer | research — do not build |
-| [013](ADR-013-vault-storage-placement.md) | Vault storage placement | accepted; protocol is hosting-independent |
-| [014](ADR-014-crypto-core-dependencies.md) | Crypto-core dependencies | accepted; noble only, no vendor yet |
-| [015](ADR-015-write-authorization.md) | Write authorization (Vault Key proof) | staged; rate limits + poisoned-head recovery now, signed writes later |
+| [001](ADR-001-vault-as-cryptographic-domain.md) | Tresor als kryptografischer Bereich | `accepted` |
+| [002](ADR-002-principal-identity.md) | Principal-Identität | `proposed` |
+| [003](ADR-003-device-identity.md) | Geräteidentität | `accepted` – Hüllen |
+| [004](ADR-004-capability-based-access.md) | Fähigkeitsbasierter Zugriff | `accepted` – v1-Regeln |
+| [005](ADR-005-crypto-agility.md) | Kryptografische Anpassbarkeit | `accepted` |
+| [006](ADR-006-sync-protocol.md) | Synchronisierungsprotokoll | `accepted` – Momentaufnahme-CAS |
+| [007](ADR-007-vault-connections.md) | Tresorverbindungen | `proposed` – nicht umsetzen |
+| [008](ADR-008-agent-identity.md) | Agentenidentität | `proposed` – über Zeichenfolge hinaus |
+| [009](ADR-009-mobile-client.md) | Mobiler Client | `proposed` – derzeit0 % |
+| [010](ADR-010-post-quantum-readiness.md) | Postquanten-Vorbereitung | `accepted` als Nichtumsetzung |
+| [011](ADR-011-credential-model.md) | Zugangsdatenmodell | `accepted` als weites JSON |
+| [012](ADR-012-proof-and-signature-layer.md) | Nachweis- und Signaturschicht | `research` – Forschung, nicht umsetzen |
+| [013](ADR-013-vault-storage-placement.md) | Tresorablage | `accepted`; Protokoll unabhängig vom Hosting |
+| [014](ADR-014-crypto-core-dependencies.md) | Abhängigkeiten des Kryptografiekerns | `accepted`; nur noble, noch keine lokale Fremdcodekopie |
+| [015](ADR-015-write-authorization.md) | Schreibautorisierung mit Vault-Key-Nachweis | `staged` – vorbereitet; derzeit Ratenlimits und Wiederherstellung beschädigter Köpfe, signierte Schreibvorgänge später |
 
-Parent: [`../future-architecture.md`](../future-architecture.md).
+Übergeordnet: [`../future-architecture.md`](../future-architecture.md).

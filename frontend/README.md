@@ -1,12 +1,12 @@
-# 4AllPass Frontend
+# 4AllPass-Frontend
 
-React + TypeScript + PWA (Vite). See the repo-root docs for the authoritative crypto and
-architecture specs:
+React, TypeScript und PWA mit Vite. Die maßgeblichen Kryptografie- und
+Architekturspezifikationen stehen in der Dokumentation des Hauptverzeichnisses:
 
 - [`../docs/architecture.md`](../docs/architecture.md)
 - [`../docs/webauthn-prf.md`](../docs/webauthn-prf.md)
 
-## Local setup
+## Lokal einrichten
 
 ```sh
 npm install        # from the repo root (npm workspaces)
@@ -23,25 +23,28 @@ npm run typecheck -w @4allpass/frontend
 npm run build -w @4allpass/frontend
 ```
 
-E2E tests drive the backend (PostgreSQL, Redis, uvicorn) and Chrome's virtual
-authenticator. They flip `hasPrf` / `hasLargeBlob` to cover all three unlock
-ranks.
+Die Ende-zu-Ende-Tests steuern Backend mit PostgreSQL, Redis und uvicorn sowie
+Chromes virtuellen Authentifikator. Sie schalten `hasPrf` und `hasLargeBlob` um,
+um alle drei Entsperrungsränge abzudecken.
 
-## Flows
+## Abläufe
 
-**Create vault.** Reserve a `vault_id`, generate a random Vault Key, derive the
-Master Key with Argon2id, wrap master + recovery envelopes, commit revision 1.
+**Tresor erstellen.** `vault_id` reservieren, zufälligen Vault Key erzeugen,
+Master Key mit Argon2id ableiten, Master-/Wiederherstellungshüllen erzeugen und
+Revision 1 festschreiben.
 
-**Unlock.** Fetch `active_revision`, refuse a rollback against the local pin,
-unwrap the Vault Key, verify snapshot integrity, decrypt into memory.
+**Entsperren.** `active_revision` abrufen, Rücksprung gegenüber lokalem Pin
+verweigern, Vault Key enthüllen, Integrität der Momentaufnahme prüfen und in den
+Arbeitsspeicher entschlüsseln.
 
-**Device unlock.** `@4allpass/webauthn` provisions the best rank (PRF, largeBlob,
-UV-gated local store). Unlock is assertion → DWK → Device Key → Vault Key.
-Master password always remains a fallback.
+**Geräteentsperrung.** `@4allpass/webauthn` richtet den höchsten verfügbaren Rang
+ein: PRF, largeBlob oder lokalen UV-gesicherten Speicher. Entsperrung:
+Assertion → DWK → Device Key → Vault Key. Das Masterpasswort bleibt als Rückfallweg erhalten.
 
-## Lock lifecycle
+## Lebenszyklus beim Sperren
 
-The Vault Key is zeroized on lock. In the PWA and in `4AllPass.app` that is
-the Lock button only — not sleep, screen lock, tray, idle, or a hidden tab.
-JavaScript cannot guarantee erasure of every copy; that limit is accepted in
-the threat model.
+Beim Sperren wird der Vault Key bestmöglich genullt. In der PWA und in
+`4AllPass.app` erfolgt dies nur durch die Schaltfläche zum Sperren, nicht durch
+Ruhemodus, Bildschirmsperre, Menüleiste, Inaktivität oder versteckten Tab.
+JavaScript kann das Löschen sämtlicher Kopien nicht garantieren; diese Grenze
+ist im Bedrohungsmodell berücksichtigt.

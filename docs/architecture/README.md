@@ -1,20 +1,25 @@
-# Architecture docs
+# Architekturdokumentation
 
-**Status:** Vision and ADRs. Not a license to implement.  
-**Code sequence remains:** [`../product-maturity.md`](../product-maturity.md) v3.
+**Status:** Vision und Architekturentscheidungen; keine Umsetzungsfreigabe.
+**Reihenfolge der Programmumsetzung bleibt:** [`../product-maturity.md`](../product-maturity.md) v3.
 
-| File | What it is |
-|---|---|
-| [`future-architecture.md`](future-architecture.md) | Long-term vision, honest vs code, architecture phases |
-| [`../security-boundary.md`](../security-boundary.md) | Who may see plaintext / VK (running) |
-| [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Shared agent identity — experimental, not implemented |
-| [`agent-access.md`](agent-access.md) | 4AllPass credential use later; capabilities not vault. Headless/robot parked there |
-| [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Experimental agent identity profile |
-| [`../vault-protocol.md`](../vault-protocol.md) | Client–server storage contract |
-| [`../vault-storage.md`](../vault-storage.md) | Local / self-host / managed placement |
-| [`future-compatibility-check.md`](future-compatibility-check.md) | PASS / WARNING / BLOCK for later agents |
-| [`adr/`](adr/) | Decisions. Status `accepted` only where the **running** code already holds |
+| Datei | Bedeutung |
+| --- | --- |
+| [`future-architecture.md`](future-architecture.md) | Langfristige Vision, ehrlicher Abgleich zum Code und Architekturphasen |
+| [`../security-boundary.md`](../security-boundary.md) | Wer Klartext/VK sehen darf; tatsächlich laufende Umsetzung |
+| [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Gemeinsame Agentenidentität, experimentell und nicht umgesetzt |
+| [`agent-access.md`](agent-access.md) | Spätere Zugangsdatenverwendung; Fähigkeiten statt Tresor, unbeaufsichtigter/Roboterbetrieb dort zurückgestellt |
+| [`../specs/maip-v0.1.md`](../specs/maip-v0.1.md) | Experimentelles Agentenidentitätsprofil |
+| [`../vault-protocol.md`](../vault-protocol.md) | Speichervertrag zwischen Client und Server |
+| [`../vault-storage.md`](../vault-storage.md) | Lokale, selbst gehostete oder verwaltete Ablage |
+| [`future-compatibility-check.md`](future-compatibility-check.md) | PASS / WARNING / BLOCK für spätere Agenten |
+| [`adr/`](adr/) | Entscheidungen; Status `accepted` nur, wenn laufender Code ihn bereits erfüllt |
 
-Authoritative **now** specs stay where they are: [`../crypto-protocol.md`](../crypto-protocol.md), [`../security-boundary.md`](../security-boundary.md), [`../vault-revision.md`](../vault-revision.md), [`../team-mode.md`](../team-mode.md) (review only), [`../post-quantum-roadmap.md`](../post-quantum-roadmap.md).
+Die derzeit maßgeblichen Spezifikationen bleiben an ihren Stellen:
+[`../crypto-protocol.md`](../crypto-protocol.md),
+[`../security-boundary.md`](../security-boundary.md),
+[`../vault-revision.md`](../vault-revision.md),
+[`../team-mode.md`](../team-mode.md), nur zur Prüfung,
+[`../post-quantum-roadmap.md`](../post-quantum-roadmap.md).
 
-If this folder and `packages/crypto` disagree, the library and its tests win.
+Bei Widerspruch zu `packages/crypto` haben Bibliothek und ihre Tests Vorrang.

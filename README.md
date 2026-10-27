@@ -106,6 +106,8 @@ Private, nicht geschäftliche Nutzung ist kostenlos erlaubt, einschließlich Ins
 
 Maßgeblich ist die [vollständige Lizenz auf Deutsch mit englischer Übersetzung](LICENSE). Dies ist keine Open-Source-Standardlizenz. Eine anwaltliche Prüfung wurde nicht durchgeführt. Vorhandene Downloads und ältere Releases können noch unter ihren damaligen Bedingungen stehen; diese Änderung schreibt ihre Lizenz nicht rückwirkend um.
 
+[Lizenzhistorie und Drittbestandteile](docs/LICENSE-HISTORY-AND-THIRD-PARTY.md) dokumentiert feste Quellbelege und offene Auslieferungsprüfungen.
+
 
 ---
 
@@ -201,6 +203,8 @@ Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/
 Private, non-business use is free, including installation, private modifications and private self-hosting. Internal business or professional use, resale and paid services require prior written permission or a separate license from the rightsholder. No general redistribution permission is granted. Historical license grants remain intact.
 
 See the [full German license and English translation](LICENSE); the German text governs. This is not a standard open-source license and has not undergone legal review. Existing downloads and older releases may retain their original terms; this change does not retroactively relicense them.
+
+[License history and third-party scope](docs/LICENSE-HISTORY-AND-THIRD-PARTY.md) records fixed source references and remaining distribution checks.
 
 
 ---

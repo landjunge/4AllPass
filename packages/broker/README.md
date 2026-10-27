@@ -1,19 +1,19 @@
 # `@4allpass/broker`
 
-Current source: machine requests fail closed with `handoff_unavailable`; raw
-material is never queued or relayed. / Aktueller Quellstand: Maschinenanfragen
-werden mit `handoff_unavailable` abgewiesen; kein Rohmaterial wird weitergegeben.
-Historical usage descriptions below do not enable protected production use.
-See ../../docs/PROTECTED-ACCESS-20261018.md.
+Aktueller Quellstand: Maschinenanfragen werden mit `handoff_unavailable`
+abgewiesen; Rohmaterial wird weder in die Warteschlange aufgenommen noch
+weitergereicht. Historische Nutzungsbeschreibungen unten ermöglichen keinen
+geschützten Produktivbetrieb. Siehe ../../docs/PROTECTED-ACCESS-20261018.md.
 
+**Entwicklungsrelay**, nicht der Produktbroker.
 
-**Dev relay**, not the product broker.
+| Aufruf | Prozess | Port |
+| --- | --- | --- |
+| `npm run app` / `4AllPass.app` | Sidecar `backend/app/broker.py` | `:8788`, gleicher Ursprung |
+| `npm run broker`, nur Vite | dieses Paket | `:8787` |
 
-| How you run | Process | Port |
-|---|---|---|
-| `npm run app` / `4AllPass.app` | Sidecar `backend/app/broker.py` | `:8788` (same origin) |
-| `npm run broker` (Vite-only) | this package | `:8787` |
+Entschlüsselt niemals Schlüsselhüllen und erzeugt keine GitHub-/Stripe-Tokens.
+Ein Kopplungstoken ist erforderlich. Browser-`Origin` auf dem Freigabeweg wird
+verweigert. Regeln verbleiben in `@4allpass/core` innerhalb der entsperrten UI.
 
-Never decrypts envelopes. Never mints GitHub/Stripe tokens. Pairing token required. Browser `Origin` on grant is rejected. Policy stays in `@4allpass/core` inside the unlocked UI.
-
-Do not import `@4allpass/core` here — that would skip the human Allow.
+`@4allpass/core` hier nicht importieren; das würde die menschliche Zustimmung überspringen.

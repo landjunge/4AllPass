@@ -1,11 +1,11 @@
-# Protected-operation binding core / Bindungskern
+# Bindungskern für geschützte Operationen
 
-Unreleased source preparation; **no production host, secret transfer, protected browser
-session, new API or service is available**. Human vault/import/autofill/recovery,
-cryptography, LICENSE, AP4 and existing downloads are untouched. FP-C02/FP-C03
-remain productively open. This slice hardens a building block, not an OS boundary.
+Unveröffentlichte Quellvorbereitung: **Kein Produktionshost, Geheimnistransfer,
+geschützte Browsersitzung, neue API oder Dienst verfügbar.** Menschlicher Tresor,
+Import, Autofill, Wiederherstellung, Kryptografie, LICENSE, AP4 und vorhandene
+Downloads bleiben unberührt. FP-C02/FP-C03 bleiben produktiv offen. Dieser Schritt
+härtet einen Baustein, keine Betriebssystemgrenze.
 
-## Deutsch
 
 Die normale `ExecutorCore`-Verwendung scheitert ohne vorhandene unterstützte
 Host-Capability mit `protected_host_unavailable`, **vor** jedem Grant-/Materialabruf.
@@ -67,46 +67,11 @@ unzugängliche OS-/Secretgrenze, keinen vertrauenswürdigen Vaulttransfer und ke
 produktiven KB-Ursprungsnachweis. Deshalb kann der neue DTO-Vertrag allein keinen
 Produktionslauf erlauben. Browser/DOM/Cookie-/Session-Schutz bleibt offen.
 
-## English
+## Tatsächliche Teilprüfung
 
-Normal `ExecutorCore` calls fail with `protected_host_unavailable` before any
-lookup when no supported host exists. There is no production host capability.
-A DTO, boolean/dictionary, caller trust flag, duck-typed object or legacy material
-callback cannot enable one. The sole positive path is an explicit
-`SyntheticHostCapability.for_test` with a fixed public dummy value and metadata
-only; no real material input, vault transfer, file, credential environment or
-provider account is accepted. Output explicitly reports synthetic test scope and
-production unavailable. Nominal Python types are **not** a same-UID/OS boundary.
-
-The versioned request and metadata-only `ProtectedGrant` bind separate G-01
-project/workflow/task/actor/consumer/attempt IDs, origin/principal references,
-exact target/operation, grant version and concrete request hash. A consent
-reference, issue/expiry times and lifecycle are required in the grant. No secret,
-material or access-token field. A recalculated hash, actor label or `active`
-claim grants no authority. The former experimental secret-bearing constructor
-is intentionally unsupported.
-
-Version is a strict positive bounded integer, not bool/float/string. Time values
-must be finite numeric values before any expiry comparison; bool/string/NaN/inf,
-invalid/future issue times, expiry, excessive lifetime and unknown/revoked/expired
-lifecycle fail closed. Maximum lifetime follows the existing 86400-second upper
-Access TTL limit. All binding, hash, version, lifecycle and current-time checks
-repeat inside the actual synchronous TollGate dispatch callback. Changed grants
-and duplicate callback invocations do not send again. Existing persistent
-TollGate reservation/idempotency/stop/unknown handling is reused, not replaced by
-a cached allow token or another queue.
-
-Future real activation still requires an independently inaccessible executor,
-trusted vault-to-host transfer, configured/authenticated origin/principal and
-existing host/consent lifecycle history with monotonic versions. No such host,
-store, account or deployment is created here. FP-C02/FP-C03 production and browser
-session protection remain open. Matching synthetic metadata is not identity,
-secret isolation, final cost settlement or user/project acceptance.
-
-## Actual checks / Tatsächliche Teilprüfung
-
-[Evidence](../docs/evidence/protected-binding-20261018/STATUS.md) records targeted
-metadata/host-negative tests and the existing real TollGate adapter tests with a
-loopback dummy server. No personal vault, real credential, provider call or paid
-request. Existing broader unchanged suites are not locally repeated. No builds,
-release, version, license, icon, crypto, human UI or runtime changes.
+[Die Belege](../docs/evidence/protected-binding-20261018/STATUS.md) dokumentieren
+gezielte Metadaten-/Host-Negativtests und vorhandene Tests des echten TollGate-
+Adapters mit lokalem Testserver. Kein persönlicher Tresor, echte Zugangsdaten,
+Anbieteraufruf oder bezahlte Anfrage. Breitere unveränderte Testsuiten wurden
+lokal nicht wiederholt. Keine Builds, Releases oder Änderungen an Version,
+Lizenz, Icon, Kryptografie, menschlicher UI oder Laufzeit.

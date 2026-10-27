@@ -11,8 +11,6 @@
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 
-Local-first password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
-
 4AllPass speichert Passwörter und Zugänge auf deinem Gerät. Ein Anbieter oder Server soll sie nicht lesen können. Das gilt für die **App auf dem Gerät**. Eine vom Storage-Server gelieferte PWA kann der Betreiber tauschen — das ist kein Zero-Knowledge gegen ihn.
 
 ### 👤 [Für Nutzer – herunterladen und loslegen](#für-nutzer)
@@ -21,32 +19,24 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 
 ---
 
-> **Quellstand / Source status, 18.10.2026:** Der alte Maschinenweg gab nach Allow
-> das echte Tresorgeheimnis als `access_token` zurück. In diesem Quellstand ist
-> dieser Weg auf Core-, UI-, Client- und Relay-Ebene gesperrt. Ein geschützter
-> API-Kern wird mit synthetischen Daten geprüft; produktive Geheimnisnutzung und
-> geschützte Browser-Sitzungen sind noch nicht angeschlossen. / The legacy machine
-> path returned the actual vault secret as `access_token` after Allow. This source
-> disables that path across core, UI, client and relay. A protected API core is
-> tested with synthetic data; production secret use and protected browser sessions
-> are not connected. Existing v0.1.2-rc.2 downloads are unchanged and do not contain
-> this source fix. See [boundary and evidence](docs/PROTECTED-ACCESS-20261018.md).
-> Bedienbasis / UI foundation: Die vorhandene np-Gestaltung ist im Quellstand
-> mit AP4 und bestehenden schmalen/Touch-Ansichten abgeglichen. / Source adopts
-> the existing np foundation while preserving AP4 and narrow/touch behavior.
-> [Design evidence](docs/DESIGN-ALIGNMENT-20261018.md); unchanged downloads remain
-> separately pinned. Der [Bindungskern](protected_executor/README.md) verweigert
-> fehlende Produktionshosts vor Zugriff; positive Proben bleiben explizit
-> synthetisch. / The [binding core](protected_executor/README.md) denies missing
-> production hosts before lookup; positive probes remain explicitly synthetic.
+> **Quellstand, 18.10.2026:** Der alte Maschinenweg gab nach Allow das echte
+> Tresorgeheimnis als `access_token` zurück. In diesem Quellstand ist dieser Weg
+> auf Core-, UI-, Client- und Relay-Ebene gesperrt. Ein geschützter API-Kern wird
+> mit synthetischen Daten geprüft; produktive Geheimnisnutzung und geschützte
+> Browser-Sitzungen sind noch nicht angeschlossen. Die vorhandenen Downloads
+> von v0.1.2-rc.2 bleiben unverändert und enthalten diese spätere Quellkorrektur
+> nicht. [Grenzen und Belege](docs/PROTECTED-ACCESS-20261018.md).
+> Die vorhandene np-Bedienbasis ist mit AP4 und bestehenden schmalen/Touch-
+> Ansichten abgeglichen. [Gestaltungsbelege](docs/DESIGN-ALIGNMENT-20261018.md).
+> Downloads behalten ihre getrennten Pins. Der [Bindungskern](protected_executor/README.md)
+> verweigert fehlende Produktionshosts vor Zugriff; positive Proben bleiben
+> ausdrücklich synthetisch.
 
-## Aktueller Funktionsstand / Current capabilities
+## Aktueller Funktionsstand
 
-**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.
+4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.
 
-**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet.
-
-Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. / Source and distributed downloads are separate: existing v0.1.2-rc.2 packages do not automatically include the later source correction. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
+Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. [Nachweise und Grenzen](docs/PROTECTED-ACCESS-20261018.md).
 
 ## Für Nutzer
 
@@ -100,11 +90,11 @@ Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten brauch
 
 ### Lizenz
 
-**Netzwerkpunkt Personal Use License 1.0 — individuelle Source-available-Lizenz.**
+**Netzwerkpunkt Personal Use License 1.0 — individuelle Lizenz mit einsehbarem Quelltext.**
 
 Private, nicht geschäftliche Nutzung ist kostenlos erlaubt, einschließlich Installation, eigener privater Anpassungen und privatem Self-Hosting. Interner Firmeneinsatz, berufliche Nutzung, Weiterverkauf und kostenpflichtige Dienste benötigen eine vorherige schriftliche Erlaubnis beziehungsweise gesonderte Lizenz des Rechteinhabers. Es gibt keine allgemeine Weiterverteilungserlaubnis. Bereits erteilte Rechte historischer Fassungen bleiben erhalten.
 
-Maßgeblich ist die [vollständige Lizenz auf Deutsch mit englischer Übersetzung](LICENSE). Dies ist keine Open-Source-Standardlizenz. Eine anwaltliche Prüfung wurde nicht durchgeführt. Vorhandene Downloads und ältere Releases können noch unter ihren damaligen Bedingungen stehen; diese Änderung schreibt ihre Lizenz nicht rückwirkend um.
+Maßgeblich ist die [vollständige deutsche Lizenz](LICENSE). Dies ist keine Open-Source-Standardlizenz. Eine anwaltliche Prüfung wurde nicht durchgeführt. Vorhandene Downloads und ältere Releases können noch unter ihren damaligen Bedingungen stehen; diese Änderung schreibt ihre Lizenz nicht rückwirkend um.
 
 [Lizenzhistorie und Drittbestandteile](docs/LICENSE-HISTORY-AND-THIRD-PARTY.md) dokumentiert feste Quellbelege und offene Auslieferungsprüfungen.
 
@@ -135,11 +125,11 @@ Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsk
 
 4AllPass ist ein local-first Passwort-Manager mit Desktop-App, Browser-Erweiterungen und optionalem verschlüsseltem Speicher.
 
-Der Server sieht keinen Klartext, kein Tresor-Passwort und keinen Vault Key. Was die Software tatsächlich erzwingt, steht in [Security Boundary](docs/security-boundary.md).
+Der Server sieht keinen Klartext, kein Tresor-Passwort und keinen Vault Key. Was die Software tatsächlich erzwingt, steht in [Sicherheitsgrenze](docs/security-boundary.md).
 
 ### Wie dieses Projekt entsteht
 
-**System Designer & Product Architect: Daniel Filipek (landjunge)**
+**Systementwurf und Produktarchitektur: Daniel Filipek (landjunge)**
 
 Produktvision, gewünschtes Verhalten, Grenzen und Prioritäten kommen von mir. KI unterstützt mich bei Implementierung, Tests und Dokumentation.
 
@@ -173,7 +163,7 @@ cd backend && pytest
 cd frontend && npm run test:e2e:user-watch
 ~~~
 
-`test:e2e:user-watch` is opt-in, headed or screenshot-only, dummy vault — not the real Desk vault. See [docs/UI_TEST_SUITE.md](docs/UI_TEST_SUITE.md).
+`test:e2e:user-watch` ist optional und läuft mit sichtbarem Browser oder nur für Bildschirmaufnahmen mit einem Testtresor. Der echte persönliche Tresor wird dabei nicht verwendet. Siehe [docs/UI_TEST_SUITE.md](docs/UI_TEST_SUITE.md).
 
 ### Technische Dokumentation
 
@@ -187,25 +177,6 @@ cd frontend && npm run test:e2e:user-watch
 - [Sicherheitsprobleme melden](SECURITY.md)
 
 Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abgeleitet.
-
----
-
-## English
-
-4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
-
-Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
-
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
-
-**License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
-
-Private, non-business use is free, including installation, private modifications and private self-hosting. Internal business or professional use, resale and paid services require prior written permission or a separate license from the rightsholder. No general redistribution permission is granted. Historical license grants remain intact.
-
-See the [full German license and English translation](LICENSE); the German text governs. This is not a standard open-source license and has not undergone legal review. Existing downloads and older releases may retain their original terms; this change does not retroactively relicense them.
-
-[License history and third-party scope](docs/LICENSE-HISTORY-AND-THIRD-PARTY.md) records fixed source references and remaining distribution checks.
-
 
 ---
 

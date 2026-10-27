@@ -100,7 +100,7 @@ def collect():
     (OUT / "inventory.json").write_text(
         json.dumps(
             {
-                "scope": "Notices found in installed npm, Cargo and Python build dependencies; includes build-only packages. Missing texts are listed, not invented. This is not a legal compatibility opinion.",
+                "scope": "Gefundene Hinweise aus installierten npm-, Cargo- und Python-Bauabhaengigkeiten einschliesslich reiner Bauwerkzeuge. Fehlende Texte werden aufgefuehrt, nicht erfunden. Dies ist kein rechtliches Kompatibilitaetsgutachten.",
                 "components": inventory,
             },
             indent=2,
@@ -108,9 +108,8 @@ def collect():
         + "\n"
     )
     (OUT / "README.txt").write_text(
-        "Third-party components retain their upstream terms. Root LICENSE covers the owner's contributions only.\n"
         "Drittbestandteile behalten ihre eigenen Bedingungen. Die Haupt-LICENSE gilt nur fuer eigene Beitraege.\n"
-        "inventory.json records actual versions and notice hashes, not a legal audit.\n"
+        "inventory.json dokumentiert tatsaechliche Versionen und Hinweisdatei-Hashes, kein Rechtsgutachten.\n"
     )
     print(
         json.dumps(

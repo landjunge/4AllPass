@@ -28,7 +28,7 @@
 
 **AI access differs between source and download.** Current source blocks the former handoff of actual vault secrets to AI clients. Published RC2 packages do not contain this later block; their old path could disclose real credentials after “Allow”. Do not use that old path for AI access. A protected production path is not connected yet. [Status and limits](docs/PROTECTED-ACCESS-20261018.md).
 
-## What is available today
+## What 4AllPass helps you do
 
 - **Desktop vault:** store locally and unlock with your vault password.
 - **Browser import:** review and import passwords from Chrome and Firefox.
@@ -59,10 +59,10 @@ The five products remain independent. The goal is a shared workflow with **KiraB
 
 Some interfaces already exist. A fully configured and verified workflow across all five products is still planned. Approvals stay with the responsible tool and the human. KiraBridge and Agent Authority require access to their private repositories.
 
-[Documentation](docs/README.md) · [Developer setup and contributions](docs/DEVELOPERS.md) · [Report security issues](SECURITY.md) · [Product website](https://4allpass.netzwerkpunkt.de/)
-
-## License and contributions
+## License
 
 Private, non-business use is free under the [Netzwerkpunkt Personal Use License 1.0](LICENSE). Business use requires separate written permission. The German text governs; historical license rights remain intact.
 
 Product concept and architecture: **Daniel Filipek (landjunge)**. AI assists with implementation and documentation. Feedback and verifiable reviews are welcome.
+
+[Documentation](docs/README.md) · [Developer setup and contributions](docs/DEVELOPERS.md) · [Report security issues](SECURITY.md) · [Product website](https://4allpass.netzwerkpunkt.de/)

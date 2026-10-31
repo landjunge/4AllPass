@@ -28,7 +28,7 @@
 
 **KI-Zugriff: Quellstand und Download unterscheiden sich.** Der aktuelle Quellstand sperrt die frühere Übergabe echter Tresorgeheimnisse an KI-Clients. Die veröffentlichten RC2-Pakete enthalten diese spätere Sperre nicht; ihr alter Weg konnte nach „Allow“ echte Zugangsdaten herausgeben. Verwende diesen alten Weg nicht für KI-Zugriffe. Ein geschützter Produktionsweg ist noch nicht angeschlossen. [Stand und Grenzen](docs/PROTECTED-ACCESS-20261018.md).
 
-## Was heute vorhanden ist
+## Wobei 4AllPass dir hilft
 
 - **Desktop-Tresor:** lokal speichern und mit dem Tresor-Passwort entsperren.
 - **Browser-Import:** Passwörter aus Chrome und Firefox prüfen und übernehmen.
@@ -59,10 +59,10 @@ Die fünf Produkte bleiben eigenständig. Geplant ist ein gemeinsamer Ablauf mit
 
 Einzelne Schnittstellen sind vorhanden. Ein vollständig eingerichteter und geprüfter Ablauf aller fünf Produkte ist noch geplant. Freigaben bleiben beim zuständigen Werkzeug und beim Menschen. KiraBridge und Agent Authority benötigen Zugriff auf ihre privaten Repositorys.
 
-[Dokumentation](docs/README.md) · [Entwicklerinstallation und Beiträge](docs/DEVELOPERS.md) · [Sicherheitsprobleme melden](SECURITY.md) · [Produktseite](https://4allpass.netzwerkpunkt.de/)
-
-## Lizenz und Mitwirkung
+## Lizenz
 
 Private, nicht geschäftliche Nutzung ist unter der [Netzwerkpunkt Personal Use License 1.0](LICENSE) kostenlos. Geschäftliche Nutzung benötigt eine gesonderte schriftliche Erlaubnis. Der deutsche Lizenztext ist maßgeblich; historische Lizenzrechte bleiben erhalten.
 
 Produktidee und Architektur: **Daniel Filipek (landjunge)**. KI unterstützt Implementierung und Dokumentation. Rückmeldungen und nachvollziehbare Reviews sind willkommen.
+
+[Dokumentation](docs/README.md) · [Entwicklerinstallation und Beiträge](docs/DEVELOPERS.md) · [Sicherheitsprobleme melden](SECURITY.md) · [Produktseite](https://4allpass.netzwerkpunkt.de/)

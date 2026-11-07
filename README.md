@@ -1,5 +1,7 @@
 # 4AllPass
 
+<p align="center"><img src="assets/design/wordmarks/4AllPass-dark.svg" alt="4AllPass" width="280"></p>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">
   <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">

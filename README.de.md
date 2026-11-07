@@ -5,13 +5,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/landjunge/threaddesk/blob/docs/product-family-readme-20261031/README.de.md" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/threaddesk/blob/docs/readme-current-20261107/README.md" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/KiraBridge/blob/docs/product-family-readme-20261031/README.de.md" title="KiraBridge"><img src="assets/readme/KiraBridge-dark.svg" alt="KiraBridge" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/KiraBridge/blob/docs/readme-current-20261107/README.de.md" title="KiraBridge"><img src="assets/readme/KiraBridge-dark.svg" alt="KiraBridge" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/tollgate/blob/docs/product-family-readme-20261031/README.de.md" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/tollgate/blob/docs/readme-current-20261107/README.de.md" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/agent-authority-lab/blob/docs/product-family-readme-20261031/README.de.md" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/agent-authority-lab/blob/docs/readme-current-20261107/README.de.md" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
 </p>
 
 <h1 align="center">4AllPass</h1>
@@ -51,11 +51,11 @@ Die fünf Produkte bleiben eigenständig. Geplant ist ein gemeinsamer Ablauf mit
 
 | Produkt | Aufgabe im gemeinsamen Ablauf |
 | --- | --- |
-| [ThreadDesk](https://github.com/landjunge/threaddesk/blob/docs/product-family-readme-20261031/README.de.md) | Bewahrt Projektstand, Wissen und Ergebnisse. |
-| [KiraBridge](https://github.com/landjunge/KiraBridge/blob/docs/product-family-readme-20261031/README.de.md) | Vermittelt Aufträge, Rückfragen und Antworten zwischen Chat, lokalen Agenten und Werkzeugen. |
-| [4AllPass](https://github.com/landjunge/4AllPass/blob/docs/product-family-readme-20261031/README.de.md) | Verwaltet Zugangsdaten; soll gezielt erlaubte Zugriffe ermöglichen. |
-| [TollGate](https://github.com/landjunge/tollgate/blob/docs/product-family-readme-20261031/README.de.md) | Prüft angeschlossene Aufrufe und setzt Verbrauchsgrenzen und Stopps durch. |
-| [Agent Authority](https://github.com/landjunge/agent-authority-lab/blob/docs/product-family-readme-20261031/README.de.md) | Zeigt Beobachtungen, Widersprüche und fehlende Belege; erteilt keine Freigaben. |
+| [ThreadDesk](https://github.com/landjunge/threaddesk/blob/docs/readme-current-20261107/README.md) | Bewahrt Projektstand, Wissen und Ergebnisse. |
+| [KiraBridge](https://github.com/landjunge/KiraBridge/blob/docs/readme-current-20261107/README.de.md) | Vermittelt Aufträge, Rückfragen und Antworten zwischen Chat, lokalen Agenten und Werkzeugen. |
+| [4AllPass](https://github.com/landjunge/4AllPass/blob/docs/readme-current-20261107/README.de.md) | Verwaltet Zugangsdaten; soll gezielt erlaubte Zugriffe ermöglichen. |
+| [TollGate](https://github.com/landjunge/tollgate/blob/docs/readme-current-20261107/README.de.md) | Prüft angeschlossene Aufrufe und setzt Verbrauchsgrenzen und Stopps durch. |
+| [Agent Authority](https://github.com/landjunge/agent-authority-lab/blob/docs/readme-current-20261107/README.de.md) | Zeigt Beobachtungen, Widersprüche und fehlende Belege; erteilt keine Freigaben. |
 
 Einzelne Schnittstellen sind vorhanden. Ein vollständig eingerichteter und geprüfter Ablauf aller fünf Produkte ist noch geplant. Freigaben bleiben beim zuständigen Werkzeug und beim Menschen. KiraBridge und Agent Authority benötigen Zugriff auf ihre privaten Repositorys.
 

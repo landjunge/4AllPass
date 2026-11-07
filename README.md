@@ -5,13 +5,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/landjunge/threaddesk/blob/docs/product-family-readme-20261031/README.md" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/threaddesk/blob/docs/readme-current-20261107/README.md" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/KiraBridge/blob/docs/product-family-readme-20261031/README.md" title="KiraBridge"><img src="assets/readme/KiraBridge-dark.svg" alt="KiraBridge" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/KiraBridge/blob/docs/readme-current-20261107/README.md" title="KiraBridge"><img src="assets/readme/KiraBridge-dark.svg" alt="KiraBridge" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/tollgate/blob/docs/product-family-readme-20261031/README.md" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/tollgate/blob/docs/readme-current-20261107/README.md" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/agent-authority-lab/blob/docs/product-family-readme-20261031/README.md" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/agent-authority-lab/blob/docs/readme-current-20261107/README.md" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
 </p>
 
 <h1 align="center">4AllPass</h1>
@@ -51,11 +51,11 @@ The five products remain independent. The goal is a shared workflow with **KiraB
 
 | Product | Role in the shared workflow |
 | --- | --- |
-| [ThreadDesk](https://github.com/landjunge/threaddesk/blob/docs/product-family-readme-20261031/README.md) | Keeps project context, knowledge and results. |
-| [KiraBridge](https://github.com/landjunge/KiraBridge/blob/docs/product-family-readme-20261031/README.md) | Relays tasks, questions and replies between chat, local agents and tools. |
-| [4AllPass](https://github.com/landjunge/4AllPass/blob/docs/product-family-readme-20261031/README.md) | Manages credentials; is intended to enable specifically approved access. |
-| [TollGate](https://github.com/landjunge/tollgate/blob/docs/product-family-readme-20261031/README.md) | Checks connected calls and enforces usage limits and stops. |
-| [Agent Authority](https://github.com/landjunge/agent-authority-lab/blob/docs/product-family-readme-20261031/README.md) | Shows observations, contradictions and missing evidence; does not approve actions. |
+| [ThreadDesk](https://github.com/landjunge/threaddesk/blob/docs/readme-current-20261107/README.md) | Keeps project context, knowledge and results. |
+| [KiraBridge](https://github.com/landjunge/KiraBridge/blob/docs/readme-current-20261107/README.md) | Relays tasks, questions and replies between chat, local agents and tools. |
+| [4AllPass](https://github.com/landjunge/4AllPass/blob/docs/readme-current-20261107/README.md) | Manages credentials; is intended to enable specifically approved access. |
+| [TollGate](https://github.com/landjunge/tollgate/blob/docs/readme-current-20261107/README.md) | Checks connected calls and enforces usage limits and stops. |
+| [Agent Authority](https://github.com/landjunge/agent-authority-lab/blob/docs/readme-current-20261107/README.md) | Shows observations, contradictions and missing evidence; does not approve actions. |
 
 Some interfaces already exist. A fully configured and verified workflow across all five products is still planned. Approvals stay with the responsible tool and the human. KiraBridge and Agent Authority require access to their private repositories.
 

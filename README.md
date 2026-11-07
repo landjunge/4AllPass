@@ -1,11 +1,11 @@
 # 4AllPass
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">
   <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">
 </picture>
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
 
 <p align="center">
   <a href="https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2"><img src="assets/readme/download-desktop.svg" alt="Desktop 0.1.2-rc.2" width="170"></a>

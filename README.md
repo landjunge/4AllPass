@@ -8,7 +8,7 @@
 </picture>
 
 <p align="center">
-  <a href="https://github.com/landjunge/4AllPass/releases"><img alt="Releases / RC" src="https://img.shields.io/badge/Desktop-Releases%20%2F%20RC-5b6fa8?style=flat-square"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2"><img src="assets/readme/download-desktop.svg" alt="Desktop 0.1.2-rc.2" width="170"></a>
 </p>
 
 

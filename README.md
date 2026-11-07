@@ -5,6 +5,9 @@
   <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">
 </picture>
 
+<p align="center">
+  <a href="https://github.com/landjunge/4AllPass/releases"><img alt="Releases / RC" src="https://img.shields.io/badge/Desktop-Releases%20%2F%20RC-5b6fa8?style=flat-square"></a>
+</p>
 
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>

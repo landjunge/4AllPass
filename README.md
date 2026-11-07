@@ -7,9 +7,11 @@
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
 
+<!-- AUTO-DOWNLOADS:START -->
 <p align="center">
   <a href="https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2"><img src="assets/readme/download-desktop.svg" alt="Desktop 0.1.2-rc.2" width="170"></a>
 </p>
+<!-- AUTO-DOWNLOADS:END -->
 
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>

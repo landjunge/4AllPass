@@ -1,6 +1,6 @@
 # 4AllPass
 
-<p align="center"><img src="assets/design/wordmarks/4AllPass-dark.svg" alt="4AllPass" width="280"></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">

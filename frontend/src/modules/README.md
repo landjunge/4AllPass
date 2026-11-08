@@ -1,42 +1,45 @@
-# Frontend module boundaries
+# Modulgrenzen des Frontends
 
-This directory contains the completed module structure extracted incrementally from the former central app state.
+Dieses Verzeichnis enthält die abgeschlossene Modulstruktur, die schrittweise
+aus dem früheren zentralen Anwendungszustand herausgelöst wurde.
 
-## Rules
+## Regeln
 
-1. Every module exposes its public API only through its `index.ts`.
-2. A module may use its own internal folders.
-3. Imports from another module must target that module's public entry point.
-4. No module owns cryptographic formats, snapshot formats, CAS, or key versions unless that responsibility already belongs to the lower crypto/core layer.
-5. Compatibility files under `frontend/src/lib/` may temporarily re-export a module API for older callers; new module-to-module code must use the module entry point.
-6. Keep responsibilities separated so changes can be tested and rolled back independently.
+1. Jedes Modul veröffentlicht seine API ausschließlich über seine `index.ts`.
+2. Ein Modul darf seine eigenen internen Ordner verwenden.
+3. Importe aus anderen Modulen müssen deren öffentlichen Einstiegspunkt verwenden.
+4. Kein UI-Modul übernimmt Kryptografie-/Momentaufnahmeformate, CAS oder Schlüsselversionen; diese Verantwortung verbleibt in der zuständigen tieferen Kryptografie-/Kernschicht.
+5. Kompatibilitätsdateien unter `frontend/src/lib/` dürfen vorübergehend Modul-APIs für ältere Aufrufer weiter exportieren; neue modulübergreifende Aufrufe verwenden den Moduleinstiegspunkt.
+6. Zuständigkeiten getrennt halten, damit Änderungen unabhängig prüfbar und rücknehmbar bleiben.
 
-The root command `npm run check:module-boundaries` rejects cross-module deep imports.
+Der Hauptbefehl `npm run check:module-boundaries` verweigert tiefe Importe über Modulgrenzen.
 
-## Completed migration
+## Abgeschlossene Migration
 
 `feedback → account → startup/app-shell → vault-lifecycle → recovery-management → entries
 → import/browser-profiles → autofill → devices/device-management → sharing
 → settings/agent-access → desktop-adapter`.
 
-The migration was completed in small PRs with CI, CodeQL and secret scanning required before merge.
+Die Migration erfolgte in kleinen PRs mit vorgeschriebener CI, CodeQL und
+Geheimnissuche vor dem Zusammenführen.
 
-## Final responsibilities
+## Zuständigkeiten
 
-- `app-shell`: composition, feedback wiring, and the stable public app API.
-- `account`: sign-in, sign-up, local-session and account-password separation.
-- `startup`: startup/session restoration and local-store status.
-- `vault-lifecycle`: vault selection, create/restore, lock/unlock, import into the open vault and entry commits.
-- `device-management`: biometrics, device listing and revoke orchestration.
-- `devices`: stable local device identity and WebAuthn RP/device description helpers.
-- `recovery-management`: trusted-recovery replacement and compromised-recovery rotation.
-- `entries`: plaintext entry schema and client-side entry helpers.
-- `import`: public import boundary for existing import parsing/merge behavior.
-- `browser-profiles`: browser/profile discovery, browser import and local activation state.
-- `autofill`: frontend autofill-domain helpers; the extension engine remains separate.
-- `sharing`: selective encrypted share-package build/open/download behavior.
-- `settings`: settings-domain copy and related frontend settings surface.
-- `agent-access`: frontend agent-access adapter and demo walkthrough; policy remains in `@4allpass/core`.
-- `desktop-adapter`: optional Tauri/autostart/event adapter with no vault-secret ownership.
+- `app-shell`: Zusammensetzung, Rückmeldungsanbindung und stabile öffentliche Anwendungs-API.
+- `account`: Anmeldung, Registrierung, lokale Sitzung und Trennung des Kontopassworts.
+- `startup`: Start, Sitzungswiederherstellung und lokaler Speicherstatus.
+- `vault-lifecycle`: Tresorwahl, Erstellen/Wiederherstellen, Sperren/Entsperren, Import in den geöffneten Tresor und Eintragscommits.
+- `device-management`: Biometrie, Geräteliste und Widerrufskoordination.
+- `devices`: stabile lokale Geräteidentität und Hilfen für WebAuthn-RP-/Gerätebeschreibung.
+- `recovery-management`: Ersatz vertrauter Wiederherstellung und Rotation kompromittierter Wiederherstellung.
+- `entries`: Klartexteintragsschema und clientseitige Eintragshilfen.
+- `import`: öffentliche Importgrenze für vorhandenes Einlese-/Zusammenführungsverhalten.
+- `browser-profiles`: Browser-/Profilsuche, Browserimport und lokaler Aktivierungszustand.
+- `autofill`: Autofill-Domänenhilfen des Frontends; die Erweiterungsengine bleibt getrennt.
+- `sharing`: Erstellen, Öffnen und Herunterladen selektiver verschlüsselter Freigabepakete.
+- `settings`: Einstellungstexte und zugehörige Frontend-Einstellungsoberfläche.
+- `agent-access`: Frontend-Agentenzugriffsadapter und Demonstration; Regeln verbleiben in `@4allpass/core`.
+- `desktop-adapter`: optionaler Tauri-/Autostart-/Ereignisadapter ohne Zuständigkeit für Tresorgeheimnisse.
 
-Do not move crypto protocol ownership, CAS semantics, sealed snapshot formats or key-version rules into these UI modules.
+Kryptografieprotokoll, CAS-Bedeutung, versiegelte Momentaufnahmeformate und
+Schlüsselversionsregeln dürfen nicht in diese UI-Module verlagert werden.

@@ -23,7 +23,7 @@ export const SLEEP_LOCK_HINT: Line = {
 
 export const LICENSE_HINT: Line = {
   de: "Netzwerkpunkt Personal Use License 1.0. Private, nicht geschäftliche Nutzung kostenlos. Geschäftliche Nutzung, Weiterverkauf und kostenpflichtige Dienste nur mit gesonderter schriftlicher Erlaubnis. Keine allgemeine Weiterverteilung. Deutsch maßgeblich; individuelle Vorlage, kein OSI-Standard und nicht anwaltlich geprüft. Fremdlizenzen und historische Rechte bleiben erhalten.",
-  en: "Netzwerkpunkt Personal Use License 1.0. Free private non-business use. Business use, resale and paid services require separate written permission. No general redistribution. German governs; custom terms, not an OSI standard or legal review. Third-party licenses and historical rights remain.",
+  en: "Netzwerkpunkt Personal Use License 1.0. Private, nicht geschäftliche Nutzung kostenlos. Geschäftliche Nutzung, Weiterverkauf und kostenpflichtige Dienste nur mit gesonderter schriftlicher Erlaubnis. Keine allgemeine Weiterverteilung. Deutsch maßgeblich; individuelle Vorlage, kein OSI-Standard und nicht anwaltlich geprüft. Fremdlizenzen und historische Rechte bleiben erhalten.",
 };
 
 export const UNINSTALL_HINT: Line = {

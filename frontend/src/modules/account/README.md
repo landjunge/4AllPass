@@ -1,13 +1,14 @@
-# Account module
+# Kontomodul
 
-Owns the signed-in email, the short-lived account-password reference, and the
-commands for registration, sign-in, local sign-in, and sign-out.
+Verwaltet die angemeldete E-Mail-Adresse, die kurzlebige Kontopasswortreferenz
+und Befehle für Registrierung, Anmeldung, lokale Anmeldung und Abmeldung.
 
-- The account password is retained only in memory to warn against reusing it as
-  the vault password. It is cleared on restored/local sessions and before logout.
-- Vault loading, locking, and cleanup are invoked only through callbacks.
-- The module never receives vault plaintext, a Vault Key, envelopes, snapshots,
-  revisions, or recovery material.
-- API token persistence remains in `lib/api.ts`.
+- Das Kontopasswort bleibt ausschließlich im Arbeitsspeicher, um vor seiner
+  Wiederverwendung als Tresorpasswort zu warnen. Bei wiederhergestellten/lokalen
+  Sitzungen und vor der Abmeldung wird es gelöscht.
+- Tresor laden, sperren und bereinigen erfolgt ausschließlich über Rückruffunktionen.
+- Das Modul erhält keinen Tresorklartext, Vault Key, Schlüsselhüllen,
+  Momentaufnahmen, Revisionen oder Wiederherstellungsmaterial.
+- API-Tokens werden weiterhin in `lib/api.ts` gespeichert.
 
-Other code imports only from `modules/account/index.ts`.
+Andere Module importieren ausschließlich aus `modules/account/index.ts`.

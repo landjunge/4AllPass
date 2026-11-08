@@ -1,8 +1,8 @@
 # `@4allpass/webauthn`
 
-Device unlock for the browser. Implements `docs/webauthn-prf.md`: WebAuthn is a
-platform-protected trigger for a **Device Wrapping Key**, never an encryption
-oracle for the Vault Key.
+Geräteentsperrung für den Browser nach `docs/webauthn-prf.md`: WebAuthn ist ein
+plattformgeschützter Auslöser für einen **Device Wrapping Key**, niemals ein
+Verschlüsselungsorakel für den Vault Key.
 
 ```
 src/
@@ -18,7 +18,7 @@ src/
   unlock.ts              PRF / largeBlob / UV-gated local → Vault Key
 ```
 
-## Flow
+## Ablauf
 
 ```
 enableDeviceUnlock()   master password already unlocked the vault
@@ -33,34 +33,31 @@ unlockWithDevice()     locked vault, no master password typed
   → DWK or stored wrapping key → DK → VK
 ```
 
-Only the Vault Key survives a call. PRF output, DWK, DK, and stored wrapping
-keys are zeroized by `@4allpass/crypto`'s device helpers.
+Nur der Vault Key bleibt nach einem Aufruf erhalten. PRF-Ausgabe, DWK, DK und
+gespeicherte Einhüllschlüssel werden durch die Gerätehilfen von
+`@4allpass/crypto` genullt.
 
-## Rank 2 vs rank 3
+## Rang 2 und Rang 3
 
-`webauthn-prf.md` §5 ranks largeBlob above the local store because the
-authenticator holds the material. This package splits it accordingly:
+`webauthn-prf.md` §5 ordnet largeBlob über dem lokalen Speicher ein, weil der
+Authentifikator das Material hält. Das Paket trennt entsprechend:
 
-| Rank | Device-Key Envelope | Wrapping key |
-|---:|---|---|
-| 2 `large_blob` | authenticator largeBlob | local store |
-| 3 `uv_gated_local` | local store | local store |
+| Rang | Device-Key-Envelope | Einhüllschlüssel |
+| --- | --- | --- |
+| 2 `large_blob` | largeBlob des Authentifikators | lokaler Speicher |
+| 3 `uv_gated_local` | lokaler Speicher | lokaler Speicher |
 
-Rank 2 needs both halves, so a stolen local store alone is not enough. Rank 3 is
-policy only, exactly as the spec documents it.
+Rang 2 benötigt beide Hälften; allein der gestohlene lokale Speicher reicht
+nicht. Rang 3 ist lediglich eine Regelvorgabe, wie in der Spezifikation dokumentiert.
 
-## Hard rules
+## Verbindliche Regeln
 
-- `userVerification` is always `"required"`, on create and on every assertion.
-- An assertion is only trusted after `assertUserVerified` checks the rpIdHash,
-  the UP flag, and the UV flag.
-- `prf.results.first` shorter than 32 bytes is refused, never stretched.
-- The local record never holds the Vault Key, the Master Key, or the Device Key.
-- Only the PRF Device-Key Envelope may be mirrored to the server: unwrapping it
-  requires a live assertion on that authenticator. Ranks 2 and 3 are wrapped
-  under a locally held key and stay local.
-- Failure always ends in `DeviceUnlockUnavailableError`, so the UI can offer the
-  master password. Master-password unlock is never removed or blocked.
+- `userVerification` ist immer `"required"`, beim Erstellen und jeder Assertion.
+- Einer Assertion wird erst vertraut, nachdem `assertUserVerified` rpIdHash sowie UP- und UV-Markierung geprüft hat.
+- `prf.results.first` mit weniger als 32 Bytes wird verweigert, niemals gestreckt.
+- Der lokale Datensatz enthält niemals Vault Key, Master Key oder Device Key.
+- Nur die PRF-Device-Key-Envelope darf zum Server gespiegelt werden; ihr Öffnen benötigt eine aktuelle Assertion dieses Authentifikators. Rang 2/3 werden unter einem lokal gehaltenen Schlüssel eingehüllt und bleiben lokal.
+- Fehler enden immer in `DeviceUnlockUnavailableError`, damit die UI das Masterpasswort anbieten kann. Masterpasswortentsperrung wird niemals entfernt oder blockiert.
 
 ## Tests
 
@@ -68,6 +65,6 @@ policy only, exactly as the spec documents it.
 npm test -w @4allpass/webauthn
 ```
 
-`test/fake-authenticator.ts` implements the `WebAuthnClient` boundary with a
-keyed-HMAC PRF, largeBlob storage, and a controllable UV flag, so the ranking,
-the fallbacks, and the UV gate are covered without a browser.
+`test/fake-authenticator.ts` implementiert die Grenze `WebAuthnClient` mit einer
+schlüsselbasierten HMAC-PRF, largeBlob-Speicher und steuerbarer UV-Markierung.
+Damit werden Rangfolge, Rückfallwege und UV-Schranke ohne Browser geprüft.

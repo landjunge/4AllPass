@@ -44,11 +44,12 @@ def package_icon_checks(folder, result):
 def source_checks():
     license_bytes = (ROOT / "LICENSE").read_bytes()
     assert hashlib.sha256(license_bytes).hexdigest() == (
-        "3316d5eda60ac1fea355aa43d196feea3567384179b55ca88c8636c0322021ec"
+        "32c1784603dc16f56597c5b63b276bad923fd70ec96e3fcd8540343f000a21ed"
     ), "Adopted LICENSE bytes differ (check checkout line endings)"
     text = license_bytes.decode()
     assert text.startswith("Netzwerkpunkt Personal Use License 1.0")
-    assert "DEUTSCH — maßgebliche Fassung" in text and "ENGLISH — translation" in text
+    assert "DEUTSCH — maßgebliche Fassung" in text
+    assert "ENGLISH — translation" not in text
     config = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())
     assert config["bundle"]["licenseFile"] == "../LICENSE"
     assert "../LICENSE" in config["bundle"]["resources"]

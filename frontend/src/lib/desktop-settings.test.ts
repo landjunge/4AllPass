@@ -38,14 +38,12 @@ test("sleep copy is Lock button only, not auto-lock", () => {
   assert.equal(/auto-unlock|hibernation-safe|passkey|ghp_/i.test(blob), false);
 });
 
-test("license copy is personal free, commercial not", () => {
+test("Lizenzhinweis bleibt in beiden Anzeigen auf Deutsch", () => {
   assert.match(LICENSE_HINT.de, /Netzwerkpunkt Personal Use License 1.0/);
   assert.match(LICENSE_HINT.de, /nicht geschäftliche Nutzung kostenlos/);
   assert.match(LICENSE_HINT.de, /schriftlicher Erlaubnis/);
   assert.match(LICENSE_HINT.de, /Deutsch maßgeblich/);
-  assert.match(LICENSE_HINT.en, /Free private non-business use/);
-  assert.match(LICENSE_HINT.en, /separate written permission/);
-  assert.match(LICENSE_HINT.en, /German governs/);
+  assert.equal(LICENSE_HINT.en, LICENSE_HINT.de);
   assert.equal(/PolyForm|OSI-approved/.test(LICENSE_HINT.de + LICENSE_HINT.en), false);
 });
 

@@ -1,6 +1,6 @@
 # `@4allpass/crypto`
 
-Crypto Protocol v1 core. No UI, no network, no authenticator I/O.
+Kern des Kryptografieprotokolls v1. Keine UI, Netzwerk- oder Authentifikator-Ein-/Ausgabe.
 
 ```
 src/
@@ -35,35 +35,36 @@ src/
   memory.ts             best-effort zeroize
 ```
 
-## Hard rules
+## Verbindliche Regeln
 
-- Vault Key is always random. Never derived from the master password.
-- Public `encrypt` / `wrapVaultKey` / `encryptEntry` / `sealManifest` **do not** take a nonce.
-- Versions are never defaulted: `vaultKeyVersion`, `deviceKeyVersion`, `schemaVersion` and `cryptoVersion` are stated by the writer and read back from the object.
-- Every field is authenticated. AAD covers the KDF parameter digest and both key generations; metadata that does not belong to an envelope kind is rejected, not ignored.
-- Opening is done against an expectation. AAD built from an object's own fields proves self-consistency, not identity.
-- Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshotManifest` returns those copies — **apply them**, not the objects you passed in.
-- Identifiers must be well-formed UTF-16. A lone surrogate has no UTF-8 encoding and would collapse two identities into one U+FFFD.
-- `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
-- Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.
-- The printed Recovery Key is never used as an AES key; `deriveRecoveryWrappingKey` first.
-- `bindDeviceWithPrfOutput` / `unwrapVaultKeyWithPrfOutput` zeroize the PRF output, the DWK, and the Device Key before returning. Only the Vault Key survives a device unlock.
-- Envelopes decoded with `wire.ts` are validated structurally (lengths, versions, type/field combinations) because they come from an untrusted server.
-- `ci` profile cannot be used unless `allowTestProfile: true` — on read as well as write.
-- Master password is NFC-normalized, then UTF-8.
+- Der Vault Key ist immer zufällig und wird niemals vom Masterpasswort abgeleitet.
+- Öffentliche `encrypt` / `wrapVaultKey` / `encryptEntry` / `sealManifest` nehmen keine Nonce entgegen.
+- Versionen werden nie still vorgegeben: `vaultKeyVersion`, `deviceKeyVersion`, `schemaVersion` und `cryptoVersion` werden beim Schreiben gesetzt und aus dem Objekt zurückgelesen.
+- Jedes Feld wird authentifiziert. AAD umfasst den Digest der KDF-Parameter und beide Schlüsselgenerationen. Metadaten, die nicht zum Hüllentyp gehören, werden verweigert, nicht ignoriert.
+- Das Öffnen erfolgt gegen eine Erwartung. AAD aus den eigenen Objektfeldern belegt Selbstkonsistenz, keine Identität.
+- Nicht vertrauenswürdige Datensätze werden genau einmal in normalisierte Kopien gelesen; diese Kopien werden gehasht. `verifySnapshotManifest` gibt sie zurück: diese anwenden, nicht die ursprünglich übergebenen Objekte.
+- Kennungen müssen gültiges UTF-16 sein. Ein einzelnes Surrogat hat keine UTF-8-Kodierung und würde zwei Identitäten auf U+FFFD zusammenfallen lassen.
+- `revision` wird erst nach erfolgreicher Prüfung des versiegelten Manifests vertraut; Pins entstehen mit `revisionFromManifest(verified)`.
+- Rohe WebAuthn-PRF-Ausgabe wird niemals als Schlüssel verwendet; HKDF ist erforderlich, eine ausschließlich aus Nullen bestehende PRF-Ausgabe wird verweigert.
+- Der gedruckte Recovery Key wird niemals direkt als AES-Schlüssel verwendet; zuerst `deriveRecoveryWrappingKey`.
+- `bindDeviceWithPrfOutput` / `unwrapVaultKeyWithPrfOutput` nullen PRF-Ausgabe, DWK und Device Key vor der Rückgabe. Nur der Vault Key bleibt nach Geräteentsperrung erhalten.
+- Über `wire.ts` dekodierte Hüllen werden strukturell auf Längen, Versionen und Typ-/Feldkombinationen geprüft, da sie von einem nicht vertrauenswürdigen Server stammen.
+- Das Profil `ci` darf nur mit `allowTestProfile: true` verwendet werden, beim Lesen wie beim Schreiben.
+- Das Masterpasswort wird NFC-normalisiert und danach UTF-8-kodiert.
 
-## Error semantics
+## Fehlerbedeutung
 
-| Error | Meaning |
-|---|---|
-| `ProtocolError` | malformed in a way no remote attacker can cause: wrong type, out of range, non-canonical — i.e. a local bug |
-| `AuthFailureError` | the GCM tag did not verify, **or** untrusted AEAD material had the wrong length (attacker-controlled framing cannot authenticate) |
-| `IntegrityError` | well-formed input that contradicts the caller's expectation, or a snapshot that does not match its manifest — the signature of substitution |
-| `RollbackError` | an incoming revision is older than the pinned one |
+| Fehler | Bedeutung |
+| --- | --- |
+| `ProtocolError` | Fehlerhafte lokale Eingabe, die kein entfernter Angreifer verursachen kann: falscher Typ, außerhalb des Wertebereichs oder nicht kanonisch; also ein lokaler Fehler. |
+| `AuthFailureError` | GCM-Tag nicht bestätigt oder falsche Länge nicht vertrauenswürdigen AEAD-Materials; angreiferkontrolliertes Framing authentifiziert nicht. |
+| `IntegrityError` | Formal gültige Eingabe widerspricht der Aufrufererwartung oder Momentaufnahme passt nicht zum Manifest; Hinweis auf Austausch. |
+| `RollbackError` | Eingehende Revision ist älter als die gepinnte. |
 
-All four extend `CryptoError`; catch that when the distinction does not matter.
+Alle vier erweitern `CryptoError`; diese gemeinsame Klasse abfangen, wenn die
+Unterscheidung nicht erforderlich ist.
 
-## Usage sketch
+## Nutzungsbeispiel
 
 ```ts
 const vaultKey = generateVaultKey();
@@ -102,14 +103,16 @@ npm run test:crypto:heavy
 npm run typecheck
 ```
 
-Vectors live in `docs/test-vectors/*.json` and are the source of truth; they are
-produced by `scripts/generate-vectors.mjs`, which does not import this package.
+Vektoren unter `docs/test-vectors/*.json` sind maßgeblich. Sie werden durch
+`scripts/generate-vectors.mjs` erzeugt, das dieses Paket nicht importiert.
 
-`test/adversarial-*.test.ts` covers nonce reuse, version confusion, AAD mismatch,
-cross-vault, cross-device, key substitution, downgrade, rollback, malformed input,
-truncation, credential swapping, PRF misuse, HKDF misuse, zeroization leaks and
-test-only API leakage. Findings behind those tests: `docs/adversarial-review.md`.
+`test/adversarial-*.test.ts` umfasst Nonce-Wiederverwendung, Versionsverwechslung,
+AAD-Abweichungen, tresor-/geräteübergreifende Angriffe, Schlüsselaustausch,
+Herabstufung, Rücksprünge, fehlerhafte und abgeschnittene Eingaben,
+Credential-Austausch, PRF-/HKDF-Fehlgebrauch, Nullungslecks und unerlaubten Zugang
+zu Test-APIs. Die zugrunde liegenden Befunde stehen in `docs/adversarial-review.md`.
 
-`test/property-envelope.test.ts` is the B3 property suite: random keys/ids/versions
-for device and recovery envelopes, Device-Key Envelopes, and entries. It does not
-replace KATs. Master envelopes stay on the Argon2id vector path.
+`test/property-envelope.test.ts` ist die B3-Eigenschaftstestsuite mit zufälligen
+Schlüsseln, Kennungen und Versionen für Geräte-/Wiederherstellungshüllen,
+Device-Key-Envelopes und Einträge. Sie ersetzt keine bekannten Antworttests
+(KATs). Masterhüllen bleiben beim Argon2id-Vektorprüfweg.

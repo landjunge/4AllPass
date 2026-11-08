@@ -1,18 +1,32 @@
-# 4AllPass
+<p align="center">
+  <img src="assets/readme/normalized/4AllPass-large.svg" alt="4AllPass" width="256" height="256">
+</p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">
-  <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">
-</picture>
+<p align="center">
+  <a href="https://github.com/landjunge/KiraBridge#readme" title="KiraBridge"><img src="assets/readme/normalized/KiraBridge-small.svg" alt="KiraBridge" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/threaddesk#readme" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/tollgate#readme" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/agent-authority-lab#readme" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/blockdesign#readme" title="BlockDesign"><img src="assets/readme/normalized/BlockDesign-small.svg" alt="BlockDesign" width="48" height="48"></a>
+</p>
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
 
 <!-- AUTO-DOWNLOADS:START -->
 <p align="center">
-  <a href="https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2"><img src="assets/readme/download-desktop.svg" alt="Desktop 0.1.2-rc.2" width="170"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg" title="4AllPass_0.1.2-rc.2_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg" title="4AllPass_0.1.2-rc.2_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe" title="4AllPass_0.1.2-rc.2_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
 </p>
 <!-- AUTO-DOWNLOADS:END -->
-
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 

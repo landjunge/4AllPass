@@ -1,3 +1,5 @@
+<!-- readme-header-v1: Kopf nach ThreadDesk docs/contracts/readme-header-v1.md. Nicht von Hand umgestalten; scripts/readme_header.py apply/check verwenden. -->
+
 <p align="center">
   <img src="assets/readme/normalized/4AllPass-large.svg" alt="4AllPass" width="256" height="256">
 </p>
@@ -27,6 +29,21 @@
   <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
 </p>
 <!-- AUTO-DOWNLOADS:END -->
+
+> **Sicherheitshinweis zu 0.1.2-rc.2:** In diesem Download gibt der Maschinenzugriff
+> (ein verbundenes Programm fragt an, du klickst „Erlauben“) das echte gespeicherte
+> Geheimnis als `access_token` an dieses Programm weiter. Betroffen ist nur, wer in
+> 0.1.2-rc.2 einem Programm so einen Zugriff erlaubt hat. Empfehlung: dort keinem
+> Programm „Erlauben“ geben; bereits so freigegebene Zugänge beim jeweiligen Anbieter
+> ändern oder widerrufen. Der aktuelle Quellstand sperrt diesen Weg; ein korrigiertes
+> Paket ist noch nicht veröffentlicht. [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
+>
+> **Security notice for 0.1.2-rc.2:** In this download, machine access (a connected
+> program asks, you click "Allow") passes the actual stored secret to that program
+> as `access_token`. Only users who allowed such a request in 0.1.2-rc.2 are affected.
+> Recommendation: do not click "Allow" for programs there; change or revoke any
+> credential already released this way at its provider. Current source blocks this
+> path; a corrected package is not published yet.
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
@@ -97,6 +114,8 @@ Du installierst sie, legst deinen Tresor an und übernimmst deine Passwörter au
 
 [Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
 
+Vor dem Download von 0.1.2-rc.2: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
+
 ### Was wir bewusst nicht machen
 
 Wir bauen nicht gleichzeitig Blockchain, eine eigene digitale Identität und zwanzig Zukunftsfunktionen.
@@ -144,7 +163,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 ~~~
 
-Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht.
+Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
 
 Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsklick → Öffnen** nötig sein.
 
@@ -215,7 +234,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
 

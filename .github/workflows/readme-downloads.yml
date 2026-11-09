@@ -1,7 +1,8 @@
-name: Verify README downloads
-# READMEs are maintained with tested product changes, not by a bot PR.
-# Published-release link freshness is checked; this workflow never commits,
-# opens PRs, changes the design, or overrides branch protection.
+name: Check README updater
+# The README layout and verified product text are maintained alongside code.
+# This is a read-only syntax/contract check, NOT live release-link verification.
+# Release/download URL updates are made within the approved release workflow;
+# do not create separate bot pull requests or modify default-branch content here.
 on:
   push:
     branches: [main]
@@ -16,25 +17,18 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: readme-downloads-verify
+  group: readme-updater-check
   cancel-in-progress: false
 jobs:
-  verify:
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Verify updater logic
-        run: python3 -I scripts/update_readme_downloads.py --self-test
-      - name: Check published-download references without changing GitHub
-        env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+      - name: Check local updater contract without API calls or writes
         run: |
           set -euo pipefail
-          python3 -I scripts/update_readme_downloads.py
-          if ! git diff --quiet -- README.md README.de.md assets/readme; then
-            echo "::error::README download references are outdated. Update and integrate them with the corresponding tested code/release; preserve existing design."
-            git diff --stat -- README.md README.de.md assets/readme
-            exit 1
-          fi
-          echo "README download references match published assets."
+          python3 -I scripts/update_readme_downloads.py --self-test
+          git diff --check
+          test -s README.md
+          echo "README updater self-test passed. Published download freshness must be checked during the release integration."

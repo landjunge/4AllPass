@@ -1,0 +1,184 @@
+{
+  "schema": "status-v1",
+  "product": "4AllPass",
+  "repo": {
+    "name": "landjunge/4AllPass",
+    "visibility": "public",
+    "default_branch": "main"
+  },
+  "observed_at": "2026-11-09T06:54:45Z",
+  "plan": "BIGPLAN-BAUPLAN-20261108",
+  "main_pin": {
+    "commit": "0bf2eafe0933ab13d413330d8a92ebd10524b6ad",
+    "committed_at": "2026-11-08T22:33:22Z"
+  },
+  "source_version": "0.1.2-rc.3",
+  "releases": [
+    {
+      "tag": "v0.1.2-rc.2",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-18T16:13:48Z",
+      "assets": [
+        "4AllPass_0.1.2-rc.2_aarch64.dmg",
+        "4AllPass_0.1.2-rc.2_aarch64.dmg.sha256",
+        "4AllPass_0.1.2-rc.2_amd64.AppImage",
+        "4AllPass_0.1.2-rc.2_amd64.AppImage.sha256",
+        "4AllPass_0.1.2-rc.2_x64-setup.exe",
+        "4AllPass_0.1.2-rc.2_x64-setup.exe.sha256",
+        "4AllPass_0.1.2-rc.2_x64.dmg",
+        "4AllPass_0.1.2-rc.2_x64.dmg.sha256",
+        "LICENSE",
+        "SHA256SUMS",
+        "package-check-aarch64-apple-darwin.json",
+        "package-check-x86_64-apple-darwin.json",
+        "package-check-x86_64-pc-windows-msvc.json",
+        "package-check-x86_64-unknown-linux-gnu.json",
+        "release-manifest.json",
+        "sidecar-preflight-aarch64-apple-darwin.json",
+        "sidecar-preflight-x86_64-apple-darwin.json",
+        "sidecar-preflight-x86_64-pc-windows-msvc.json",
+        "sidecar-preflight-x86_64-unknown-linux-gnu.json",
+        "source-Linux.json",
+        "source-Windows.json",
+        "source-macOS-Intel.json",
+        "source-macOS.json",
+        "third-party-notices-Linux.zip",
+        "third-party-notices-Windows.zip",
+        "third-party-notices-macOS-Intel.zip",
+        "third-party-notices-macOS.zip"
+      ]
+    },
+    {
+      "tag": "desktop",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-08-24T00:29:38Z",
+      "assets": [
+        "4AllPass_0.1.0_aarch64.dmg",
+        "4AllPass_0.1.0_aarch64.dmg.sha256",
+        "4AllPass_0.1.0_amd64.AppImage",
+        "4AllPass_0.1.0_amd64.AppImage.sha256",
+        "4AllPass_0.1.0_x64-setup.exe",
+        "4AllPass_0.1.0_x64-setup.exe.sha256",
+        "4AllPass_0.1.0_x64.dmg",
+        "4AllPass_0.1.0_x64.dmg.sha256"
+      ]
+    },
+    {
+      "tag": "v0.1.1",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-08-21T20:12:17Z",
+      "assets": [
+        "4AllPass_0.1.0_aarch64.dmg",
+        "4AllPass_0.1.0_amd64.AppImage",
+        "4AllPass_0.1.0_x64-setup.exe"
+      ]
+    },
+    {
+      "tag": "v0.1.0",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-08-21T19:54:57Z",
+      "assets": []
+    }
+  ],
+  "installed": {
+    "mac": {
+      "state": "installed",
+      "observed_at": "2026-11-09T06:54:45Z",
+      "entries": [
+        {
+          "kind": "app",
+          "path": "/Applications/4AllPass.app",
+          "version": "0.1.0",
+          "source_commit": "unknown"
+        }
+      ]
+    },
+    "windows": "unknown",
+    "linux": "unknown"
+  },
+  "server": {
+    "source": "ops/netcup.json (KiraBridge, BP-OPS-01)",
+    "observed_at": "2026-11-08T16:59:45Z",
+    "components": [
+      {
+        "name": "4allpass-backend",
+        "state": "running",
+        "version": "unknown",
+        "source_commit": "6da2fbc1c1b29295e33769903834442a3c1580c9",
+        "exposure": "hinter dem gemeinsamen Reverse-Proxy",
+        "note": "Image vom 2026-08-19; main enthaelt seitdem 34 Commits unter backend/ (Stand Beobachtung)"
+      },
+      {
+        "name": "4allpass-web",
+        "state": "running",
+        "version": "unknown",
+        "source_commit": "6da2fbc1c1b29295e33769903834442a3c1580c9",
+        "exposure": "hinter dem gemeinsamen Reverse-Proxy",
+        "note": "Image vom 2026-08-19; Route fuer pass.netzwerkpunkt.de vorhanden, laut Inventar zeigt der DNS dieser Domain aber nicht auf diesen Host"
+      },
+      {
+        "name": "4allpass-postgres",
+        "state": "running",
+        "version": "postgres:16-alpine",
+        "source_commit": "unknown",
+        "exposure": "nur Docker-Netz"
+      },
+      {
+        "name": "4allpass-redis",
+        "state": "running",
+        "version": "redis:7-alpine",
+        "source_commit": "unknown",
+        "exposure": "nur Docker-Netz"
+      },
+      {
+        "name": "4allpass-caddy",
+        "state": "running",
+        "version": "caddy:2-alpine",
+        "source_commit": "unknown",
+        "exposure": "oeffentlich (80, 443, 8443); gemeinsamer Ingress fuer mehrere Produkte"
+      }
+    ]
+  },
+  "open_packages": [
+    {
+      "id": "BP-SEC-01",
+      "title": "RC2-Warnhinweis oder RC3; Server-Neu-Rollout mit Sicherung",
+      "status": "open",
+      "note": "Neu-Rollout haengt an Entscheidung E1"
+    },
+    {
+      "id": "BP-4AP-01",
+      "title": "geschuetzte Nutzung durch Agenten ueber den Executor",
+      "status": "open"
+    },
+    {
+      "id": "BP-TRUTH-01",
+      "title": "Ist-Stand-Register (diese Datei)",
+      "status": "in-progress"
+    },
+    {
+      "id": "BP-DOC-01",
+      "title": "READMEs und Lizenzen, Angaben aus STATUS.json",
+      "status": "open"
+    },
+    {
+      "id": "BP-DESIGN-01",
+      "title": "gemeinsames Designsystem",
+      "status": "open"
+    },
+    {
+      "id": "BP-HYG-01",
+      "title": "Arbeitsstände und Worktrees aufräumen",
+      "status": "open"
+    }
+  ],
+  "notes": [
+    "Der Release v0.1.2-rc.2 enthaelt laut Bauplan noch den alten Weg, der Tresorgeheimnisse als access_token ausgibt (W01); main steht bei 0.1.2-rc.3 ohne Release.",
+    "Containerstatus aus dem Inventar vom 2026-11-08; die Compose-Dienste tragen keine Versionsnummer.",
+    "Status 'open' heisst: laut Bauplan offen, in diesem Register kein Abschlussbeleg."
+  ]
+}

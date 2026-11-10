@@ -13,11 +13,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.core.config import get_settings
 from app.main import app
+
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 DEPLOY = Path(__file__).resolve().parents[2] / "deploy"
 DOCKER_GATEWAY = ("172.18.0.1", 51000)

@@ -48,4 +48,5 @@ bodies in `backend/app`. Body-limit stream stall was closed in E02 (AP-02, #230)
 | Command | Result |
 |---|---|
 | backend `pytest`, throwaway SQLite | 229 pass, 1 skip (PostgreSQL migration test) |
+| backend `pytest`, throwaway PostgreSQL 17 (unix socket) | 230/230 |
 | `test_deploy_proxy.py` against the unfixed deploy files | fails: second client gets 429 |

@@ -53,9 +53,11 @@
 
 Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **ThreadDesk** (Projekte und Arbeitsstände), **4AllPass** (Zugänge und Schlüssel), **TollGate** (Nutzungsgrenzen und Budgets) und **Agent Authority** (nur Beobachtung und Nachweise). Jedes Werkzeug behält eigene Zuständigkeiten und Berechtigungen. Die gemeinsame sprachgesteuerte Bedienung ist das übergreifende Entwicklungsziel; einzelne Integrationen werden nur als verfügbar beschrieben, wenn sie tatsächlich nachgewiesen sind.
 
-## Verständliche Zugänge sind ein Teil von Barrierefreiheit
+## Sichere Zugänge für sprachgesteuerte Abläufe
 
-Für Menschen mit eingeschränkter Beweglichkeit oder Schwierigkeiten bei Maus und Tastatur ist es hilfreich, Programme und Aufgaben per Sprache anzustoßen. Dabei muss die Absicherung von Konten und Schlüsseln erhalten bleiben. 4AllPass soll den Umgang mit Zugängen im Werkzeugverbund nachvollziehbarer gestalten, nicht Schutzmechanismen umgehen. Sensible Freigaben, Authentifizierung und Geheimnisse werden weiterhin nach ihren eigenen Sicherheitsregeln behandelt. Bereits vorhandene Zugriffsmöglichkeiten, bekannte Risiken und geplante Verbesserungen sind getrennt zu betrachten.
+**Das gemeinsame Hauptziel ist, Computer und Werkzeuge über natürliche Sprache für alle Menschen bedienbar zu machen.** KiraBridge übernimmt die Sprach- und Computersteuerung; 4AllPass verwaltet die dafür benötigten Zugänge, Schlüssel und Identitäten nach eigenen Sicherheitsregeln. Sprachbefehle sollen Abläufe vereinfachen, aber niemals Berechtigungen, Authentifizierung oder bewusste Freigaben umgehen.
+
+**Barrierefreiheit wird als wichtiger zusätzlicher Nutzen mitgedacht, nicht als alleinige Zielgruppe oder primärer Produktzweck.** Wer Schwierigkeiten mit Maus oder Tastatur hat, kann besonders von verständlichen, sprachgestützten Abläufen profitieren; auch freihändige und alltägliche Bedienung wird leichter. Sensible Freigaben und Geheimnisse bleiben geschützt. Bestehende Möglichkeiten, Risiken und geplante Verbesserungen sind klar zu trennen.
 
 **Wichtig:** Der nachfolgende Sicherheitshinweis zur veröffentlichten Version 0.1.2-rc.2 gilt unverändert. Die Sprachvision ändert nichts daran, dass ein freigegebener Maschinenzugriff in diesem Paket das gespeicherte Geheimnis an das verbundene Programm weitergeben kann. Diese Grenze ist bei der Verwendung ausdrücklich zu berücksichtigen.
 

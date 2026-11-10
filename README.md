@@ -47,7 +47,17 @@
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
-**Teil der NetzwerkPunkt-Werkzeugfamilie:** KiraBridge verbindet ChatGPT mit den Werkzeugen auf deinem Rechner und ist der zentrale Weg für die Bedienung per Sprache oder Chat. Zur Familie gehören **KiraBridge** (Verbindung und Steuerung), **ThreadDesk** (Projekte und Arbeitsstände), **4AllPass** (Zugänge und Schlüssel), **TollGate** (Nutzungsgrenzen und Budgets) und **Agent Authority** (ausschließlich Beobachtung und Nachweise). Die Werkzeuge bleiben eigenständig. **Die Verbindung aller fünf Werkzeuge über Sprache ist unser gemeinsames Ausbauziel:** Vorhandene Anbindungen und geplante Funktionen werden jeweils getrennt dokumentiert, nicht als schon vollständig fertig dargestellt.
+## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
+
+**KiraBridge verbindet die NetzwerkPunkt-Werkzeugfamilie über ChatGPT mit Sprache, Chat und direkter Computersteuerung.** Dazu zählen unter passenden Berechtigungen das Öffnen von Programmen, Fensterwechsel, Notizen, direkte Texteingabe und Tastenkombinationen. **4AllPass hat darin eine andere, klar abgegrenzte Aufgabe:** Es verwaltet Zugänge, Schlüssel und Identitäten für angebundene Werkzeuge. Ein Sprachbefehl soll niemals schon deshalb Zugriff auf geheime Daten gewähren, weil er bequem formuliert wurde.
+
+Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **ThreadDesk** (Projekte und Arbeitsstände), **4AllPass** (Zugänge und Schlüssel), **TollGate** (Nutzungsgrenzen und Budgets) und **Agent Authority** (nur Beobachtung und Nachweise). Jedes Werkzeug behält eigene Zuständigkeiten und Berechtigungen. Die gemeinsame sprachgesteuerte Bedienung ist das übergreifende Entwicklungsziel; einzelne Integrationen werden nur als verfügbar beschrieben, wenn sie tatsächlich nachgewiesen sind.
+
+## Verständliche Zugänge sind ein Teil von Barrierefreiheit
+
+Für Menschen mit eingeschränkter Beweglichkeit oder Schwierigkeiten bei Maus und Tastatur ist es hilfreich, Programme und Aufgaben per Sprache anzustoßen. Dabei muss die Absicherung von Konten und Schlüsseln erhalten bleiben. 4AllPass soll den Umgang mit Zugängen im Werkzeugverbund nachvollziehbarer gestalten, nicht Schutzmechanismen umgehen. Sensible Freigaben, Authentifizierung und Geheimnisse werden weiterhin nach ihren eigenen Sicherheitsregeln behandelt. Bereits vorhandene Zugriffsmöglichkeiten, bekannte Risiken und geplante Verbesserungen sind getrennt zu betrachten.
+
+**Wichtig:** Der nachfolgende Sicherheitshinweis zur veröffentlichten Version 0.1.2-rc.2 gilt unverändert. Die Sprachvision ändert nichts daran, dass ein freigegebener Maschinenzugriff in diesem Paket das gespeicherte Geheimnis an das verbundene Programm weitergeben kann. Diese Grenze ist bei der Verwendung ausdrücklich zu berücksichtigen.
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 

@@ -3,7 +3,7 @@
 use std::{
     fmt,
     fs,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 #[cfg(target_os = "macos")]
@@ -19,7 +19,7 @@ use sha1::Sha1;
 use zeroize::Zeroize;
 
 use crate::browsers::{chromium_profile_dir, firefox_profile_dir};
-use crate::secret_fs::{secret_temp_dir, shred_tree};
+use crate::secret_fs::with_secret_temp_dir;
 
 #[derive(Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -107,12 +107,11 @@ fn keychain_secret(service: &str, account: &str) -> Result<Vec<u8>, String> {
     }
 }
 
-fn copy_login_db(profile_dir: &Path) -> Result<PathBuf, String> {
+fn copy_login_db(profile_dir: &Path, tmp: &Path) -> Result<(), String> {
     let src = profile_dir.join("Login Data");
     if !src.is_file() {
         return Err(format!("no Login Data in {}", profile_dir.display()));
     }
-    let tmp = secret_temp_dir("4ap-login")?;
     fs::copy(&src, tmp.join("Login Data")).map_err(|err| err.to_string())?;
     for extra in ["Login Data-wal", "Login Data-shm", "Login Data-journal"] {
         let side = profile_dir.join(extra);
@@ -120,7 +119,7 @@ fn copy_login_db(profile_dir: &Path) -> Result<PathBuf, String> {
             let _ = fs::copy(&side, tmp.join(extra));
         }
     }
-    Ok(tmp)
+    Ok(())
 }
 
 fn title_from_url(url: &str) -> String {
@@ -183,11 +182,11 @@ pub fn import_browser_logins(browser_id: String, profile_id: String) -> Result<V
     secret.zeroize();
     let home = crate::browsers::default_home();
     let profile_dir = chromium_profile_dir(&home, &browser_id, &profile_id)?;
-    let tmp = copy_login_db(&profile_dir)?;
-    let db = tmp.join("Login Data");
-    let result = read_chromium_logins(&db, &key, &format!("{browser_id}:{profile_id}"));
+    let result = with_secret_temp_dir("4ap-login", |tmp| {
+        copy_login_db(&profile_dir, tmp)?;
+        read_chromium_logins(&tmp.join("Login Data"), &key, &format!("{browser_id}:{profile_id}"))
+    });
     key.zeroize();
-    shred_tree(&tmp);
     result
 }
 

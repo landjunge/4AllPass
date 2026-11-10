@@ -110,6 +110,19 @@ export function snapshotHead(wire: unknown): {
   };
 }
 
+/** Refuse a rollback from the unverified head, before any key is touched. */
+function assertSnapshotHeadFresh(snapshot: VaultSnapshot, pin: VaultRevision | null): void {
+  assertFreshSnapshot(pin, {
+    vaultId: snapshot.vaultId,
+    revision: snapshot.revision,
+    vaultKeyVersion: snapshot.vaultKeyVersion,
+    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+    ...(snapshot.sealedManifest
+      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
+      : {}),
+  });
+}
+
 /**
  * Decrypt a snapshot with a Vault Key already in memory. Used to pull a newer
  * revision without running Argon2 again. Caller keeps the key until lock.
@@ -128,15 +141,7 @@ export function decryptUnlockedSnapshot(
     throw new Error("server returned a snapshot for a different vault");
   }
   const pin = options.pin ?? null;
-  assertFreshSnapshot(pin, {
-    vaultId: snapshot.vaultId,
-    revision: snapshot.revision,
-    vaultKeyVersion: snapshot.vaultKeyVersion,
-    cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
-    ...(snapshot.sealedManifest
-      ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
-      : {}),
-  });
+  assertSnapshotHeadFresh(snapshot, pin);
 
   let entries = snapshot.entries;
   let envelopes = snapshot.envelopes;
@@ -205,6 +210,9 @@ export function openUnlockedSnapshot(
   if (snapshot.vaultId !== options.vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
+  // A replayed older head must be a RollbackError, not a "wrong password" from
+  // running Argon2id on the replayed envelope first.
+  assertSnapshotHeadFresh(snapshot, options.pin ?? null);
   const master = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(options.vaultPassword, master);
   try {

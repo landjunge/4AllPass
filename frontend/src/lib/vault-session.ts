@@ -725,6 +725,15 @@ async function commitSnapshot(
         sealedManifest: encodeSealedManifest(sealedManifest),
       }),
     );
+    // A 200 must carry exactly what was written. An older head here would
+    // otherwise open cleanly and report a dropped write as saved.
+    if (
+      committed.revision !== nextRevision ||
+      !committed.sealedManifest ||
+      !equalBytes(sealedManifestDigest(committed.sealedManifest), sealedManifestDigest(sealedManifest))
+    ) {
+      throw new IntegrityError(`server did not return the committed revision ${nextRevision}`);
+    }
     return acceptSnapshot(committed, vaultKey, vault.unlockedWith);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {

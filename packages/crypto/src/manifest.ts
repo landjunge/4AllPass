@@ -368,7 +368,9 @@ export function encodeManifest(manifest: SnapshotManifest): Uint8Array {
 
 class FrameReader {
   private offset = 0;
-  private readonly decoder = new TextDecoder("utf-8", { fatal: true });
+  // `ignoreBOM: true` keeps a leading U+FEFF. The default strips it, so an id
+  // that starts with one would decode to a different string than was sealed.
+  private readonly decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
   private readonly buf: Uint8Array;
 
   constructor(buf: Uint8Array) {

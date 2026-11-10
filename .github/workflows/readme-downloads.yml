@@ -1,28 +1,34 @@
-name: Refresh README downloads
+name: Check README updater
+# The README layout and verified product text are maintained alongside code.
+# This is a read-only syntax/contract check, NOT live release-link verification.
+# Release/download URL updates are made within the approved release workflow;
+# do not create separate bot pull requests or modify default-branch content here.
 on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - README.de.md
+      - scripts/update_readme_downloads.py
+      - .github/workflows/readme-downloads.yml
   release:
     types: [published, edited, deleted]
-  schedule:
-    - cron: '37 5 * * *'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: readme-downloads
+  group: readme-updater-check
   cancel-in-progress: false
 jobs:
-  refresh:
+  check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - name: Update badges from published release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 scripts/update_readme_downloads.py
-      - name: Commit changed README and badges only
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check local updater contract without API calls or writes
         run: |
-          git add -A -- README.md assets/readme
-          if ! git diff --cached --quiet; then
-            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs: refresh download buttons [skip ci]"
-            git push
-          fi
+          set -euo pipefail
+          python3 -I scripts/update_readme_downloads.py --self-test
+          git diff --check
+          test -s README.md
+          echo "README updater self-test passed. Published download freshness must be checked during the release integration."

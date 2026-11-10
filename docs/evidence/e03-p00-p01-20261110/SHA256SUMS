@@ -1,0 +1,6 @@
+491d60bff1044edcc0e769868f5a2b5eec288694f26e4fee0444567262df6cdc  packages/crypto/src/manifest.ts
+c17a3b0837f1f0ce50072e6af6d055c4a6f2f8179e361975088be4c6170d9685  packages/crypto/src/kdf/argon2id.ts
+f76911d5d2bc6d6273e1edd76d6f0675fdf2f7a642d2bbe023fe4cfceb84429d  packages/crypto/test/manifest.test.ts
+228660475e41e5ece7be98960a7453697d4b3d17849fc91de03aa9d5aeb7ed69  packages/crypto/test/adversarial-kdf-toctou.test.ts
+e5e3fd51965eebef38767d9b13247cd2cfb8ea21149128b1ab2ded4764a5ed98  frontend/src/lib/vault-session.nonce-budget.test.ts
+be2b5bfbb06e2ada2bb53dc053bfe4a4331c6ca85691c8453eb50ed4b6cf99e8  docs/evidence/e03-p00-p01-20261110/file-register.tsv

@@ -12,7 +12,7 @@ use sha1::Sha1;
 use sha2::{Digest, Sha256};
 
 use crate::browser_passwords::BrowserLogin;
-use crate::secret_fs::{secret_temp_dir, shred_tree};
+use crate::secret_fs::with_secret_temp_dir;
 use zeroize::Zeroize;
 
 enum Der<'a> {
@@ -258,7 +258,7 @@ pub fn read_firefox_logins(profile_dir: &Path, source: &str) -> Result<Vec<Brows
     if !key4.is_file() || !logins.is_file() {
         return Err(format!("no key4.db/logins.json in {}", profile_dir.display()));
     }
-    let tmp = secret_temp_dir("4ap-ff")?;
+    with_secret_temp_dir("4ap-ff", |tmp| {
     fs::copy(&key4, tmp.join("key4.db")).map_err(|err| err.to_string())?;
     fs::copy(&logins, tmp.join("logins.json")).map_err(|err| err.to_string())?;
     for extra in ["key4.db-wal", "key4.db-shm", "key4.db-journal"] {
@@ -267,7 +267,7 @@ pub fn read_firefox_logins(profile_dir: &Path, source: &str) -> Result<Vec<Brows
             let _ = fs::copy(&side, tmp.join(extra));
         }
     }
-    let result = (|| {
+    (|| {
         let mut master = firefox_master_key(&tmp.join("key4.db"), b"")?;
         let built = (|| {
             let text = fs::read_to_string(tmp.join("logins.json")).map_err(|err| err.to_string())?;
@@ -310,9 +310,8 @@ pub fn read_firefox_logins(profile_dir: &Path, source: &str) -> Result<Vec<Brows
         })();
         master.zeroize();
         built
-    })();
-    shred_tree(&tmp);
-    result
+    })()
+    })
 }
 
 #[cfg(test)]
@@ -334,5 +333,32 @@ mod tests {
         let (node, _) = parse_der(&raw).unwrap();
         let items = seq(&node).unwrap();
         assert_eq!(int(&items[0]).unwrap(), 1003);
+    }
+
+    /// E04/P06: key4.db was copied, then the logins.json copy failed and the
+    /// early return left the key-store copy in the temp dir.
+    #[cfg(unix)]
+    #[test]
+    fn failed_second_copy_leaves_no_key_store_copy() {
+        use std::os::unix::fs::PermissionsExt;
+        let profile = std::env::temp_dir().join(format!("4ap-ffprofile-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&profile);
+        fs::create_dir_all(&profile).unwrap();
+        fs::write(profile.join("key4.db"), b"synthetic key store").unwrap();
+        fs::write(profile.join("logins.json"), b"{}").unwrap();
+        fs::set_permissions(profile.join("logins.json"), fs::Permissions::from_mode(0o000)).unwrap();
+        let marker = format!("4ap-ff-{}-", std::process::id());
+        let leftovers = || {
+            fs::read_dir(std::env::temp_dir())
+                .unwrap()
+                .filter_map(Result::ok)
+                .filter(|e| e.file_name().to_string_lossy().starts_with(&marker))
+                .count()
+        };
+        let before = leftovers();
+        assert!(read_firefox_logins(&profile, "firefox:test").is_err());
+        assert_eq!(leftovers(), before, "temp copy of key4.db survived a failed import");
+        fs::set_permissions(profile.join("logins.json"), fs::Permissions::from_mode(0o600)).unwrap();
+        fs::remove_dir_all(&profile).unwrap();
     }
 }

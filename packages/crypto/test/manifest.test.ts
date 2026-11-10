@@ -101,6 +101,29 @@ describe("snapshot manifest", () => {
     assert.deepEqual(decoded, manifest);
   });
 
+  it("keeps a leading U+FEFF in identifiers instead of stripping it as a BOM", () => {
+    // E03/P01: TextDecoder strips a leading BOM by default, so these ids came
+    // back shorter than they were sealed and the honest snapshot was refused.
+    const key = generateVaultKey();
+    const vaultId = "\uFEFFvault-bom";
+    const entry = encryptEntry({
+      vaultKey: key,
+      vaultId,
+      entryId: "\uFEFFentry-bom",
+      plaintext: new Uint8Array([1]),
+      vaultKeyVersion: 1,
+    });
+    const manifest = buildManifest({ vaultId, revision: 1, vaultKeyVersion: 1, entries: [entry], envelopes: [] });
+    assert.deepEqual(decodeManifest(encodeManifest(manifest)), manifest);
+    const verified = verifySnapshotManifest(
+      sealManifest({ vaultKey: key, manifest }),
+      { entries: [entry], envelopes: [] },
+      { vaultKey: key, vaultId, revision: 1, vaultKeyVersion: 1 },
+    );
+    assert.equal(verified.manifest.vaultId, vaultId);
+    assert.equal(verified.entries[0]?.id, "\uFEFFentry-bom");
+  });
+
   it("refuses a manifest body with trailing bytes", () => {
     const { manifest } = fixtureSnapshot();
     const body = encodeManifest(manifest);

@@ -1,0 +1,994 @@
+path	role	module
+.claude/skills/4allpass	config	repo
+.cursor/environment.json	config	repo
+.cursor/skills/4allpass	config	repo
+.cursor/skills/4allpass-next	config	repo
+.cursor/skills/4allpass-ui	config	repo
+.gitattributes	config	repo
+.github/CODEOWNERS	config	P11 ci
+.github/ISSUE_TEMPLATE/bug.yml	config	P11 ci
+.github/ISSUE_TEMPLATE/config.yml	config	P11 ci
+.github/ISSUE_TEMPLATE/feature.yml	config	P11 ci
+.github/ISSUE_TEMPLATE/security.yml	config	P11 ci
+.github/PULL_REQUEST_TEMPLATE.md	docs	P11 ci
+.github/workflows/ci.yml	config	P11 ci
+.github/workflows/codeql.yml	config	P11 ci
+.github/workflows/desktop.yml	config	P11 ci
+.github/workflows/pages.yml	config	P11 ci
+.github/workflows/readme-downloads.yml	config	P11 ci
+.github/workflows/readme-with-code.yml	config	P11 ci
+.github/workflows/secret-scan.yml	config	P11 ci
+.gitignore	config	repo
+.gitleaksignore	config	repo
+.grok/skills/4allpass-next/SKILL.md	docs	repo
+.grok/skills/4allpass-ui-test/SKILL.md	docs	repo
+.grok/skills/4allpass-ui/SKILL.md	docs	repo
+.grok/skills/4allpass/SKILL.md	docs	repo
+.grok/skills/4allpass/references/claims.md	docs	repo
+.grok/skills/4allpass/references/coding.md	docs	repo
+.grok/skills/4allpass/references/improve.md	docs	repo
+.grok/skills/4allpass/references/invariants.md	docs	repo
+.grok/skills/4allpass/references/review.md	docs	repo
+AGENTS.md	docs	repo
+CLAUDE.md	docs	repo
+CONTRIBUTING.md	docs	repo
+DESIGN.md	docs	repo
+LICENSE	config	repo
+README.md	docs	repo
+ROADMAP.md	docs	repo
+SECURITY.md	docs	repo
+STATUS.json	config	repo
+assets/design/2026-10-18/4AllPass-Designpaket.zip	asset	repo
+assets/design/README.md	docs	repo
+assets/design/SHA256SUMS	asset	repo
+assets/design/icons/dark/4AllPass-dark-1024.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-128.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-16.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-180.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-192.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-24.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-256.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-32.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-384.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-48.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-512.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-64.png	asset	repo
+assets/design/icons/dark/4AllPass-dark-96.png	asset	repo
+assets/design/icons/light/4AllPass-light-1024.png	asset	repo
+assets/design/icons/light/4AllPass-light-128.png	asset	repo
+assets/design/icons/light/4AllPass-light-16.png	asset	repo
+assets/design/icons/light/4AllPass-light-180.png	asset	repo
+assets/design/icons/light/4AllPass-light-192.png	asset	repo
+assets/design/icons/light/4AllPass-light-24.png	asset	repo
+assets/design/icons/light/4AllPass-light-256.png	asset	repo
+assets/design/icons/light/4AllPass-light-32.png	asset	repo
+assets/design/icons/light/4AllPass-light-384.png	asset	repo
+assets/design/icons/light/4AllPass-light-48.png	asset	repo
+assets/design/icons/light/4AllPass-light-512.png	asset	repo
+assets/design/icons/light/4AllPass-light-64.png	asset	repo
+assets/design/icons/light/4AllPass-light-96.png	asset	repo
+assets/design/icons/windows/4AllPass-dark.ico	asset	repo
+assets/design/icons/windows/4AllPass-light.ico	asset	repo
+assets/design/originals/4AllPass-dark.png	asset	repo
+assets/design/originals/4AllPass-light.png	asset	repo
+assets/design/wordmarks/4AllPass-dark.svg	asset	repo
+assets/design/wordmarks/4AllPass-light.svg	asset	repo
+assets/readme/download-linux.svg	asset	repo
+assets/readme/download-macos-apple-silicon.svg	asset	repo
+assets/readme/download-macos-intel.svg	asset	repo
+assets/readme/download-windows.svg	asset	repo
+assets/readme/normalized/4AllPass-large.svg	asset	repo
+assets/readme/normalized/Agent-Authority-small.svg	asset	repo
+assets/readme/normalized/BlockDesign-small.svg	asset	repo
+assets/readme/normalized/KiraBridge-small.svg	asset	repo
+assets/readme/normalized/ThreadDesk-small.svg	asset	repo
+assets/readme/normalized/TollGate-small.svg	asset	repo
+backend/.env.example	config	P03 backend-api
+backend/Dockerfile	config	P03 backend-api
+backend/README.md	docs	P03 backend-api
+backend/alembic.ini	config	P03 backend-api
+backend/alembic/env.py	production	P03 backend-api
+backend/alembic/script.py.mako	production	P03 backend-api
+backend/alembic/versions/4e9316ce2d07_initial_schema.py	production	P03 backend-api
+backend/alembic/versions/b7c2a91e4f10_auth_snapshot_columns.py	production	P03 backend-api
+backend/alembic/versions/c3f8d10a62b4_sealed_manifest.py	production	P03 backend-api
+backend/app/__init__.py	production	P03 backend-api
+backend/app/__main__.py	production	P03 backend-api
+backend/app/api/__init__.py	production	P03 backend-api
+backend/app/api/deps.py	production	P03 backend-api
+backend/app/api/rate_limit.py	production	P03 backend-api
+backend/app/api/routes/__init__.py	production	P03 backend-api
+backend/app/api/routes/auth.py	production	P03 backend-api
+backend/app/api/routes/devices.py	production	P03 backend-api
+backend/app/api/routes/health.py	production	P03 backend-api
+backend/app/api/routes/local_meta.py	production	P03 backend-api
+backend/app/api/routes/vaults.py	production	P03 backend-api
+backend/app/api/routes/webauthn.py	production	P03 backend-api
+backend/app/authority_emit.py	production	P03 backend-api
+backend/app/body_limit.py	production	P03 backend-api
+backend/app/broker.py	production	P03 backend-api
+backend/app/core/__init__.py	production	P03 backend-api
+backend/app/core/_account_password_blocklist.py	production	P03 backend-api
+backend/app/core/account_password_policy.py	production	P03 backend-api
+backend/app/core/challenges.py	production	P03 backend-api
+backend/app/core/config.py	production	P03 backend-api
+backend/app/core/encoding.py	production	P03 backend-api
+backend/app/core/limits.py	production	P03 backend-api
+backend/app/core/paths.py	production	P03 backend-api
+backend/app/core/security.py	production	P03 backend-api
+backend/app/core/sessions.py	production	P03 backend-api
+backend/app/core/webauthn_cose.py	production	P03 backend-api
+backend/app/db/__init__.py	production	P03 backend-api
+backend/app/db/base.py	production	P03 backend-api
+backend/app/db/redis.py	production	P03 backend-api
+backend/app/db/session.py	production	P03 backend-api
+backend/app/db/types.py	production	P03 backend-api
+backend/app/local.py	production	P03 backend-api
+backend/app/main.py	production	P03 backend-api
+backend/app/models/__init__.py	production	P03 backend-api
+backend/app/models/device.py	production	P03 backend-api
+backend/app/models/device_key_envelope.py	production	P03 backend-api
+backend/app/models/entry.py	production	P03 backend-api
+backend/app/models/enums.py	production	P03 backend-api
+backend/app/models/key_envelope.py	production	P03 backend-api
+backend/app/models/mixins.py	production	P03 backend-api
+backend/app/models/snapshot.py	production	P03 backend-api
+backend/app/models/user.py	production	P03 backend-api
+backend/app/models/vault.py	production	P03 backend-api
+backend/app/models/webauthn_credential.py	production	P03 backend-api
+backend/app/schemas/__init__.py	production	P03 backend-api
+backend/app/schemas/auth.py	production	P03 backend-api
+backend/app/schemas/common.py	production	P03 backend-api
+backend/app/schemas/device.py	production	P03 backend-api
+backend/app/schemas/snapshot.py	production	P03 backend-api
+backend/app/schemas/vault.py	production	P03 backend-api
+backend/app/schemas/webauthn.py	production	P03 backend-api
+backend/app/services/snapshots.py	production	P03 backend-api
+backend/pytest.ini	production	P03 backend-api
+backend/requirements-dev.txt	config	P03 backend-api
+backend/requirements-sidecar.txt	docs	P03 backend-api
+backend/requirements.txt	docs	P03 backend-api
+backend/tests/__init__.py	test	P03 backend-api
+backend/tests/conftest.py	test	P03 backend-api
+backend/tests/security/__init__.py	test	P03 backend-api
+backend/tests/security/helpers.py	test	P03 backend-api
+backend/tests/security/test_auth_sessions.py	test	P03 backend-api
+backend/tests/security/test_authorization_idor.py	test	P03 backend-api
+backend/tests/security/test_destructive_write_limits.py	test	P03 backend-api
+backend/tests/security/test_devices_envelopes.py	test	P03 backend-api
+backend/tests/security/test_local_ui_traversal.py	test	P03 backend-api
+backend/tests/security/test_login_enumeration.py	test	P03 backend-api
+backend/tests/security/test_registration_password.py	test	P03 backend-api
+backend/tests/security/test_revision_history.py	test	P03 backend-api
+backend/tests/security/test_snapshots.py	test	P03 backend-api
+backend/tests/test_access_broker.py	test	P03 backend-api
+backend/tests/test_auth.py	test	P03 backend-api
+backend/tests/test_authority_emit.py	test	P03 backend-api
+backend/tests/test_body_limit.py	test	P03 backend-api
+backend/tests/test_health.py	test	P03 backend-api
+backend/tests/test_local.py	test	P03 backend-api
+backend/tests/test_migrations.py	test	P03 backend-api
+backend/tests/test_models.py	test	P03 backend-api
+backend/tests/test_ownership.py	test	P03 backend-api
+backend/tests/test_package_machine_deny.py	test	P03 backend-api
+backend/tests/test_paths.py	test	P03 backend-api
+backend/tests/test_security_hardening.py	test	P03 backend-api
+backend/tests/test_security_unit.py	test	P03 backend-api
+backend/tests/test_sidecar_packaging.py	test	P03 backend-api
+backend/tests/test_webauthn_challenge.py	test	P03 backend-api
+backend/tests/test_webauthn_cose.py	test	P03 backend-api
+backend/tests/test_webauthn_device_binding.py	test	P03 backend-api
+backend/tests/test_webauthn_policy.py	test	P03 backend-api
+backend/tests/webauthn_cose_fixtures.py	test	P03 backend-api
+brand/README.md	docs	repo
+brand/ap4/4allpass-dark.png	asset	repo
+brand/ap4/4allpass-light.png	asset	repo
+brand/ap4/SHA256SUMS	asset	repo
+brand/ap4/containers.json	asset	repo
+brand/ap4/dark/4allpass-dark-1024.png	asset	repo
+brand/ap4/dark/4allpass-dark-128.png	asset	repo
+brand/ap4/dark/4allpass-dark-16.png	asset	repo
+brand/ap4/dark/4allpass-dark-180.png	asset	repo
+brand/ap4/dark/4allpass-dark-192.png	asset	repo
+brand/ap4/dark/4allpass-dark-24.png	asset	repo
+brand/ap4/dark/4allpass-dark-256.png	asset	repo
+brand/ap4/dark/4allpass-dark-32.png	asset	repo
+brand/ap4/dark/4allpass-dark-384.png	asset	repo
+brand/ap4/dark/4allpass-dark-48.png	asset	repo
+brand/ap4/dark/4allpass-dark-512.png	asset	repo
+brand/ap4/dark/4allpass-dark-64.png	asset	repo
+brand/ap4/dark/4allpass-dark-96.png	asset	repo
+brand/ap4/light/4allpass-light-1024.png	asset	repo
+brand/ap4/light/4allpass-light-128.png	asset	repo
+brand/ap4/light/4allpass-light-16.png	asset	repo
+brand/ap4/light/4allpass-light-180.png	asset	repo
+brand/ap4/light/4allpass-light-192.png	asset	repo
+brand/ap4/light/4allpass-light-24.png	asset	repo
+brand/ap4/light/4allpass-light-256.png	asset	repo
+brand/ap4/light/4allpass-light-32.png	asset	repo
+brand/ap4/light/4allpass-light-384.png	asset	repo
+brand/ap4/light/4allpass-light-48.png	asset	repo
+brand/ap4/light/4allpass-light-512.png	asset	repo
+brand/ap4/light/4allpass-light-64.png	asset	repo
+brand/ap4/light/4allpass-light-96.png	asset	repo
+brand/ap4/native/1024x1024.png	asset	repo
+brand/ap4/native/128x128.png	asset	repo
+brand/ap4/native/16x16.png	asset	repo
+brand/ap4/native/24x24.png	asset	repo
+brand/ap4/native/256x256.png	asset	repo
+brand/ap4/native/32x32.png	asset	repo
+brand/ap4/native/48x48.png	asset	repo
+brand/ap4/native/512x512.png	asset	repo
+brand/ap4/native/64x64.png	asset	repo
+brand/mark.svg	asset	repo
+brand/wordmark.svg	asset	repo
+deploy/LAYOUT.md	docs	P11 deploy
+deploy/compose.yml	config	P11 deploy
+deploy/env.example	config	P11 deploy
+deploy/init-tree.sh	config	P11 deploy
+deploy/nginx-landing.conf	config	P11 deploy
+deploy/nginx-vault.conf	config	P11 deploy
+docker-compose.yml	config	P11 deploy
+docs/.nojekyll	docs	repo
+docs/DESIGN-ALIGNMENT-20261018.md	docs	repo
+docs/DESIGN.md	docs	repo
+docs/GNOM_HUB_DESIGN_DIRECTION.md	docs	repo
+docs/LICENSE-RELEASE-20261018.md	docs	repo
+docs/PROTECTED-ACCESS-20261018.md	docs	repo
+docs/README-HUMAN.md	docs	repo
+docs/README.md	docs	repo
+docs/RELEASE-0.1.2-rc.3.md	docs	repo
+docs/UI_TEST_SUITE.md	docs	repo
+docs/account-password-policy.md	docs	repo
+docs/adversarial-review-boundaries.md	docs	repo
+docs/adversarial-review-external-01.md	docs	repo
+docs/adversarial-review.md	docs	repo
+docs/android-skeleton-grok-build.md	docs	repo
+docs/architecture.md	docs	repo
+docs/architecture/README.md	docs	repo
+docs/architecture/adr/ADR-001-vault-as-cryptographic-domain.md	docs	repo
+docs/architecture/adr/ADR-002-principal-identity.md	docs	repo
+docs/architecture/adr/ADR-003-device-identity.md	docs	repo
+docs/architecture/adr/ADR-004-capability-based-access.md	docs	repo
+docs/architecture/adr/ADR-005-crypto-agility.md	docs	repo
+docs/architecture/adr/ADR-006-sync-protocol.md	docs	repo
+docs/architecture/adr/ADR-007-vault-connections.md	docs	repo
+docs/architecture/adr/ADR-008-agent-identity.md	docs	repo
+docs/architecture/adr/ADR-009-mobile-client.md	docs	repo
+docs/architecture/adr/ADR-010-post-quantum-readiness.md	docs	repo
+docs/architecture/adr/ADR-011-credential-model.md	docs	repo
+docs/architecture/adr/ADR-012-proof-and-signature-layer.md	docs	repo
+docs/architecture/adr/ADR-013-vault-storage-placement.md	docs	repo
+docs/architecture/adr/ADR-014-crypto-core-dependencies.md	docs	repo
+docs/architecture/adr/ADR-015-write-authorization.md	docs	repo
+docs/architecture/adr/ADR-016-protected-machine-access.md	docs	repo
+docs/architecture/adr/README.md	docs	repo
+docs/architecture/agent-access.md	docs	repo
+docs/architecture/agent-identity.md	docs	repo
+docs/architecture/future-architecture.md	docs	repo
+docs/architecture/future-compatibility-check.md	docs	repo
+docs/architecture/trust-boundaries.md	docs	repo
+docs/audit-scope.md	docs	repo
+docs/autofill-extension.md	docs	repo
+docs/autofill-v1.md	docs	repo
+docs/browser-sync.md	docs	repo
+docs/capability-contract-v1.md	docs	repo
+docs/capability-interface.md	docs	repo
+docs/checklists.md	docs	repo
+docs/comparison.md	docs	repo
+docs/crypto-protocol.md	docs	repo
+docs/crypto/authentication.md	docs	repo
+docs/crypto/encryption.md	docs	repo
+docs/crypto/envelopes.md	docs	repo
+docs/crypto/invariants.md	docs	repo
+docs/crypto/key-derivation.md	docs	repo
+docs/crypto/key-hierarchy.md	docs	repo
+docs/crypto/lock-lifecycle.md	docs	repo
+docs/crypto/recovery.md	docs	repo
+docs/crypto/revocation.md	docs	repo
+docs/crypto/server-storage.md	docs	repo
+docs/crypto/snapshot-integrity.md	docs	repo
+docs/crypto/testing.md	docs	repo
+docs/crypto/versioning.md	docs	repo
+docs/datenschutz.html	docs	website
+docs/demos/netzwerkpunkt-network.html	docs	website
+docs/desktop-command-boundary.md	docs	repo
+docs/desktop-native-normal-probe.md	docs	repo
+docs/desktop-network-boundary.md	docs	repo
+docs/desktop-runtime-boundary.md	docs	repo
+docs/desktop.md	docs	repo
+docs/dev-workflow.md	docs	repo
+docs/device-assertion-binding.md	docs	repo
+docs/distribution.md	docs	repo
+docs/eight-week-agent-access.md	docs	repo
+docs/entstehungslinie.md	docs	repo
+docs/evidence/broker-connection-state-20261020/STATUS.md	docs	repo
+docs/evidence/design-alignment-20261018/access-blocked-de-zoom.png	docs	repo
+docs/evidence/design-alignment-20261018/access-blocked-en.png	docs	repo
+docs/evidence/design-alignment-20261018/human-vault-desktop.png	docs	repo
+docs/evidence/design-alignment-20261018/ui-proof.json	docs	repo
+docs/evidence/desktop-listener-host-20261020/STATUS.md	docs	repo
+docs/evidence/device-assertion-binding-20261020/SHA256SUMS	docs	repo
+docs/evidence/device-assertion-binding-20261020/STATUS.md	docs	repo
+docs/evidence/h1-account-password-20261020/SHA256SUMS	docs	repo
+docs/evidence/h1-account-password-20261020/STATUS.md	docs	repo
+docs/evidence/h1-account-password-20261020/checks.json	docs	repo
+docs/evidence/h2-local-network-boundary-20261020/SHA256SUMS	docs	repo
+docs/evidence/h2-local-network-boundary-20261020/STATUS.md	docs	repo
+docs/evidence/h2-local-network-boundary-20261020/checks.json	docs	repo
+docs/evidence/h2-local-network-boundary-20261020/native-results.json	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/SHA256SUMS	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/STATUS.md	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/checks.json	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/independent-review.json	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/native-candidate.json	docs	repo
+docs/evidence/h3-desktop-command-boundary-20261020/native-negative.json	docs	repo
+docs/evidence/h4-runtime-20261020/SHA256SUMS	docs	repo
+docs/evidence/h4-runtime-20261020/STATUS.md	docs	repo
+docs/evidence/indexeddb-transactions-20261020/STATUS.md	docs	repo
+docs/evidence/indexeddb-transactions-20261020/results.json	docs	repo
+docs/evidence/license-release-20261018/ap4-app.png	docs	repo
+docs/evidence/license-release-20261018/ap4-browser.json	docs	repo
+docs/evidence/license-release-20261018/ap4-extension-popup.png	docs	repo
+docs/evidence/license-release-20261018/ap4-native-format-check.json	docs	repo
+docs/evidence/license-release-20261018/ap4-small-sizes.png	docs	repo
+docs/evidence/license-release-20261018/ap4-source-check.json	docs	repo
+docs/evidence/license-release-20261018/historical-release-baseline.json	docs	repo
+docs/evidence/license-release-20261018/historical-release-preservation.json	docs	repo
+docs/evidence/license-release-20261018/installer-check.json	docs	repo
+docs/evidence/license-release-20261018/product-live-browser.json	docs	repo
+docs/evidence/license-release-20261018/product-live-dark-mobile.png	docs	repo
+docs/evidence/license-release-20261018/product-live-light-mobile.png	docs	repo
+docs/evidence/license-release-20261018/product-page-publication.json	docs	repo
+docs/evidence/license-release-20261018/product-page-publication.patch	docs	repo
+docs/evidence/license-release-20261018/published-release.json	docs	repo
+docs/evidence/license-release-20261018/remote-assets-before-publication.json	docs	repo
+docs/evidence/license-release-20261018/settings-de.png	docs	repo
+docs/evidence/license-release-20261018/settings-en.png	docs	repo
+docs/evidence/license-release-20261018/settings-ui.json	docs	repo
+docs/evidence/license-release-20261018/startup-fix-proof-sources.json	docs	repo
+docs/evidence/license-release-20261018/startup-fixed-package-check-aarch64-apple-darwin.json	docs	repo
+docs/evidence/license-release-20261018/startup-fixed-package-check-x86_64-pc-windows-msvc.json	docs	repo
+docs/evidence/native-normal-journey-20261020/STATUS.md	docs	repo
+docs/evidence/p05-hard-revoke-postcommit-20261020/SHA256SUMS	docs	repo
+docs/evidence/p05-hard-revoke-postcommit-20261020/STATUS.md	docs	repo
+docs/evidence/p05-hard-revoke-postcommit-20261020/checks.json	docs	repo
+docs/evidence/p05-history-refetch-20261020/SHA256SUMS	docs	repo
+docs/evidence/p05-history-refetch-20261020/STATUS.md	docs	repo
+docs/evidence/p05-history-refetch-20261020/checks.json	docs	repo
+docs/evidence/p06-csv-records-20261020/SHA256SUMS	docs	repo
+docs/evidence/p06-csv-records-20261020/STATUS.md	docs	repo
+docs/evidence/p06-temp-cleanup-20261020.md	docs	repo
+docs/evidence/package-machine-deny-20261019/STATUS.md	docs	repo
+docs/evidence/pin-content-20261020/SHA256SUMS	docs	repo
+docs/evidence/pin-content-20261020/STATUS.md	docs	repo
+docs/evidence/pin-content-20261020/checks.json	docs	repo
+docs/evidence/protected-access-20261018/access-blocked-de-zoom.png	docs	repo
+docs/evidence/protected-access-20261018/access-blocked-en.png	docs	repo
+docs/evidence/protected-access-20261018/ui-proof.json	docs	repo
+docs/evidence/protected-binding-20261018/STATUS.md	docs	repo
+docs/evidence/protected-binding-20261018/test-summary.json	docs	repo
+docs/evidence/rc3-artifact-review-20261019/STATUS.md	docs	repo
+docs/evidence/rc3-artifact-review-20261019/artifact-review.json	docs	repo
+docs/evidence/rc3-artifact-review-20261019/unlock-search-copy.json	docs	repo
+docs/evidence/webauthn-origin-policy-20261020/STATUS.md	docs	repo
+docs/freeze.md	docs	repo
+docs/future-readiness.md	docs	repo
+docs/git-workflow.md	docs	repo
+docs/github-sichtbarkeit.md	docs	repo
+docs/grok-build-plan.md	docs	repo
+docs/impressum.html	docs	website
+docs/index.html	docs	website
+docs/install-terminal.md	docs	repo
+docs/ios-skeleton-grok-build.md	docs	repo
+docs/launch-posts.md	docs	repo
+docs/licensing-plan.md	docs	repo
+docs/live-browser-test.md	docs	repo
+docs/llms.txt	docs	repo
+docs/local-access-broker.md	docs	repo
+docs/plan-rest.md	docs	repo
+docs/positioning.md	docs	repo
+docs/post-quantum-roadmap.md	docs	repo
+docs/product-maturity.md	docs	repo
+docs/product-philosophy.md	docs	repo
+docs/provider-resolution.md	docs	repo
+docs/provider-service-vision.md	docs	repo
+docs/recovery.md	docs	repo
+docs/release-notes/0.1.2-rc.2-security-notice.md	docs	repo
+docs/release-notes/0.1.2-rc.3-draft.md	docs	repo
+docs/reproducible-builds.md	docs	repo
+docs/reviews/attack-vectors.md	docs	repo
+docs/reviews/mitigations.md	docs	repo
+docs/reviews/threat-model.md	docs	repo
+docs/roadmap.md	docs	repo
+docs/robots.txt	docs	repo
+docs/screenshots/index.html	docs	website
+docs/screenshots/v0-chrome.html	docs	website
+docs/screenshots/v1-auth.html	docs	website
+docs/screenshots/v2-create.html	docs	website
+docs/screenshots/v3-unlock.html	docs	website
+docs/screenshots/v4-desk-empty.html	docs	website
+docs/screenshots/v4-desk-phone.html	docs	website
+docs/screenshots/v4-desk.html	docs	website
+docs/screenshots/v5-browser.html	docs	website
+docs/screenshots/v6-access.html	docs	website
+docs/screenshots/v7-settings.html	docs	website
+docs/screenshots/v8-import.html	docs	website
+docs/screenshots/wire.css	docs	repo
+docs/secret-access-layer.md	docs	repo
+docs/security-boundary.md	docs	repo
+docs/security-freeze-2.md	docs	repo
+docs/sharing.md	docs	repo
+docs/sitemap.xml	docs	repo
+docs/specs/maip-v0.1.md	docs	repo
+docs/supply-chain-security.md	docs	repo
+docs/team-mode.md	docs	repo
+docs/test-vectors-argon2id.md	docs	repo
+docs/test-vectors.md	docs	repo
+docs/test-vectors/aes-gcm-v1.json	docs	repo
+docs/test-vectors/argon2id-v1.json	docs	repo
+docs/test-vectors/device-prf-v1.json	docs	repo
+docs/test-vectors/recovery-v1.json	docs	repo
+docs/testing/fresh-user-journey.md	docs	repo
+docs/threat-model.md	docs	repo
+docs/two-minute-demo.md	docs	repo
+docs/ui-map.md	docs	repo
+docs/vault-protocol.md	docs	repo
+docs/vault-revision.md	docs	repo
+docs/vault-storage.md	docs	repo
+docs/webauthn-prf.md	docs	repo
+docs/workflow-action-pins.md	docs	repo
+docs/your-ai-agent-doesnt-need-your-api-keys.md	docs	repo
+examples/n8n-access-client.mjs	production	P09 examples
+examples/n8n-github-read.test.mjs	test	P09 examples
+examples/n8n-github-read.workflow.json	config	P09 examples
+extension/icons/icon128.png	asset	P07 extension
+extension/icons/icon16.png	asset	P07 extension
+extension/icons/icon32.png	asset	P07 extension
+extension/icons/icon48.png	asset	P07 extension
+extension/icons/logo.png	asset	P07 extension
+extension/manifest.json	config	P07 extension
+extension/package.json	config	P07 extension
+extension/safari/FourAllPass/FourAllPass Extension/FourAllPass_Extension.entitlements	production	P07 extension
+extension/safari/FourAllPass/FourAllPass Extension/Info.plist	production	P07 extension
+extension/safari/FourAllPass/FourAllPass Extension/SafariWebExtensionHandler.swift	production	P07 extension
+extension/safari/FourAllPass/FourAllPass.xcodeproj/project.pbxproj	config	P07 extension
+extension/safari/FourAllPass/FourAllPass.xcodeproj/project.xcworkspace/contents.xcworkspacedata	config	P07 extension
+extension/safari/FourAllPass/FourAllPass/AppDelegate.swift	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AccentColor.colorset/Contents.json	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/Contents.json	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-1024.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-128.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-16.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-256.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-32.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-512.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/AppIcon.appiconset/ap4-64.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/Contents.json	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/LargeIcon.imageset/Contents.json	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/LargeIcon.imageset/ap4-128.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/LargeIcon.imageset/ap4-256.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Assets.xcassets/LargeIcon.imageset/ap4-384.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Base.lproj/Main.storyboard	config	P07 extension
+extension/safari/FourAllPass/FourAllPass/FourAllPass.entitlements	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/Info.plist	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/Resources/Base.lproj/Main.html	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/Resources/Icon.png	asset	P07 extension
+extension/safari/FourAllPass/FourAllPass/Resources/Script.js	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/Resources/Style.css	production	P07 extension
+extension/safari/FourAllPass/FourAllPass/ViewController.swift	production	P07 extension
+extension/safari/FourAllPass/FourAllPassTests/FourAllPassTests.swift	production	P07 extension
+extension/safari/FourAllPass/FourAllPassUITests/FourAllPassUITests.swift	production	P07 extension
+extension/safari/FourAllPass/FourAllPassUITests/FourAllPassUITestsLaunchTests.swift	production	P07 extension
+extension/scripts/build.mjs	production	P07 extension
+extension/src/background.ts	production	P07 extension
+extension/src/browser.ts	production	P07 extension
+extension/src/content.ts	production	P07 extension
+extension/src/fill.ts	production	P07 extension
+extension/src/idle-lock.ts	production	P07 extension
+extension/src/match.ts	production	P07 extension
+extension/src/password-separation.ts	production	P07 extension
+extension/src/popup-settings.ts	production	P07 extension
+extension/src/popup.css	production	P07 extension
+extension/src/popup.html	production	P07 extension
+extension/src/popup.ts	production	P07 extension
+extension/src/revision-pin.ts	production	P07 extension
+extension/src/storage-identity.ts	production	P07 extension
+extension/src/tab-target.ts	production	P07 extension
+extension/src/totp.ts	production	P07 extension
+extension/src/unlock.ts	production	P07 extension
+extension/test/fill.test.ts	test	P07 extension
+extension/test/idle-lock.test.ts	test	P07 extension
+extension/test/match.test.ts	test	P07 extension
+extension/test/password-separation.test.ts	test	P07 extension
+extension/test/popup-settings.test.ts	test	P07 extension
+extension/test/storage-identity.test.ts	test	P07 extension
+extension/test/tab-target.test.ts	test	P07 extension
+extension/test/unlock.test.ts	test	P07 extension
+extension/tsconfig.json	config	P07 extension
+frontend/.gitignore	config	P02 frontend-vault-ui
+frontend/.oxlintrc.json	config	P02 frontend-vault-ui
+frontend/Dockerfile	config	P02 frontend-vault-ui
+frontend/README.md	docs	P02 frontend-vault-ui
+frontend/e2e/desktop/fresh-user-journey.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/desktop/journey-observer.ts	test	P02 frontend-vault-ui
+frontend/e2e/desktop/shell.ts	test	P02 frontend-vault-ui
+frontend/e2e/desktop/v0-v8.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/device-unlock.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/extension/autofill-github-live.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/extension/autofill-local.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/extension/autofill.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/extension/vault.ts	test	P02 frontend-vault-ui
+frontend/e2e/live/actions.ts	test	P02 frontend-vault-ui
+frontend/e2e/live/browsers.ts	test	P02 frontend-vault-ui
+frontend/e2e/live/cross-browser.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/live/hard-revoke.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/live/two-minute-demo.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/browser-cards-import.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/first-run-access.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/hard-revoke-postcommit.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/import-review.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/poisoned-head-recovery.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/restore-share.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/shared-desktop.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/vault-desk.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/local/vault-history.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/two-device.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/user-watch/v0-v8-observer.spec.ts	test	P02 frontend-vault-ui
+frontend/e2e/virtual-authenticator.ts	test	P02 frontend-vault-ui
+frontend/e2e/watch/config.ts	test	P02 frontend-vault-ui
+frontend/index.html	production	P02 frontend-vault-ui
+frontend/nginx.conf	config	P02 frontend-vault-ui
+frontend/package.json	config	P02 frontend-vault-ui
+frontend/playwright.autofill-local.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.desktop.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.extension.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.fresh-user.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.live.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.local.config.ts	config	P02 frontend-vault-ui
+frontend/playwright.user-watch.config.ts	config	P02 frontend-vault-ui
+frontend/public/access-prompt.html	production	P09 frontend-access
+frontend/public/access-prompt.js	production	P09 frontend-access
+frontend/public/agent-request.html	production	P09 frontend-access
+frontend/public/favicon-light.png	asset	P02 frontend-vault-ui
+frontend/public/favicon.png	asset	P02 frontend-vault-ui
+frontend/public/icon-180.png	asset	P02 frontend-vault-ui
+frontend/public/icon-192.png	asset	P02 frontend-vault-ui
+frontend/public/icon-512.png	asset	P02 frontend-vault-ui
+frontend/public/icon.png	asset	P02 frontend-vault-ui
+frontend/public/logo-light.png	asset	P02 frontend-vault-ui
+frontend/public/logo.png	asset	P02 frontend-vault-ui
+frontend/public/og.png	asset	P02 frontend-vault-ui
+frontend/public/test-login-assist.html	test	P02 frontend-vault-ui
+frontend/public/test-login-github.html	test	P02 frontend-vault-ui
+frontend/public/test-login.html	test	P02 frontend-vault-ui
+frontend/scripts/run-user-suite.mjs	production	P11 test-tooling
+frontend/scripts/setup-ai-staging-vault.mjs	production	P11 test-tooling
+frontend/src/App.tsx	production	P02 frontend-vault-ui
+frontend/src/components/AccessBrokerHost.tsx	production	P09 frontend-access
+frontend/src/components/AccessPanel.tsx	production	P09 frontend-access
+frontend/src/components/BrowserCards.tsx	production	P06 import
+frontend/src/components/BrowserIcon.test.ts	test	P06 import
+frontend/src/components/BrowserIcon.tsx	production	P06 import
+frontend/src/components/DevicesPanel.tsx	production	P04/P05 frontend-devices-revoke
+frontend/src/components/HardRevokeProgress.tsx	production	P04/P05 frontend-devices-revoke
+frontend/src/components/LanguageSwitch.tsx	production	P02 frontend-vault-ui
+frontend/src/components/LocalBrokerConnect.tsx	production	P09 frontend-access
+frontend/src/components/N8nHttpRecipe.tsx	production	P09 frontend-access
+frontend/src/components/OnboardingWizard.tsx	production	P02 frontend-vault-ui
+frontend/src/components/RecoveryKitDialog.tsx	production	P05 frontend-recovery-history
+frontend/src/components/SettingsPanel.tsx	production	P02 frontend-vault-ui
+frontend/src/components/TotpCode.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/FieldLabel.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/PullLocalVaultBanner.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultEntryForm.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultHeader.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultHistoryPanel.tsx	production	P05 frontend-recovery-history
+frontend/src/components/vault/VaultImportReview.tsx	production	P06 import
+frontend/src/components/vault/VaultList.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultSearchAndFilters.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultSettings.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/VaultShareDialog.tsx	production	P06 sharing
+frontend/src/components/vault/VaultShareImportDialog.tsx	production	P06 sharing
+frontend/src/components/vault/VaultTabs.tsx	production	P02 frontend-vault-ui
+frontend/src/components/vault/index.ts	production	P02 frontend-vault-ui
+frontend/src/desktop.css	production	P08 desktop-frontend
+frontend/src/hooks/vault/index.ts	production	P02 frontend-vault-ui
+frontend/src/hooks/vault/useVaultHealth.ts	production	P02 frontend-vault-ui
+frontend/src/hooks/vault/useVaultSearch.ts	production	P02 frontend-vault-ui
+frontend/src/hooks/vault/useVaultState.ts	production	P02 frontend-vault-ui
+frontend/src/lib/access-demo.test.ts	test	P09 frontend-access
+frontend/src/lib/access-demo.ts	production	P09 frontend-access
+frontend/src/lib/access.test.ts	test	P09 frontend-access
+frontend/src/lib/access.ts	production	P09 frontend-access
+frontend/src/lib/active-vault.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/active-vault.ts	production	P02 vault-lifecycle
+frontend/src/lib/api.ts	production	P03 frontend-account-api
+frontend/src/lib/autofill-demo.test.ts	test	P07 frontend-autofill
+frontend/src/lib/autofill-demo.ts	production	P07 frontend-autofill
+frontend/src/lib/bilingual-guard.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/browser-active.test.ts	test	P06 import
+frontend/src/lib/browser-active.ts	production	P06 import
+frontend/src/lib/browsers.test.ts	test	P06 import
+frontend/src/lib/browsers.ts	production	P06 import
+frontend/src/lib/clipboard.test.ts	test	P08 desktop-frontend
+frontend/src/lib/clipboard.ts	production	P08 desktop-frontend
+frontend/src/lib/copy-mode.test.ts	test	P08 desktop-frontend
+frontend/src/lib/copy-mode.ts	production	P08 desktop-frontend
+frontend/src/lib/csv-records.ts	production	P06 import
+frontend/src/lib/desktop-settings.test.ts	test	P08 desktop-frontend
+frontend/src/lib/desktop-settings.ts	production	P08 desktop-frontend
+frontend/src/lib/desktop.ts	production	P08 desktop-frontend
+frontend/src/lib/detect.test.ts	test	P07 frontend-autofill
+frontend/src/lib/detect.ts	production	P07 frontend-autofill
+frontend/src/lib/device-identity.ts	production	P04/P05 frontend-devices-revoke
+frontend/src/lib/entries.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/entries.ts	production	P02 frontend-vault-ui
+frontend/src/lib/hard-revoke-result.ts	production	P04/P05 frontend-devices-revoke
+frontend/src/lib/historic-snapshot.ts	production	P02 vault-lifecycle
+frontend/src/lib/import-classify.test.ts	test	P06 import
+frontend/src/lib/import-classify.ts	production	P06 import
+frontend/src/lib/import.csv-records.test.ts	test	P06 import
+frontend/src/lib/import.test.ts	test	P06 import
+frontend/src/lib/import.ts	production	P06 import
+frontend/src/lib/local-broker-client.test.ts	test	P09 frontend-access
+frontend/src/lib/local-broker-client.ts	production	P09 frontend-access
+frontend/src/lib/n8n-http.test.ts	test	P09 frontend-access
+frontend/src/lib/n8n-http.ts	production	P09 frontend-access
+frontend/src/lib/onboarding.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/onboarding.ts	production	P02 frontend-vault-ui
+frontend/src/lib/password-separation.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/password-separation.ts	production	P03 frontend-account-api
+frontend/src/lib/providers.test.ts	test	P07 frontend-autofill
+frontend/src/lib/providers.ts	production	P07 frontend-autofill
+frontend/src/lib/pull-other-vault.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/pull-other-vault.ts	production	P02 vault-lifecycle
+frontend/src/lib/revision-pin.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/revision-pin.ts	production	P02 vault-lifecycle
+frontend/src/lib/share.test.ts	test	P06 sharing
+frontend/src/lib/share.ts	production	P06 sharing
+frontend/src/lib/snapshot-cache.indexeddb.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/snapshot-cache.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/snapshot-cache.ts	production	P02 vault-lifecycle
+frontend/src/lib/storage-origin.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/storage-origin.ts	production	P02 frontend-vault-ui
+frontend/src/lib/test-storage-shim.ts	test	P02 frontend-vault-ui
+frontend/src/lib/totp.test.ts	test	P02 frontend-vault-ui
+frontend/src/lib/totp.ts	production	P02 frontend-vault-ui
+frontend/src/lib/vault-session.freshness.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.hard-revoke.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.head-recovery.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.history.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.offline.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.pin-content.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.recovery-rotation.test.ts	test	P02 vault-lifecycle
+frontend/src/lib/vault-session.ts	production	P02 vault-lifecycle
+frontend/src/lib/webauthnCapabilities.test.ts	test	P04 frontend-devices
+frontend/src/lib/webauthnCapabilities.ts	production	P04 frontend-devices
+frontend/src/lib/webauthnPrf.test.ts	test	P04 frontend-devices
+frontend/src/lib/webauthnPrf.ts	production	P04 frontend-devices
+frontend/src/main.tsx	production	P02 frontend-vault-ui
+frontend/src/modules/README.md	docs	P02 frontend-vault-ui
+frontend/src/modules/account/README.md	docs	P03 frontend-account-api
+frontend/src/modules/account/index.ts	production	P03 frontend-account-api
+frontend/src/modules/account/service/account-commands.ts	production	P03 frontend-account-api
+frontend/src/modules/account/service/registration-password.ts	production	P03 frontend-account-api
+frontend/src/modules/account/state/use-account.ts	production	P03 frontend-account-api
+frontend/src/modules/account/tests/account.test.ts	test	P03 frontend-account-api
+frontend/src/modules/account/tests/password-policy.test.ts	test	P03 frontend-account-api
+frontend/src/modules/agent-access/access.ts	production	P09 frontend-access
+frontend/src/modules/agent-access/demo.ts	production	P09 frontend-access
+frontend/src/modules/agent-access/index.ts	production	P09 frontend-access
+frontend/src/modules/app-shell/index.ts	production	P02 frontend-vault-ui
+frontend/src/modules/app-shell/index.tsx	production	P02 frontend-vault-ui
+frontend/src/modules/autofill/index.ts	production	P07 frontend-autofill
+frontend/src/modules/browser-profiles/index.ts	production	P06 import
+frontend/src/modules/desktop-adapter/index.ts	production	P08 desktop-frontend
+frontend/src/modules/device-management/hard-revoke-coordinator.ts	production	P04/P05 frontend-devices-revoke
+frontend/src/modules/device-management/index.ts	production	P04/P05 frontend-devices-revoke
+frontend/src/modules/device-management/tests/hard-revoke.test.ts	test	P04/P05 frontend-devices-revoke
+frontend/src/modules/devices/index.ts	production	P04 frontend-devices
+frontend/src/modules/entries/index.ts	production	P02 vault-lifecycle
+frontend/src/modules/feedback/README.md	docs	P02 frontend-vault-ui
+frontend/src/modules/feedback/errors/describe-error.ts	production	P02 frontend-vault-ui
+frontend/src/modules/feedback/index.ts	production	P02 frontend-vault-ui
+frontend/src/modules/feedback/state/feedback-state.ts	production	P02 frontend-vault-ui
+frontend/src/modules/feedback/tests/feedback.test.ts	test	P02 frontend-vault-ui
+frontend/src/modules/import/index.ts	production	P06 import
+frontend/src/modules/recovery-management/index.ts	production	P05 frontend-recovery-history
+frontend/src/modules/settings/index.ts	production	P02 frontend-vault-ui
+frontend/src/modules/sharing/index.ts	production	P06 sharing
+frontend/src/modules/startup/README.md	docs	P02 frontend-vault-ui
+frontend/src/modules/startup/index.ts	production	P02 frontend-vault-ui
+frontend/src/modules/startup/service/run-startup.ts	production	P02 frontend-vault-ui
+frontend/src/modules/startup/state/use-startup.ts	production	P02 frontend-vault-ui
+frontend/src/modules/startup/tests/startup.test.ts	test	P02 frontend-vault-ui
+frontend/src/modules/types.ts	production	P02 frontend-vault-ui
+frontend/src/modules/vault-lifecycle/index.ts	production	P02 vault-lifecycle
+frontend/src/networkpunkt.css	production	P02 frontend-vault-ui
+frontend/src/pages/AuthPage.tsx	production	P03 frontend-account-api
+frontend/src/pages/CreateVaultPage.tsx	production	P02 frontend-vault-ui
+frontend/src/pages/RestoreVaultPage.tsx	production	P05 frontend-recovery-history
+frontend/src/pages/UnlockPage.tsx	production	P02 frontend-vault-ui
+frontend/src/pages/VaultPage.tsx	production	P02 frontend-vault-ui
+frontend/src/services/vault/detect.ts	production	P07 frontend-autofill
+frontend/src/services/vault/entries.test.ts	test	P02 frontend-vault-ui
+frontend/src/services/vault/entries.ts	production	P02 frontend-vault-ui
+frontend/src/services/vault/importFile.ts	production	P06 import
+frontend/src/services/vault/index.ts	production	P02 frontend-vault-ui
+frontend/src/services/vault/pwned.test.ts	test	P02 frontend-vault-ui
+frontend/src/services/vault/pwned.ts	production	P02 frontend-vault-ui
+frontend/src/services/vault/share.ts	production	P06 sharing
+frontend/src/state/app-state.tsx	production	P02 frontend-vault-ui
+frontend/src/state/copy-mode.tsx	production	P08 desktop-frontend
+frontend/src/styles.css	production	P02 frontend-vault-ui
+frontend/src/tokens.css	production	P02 frontend-vault-ui
+frontend/src/types/vault.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/category.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/drafts.test.ts	test	P02 frontend-vault-ui
+frontend/src/utils/vault/drafts.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/health.test.ts	test	P02 frontend-vault-ui
+frontend/src/utils/vault/health.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/index.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/labels.test.ts	test	P02 frontend-vault-ui
+frontend/src/utils/vault/labels.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/search.test.ts	test	P02 frontend-vault-ui
+frontend/src/utils/vault/search.ts	production	P02 frontend-vault-ui
+frontend/src/utils/vault/strength.test.ts	test	P02 frontend-vault-ui
+frontend/src/utils/vault/strength.ts	production	P02 frontend-vault-ui
+frontend/tsconfig.app.json	config	P02 frontend-vault-ui
+frontend/tsconfig.json	config	P02 frontend-vault-ui
+frontend/tsconfig.node.json	config	P02 frontend-vault-ui
+frontend/vite.config.ts	config	P02 frontend-vault-ui
+package-lock.json	generated	repo
+package.json	config	repo
+packages/access/README.md	docs	P09 access-sdk
+packages/access/package.json	config	P09 access-sdk
+packages/access/src/client.ts	production	P09 access-sdk
+packages/access/src/errors.ts	production	P09 access-sdk
+packages/access/src/github.ts	production	P09 access-sdk
+packages/access/src/index.ts	production	P09 access-sdk
+packages/access/src/redact.ts	production	P09 access-sdk
+packages/access/test/client.test.ts	test	P09 access-sdk
+packages/access/tsconfig.json	config	P09 access-sdk
+packages/broker/README.md	docs	P09 broker-relay
+packages/broker/package.json	config	P09 broker-relay
+packages/broker/src/relay.mjs	production	P09 broker-relay
+packages/broker/test/relay.test.mjs	test	P09 broker-relay
+packages/core/README.md	docs	P09 core-policy
+packages/core/package.json	config	P09 core-policy
+packages/core/src/access/decision.ts	production	P09 core-policy
+packages/core/src/access/handoff.ts	production	P09 core-policy
+packages/core/src/access/index.ts	production	P09 core-policy
+packages/core/src/access/limits.ts	production	P09 core-policy
+packages/core/src/access/request.ts	production	P09 core-policy
+packages/core/src/access/standing.ts	production	P09 core-policy
+packages/core/src/access/types.ts	production	P09 core-policy
+packages/core/src/access/why.ts	production	P09 core-policy
+packages/core/src/audit/index.ts	production	P09 core-policy
+packages/core/src/audit/types.ts	production	P09 core-policy
+packages/core/src/capabilities/index.ts	production	P09 core-policy
+packages/core/src/capabilities/registry.ts	production	P09 core-policy
+packages/core/src/capabilities/types.ts	production	P09 core-policy
+packages/core/src/credentials/index.ts	production	P09 core-policy
+packages/core/src/credentials/types.ts	production	P09 core-policy
+packages/core/src/index.ts	production	P09 core-policy
+packages/core/src/policy/evaluate.ts	production	P09 core-policy
+packages/core/src/policy/index.ts	production	P09 core-policy
+packages/core/src/policy/types.ts	production	P09 core-policy
+packages/core/src/vault/index.ts	production	P09 core-policy
+packages/core/src/vault/types.ts	production	P09 core-policy
+packages/core/test/access-policy.test.ts	test	P09 core-policy
+packages/core/test/standing-grant.test.ts	test	P09 core-policy
+packages/core/tsconfig.json	config	P09 core-policy
+packages/crypto/README.md	docs	P01 crypto-core
+packages/crypto/package.json	config	P01 crypto-core
+packages/crypto/src/aead/aes-gcm.ts	production	P01 crypto-core
+packages/crypto/src/constants.ts	production	P01 crypto-core
+packages/crypto/src/device.ts	production	P01 crypto-core
+packages/crypto/src/encoding/aad.ts	production	P01 crypto-core
+packages/crypto/src/encoding/base64.ts	production	P01 crypto-core
+packages/crypto/src/encoding/bytes.ts	production	P01 crypto-core
+packages/crypto/src/encoding/digest.ts	production	P01 crypto-core
+packages/crypto/src/encoding/framing.ts	production	P01 crypto-core
+packages/crypto/src/encoding/unicode.ts	production	P01 crypto-core
+packages/crypto/src/entry.ts	production	P01 crypto-core
+packages/crypto/src/envelope.ts	production	P01 crypto-core
+packages/crypto/src/errors.ts	production	P01 crypto-core
+packages/crypto/src/index.ts	production	P01 crypto-core
+packages/crypto/src/kdf/argon2id.ts	production	P01 crypto-core
+packages/crypto/src/kdf/profiles.ts	production	P01 crypto-core
+packages/crypto/src/manifest.ts	production	P01 crypto-core
+packages/crypto/src/memory.ts	production	P01 crypto-core
+packages/crypto/src/random.ts	production	P01 crypto-core
+packages/crypto/src/recovery.ts	production	P01 crypto-core
+packages/crypto/src/requester.ts	production	P01 crypto-core
+packages/crypto/src/revision.ts	production	P01 crypto-core
+packages/crypto/src/snapshot.ts	production	P01 crypto-core
+packages/crypto/src/test-only.ts	test	P01 crypto-core
+packages/crypto/src/types.ts	production	P01 crypto-core
+packages/crypto/src/validate.ts	production	P01 crypto-core
+packages/crypto/src/wire.ts	production	P01 crypto-core
+packages/crypto/test/aad.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-aead.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-freshness.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-identity.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-kdf-prf.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-kdf-toctou.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-recovery.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-requester.test.ts	test	P01 crypto-core
+packages/crypto/test/adversarial-toctou.test.ts	test	P01 crypto-core
+packages/crypto/test/aes-gcm-vectors.test.ts	test	P01 crypto-core
+packages/crypto/test/argon2id-vectors.test.ts	test	P01 crypto-core
+packages/crypto/test/device-hardening.test.ts	test	P01 crypto-core
+packages/crypto/test/device-unlock.test.ts	test	P01 crypto-core
+packages/crypto/test/device.test.ts	test	P01 crypto-core
+packages/crypto/test/end-to-end.test.ts	test	P01 crypto-core
+packages/crypto/test/envelope.test.ts	test	P01 crypto-core
+packages/crypto/test/error-taxonomy.test.ts	test	P01 crypto-core
+packages/crypto/test/fixtures.ts	test	P01 crypto-core
+packages/crypto/test/helpers.ts	test	P01 crypto-core
+packages/crypto/test/kdf-bounds.test.ts	test	P01 crypto-core
+packages/crypto/test/manifest.test.ts	test	P01 crypto-core
+packages/crypto/test/nonce.test.ts	test	P01 crypto-core
+packages/crypto/test/property-envelope.test.ts	test	P01 crypto-core
+packages/crypto/test/recovery.test.ts	test	P01 crypto-core
+packages/crypto/test/revision.test.ts	test	P01 crypto-core
+packages/crypto/test/snapshot.test.ts	test	P01 crypto-core
+packages/crypto/test/supply-chain.test.ts	test	P01 crypto-core
+packages/crypto/test/wire.test.ts	test	P01 crypto-core
+packages/crypto/tsconfig.json	config	P01 crypto-core
+packages/providers/package.json	config	P07 providers
+packages/providers/src/detect.ts	production	P07 providers
+packages/providers/src/index.ts	production	P07 providers
+packages/providers/src/match.ts	production	P07 providers
+packages/providers/src/normalize.ts	production	P07 providers
+packages/providers/src/registry/amazon.ts	production	P07 providers
+packages/providers/src/registry/apple.ts	production	P07 providers
+packages/providers/src/registry/github.ts	production	P07 providers
+packages/providers/src/registry/google.ts	production	P07 providers
+packages/providers/src/registry/index.ts	production	P07 providers
+packages/providers/src/registry/microsoft.ts	production	P07 providers
+packages/providers/src/registry/rest.ts	production	P07 providers
+packages/providers/src/resolve.ts	production	P07 providers
+packages/providers/src/types.ts	production	P07 providers
+packages/providers/test/detect.test.ts	test	P07 providers
+packages/providers/test/normalize.test.ts	test	P07 providers
+packages/providers/test/resolve.test.ts	test	P07 providers
+packages/providers/tsconfig.json	config	P07 providers
+packages/webauthn/README.md	docs	P04 webauthn
+packages/webauthn/package.json	config	P04 webauthn
+packages/webauthn/src/authenticator-data.ts	production	P04 webauthn
+packages/webauthn/src/browser-client.ts	production	P04 webauthn
+packages/webauthn/src/challenge.ts	production	P04 webauthn
+packages/webauthn/src/enable.ts	production	P04 webauthn
+packages/webauthn/src/errors.ts	production	P04 webauthn
+packages/webauthn/src/index.ts	production	P04 webauthn
+packages/webauthn/src/large-blob.ts	production	P04 webauthn
+packages/webauthn/src/prf.ts	production	P04 webauthn
+packages/webauthn/src/store.ts	production	P04 webauthn
+packages/webauthn/src/types.ts	production	P04 webauthn
+packages/webauthn/src/unlock.ts	production	P04 webauthn
+packages/webauthn/test/device-unlock.test.ts	test	P04 webauthn
+packages/webauthn/test/fake-authenticator.ts	test	P04 webauthn
+packages/webauthn/test/store.indexeddb.test.ts	test	P04 webauthn
+packages/webauthn/tsconfig.json	config	P04 webauthn
+protected_executor/README.md	docs	P09 protected-executor
+protected_executor/__init__.py	production	P09 protected-executor
+protected_executor/capability.py	production	P09 protected-executor
+protected_executor/contracts.py	production	P09 protected-executor
+protected_executor/core.py	production	P09 protected-executor
+protected_executor/tests/test_binding.py	test	P09 protected-executor
+protected_executor/tests/test_core.py	test	P09 protected-executor
+protected_executor/tests/test_tollgate.py	test	P09 protected-executor
+protected_executor/tollgate_adapter.py	production	P09 protected-executor
+scripts/attack-recovery.mjs	production	P11 build-tools
+scripts/check-module-boundaries.mjs	production	P11 build-tools
+scripts/check-release-license.py	production	P11 build-tools
+scripts/collect-release-notices.py	production	P11 build-tools
+scripts/generate-account-password-blocklist.py	production	P11 build-tools
+scripts/generate-sbom.sh	production	P11 build-tools
+scripts/generate-vectors.mjs	production	P11 build-tools
+scripts/git-hooks/post-commit	config	P11 build-tools
+scripts/hash-dist.mjs	production	P11 build-tools
+scripts/install-git-hooks.sh	production	P11 build-tools
+scripts/install-pick.test.sh	production	P11 build-tools
+scripts/install.ps1	production	P11 build-tools
+scripts/install.sh	production	P11 build-tools
+scripts/live-browser-test.sh	production	P11 build-tools
+scripts/local-access-broker.mjs	production	P11 build-tools
+scripts/macos_runtime_policy.py	production	P11 build-tools
+scripts/make-dmg.sh	production	P11 build-tools
+scripts/native_network_fixture.py	production	P11 build-tools
+scripts/open-desktop.sh	production	P11 build-tools
+scripts/package-macos.sh	production	P11 build-tools
+scripts/package-pages.sh	production	P11 build-tools
+scripts/package-sidecar.py	production	P11 build-tools
+scripts/package_machine_deny.py	production	P11 build-tools
+scripts/requirements-dev.txt	config	P11 build-tools
+scripts/run-local-app.mjs	production	P11 build-tools
+scripts/run-sidecar.mjs	production	P11 build-tools
+scripts/sync-approved-icons.py	production	P11 build-tools
+scripts/test-native-command-acl.py	production	P11 build-tools
+scripts/test-native-network-boundary.py	production	P11 build-tools
+scripts/test-native-normal-journey.py	production	P11 build-tools
+scripts/test_macos_runtime_policy.py	test	P11 build-tools
+scripts/testdata/release-body-older-dmg.json	test	P11 build-tools
+scripts/update_readme_downloads.py	production	P11 build-tools
+scripts/verify-aes-gcm-vectors.mjs	production	P01 vector-tools
+scripts/verify-argon2id-vectors.py	production	P01 vector-tools
+scripts/verify-indexeddb-transactions.mjs	production	P11 build-tools
+scripts/verify-reproducible-build.mjs	production	P11 build-tools
+site/.nojekyll	config	website
+site/DEPLOY-NOTE.md	docs	website
+site/DOMAIN-STRATEGY.md	docs	website
+site/assets/ap4-dark-128.png	asset	website
+site/assets/ap4-dark-32.png	asset	website
+site/assets/ap4-dark-512.png	asset	website
+site/assets/ap4-light-128.png	asset	website
+site/assets/ap4-light-32.png	asset	website
+site/assets/ap4-light-512.png	asset	website
+site/datenschutz.html	production	website
+site/download.html	production	website
+site/hub-4allpass.html	production	website
+site/impressum.html	production	website
+site/index.html	production	website
+site/llms.txt	docs	website
+site/robots.txt	docs	website
+site/sitemap.xml	config	website
+src-tauri/.cargo/audit.toml	config	P08 desktop-native
+src-tauri/Cargo.lock	config	P08 desktop-native
+src-tauri/Cargo.toml	config	P08 desktop-native
+src-tauri/Info.plist	production	P08 desktop-native
+src-tauri/build.rs	config	P08 desktop-native
+src-tauri/capabilities/access-prompt.json	config	P08 desktop-native
+src-tauri/capabilities/default.json	config	P08 desktop-native
+src-tauri/deny.toml	config	P08 desktop-native
+src-tauri/entitlements.plist	production	P08 desktop-native
+src-tauri/icons/128x128.png	asset	P08 desktop-native
+src-tauri/icons/128x128@2x.png	asset	P08 desktop-native
+src-tauri/icons/256x256.png	asset	P08 desktop-native
+src-tauri/icons/256x256@2x.png	asset	P08 desktop-native
+src-tauri/icons/32x32.png	asset	P08 desktop-native
+src-tauri/icons/512x512.png	asset	P08 desktop-native
+src-tauri/icons/512x512@2x.png	asset	P08 desktop-native
+src-tauri/icons/icon.icns	asset	P08 desktop-native
+src-tauri/icons/icon.ico	asset	P08 desktop-native
+src-tauri/icons/icon.png	asset	P08 desktop-native
+src-tauri/permissions/autogenerated/access_decide.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/access_dismiss.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/access_prompt.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/extension_install.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/import_browser_logins.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/list_browser_profiles.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/open_autofill_demo.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/open_browser_for_extension.toml	generated	P08 desktop-native
+src-tauri/permissions/autogenerated/sidecar_http.toml	generated	P08 desktop-native
+src-tauri/src/bin/acl_probe.rs	test	P08 desktop-native
+src-tauri/src/bin/normal_journey_probe.rs	test	P08 desktop-native
+src-tauri/src/browser_passwords.rs	production	P06 native-import
+src-tauri/src/browsers.rs	production	P08 desktop-native
+src-tauri/src/command_contract.rs	production	P08 desktop-native
+src-tauri/src/core_bind.rs	production	P08 desktop-native
+src-tauri/src/firefox_logins.rs	production	P06 native-import
+src-tauri/src/lib.rs	production	P08 desktop-native
+src-tauri/src/loopback.rs	production	P08 desktop-native
+src-tauri/src/main.rs	production	P08 desktop-native
+src-tauri/src/native_acl_probe.rs	test	P08 desktop-native
+src-tauri/src/native_network_probe.rs	test	P08 desktop-native
+src-tauri/src/native_normal_journey_probe.rs	test	P08 desktop-native
+src-tauri/src/process.rs	production	P08 desktop-native
+src-tauri/src/process_inspect.rs	production	P08 desktop-native
+src-tauri/src/prompts.rs	production	P08 desktop-native
+src-tauri/src/secret_fs.rs	production	P06 native-import
+src-tauri/src/sidecar_http.rs	production	P08 desktop-native
+src-tauri/src/sidecar_http_tests.rs	test	P08 desktop-native
+src-tauri/src/sidecar_target.rs	production	P08 desktop-native
+src-tauri/src/sleep.rs	production	P08 desktop-native
+src-tauri/src/test_http_fixture.rs	test	P08 desktop-native
+src-tauri/src/tray.rs	production	P08 desktop-native
+src-tauri/tauri.conf.json	config	P08 desktop-native
+src-tauri/tests/native-acl-probe.js	test	P08 desktop-native
+src-tauri/tests/native-network-probe.js	test	P08 desktop-native
+src-tauri/tests/native-normal-journey.js	test	P08 desktop-native

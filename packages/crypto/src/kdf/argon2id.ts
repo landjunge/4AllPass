@@ -8,6 +8,7 @@ import {
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import { utf8Nfc } from "../encoding/unicode.ts";
+import { zeroize } from "../memory.ts";
 import { assertBytes } from "../validate.ts";
 import { assertKdfBlock, assertKdfParamsWellFormed, assertKdfSalt } from "./profiles.ts";
 import type { Argon2idParams, KdfParams, KeyEnvelope } from "../types.ts";
@@ -72,11 +73,12 @@ export function deriveMasterKey(
   if (block.salt.length !== SALT_BYTES_MIN && block.salt.length !== SALT_BYTES_MAX) {
     throw new ProtocolError(`salt must be ${SALT_BYTES_MIN} or ${SALT_BYTES_MAX} bytes`);
   }
-  return deriveArgon2idRaw({
-    password: utf8Nfc(password),
-    salt: block.salt,
-    params: block,
-  });
+  const passwordBytes = utf8Nfc(password);
+  try {
+    return deriveArgon2idRaw({ password: passwordBytes, salt: block.salt, params: block });
+  } finally {
+    zeroize(passwordBytes);
+  }
 }
 
 /** Kept as the name the rest of the tree imports; identical to `DeriveMasterKeyOptions`. */

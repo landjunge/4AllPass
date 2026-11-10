@@ -1,13 +1,65 @@
-# 4AllPass
+<!-- readme-header-v1: Kopf nach ThreadDesk docs/contracts/readme-header-v1.md. Nicht von Hand umgestalten; scripts/readme_header.py apply/check verwenden. -->
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/design/icons/dark/4AllPass-dark-128.png">
-  <img src="assets/design/icons/light/4AllPass-light-128.png" alt="4AllPass" width="96" height="96">
-</picture>
+<p align="center">
+  <img src="assets/readme/normalized/4AllPass-large.svg" alt="4AllPass" width="256" height="256">
+</p>
 
+<p align="center">
+  <a href="https://github.com/landjunge/KiraBridge#readme" title="KiraBridge"><img src="assets/readme/normalized/KiraBridge-small.svg" alt="KiraBridge" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/threaddesk#readme" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/tollgate#readme" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/agent-authority-lab#readme" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/blockdesign#readme" title="BlockDesign"><img src="assets/readme/normalized/BlockDesign-small.svg" alt="BlockDesign" width="48" height="48"></a>
+</p>
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
+
+<!-- AUTO-DOWNLOADS:START -->
+<p align="center">
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg" title="4AllPass_0.1.2-rc.2_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg" title="4AllPass_0.1.2-rc.2_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe" title="4AllPass_0.1.2-rc.2_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.2" width="190" height="52"></a>
+  &nbsp;
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
+</p>
+<!-- AUTO-DOWNLOADS:END -->
+
+> **Sicherheitshinweis zu 0.1.2-rc.2:** In diesem Download gibt der Maschinenzugriff
+> (ein verbundenes Programm fragt an, du klickst „Erlauben“) das echte gespeicherte
+> Geheimnis als `access_token` an dieses Programm weiter. Betroffen ist nur, wer in
+> 0.1.2-rc.2 einem Programm so einen Zugriff erlaubt hat. Empfehlung: dort keinem
+> Programm „Erlauben“ geben; bereits so freigegebene Zugänge beim jeweiligen Anbieter
+> ändern oder widerrufen. Der aktuelle Quellstand sperrt diesen Weg; ein korrigiertes
+> Paket ist noch nicht veröffentlicht. [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
+>
+> **Security notice for 0.1.2-rc.2:** In this download, machine access (a connected
+> program asks, you click "Allow") passes the actual stored secret to that program
+> as `access_token`. Only users who allowed such a request in 0.1.2-rc.2 are affected.
+> Recommendation: do not click "Allow" for programs there; change or revoke any
+> credential already released this way at its provider. Current source blocks this
+> path; a corrected package is not published yet.
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
+
+## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
+
+**KiraBridge verbindet die NetzwerkPunkt-Werkzeugfamilie über ChatGPT mit Sprache, Chat und direkter Computersteuerung.** Dazu zählen unter passenden Berechtigungen das Öffnen von Programmen, Fensterwechsel, Notizen, direkte Texteingabe und Tastenkombinationen. **4AllPass hat darin eine andere, klar abgegrenzte Aufgabe:** Es verwaltet Zugänge, Schlüssel und Identitäten für angebundene Werkzeuge. Ein Sprachbefehl soll niemals schon deshalb Zugriff auf geheime Daten gewähren, weil er bequem formuliert wurde.
+
+Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **ThreadDesk** (Projekte und Arbeitsstände), **4AllPass** (Zugänge und Schlüssel), **TollGate** (Nutzungsgrenzen und Budgets) und **Agent Authority** (nur Beobachtung und Nachweise). Jedes Werkzeug behält eigene Zuständigkeiten und Berechtigungen. Die gemeinsame sprachgesteuerte Bedienung ist das übergreifende Entwicklungsziel; einzelne Integrationen werden nur als verfügbar beschrieben, wenn sie tatsächlich nachgewiesen sind.
+
+## Sichere Zugänge für sprachgesteuerte Abläufe
+
+**Das gemeinsame Hauptziel ist, Computer und Werkzeuge über natürliche Sprache für alle Menschen bedienbar zu machen.** KiraBridge übernimmt die Sprach- und Computersteuerung; 4AllPass verwaltet die dafür benötigten Zugänge, Schlüssel und Identitäten nach eigenen Sicherheitsregeln. Sprachbefehle sollen Abläufe vereinfachen, aber niemals Berechtigungen, Authentifizierung oder bewusste Freigaben umgehen.
+
+**Barrierefreiheit wird als wichtiger zusätzlicher Nutzen mitgedacht, nicht als alleinige Zielgruppe oder primärer Produktzweck.** Wer Schwierigkeiten mit Maus oder Tastatur hat, kann besonders von verständlichen, sprachgestützten Abläufen profitieren; auch freihändige und alltägliche Bedienung wird leichter. Sensible Freigaben und Geheimnisse bleiben geschützt. Bestehende Möglichkeiten, Risiken und geplante Verbesserungen sind klar zu trennen.
+
+**Wichtig:** Der nachfolgende Sicherheitshinweis zur veröffentlichten Version 0.1.2-rc.2 gilt unverändert. Die Sprachvision ändert nichts daran, dass ein freigegebener Maschinenzugriff in diesem Paket das gespeicherte Geheimnis an das verbundene Programm weitergeben kann. Diese Grenze ist bei der Verwendung ausdrücklich zu berücksichtigen.
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 
@@ -76,6 +128,8 @@ Du installierst sie, legst deinen Tresor an und übernimmst deine Passwörter au
 
 [Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
 
+Vor dem Download von 0.1.2-rc.2: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
+
 ### Was wir bewusst nicht machen
 
 Wir bauen nicht gleichzeitig Blockchain, eine eigene digitale Identität und zwanzig Zukunftsfunktionen.
@@ -123,7 +177,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 ~~~
 
-Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht.
+Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
 
 Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsklick → Öffnen** nötig sein.
 
@@ -194,7 +248,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2). Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
 

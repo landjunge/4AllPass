@@ -203,7 +203,8 @@ test("restoreRecoveredRevision commits above the broken head, never back at it",
   let sent: { revision: number; expectedRevision?: number | null } | null = null;
   api.commitSnapshot = async (_vaultId: string, payload) => {
     sent = payload as typeof sent;
-    return Promise.resolve(goodRevision(payload.revision, [ENTRY]) as never);
+    // The server stores and returns the committed bytes (commit must echo them).
+    return { ...payload, vaultId: _vaultId };
   };
 
   await restoreRecoveredRevision(VAULT_ID, PASSWORD, found);

@@ -8,7 +8,10 @@ import { afterEach, test } from "node:test";
 
 import {
   ARGON2ID_PROFILES,
+  AuthFailureError,
   RollbackError,
+  bytesToBase64,
+  bytesToHex,
   buildManifest,
   deriveMasterKey,
   encodeVaultSnapshot,
@@ -20,19 +23,22 @@ import {
 } from "@4allpass/crypto";
 
 import { api } from "./api.ts";
+import { emptyDraft, type VaultEntry } from "./entries.ts";
 import { savePin } from "./revision-pin.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
-import { unlockWithMasterPassword } from "./vault-session.ts";
+import { commitEntries, unlockWithMasterPassword } from "./vault-session.ts";
 
 const PASSWORD = "offline-master-password";
 const profile = ARGON2ID_PROFILES.mobile_safe;
 const originalGet = api.getSnapshot.bind(api);
+const originalCommit = api.commitSnapshot.bind(api);
 
 afterEach(() => {
   clearTestStorage();
   setSnapshotCacheForTests(null);
   api.getSnapshot = originalGet;
+  api.commitSnapshot = originalCommit;
 });
 
 function sealedSnapshot(vaultId: string, revision: number) {
@@ -110,4 +116,53 @@ test("HTTP errors do not fall back to cache", async () => {
     throw new Error("500 from server");
   };
   await assert.rejects(() => unlockWithMasterPassword(vaultId, PASSWORD), /500 from server/);
+});
+
+test("the cache holds ciphertext only and is not replaced by a failed open", async () => {
+  // E03/P02: neither plaintext nor key material may reach the offline cache, and
+  // a tampered higher head must leave the last verified snapshot in place.
+  const vaultId = "vault-offline-ciphertext-only";
+  const cache = memorySnapshotCache();
+  setSnapshotCacheForTests(cache);
+  api.getSnapshot = async () => sealedSnapshot(vaultId, 1);
+  const opened = await unlockWithMasterPassword(vaultId, PASSWORD);
+  api.commitSnapshot = async (id, payload) => ({
+    vaultId: id,
+    revision: payload.revision,
+    vaultKeyVersion: payload.vaultKeyVersion,
+    cryptoProtocolVersion: 1,
+    envelopes: payload.envelopes,
+    entries: payload.entries,
+    sealedManifest: payload.sealedManifest,
+  });
+  const canary: VaultEntry = {
+    ...emptyDraft(),
+    id: "entry-canary",
+    title: "Offline canary title",
+    username: "canary-user",
+    password: "canary-secret-value",
+    updatedAt: "2026-11-10T00:00:00Z",
+  };
+  const committed = await commitEntries(opened, [canary]);
+  const cached = await cache.load(vaultId);
+  assert.ok(cached);
+  assert.equal(cached.revision, 2);
+  const text = JSON.stringify(cached);
+  for (const needle of [
+    canary.title,
+    canary.username,
+    canary.password,
+    PASSWORD,
+    bytesToBase64(committed.vaultKey),
+    bytesToHex(committed.vaultKey),
+  ]) {
+    assert.equal(text.includes(needle), false, `cache leaks ${needle.slice(0, 8)}…`);
+  }
+
+  const tampered = structuredClone(cached);
+  tampered.revision = 3;
+  api.getSnapshot = async () => tampered;
+  // The revision is in the manifest AAD, so the lie fails the GCM tag.
+  await assert.rejects(() => unlockWithMasterPassword(vaultId, PASSWORD), AuthFailureError);
+  assert.equal((await cache.load(vaultId))?.revision, 2, "failed open must not replace the cache");
 });

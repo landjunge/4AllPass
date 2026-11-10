@@ -99,3 +99,33 @@ describe("KDF parameters are read exactly once", () => {
     assert.ok(reads() <= 1, `kdf params were read ${reads()} times; expected at most 1`);
   });
 });
+
+describe("master password bytes are wiped after derivation", () => {
+  it("zeroizes the NFC/UTF-8 copy of the password on success and on failure", () => {
+    // E03/P01 (crypto-protocol.md §4 step 6): the encoded password is a buffer
+    // this library owns, so it must not outlive Argon2id. Captured through
+    // TextEncoder because it never leaves deriveMasterKey otherwise.
+    const captured: Uint8Array[] = [];
+    const original = TextEncoder.prototype.encode;
+    TextEncoder.prototype.encode = function encode(this: InstanceType<typeof TextEncoder>, input?: string) {
+      const out = original.call(this, input);
+      captured.push(out);
+      return out;
+    };
+    try {
+      deriveMasterKey(PASSWORD, SALT, ARGON2ID_PROFILES.ci, { allowTestProfile: true });
+      assert.throws(() =>
+        deriveMasterKey(PASSWORD, new Uint8Array(16), { ...ARGON2ID_PROFILES.ci, memory: 8 }, {
+          allowTestProfile: true,
+        }),
+      );
+    } finally {
+      TextEncoder.prototype.encode = original;
+    }
+    const passwordBuffers = captured.filter((b) => b.length === PASSWORD.length);
+    assert.ok(passwordBuffers.length >= 1, "the password must have been encoded");
+    for (const buffer of passwordBuffers) {
+      assert.ok(buffer.every((b) => b === 0), "password bytes survived deriveMasterKey");
+    }
+  });
+});

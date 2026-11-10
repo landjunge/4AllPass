@@ -18,10 +18,25 @@ pub fn secret_temp_dir(prefix: &str) -> Result<PathBuf, String> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&tmp, fs::Permissions::from_mode(0o700))
-            .map_err(|err| err.to_string())?;
+        if let Err(err) = fs::set_permissions(&tmp, fs::Permissions::from_mode(0o700)) {
+            shred_tree(&tmp);
+            return Err(err.to_string());
+        }
     }
     Ok(tmp)
+}
+
+/// Run `work` in a fresh owner-only temp dir and remove the dir on every exit,
+/// including an early `?` inside `work` (for example a second copy failing
+/// after the first secret file was already copied).
+pub fn with_secret_temp_dir<T>(
+    prefix: &str,
+    work: impl FnOnce(&Path) -> Result<T, String>,
+) -> Result<T, String> {
+    let tmp = secret_temp_dir(prefix)?;
+    let result = work(&tmp);
+    shred_tree(&tmp);
+    result
 }
 
 /// Historical name: removal, not a secure-erasure guarantee. Never overwrite
@@ -44,6 +59,18 @@ mod tests {
         assert_eq!(mode, 0o700);
         shred_tree(&dir);
         assert!(!dir.exists());
+    }
+
+    #[test]
+    fn temp_dir_is_removed_when_work_fails_midway() {
+        let mut seen = None;
+        let result: Result<(), String> = with_secret_temp_dir("4ap-test-failing-work", |dir| {
+            fs::write(dir.join("first-copy"), b"synthetic-secret-copy").unwrap();
+            seen = Some(dir.to_path_buf());
+            Err("second copy failed".into())
+        });
+        assert!(result.is_err());
+        assert!(!seen.unwrap().exists());
     }
 
     #[test]

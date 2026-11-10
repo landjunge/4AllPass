@@ -77,6 +77,14 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
     )
     assert put.status_code == 200, put.text
 
+    issued = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges",
+        headers=_auth(alice),
+        json={"purpose": "assert"},
+    )
+    assert issued.status_code == 200, issued.text
+    challenge_id = issued.json()["challengeId"]
+
     paths = [
         ("GET", f"/api/v1/vaults/{vault_id}", None),
         ("GET", f"/api/v1/vaults/{vault_id}/snapshot", None),
@@ -100,6 +108,14 @@ async def test_foreign_user_cannot_touch_vault_device_snapshot_or_envelope(clien
         ("GET", f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}/credentials/{_cred_path(cred_id)}/device-key-envelope", None),
         ("PUT", _dke_path(vault_id, DEVICE_A, cred_id),
          _dke(vault_id, DEVICE_A, cred_id)),
+        # E03/P03: history and WebAuthn challenge routes were not in this list.
+        ("GET", f"/api/v1/vaults/{vault_id}/revisions", None),
+        ("GET", f"/api/v1/vaults/{vault_id}/revisions/1", None),
+        ("POST", f"/api/v1/vaults/{vault_id}/webauthn/challenges", {"purpose": "assert"}),
+        ("POST", f"/api/v1/vaults/{vault_id}/webauthn/challenges/{challenge_id}/consume", {
+            "purpose": "assert",
+            "challenge": "A" * 43 + "=",
+        }),
     ]
     for method, path, body in paths:
         response = await client.request(method, path, headers=_auth(bob), json=body)

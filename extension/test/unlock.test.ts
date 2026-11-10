@@ -33,9 +33,10 @@ function sealedSnapshot(
   revision: number,
   secrets: Record<string, string> = { entry_demo: '{"title":"Demo","password":"one"}' },
   vaultKey = generateVaultKey(),
+  password = PASSWORD,
 ) {
   const salt = generateSalt(16);
-  const masterKey = deriveMasterKey(PASSWORD, salt, profile);
+  const masterKey = deriveMasterKey(password, salt, profile);
   const master = wrapVaultKey({
     vaultKey,
     wrappingKey: masterKey,
@@ -137,6 +138,21 @@ test("openUnlockedSnapshot refuses a replayed older snapshot after the pin", () 
         vaultPassword: PASSWORD,
         pin: newer.pin,
       }),
+    RollbackError,
+  );
+});
+
+test("openUnlockedSnapshot reports a replay sealed under an old password as rollback", () => {
+  // E03/P02: the pin is checked before Argon2id. Before, the replayed master
+  // envelope was opened first and the rollback surfaced as a wrong password.
+  const vaultId = "vault_ext_rollback_oldpw_0000000000001";
+  const newer = openUnlockedSnapshot(sealedSnapshot(vaultId, 4).wire, {
+    vaultId,
+    vaultPassword: PASSWORD,
+  });
+  const replay = sealedSnapshot(vaultId, 2, undefined, undefined, "previous-master-password");
+  assert.throws(
+    () => openUnlockedSnapshot(replay.wire, { vaultId, vaultPassword: PASSWORD, pin: newer.pin }),
     RollbackError,
   );
 });

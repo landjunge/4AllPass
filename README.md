@@ -59,6 +59,16 @@
 
 **Sicherheit / Security:** Die vier Download-Schaltflächen oben führen zu 0.1.2-rc.3. 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben betroffen: Wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und die Zugangsdaten beim jeweiligen Anbieter ändern oder widerrufen. / The four download buttons above point to 0.1.2-rc.3. 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop) remain affected: if you allowed access there, update and change or revoke the credential at its provider. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases)
 
+## In einer Minute verstehen / In one minute
+
+**Deutsch – konkreter Ablauf:** 4AllPass installieren, einen lokalen Tresor anlegen und mit einem eigenen Tresorpasswort entsperren. Zugangsdaten als Einträge verwalten; Browser-Import und Autofill stehen zur Verfügung. Der Speicher kann lokal bleiben, Synchronisation ist optional. Die aktuelle Vorabversion **v0.1.2-rc.3** hat installierbare Pakete für macOS (Intel/Apple Silicon), Windows x64 und Linux x64. Prüfe vor dem Einsatz den Sicherheitshinweis oben: Der Maschinenzugriff ist in RC3 vollständig gesperrt, nicht etwa bereits durch einen geschützten Agenten-Executor ersetzt.
+
+**English – practical workflow:** Install 4AllPass, create a local vault and unlock it with a separate vault password. Manage saved credentials and use browser import or autofill; synchronization is optional. Preview **v0.1.2-rc.3** has downloadable installers for macOS (Intel/Apple Silicon), Windows x64 and Linux x64. Read the security notice above before use: machine-facing credential access is disabled in RC3, not replaced by a production-ready protected agent executor.
+
+**Produktfamilie / Tool family:** KiraBridge ist die geplante sprachgesteuerte Verbindung zwischen den Werkzeugen. 4AllPass schützt Zugangsdaten; ThreadDesk hält Projekte und Arbeitsstände fest, TollGate überwacht Budgets und Agent Authority dokumentiert Handlungen. Gemeinsame Sprachabläufe sind das Entwicklungsziel und kein Versprechen, dass alle Integrationen bereits ausgeliefert werden.
+
+**Vertrauen und Rückmeldung / Trust and feedback:** [Release und Prüfsummen / Release & checksums](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3) · [Sicherheitsmeldung / Security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) · [Sicherheitskontakt / Security](SECURITY.md) · [Fehler melden / Report a bug](https://github.com/landjunge/4AllPass/issues) · [Funktionsgrenzen / Implementation limits](docs/security-boundary.md).
+
 ## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
 
 **KiraBridge verbindet die NetzwerkPunkt-Werkzeugfamilie über ChatGPT mit Sprache, Chat und direkter Computersteuerung.** Dazu zählen unter passenden Berechtigungen das Öffnen von Programmen, Fensterwechsel, Notizen, direkte Texteingabe und Tastenkombinationen. **4AllPass hat darin eine andere, klar abgegrenzte Aufgabe:** Es verwaltet Zugänge, Schlüssel und Identitäten für angebundene Werkzeuge. Ein Sprachbefehl soll niemals schon deshalb Zugriff auf geheime Daten gewähren, weil er bequem formuliert wurde.
@@ -93,8 +103,9 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > path returned the actual vault secret as `access_token` after Allow. This source
 > disables that path across core, UI, client and relay. A protected API core is
 > tested with synthetic data; production secret use and protected browser sessions
-> are not connected. Existing v0.1.2-rc.2 downloads are unchanged and do not contain
-> this source fix. See [boundary and evidence](docs/PROTECTED-ACCESS-20261018.md).
+> are not connected. The now-published v0.1.2-rc.3 packages close the legacy
+> machine-secret handoff; v0.1.2-rc.2 and older releases remain affected.
+> See [boundary and evidence](docs/PROTECTED-ACCESS-20261018.md).
 > Bedienbasis / UI foundation: Die vorhandene np-Gestaltung ist im Quellstand
 > mit AP4 und bestehenden schmalen/Touch-Ansichten abgeglichen. / Source adopts
 > the existing np foundation while preserving AP4 and narrow/touch behavior.
@@ -110,7 +121,7 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 
 **English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet.
 
-Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. / Source and distributed downloads are separate: existing v0.1.2-rc.2 packages do not automatically include the later source correction. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
+Quellstand und veröffentlichte Downloads bleiben zu unterscheiden: Die jetzt veröffentlichten v0.1.2-rc.3-Installationspakete sperren den alten Maschinenzugriff; v0.1.2-rc.2 und ältere Releases enthalten diese Korrektur nicht. / Source and distributed releases remain distinct: the published v0.1.2-rc.3 packages block the legacy machine-access path; v0.1.2-rc.2 and older releases do not contain this fix. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
 
 ## Für Nutzer
 

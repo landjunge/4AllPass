@@ -128,6 +128,17 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
     void dismissDesktopAccess();
   }
 
+  function finishGrant(request: AccessRequest, entry: VaultEntry, from = pendingRef.current): void {
+    const issued = issueGrant(request, entry);
+    if (issued.status === "denied") {
+      setAudit((rows) => [auditLine(request, "DENIED", issued.reason), ...rows]);
+      finish(deniedResponse(issued.reason), from);
+      return;
+    }
+    setAudit((rows) => [auditLine(request, "APPROVED"), ...rows]);
+    finish(approvedResponse(issued.grant), from);
+  }
+
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
@@ -148,9 +159,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
           finish(deniedResponse("no_credential"), current);
           return;
         }
-        const grant = issueGrant(current.request, entry);
-        setAudit((rows) => [auditLine(current.request, "APPROVED"), ...rows]);
-        finish(approvedResponse(grant), current);
+        finishGrant(current.request, entry, current);
         return;
       }
       setAudit((rows) => [auditLine(current.request, "DENIED", "denied_by_user"), ...rows]);
@@ -214,9 +223,7 @@ export function AccessBrokerHost({ entries }: { entries: VaultEntry[] }): ReactN
                     finish(deniedResponse("no_credential"));
                     return;
                   }
-                  const grant = issueGrant(pending.request, entry);
-                  setAudit((rows) => [auditLine(pending.request, "APPROVED"), ...rows]);
-                  finish(approvedResponse(grant));
+                  finishGrant(pending.request, entry);
                 }}
               >
                 {t({ de: "Erlauben", en: "Allow" })}

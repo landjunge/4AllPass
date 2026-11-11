@@ -20,30 +20,32 @@
 
 <!-- AUTO-DOWNLOADS:START -->
 <p align="center">
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg" title="4AllPass_0.1.2-rc.2_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_aarch64.dmg" title="4AllPass_0.1.2-rc.3_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg" title="4AllPass_0.1.2-rc.2_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64.dmg" title="4AllPass_0.1.2-rc.3_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe" title="4AllPass_0.1.2-rc.2_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64-setup.exe" title="4AllPass_0.1.2-rc.3_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_amd64.AppImage" title="4AllPass_0.1.2-rc.3_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.3" width="190" height="52"></a>
 </p>
 <!-- AUTO-DOWNLOADS:END -->
 
-> **Sicherheitshinweis zu 0.1.2-rc.2:** In diesem Download gibt der Maschinenzugriff
-> (ein verbundenes Programm fragt an, du klickst „Erlauben“) das echte gespeicherte
-> Geheimnis als `access_token` an dieses Programm weiter. Betroffen ist nur, wer in
-> 0.1.2-rc.2 einem Programm so einen Zugriff erlaubt hat. Empfehlung: dort keinem
-> Programm „Erlauben“ geben; bereits so freigegebene Zugänge beim jeweiligen Anbieter
-> ändern oder widerrufen. Der aktuelle Quellstand sperrt diesen Weg; ein korrigiertes
-> Paket ist noch nicht veröffentlicht. [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
+> **Sicherheitshinweis zu 0.1.2-rc.2 und 0.1.2-rc.3:** 0.1.2-rc.3 ist zum Download
+> verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird abgelehnt, auch
+> nach „Erlauben“. 0.1.2-rc.2 bleibt betroffen; dort gab der Maschinenzugriff nach
+> „Erlauben“ das echte gespeicherte Geheimnis als `access_token` an das verbundene
+> Programm weiter. Wer das dort erlaubt hat, sollte aktualisieren und den Zugang
+> beim jeweiligen Anbieter ändern oder widerrufen. Ein Update holt bereits
+> herausgegebene Kopien nicht zurück.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 >
-> **Security notice for 0.1.2-rc.2:** In this download, machine access (a connected
-> program asks, you click "Allow") passes the actual stored secret to that program
-> as `access_token`. Only users who allowed such a request in 0.1.2-rc.2 are affected.
-> Recommendation: do not click "Allow" for programs there; change or revoke any
-> credential already released this way at its provider. Current source blocks this
-> path; a corrected package is not published yet.
+> **Security notice for 0.1.2-rc.2 and 0.1.2-rc.3:** 0.1.2-rc.3 is available for
+> download and closes the machine-access path: every request is denied, including
+> after "Allow". 0.1.2-rc.2 remains affected; there, after "Allow", machine access
+> passed the actual stored secret to the connected program as `access_token`. If
+> you allowed that, update and change or revoke the credential at its provider.
+> Updating does not recall copies already handed out.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 

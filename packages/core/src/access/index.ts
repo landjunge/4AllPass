@@ -5,12 +5,16 @@ export type {
   AccessRequest,
   AccessVerdict,
   DenyReason,
+  IssueGrantResult,
 } from "./types.ts";
 export {
   AVAILABLE_HANDOFF,
+  DEFAULT_HANDOFF,
   HANDOFF_MODES,
+  effectiveHandoff,
   handoffIsAvailable,
   parseHandoff,
+  resolveHandoff,
   type HandoffMode,
 } from "./handoff.ts";
 export { applicationRef, parseAccessBody } from "./request.ts";

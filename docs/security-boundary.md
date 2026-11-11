@@ -563,10 +563,13 @@ machine requests are denied before a credential request can enter the queue
 In this source, both the Python sidecar and Node development relay deny
 `POST /v1/access/request` with `handoff_unavailable` after existing token/origin
 checks. Omitted, `raw_secret` and `mediated` requests cannot queue a credential
-handoff. The core policy exposes no available handoff mode. The frontend grant
-adapter never reads `entry.password`; reading or approving even a stale grant
-returns a denial. A stale UI decision is projected to a fixed denial before relay
-output, and the access client rejects old `approved`/`access_token` responses.
+handoff. The core policy exposes no available handoff mode. `issueGrant`
+refuses to mint a grant for any mode outside that set. Parser and policy share
+one omitted default (`mediated`), so an omitted handoff cannot become
+`raw_secret` if a mode is reopened later. The frontend grant adapter never reads
+`entry.password`; reading or approving even a stale grant returns a denial. A
+stale UI decision is projected to a fixed denial before relay output, and the
+access client rejects old `approved`/`access_token` responses.
 The Access tab explains this blocked state in DE/EN. Human copying/autofill is
 not silently converted into an agent access channel.
 

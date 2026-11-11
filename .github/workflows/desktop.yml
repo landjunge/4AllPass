@@ -15,6 +15,10 @@ on:
         type: choice
         default: all
         options: [all, macOS, macOS-Intel, Windows, Linux]
+  # Temporary push trigger while GitHub workflow_dispatch is failing at startup.
+  # Restricted to this build branch; remove after the rc.3 candidate exists.
+  push:
+    branches: [ci/desktop-push-build-20261111]
 
 concurrency:
   group: desktop-installers-${{ inputs.target || 'all' }}

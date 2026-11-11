@@ -38,6 +38,7 @@ import {
   IntegrityError,
   kdfParamsFrom,
   parseRecoveryKey,
+  ProtocolError,
   revisionFromManifest,
   sealManifest,
   sealedManifestDigest,
@@ -81,6 +82,7 @@ import {
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 import { isOfflineError, snapshotCache } from "./snapshot-cache.ts";
+import { VaultLockedError, type VaultLiveness } from "./vault-liveness.ts";
 import { assertHistoricSelection, openHistoricSnapshot, type HistoricSelection } from "./historic-snapshot.ts";
 export { HistoricRevisionUnreadable } from "./historic-snapshot.ts";
 
@@ -673,8 +675,16 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
 export async function commitEntries(
   vault: UnlockedVault,
   entries: VaultEntry[],
+  liveness?: VaultLiveness,
 ): Promise<UnlockedVault> {
-  return commitSnapshot(vault, entries, vault.envelopes);
+  return commitSnapshot(vault, entries, vault.envelopes, liveness ? { liveness } : undefined);
+}
+
+/** Defense in depth: a key that was zeroized by `lock` must never seal data. */
+function assertUsableVaultKey(vaultKey: Uint8Array): void {
+  if (vaultKey.length === 0 || vaultKey.every((byte) => byte === 0)) {
+    throw new ProtocolError("vault key is zeroized; refusing to commit");
+  }
 }
 
 async function commitSnapshot(
@@ -684,9 +694,14 @@ async function commitSnapshot(
   options?: {
     vaultKeyVersion?: number;
     vaultKey?: Uint8Array;
+    liveness?: VaultLiveness;
   },
 ): Promise<UnlockedVault> {
+  // Check before any entry plaintext is encrypted. There is no await between
+  // this check and the CAS request, so this is the last safe abort point.
+  options?.liveness?.assertLive();
   const vaultKey = options?.vaultKey ?? vault.vaultKey;
+  assertUsableVaultKey(vaultKey);
   const vaultKeyVersion = options?.vaultKeyVersion ?? vault.vaultKeyVersion;
   const encrypted = entries.map((entry) => {
     const plaintext = encodeEntryPlaintext(entry);
@@ -790,7 +805,9 @@ export interface EnabledDeviceUnlock {
 export async function enableDeviceUnlockForVault(
   vault: UnlockedVault,
   accountEmail: string,
+  liveness?: VaultLiveness,
 ): Promise<EnabledDeviceUnlock> {
+  liveness?.assertLive();
   const id = deviceId();
   const description = describeDevice();
   await api.registerDevice(vault.vaultId, {
@@ -799,6 +816,7 @@ export async function enableDeviceUnlockForVault(
     platform: description.platform,
     userAgentSummary: description.userAgentSummary,
   });
+  liveness?.assertLive();
 
   const challenges = serverChallenges(vault.vaultId, id);
   try {
@@ -818,6 +836,13 @@ export async function enableDeviceUnlockForVault(
         displayName: accountEmail,
       },
     });
+
+    if (liveness && !liveness.isLive()) {
+      // The ceremony may already have saved a record that wrapped the
+      // zeroized VK. Remove it before it can be offered as an unlock path.
+      await store().remove(vault.vaultId, id).catch(() => undefined);
+      throw new VaultLockedError();
+    }
 
     const credentialIdBase64 = bytesToBase64(result.credentialId);
     const create = challenges.takeCreate();
@@ -846,7 +871,16 @@ export async function enableDeviceUnlockForVault(
       ),
       result.deviceEnvelope,
     ];
-    const updated = await commitSnapshot(vault, vault.entries, envelopes);
+    const updated = await commitSnapshot(
+      vault,
+      vault.entries,
+      envelopes,
+      liveness ? { liveness } : undefined,
+    );
+    if (liveness && !liveness.isLive()) {
+      lock(updated);
+      throw new VaultLockedError();
+    }
 
     if (result.mirrorableDeviceKeyEnvelope) {
       await api.putDeviceKeyEnvelope(
@@ -872,12 +906,21 @@ export async function enableDeviceUnlockForVault(
 export async function revokeDevice(
   vault: UnlockedVault,
   targetDeviceId: string,
+  liveness?: VaultLiveness,
 ): Promise<UnlockedVault> {
+  liveness?.assertLive();
   await api.revokeDevice(vault.vaultId, targetDeviceId);
+  // A lock during DELETE must not seal the next snapshot under 00…00.
+  liveness?.assertLive();
   const envelopes = vault.envelopes.filter(
     (envelope) => !(envelope.type === "device" && envelope.deviceId === targetDeviceId),
   );
-  return commitSnapshot(vault, vault.entries, envelopes);
+  return commitSnapshot(
+    vault,
+    vault.entries,
+    envelopes,
+    liveness ? { liveness } : undefined,
+  );
 }
 
 function recoveryEnvelopeOf(vault: UnlockedVault): KeyEnvelope {
@@ -923,7 +966,9 @@ function assertMasterOpensVault(vault: UnlockedVault, masterPassword: string): {
 export async function replaceTrustedRecoveryKey(
   vault: UnlockedVault,
   oldRecoveryKeyText: string,
+  liveness?: VaultLiveness,
 ): Promise<{ vault: UnlockedVault; recoveryKey: string }> {
+  liveness?.assertLive();
   const recoveryEnvelope = recoveryEnvelopeOf(vault);
   const oldKey = parseRecoveryKey(oldRecoveryKeyText);
   const oldRwk = deriveRecoveryWrappingKey({ recoveryKey: oldKey, vaultId: vault.vaultId });
@@ -957,7 +1002,12 @@ export async function replaceTrustedRecoveryKey(
     const envelopes = vault.envelopes.map((envelope) =>
       envelope.type === "recovery" ? nextEnvelope : envelope,
     );
-    const updated = await commitSnapshot(vault, vault.entries, envelopes);
+    const updated = await commitSnapshot(
+      vault,
+      vault.entries,
+      envelopes,
+      liveness ? { liveness } : undefined,
+    );
     return { vault: updated, recoveryKey: formatRecoveryKey(nextKey) };
   } finally {
     zeroize(oldKey, nextKey);
@@ -970,8 +1020,13 @@ export async function replaceTrustedRecoveryKey(
  */
 export async function rotateCompromisedRecovery(
   vault: UnlockedVault,
-  options: { masterPassword: string; previousRecoveryKeyText?: string },
+  options: {
+    masterPassword: string;
+    previousRecoveryKeyText?: string;
+    liveness?: VaultLiveness;
+  },
 ): Promise<{ vault: UnlockedVault; recoveryKey: string }> {
+  options.liveness?.assertLive();
   const { masterEnvelope, masterKey } = assertMasterOpensVault(vault, options.masterPassword);
   const previousRecoveryKey = options.previousRecoveryKeyText
     ? parseRecoveryKey(options.previousRecoveryKeyText)
@@ -994,6 +1049,7 @@ export async function rotateCompromisedRecovery(
 
   let transferredVaultKey = false;
   try {
+    options.liveness?.assertLive();
     const envelopes: KeyEnvelope[] = [
       wrapVaultKey({
         vaultKey: vaultKey2,
@@ -1030,6 +1086,7 @@ export async function rotateCompromisedRecovery(
     const updated = await commitSnapshot(vault, vault.entries, envelopes, {
       vaultKey: vaultKey2,
       vaultKeyVersion: nextVaultKeyVersion,
+      ...(options.liveness ? { liveness: options.liveness } : {}),
     });
     transferredVaultKey = true;
     zeroize(previousKey);

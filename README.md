@@ -53,11 +53,11 @@
 
 ## Auf einen Blick / At a glance
 
-**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Der neue Quellstand blockiert die frühere Übergabe ungeschützter Geheimnisse an KI-Clients; das macht ältere Installationspakete aber **nicht** rückwirkend sicher.
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Die Vorabversion 0.1.2-rc.3 ist für macOS Apple Silicon, macOS Intel, Windows x64 und Linux x64 AppImage verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird abgelehnt, auch nach „Erlauben“.
 
-**English:** A local password vault with a desktop interface, browser import and autofill. Current source blocks the earlier unprotected secret handoff to AI clients, but this does **not** retroactively fix older downloadable installers.
+**English:** A local password vault with a desktop interface, browser import and autofill. Preview 0.1.2-rc.3 is available for macOS Apple Silicon, macOS Intel, Windows x64 and Linux x64 AppImage and closes the machine-access path: every request is denied, including after "Allow".
 
-**Sicherheit / Security:** Die oben verlinkten Installationsdateien gehören zu **RC2** und unterliegen der ausdrücklichen Sicherheitswarnung. / The installers above are **RC2** and carry the security warning. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases): Stand 11.11.2026 hatte das neuere RC3-Release Prüfdateien, aber noch **keine installierbaren RC3-Binaries**. / As checked on November 11, the newer RC3 release included verification files but **no installable RC3 binaries**. Den Maschinenzugriff in RC2 nicht freigeben. / Do not grant machine access in RC2.
+**Sicherheit / Security:** Die vier Download-Schaltflächen oben führen zu 0.1.2-rc.3. 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben betroffen: Wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und die Zugangsdaten beim jeweiligen Anbieter ändern oder widerrufen. / The four download buttons above point to 0.1.2-rc.3. 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop) remain affected: if you allowed access there, update and change or revoke the credential at its provider. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases)
 
 ## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
 

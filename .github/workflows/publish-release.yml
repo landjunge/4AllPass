@@ -51,6 +51,7 @@ jobs:
       - name: Upload installers to the existing release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail

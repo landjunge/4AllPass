@@ -440,9 +440,14 @@ still follows successful opening and remains best-effort.
   the password. The popup may show a provider/kind **suggestion** from URL +
   field *names* + title (`detectSetup` in `@4allpass/providers`). Field values
   are not inputs. A single env-style name (`OPENAI_API_KEY`) is not high
-  confidence. Filling still requires **Auswählen / Fill**. API-key fill uses
-  only vault rows with `kind: "api"` for that provider, into the named field,
-  still with `expectedOrigin`. Privileged extension messages (`unlock`,
+  confidence. Filling still requires **Auswählen / Fill**. API-key fill needs
+  the page host itself to resolve to the provider at `detectSetup` confidence
+  ≥ 0.95 (`domainHit`), not only a field name, and uses only vault rows with
+  `kind: "api"` for that provider, into the named field, still with
+  `expectedOrigin`. A suggestion is bound to the tab, exact URL and host where
+  it was shown; `accept-suggestion` refuses a tab switch or navigation. A
+  field-only `openai_api_key` on a foreign origin is never filled. Privileged
+  extension messages (`unlock`,
   `fill-tab`, `suggest-active`, `accept-suggestion`, …) from a content-script
   sender (`sender.tab`) are rejected. After a successful
   fill, the page JavaScript can read the input (`input.value`, listeners).

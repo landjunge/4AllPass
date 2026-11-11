@@ -1,5 +1,14 @@
 import { bytesToHex, randomBytes, zeroize, type VaultRevision } from "@4allpass/crypto";
 import { detectSetup, type SetupSuggestion } from "@4allpass/providers";
+import {
+  apiFillAllowed,
+  createSuggestionBinding,
+  parseSuggestionBinding,
+  suggestionAcceptanceFailure,
+  suggestionBindingStillHolds,
+  suggestionMatchesBinding,
+  type SuggestionBinding,
+} from "./api-fill-gate.ts";
 import { ext } from "./browser.ts";
 import { AUTO_LOCK_MINUTES, createIdleLock } from "./idle-lock.ts";
 import { formatAssistPrompt, formatFillFailure, type FillReason, type FillResult } from "./fill.ts";
@@ -390,29 +399,44 @@ async function suggestActive(): Promise<Record<string, unknown>> {
     fieldLabels: probe.fieldLabels,
     pageTitle: tab.title,
   });
+  const shown = Boolean(suggestion.promptDe);
   return {
     ok: true,
-    suggestion: suggestion.promptDe ? publicSuggestion(suggestion) : null,
+    suggestion: shown ? publicSuggestion(suggestion) : null,
+    binding: shown ? createSuggestionBinding(tab, suggestion) : null,
   };
 }
 
-async function fillApiSuggestion(entryId?: string, tabId?: number): Promise<Record<string, unknown>> {
+async function fillApiSuggestion(
+  entryId?: string,
+  binding?: SuggestionBinding | null,
+): Promise<Record<string, unknown>> {
   await pullIfChanged(true);
   if (!session) {
     await openPopupSafe();
     return { ok: false, error: formatFillFailure({ reason: "locked" }), reason: "locked" };
   }
+  if (!binding || binding.credentialKind !== "api" || !binding.matchedField) {
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
+  }
   noteActivity();
-  const hinted = tabId !== undefined ? await ext.tabs.get(tabId).catch(() => undefined) : undefined;
-  const tab = hinted?.id !== undefined && isHttpUrl(hinted.url) ? hinted : await activeHttpTab();
-  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
-  rememberHttpTab(tab);
-  await ensurePageOrigin(tab.url);
-  const matchedUrl = tab.url;
+  const live = await ext.tabs.get(binding.tabId).catch(() => undefined);
+  const [active] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!suggestionBindingStillHolds(binding, live, active)) {
+    return {
+      ok: false,
+      error: formatFillFailure({ reason: "origin-mismatch" }),
+      reason: "origin-mismatch",
+    };
+  }
+  if (!live?.id || !live.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  rememberHttpTab(live);
+  await ensurePageOrigin(live.url);
+  const matchedUrl = live.url;
   const matchedOrigin = pageOrigin(matchedUrl);
   if (!matchedOrigin) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
-  const probe = await sendToTab(tab.id, { type: "probe-form" });
-  const liveAfterProbe = await ext.tabs.get(tab.id).catch(() => undefined);
+  const probe = await sendToTab(live.id, { type: "probe-form" });
+  const liveAfterProbe = await ext.tabs.get(live.id).catch(() => undefined);
   if (!fillTargetStillHolds(matchedOrigin, liveAfterProbe?.url, probe.pageOrigin)) {
     return {
       ok: false,
@@ -424,9 +448,12 @@ async function fillApiSuggestion(entryId?: string, tabId?: number): Promise<Reco
     url: matchedUrl,
     fieldNames: probe.fieldNames,
     fieldLabels: probe.fieldLabels,
-    pageTitle: tab.title,
+    pageTitle: live.title,
   });
-  if (!suggestion.providerId || suggestion.credentialKind !== "api" || !suggestion.matchedField) {
+  if (!apiFillAllowed(suggestion)) {
+    return { ok: false, error: formatFillFailure({ reason: "low-confidence" }), reason: "low-confidence" };
+  }
+  if (!suggestionMatchesBinding(binding, suggestion)) {
     return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
   }
   const matches = entriesForProvider(session.entries, suggestion.providerId);
@@ -442,7 +469,7 @@ async function fillApiSuggestion(entryId?: string, tabId?: number): Promise<Reco
     await openPopupSafe();
     return { ok: true, needsPick: true, entries: publicPicks(matches) };
   }
-  const filled = await sendToTab(tab.id, {
+  const filled = await sendToTab(live.id, {
     type: "fill-named-field",
     field: suggestion.matchedField,
     value: chosen.password,
@@ -468,22 +495,50 @@ async function fillApiSuggestion(entryId?: string, tabId?: number): Promise<Reco
   };
 }
 
-async function acceptSuggestion(entryId?: string, tabId?: number): Promise<Record<string, unknown>> {
-  const tab = tabId !== undefined ? await ext.tabs.get(tabId).catch(() => undefined) : await activeHttpTab();
-  if (!tab?.id || !tab.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
-  rememberHttpTab(tab);
-  await ensurePageOrigin(tab.url);
-  const probe = await sendToTab(tab.id, { type: "probe-form" });
+async function acceptSuggestion(
+  entryId?: string,
+  binding?: SuggestionBinding | null,
+): Promise<Record<string, unknown>> {
+  if (!binding) {
+    return { ok: false, error: formatFillFailure({ reason: "no-match" }), reason: "no-match" };
+  }
+  const live = await ext.tabs.get(binding.tabId).catch(() => undefined);
+  const [active] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!suggestionBindingStillHolds(binding, live, active)) {
+    return {
+      ok: false,
+      error: formatFillFailure({ reason: "origin-mismatch" }),
+      reason: "origin-mismatch",
+    };
+  }
+  if (!live?.id || !live.url) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  rememberHttpTab(live);
+  await ensurePageOrigin(live.url);
+  const matchedOrigin = pageOrigin(live.url);
+  if (!matchedOrigin) return { ok: false, error: "no website tab to fill", reason: "no-fields" };
+  const probe = await sendToTab(live.id, { type: "probe-form" });
+  const liveAfterProbe = await ext.tabs.get(live.id).catch(() => undefined);
+  if (!fillTargetStillHolds(matchedOrigin, liveAfterProbe?.url, probe.pageOrigin)) {
+    return {
+      ok: false,
+      error: formatFillFailure({ reason: "origin-mismatch" }),
+      reason: "origin-mismatch",
+    };
+  }
   const suggestion = detectSetup({
-    url: tab.url,
+    url: live.url,
     fieldNames: probe.fieldNames,
     fieldLabels: probe.fieldLabels,
-    pageTitle: tab.title,
+    pageTitle: live.title,
   });
-  if (suggestion.credentialKind === "api" && suggestion.matchedField) {
-    return fillApiSuggestion(entryId, tab.id);
+  const gate = suggestionAcceptanceFailure(binding, suggestion);
+  if (gate) {
+    return { ok: false, error: formatFillFailure({ reason: gate }), reason: gate };
   }
-  return fillActive(entryId, false, tab.id);
+  if (binding.credentialKind === "api") {
+    return fillApiSuggestion(entryId, binding);
+  }
+  return fillActive(entryId, false, live.id);
 }
 
 ext.runtime.onInstalled.addListener(() => {
@@ -615,7 +670,7 @@ async function handle(
     case "accept-suggestion":
       return acceptSuggestion(
         typeof message.entryId === "string" ? message.entryId : undefined,
-        typeof message.tabId === "number" ? message.tabId : undefined,
+        parseSuggestionBinding(message.binding),
       );
     default:
       return { ok: false, error: "unknown message" };

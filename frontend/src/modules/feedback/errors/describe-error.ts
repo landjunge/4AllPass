@@ -167,6 +167,7 @@ function errorName(error: unknown): string {
     case "ProtocolError":
     case "RollbackError":
     case "TypeError":
+    case "VaultLockedError":
     case "UserFeedbackError":
       return error.name;
     default:
@@ -209,6 +210,8 @@ function classify(error: unknown, status: number | undefined): FeedbackErrorCode
       return "protocol_error";
     case "RollbackError":
       return "rollback_detected";
+    case "VaultLockedError":
+      return "vault_locked";
     case "TypeError":
       return "network_unavailable";
     default:

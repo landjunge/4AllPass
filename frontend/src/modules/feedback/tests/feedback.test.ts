@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { VaultLockedError } from "../../../lib/vault-liveness.ts";
 import {
   createNotice,
   describeError,
@@ -52,6 +53,14 @@ test("known security failures get distinct user-safe codes", () => {
 test("intentional app errors use catalog text instead of caller text", () => {
   const feedback = describeError(feedbackError("vault_locked"));
   assert.equal(feedback.code, "vault_locked");
+  assert.match(feedback.userText.de, /Tresor ist gesperrt/);
+  assert.match(feedback.userText.en, /vault is locked/);
+});
+
+test("a lock-aborted mutation reports the locked catalog text, not a generic failure", () => {
+  const feedback = describeError(new VaultLockedError("synthetic late unlock"));
+  assert.equal(feedback.code, "vault_locked");
+  assert.deepEqual(feedback.technical, { name: "VaultLockedError" });
   assert.match(feedback.userText.de, /Tresor ist gesperrt/);
   assert.match(feedback.userText.en, /vault is locked/);
 });

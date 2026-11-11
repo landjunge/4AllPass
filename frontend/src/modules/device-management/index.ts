@@ -1,14 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { api, type DeviceSummary } from "../../lib/api.ts";
-import { deviceId } from "../devices/index.ts";
-import {
-  enableDeviceUnlockForVault,
-  revokeDevice,
-  type UnlockedVault,
-} from "../../lib/vault-session.ts";
+import type { UnlockedVault } from "../../lib/vault-session.ts";
+import type { VaultLiveness } from "../../lib/vault-liveness.ts";
 import { feedbackError, type NoticeCode } from "../feedback/index.ts";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
+import { createDeviceMutations } from "./device-mutations.ts";
 import { createHardRevokeCoordinator, type RevokeProgress } from "./hard-revoke-coordinator.ts";
 
 export type { RevokeProgress } from "./hard-revoke-coordinator.ts";
@@ -21,6 +18,7 @@ export interface UseDeviceManagementOptions {
   getActiveVaultId(): string | null;
   getAccountEmail(): string | null;
   currentVault(): UnlockedVault | null;
+  captureVaultLiveness(vault: UnlockedVault): VaultLiveness;
   replaceUnlockedVault(next: UnlockedVault | null): void;
   setDeviceUnlockAvailable(available: boolean): void;
 }
@@ -52,6 +50,17 @@ export function useDeviceManagement(options: UseDeviceManagementOptions): Device
     }));
   }
   const coordinator = coordinatorRef.current;
+  const mutationsRef = useRef<ReturnType<typeof createDeviceMutations> | null>(null);
+  if (!mutationsRef.current) {
+    mutationsRef.current = createDeviceMutations(() => ({
+      currentVault: optionsRef.current.currentVault,
+      captureVaultLiveness: optionsRef.current.captureVaultLiveness,
+      replaceUnlockedVault: optionsRef.current.replaceUnlockedVault,
+      setDeviceUnlockAvailable: optionsRef.current.setDeviceUnlockAvailable,
+      setDevices,
+    }));
+  }
+  const mutations = mutationsRef.current;
   const deviceGeneration = useRef(0);
 
   const refreshDevices = useCallback(async () => {
@@ -69,28 +78,17 @@ export function useDeviceManagement(options: UseDeviceManagementOptions): Device
   }, [coordinator]);
 
   const enableBiometrics = useCallback(async (): Promise<DeviceUnlockMechanism> => {
-    const current = options.currentVault();
-    if (!current) throw feedbackError("vault_locked");
     const accountEmail = options.getAccountEmail();
     if (!accountEmail) throw feedbackError("not_signed_in");
-    return options.runWithStatus(async () => {
-      const result = await enableDeviceUnlockForVault(current, accountEmail);
-      options.replaceUnlockedVault(result.vault);
-      options.setDeviceUnlockAvailable(true);
-      setDevices(await api.listDevices(current.vaultId));
-      return result.mechanism;
-    }, "device_unlock_enabled");
-  }, [options]);
+    return options.runWithStatus(
+      () => mutations.enableBiometrics(accountEmail),
+      "device_unlock_enabled",
+    );
+  }, [options, mutations]);
 
   const revoke = useCallback(async (targetDeviceId: string) => {
-    const current = options.currentVault();
-    if (!current) throw feedbackError("vault_locked");
-    await options.runWithStatus(async () => {
-      options.replaceUnlockedVault(await revokeDevice(current, targetDeviceId));
-      setDevices(await api.listDevices(current.vaultId));
-      if (targetDeviceId === deviceId()) options.setDeviceUnlockAvailable(false);
-    }, "device_soft_revoked");
-  }, [options]);
+    await options.runWithStatus(() => mutations.revoke(targetDeviceId), "device_soft_revoked");
+  }, [options, mutations]);
 
   const hardRevoke = useCallback(async (
     targetDeviceId: string,

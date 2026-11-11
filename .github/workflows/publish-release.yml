@@ -1,0 +1,57 @@
+name: Publish release assets
+
+# Manual publication of already-built, independently verified artifacts.
+# This workflow does not build, sign or verify a candidate. It moves the four
+# desktop installers from one existing desktop.yml run to an existing release
+# tag, then verifies the downloaded installer checksums against their .sha256
+# sidecars before upload. Publication remains an explicit maintainer action.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Desktop installers workflow run ID"
+        required: true
+        type: string
+      tag:
+        description: "Existing release tag (for example v0.1.2-rc.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    name: Publish installers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download built installers
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts
+
+      - name: Verify and stage the four installers
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.AppImage' \) -exec cp -n {} release/ \;
+          find artifacts -type f -name '*.sha256' -exec cp -n {} release/ \;
+          test "$(find release -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.AppImage' \) | wc -l)" -eq 4
+          cd release
+          for sidecar in *.sha256; do
+            sha256sum -c "$sidecar"
+          done
+          ls -lh
+
+      - name: Upload installers to the existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" release/*.dmg release/*.exe release/*.AppImage release/*.sha256 --clobber

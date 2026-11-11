@@ -47,6 +47,14 @@
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
+## Auf einen Blick / At a glance
+
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Der neue Quellstand blockiert die frühere Übergabe ungeschützter Geheimnisse an KI-Clients; das macht ältere Installationspakete aber **nicht** rückwirkend sicher.
+
+**English:** A local password vault with a desktop interface, browser import and autofill. Current source blocks the earlier unprotected secret handoff to AI clients, but this does **not** retroactively fix older downloadable installers.
+
+**Sicherheit / Security:** Die oben verlinkten Installationsdateien gehören zu **RC2** und unterliegen der ausdrücklichen Sicherheitswarnung. / The installers above are **RC2** and carry the security warning. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases): Stand 11.11.2026 hatte das neuere RC3-Release Prüfdateien, aber noch **keine installierbaren RC3-Binaries**. / As checked on November 11, the newer RC3 release included verification files but **no installable RC3 binaries**. Den Maschinenzugriff in RC2 nicht freigeben. / Do not grant machine access in RC2.
+
 ## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
 
 **KiraBridge verbindet die NetzwerkPunkt-Werkzeugfamilie über ChatGPT mit Sprache, Chat und direkter Computersteuerung.** Dazu zählen unter passenden Berechtigungen das Öffnen von Programmen, Fensterwechsel, Notizen, direkte Texteingabe und Tastenkombinationen. **4AllPass hat darin eine andere, klar abgegrenzte Aufgabe:** Es verwaltet Zugänge, Schlüssel und Identitäten für angebundene Werkzeuge. Ein Sprachbefehl soll niemals schon deshalb Zugriff auf geheime Daten gewähren, weil er bequem formuliert wurde.

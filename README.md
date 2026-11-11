@@ -30,21 +30,23 @@
 </p>
 <!-- AUTO-DOWNLOADS:END -->
 
-> **Sicherheitshinweis zu 0.1.2-rc.2 und 0.1.2-rc.3:** 0.1.2-rc.3 ist zum Download
-> verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird abgelehnt, auch
-> nach „Erlauben“. 0.1.2-rc.2 bleibt betroffen; dort gab der Maschinenzugriff nach
+> **Sicherheitshinweis zu 0.1.2-rc.3 und älteren Vorabversionen:** 0.1.2-rc.3 ist
+> zum Download verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird
+> abgelehnt, auch nach „Erlauben“. Betroffen sind 0.1.2-rc.2 und ältere
+> Vorabversionen (v0.1.0, v0.1.1, desktop); dort gab der Maschinenzugriff nach
 > „Erlauben“ das echte gespeicherte Geheimnis als `access_token` an das verbundene
 > Programm weiter. Wer das dort erlaubt hat, sollte aktualisieren und den Zugang
 > beim jeweiligen Anbieter ändern oder widerrufen. Ein Update holt bereits
 > herausgegebene Kopien nicht zurück.
 > [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 >
-> **Security notice for 0.1.2-rc.2 and 0.1.2-rc.3:** 0.1.2-rc.3 is available for
-> download and closes the machine-access path: every request is denied, including
-> after "Allow". 0.1.2-rc.2 remains affected; there, after "Allow", machine access
-> passed the actual stored secret to the connected program as `access_token`. If
-> you allowed that, update and change or revoke the credential at its provider.
-> Updating does not recall copies already handed out.
+> **Security notice for 0.1.2-rc.3 and older previews:** 0.1.2-rc.3 is available
+> for download and closes the machine-access path: every request is denied,
+> including after "Allow". 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop)
+> are affected; there, after "Allow", machine access passed the actual stored
+> secret to the connected program as `access_token`. If you allowed that, update
+> and change or revoke the credential at its provider. Updating does not recall
+> copies already handed out.
 > [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
@@ -69,7 +71,7 @@ Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **Thread
 
 **Barrierefreiheit wird als wichtiger zusätzlicher Nutzen mitgedacht, nicht als alleinige Zielgruppe oder primärer Produktzweck.** Wer Schwierigkeiten mit Maus oder Tastatur hat, kann besonders von verständlichen, sprachgestützten Abläufen profitieren; auch freihändige und alltägliche Bedienung wird leichter. Sensible Freigaben und Geheimnisse bleiben geschützt. Bestehende Möglichkeiten, Risiken und geplante Verbesserungen sind klar zu trennen.
 
-**Wichtig:** 0.1.2-rc.2 bleibt vom Maschinenzugriff betroffen: Dort kann ein freigegebener Zugriff das gespeicherte Geheimnis an das verbundene Programm weitergeben. 0.1.2-rc.3 schließt diesen Weg; wer in rc.2 einem Programm Zugriff erlaubt hat, sollte aktualisieren und den Zugang beim jeweiligen Anbieter ändern oder widerrufen. Die Sprachvision ändert nichts an dieser Grenze.
+**Wichtig:** 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben vom Maschinenzugriff betroffen: Dort kann ein freigegebener Zugriff das gespeicherte Geheimnis an das verbundene Programm weitergeben. 0.1.2-rc.3 schließt diesen Weg; wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und den Zugang beim jeweiligen Anbieter ändern oder widerrufen. Die Sprachvision ändert nichts an dieser Grenze.
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 

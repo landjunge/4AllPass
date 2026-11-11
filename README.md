@@ -20,40 +20,44 @@
 
 <!-- AUTO-DOWNLOADS:START -->
 <p align="center">
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg" title="4AllPass_0.1.2-rc.2_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_aarch64.dmg" title="4AllPass_0.1.2-rc.3_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg" title="4AllPass_0.1.2-rc.2_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64.dmg" title="4AllPass_0.1.2-rc.3_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe" title="4AllPass_0.1.2-rc.2_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64-setup.exe" title="4AllPass_0.1.2-rc.3_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_amd64.AppImage" title="4AllPass_0.1.2-rc.3_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.3" width="190" height="52"></a>
 </p>
 <!-- AUTO-DOWNLOADS:END -->
 
-> **Sicherheitshinweis zu 0.1.2-rc.2:** In diesem Download gibt der Maschinenzugriff
-> (ein verbundenes Programm fragt an, du klickst „Erlauben“) das echte gespeicherte
-> Geheimnis als `access_token` an dieses Programm weiter. Betroffen ist nur, wer in
-> 0.1.2-rc.2 einem Programm so einen Zugriff erlaubt hat. Empfehlung: dort keinem
-> Programm „Erlauben“ geben; bereits so freigegebene Zugänge beim jeweiligen Anbieter
-> ändern oder widerrufen. Der aktuelle Quellstand sperrt diesen Weg; ein korrigiertes
-> Paket ist noch nicht veröffentlicht. [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
+> **Sicherheitshinweis zu 0.1.2-rc.3 und älteren Vorabversionen:** 0.1.2-rc.3 ist
+> zum Download verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird
+> abgelehnt, auch nach „Erlauben“. Betroffen sind 0.1.2-rc.2 und ältere
+> Vorabversionen (v0.1.0, v0.1.1, desktop); dort gab der Maschinenzugriff nach
+> „Erlauben“ das echte gespeicherte Geheimnis als `access_token` an das verbundene
+> Programm weiter. Wer das dort erlaubt hat, sollte aktualisieren und den Zugang
+> beim jeweiligen Anbieter ändern oder widerrufen. Ein Update holt bereits
+> herausgegebene Kopien nicht zurück.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 >
-> **Security notice for 0.1.2-rc.2:** In this download, machine access (a connected
-> program asks, you click "Allow") passes the actual stored secret to that program
-> as `access_token`. Only users who allowed such a request in 0.1.2-rc.2 are affected.
-> Recommendation: do not click "Allow" for programs there; change or revoke any
-> credential already released this way at its provider. Current source blocks this
-> path; a corrected package is not published yet.
+> **Security notice for 0.1.2-rc.3 and older previews:** 0.1.2-rc.3 is available
+> for download and closes the machine-access path: every request is denied,
+> including after "Allow". 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop)
+> are affected; there, after "Allow", machine access passed the actual stored
+> secret to the connected program as `access_token`. If you allowed that, update
+> and change or revoke the credential at its provider. Updating does not recall
+> copies already handed out.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
 
 ## Auf einen Blick / At a glance
 
-**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Der neue Quellstand blockiert die frühere Übergabe ungeschützter Geheimnisse an KI-Clients; das macht ältere Installationspakete aber **nicht** rückwirkend sicher.
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Die Vorabversion 0.1.2-rc.3 ist für macOS Apple Silicon, macOS Intel, Windows x64 und Linux x64 AppImage verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird abgelehnt, auch nach „Erlauben“.
 
-**English:** A local password vault with a desktop interface, browser import and autofill. Current source blocks the earlier unprotected secret handoff to AI clients, but this does **not** retroactively fix older downloadable installers.
+**English:** A local password vault with a desktop interface, browser import and autofill. Preview 0.1.2-rc.3 is available for macOS Apple Silicon, macOS Intel, Windows x64 and Linux x64 AppImage and closes the machine-access path: every request is denied, including after "Allow".
 
-**Sicherheit / Security:** Die oben verlinkten Installationsdateien gehören zu **RC2** und unterliegen der ausdrücklichen Sicherheitswarnung. / The installers above are **RC2** and carry the security warning. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases): Stand 11.11.2026 hatte das neuere RC3-Release Prüfdateien, aber noch **keine installierbaren RC3-Binaries**. / As checked on November 11, the newer RC3 release included verification files but **no installable RC3 binaries**. Den Maschinenzugriff in RC2 nicht freigeben. / Do not grant machine access in RC2.
+**Sicherheit / Security:** Die vier Download-Schaltflächen oben führen zu 0.1.2-rc.3. 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben betroffen: Wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und die Zugangsdaten beim jeweiligen Anbieter ändern oder widerrufen. / The four download buttons above point to 0.1.2-rc.3. 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop) remain affected: if you allowed access there, update and change or revoke the credential at its provider. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases)
 
 ## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
 
@@ -67,7 +71,7 @@ Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **Thread
 
 **Barrierefreiheit wird als wichtiger zusätzlicher Nutzen mitgedacht, nicht als alleinige Zielgruppe oder primärer Produktzweck.** Wer Schwierigkeiten mit Maus oder Tastatur hat, kann besonders von verständlichen, sprachgestützten Abläufen profitieren; auch freihändige und alltägliche Bedienung wird leichter. Sensible Freigaben und Geheimnisse bleiben geschützt. Bestehende Möglichkeiten, Risiken und geplante Verbesserungen sind klar zu trennen.
 
-**Wichtig:** Der nachfolgende Sicherheitshinweis zur veröffentlichten Version 0.1.2-rc.2 gilt unverändert. Die Sprachvision ändert nichts daran, dass ein freigegebener Maschinenzugriff in diesem Paket das gespeicherte Geheimnis an das verbundene Programm weitergeben kann. Diese Grenze ist bei der Verwendung ausdrücklich zu berücksichtigen.
+**Wichtig:** 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben vom Maschinenzugriff betroffen: Dort kann ein freigegebener Zugriff das gespeicherte Geheimnis an das verbundene Programm weitergeben. 0.1.2-rc.3 schließt diesen Weg; wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und den Zugang beim jeweiligen Anbieter ändern oder widerrufen. Die Sprachvision ändert nichts an dieser Grenze.
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 
@@ -134,9 +138,9 @@ Du installierst sie, legst deinen Tresor an und übernimmst deine Passwörter au
 2. **Übernehmen** – Passwörter aus Chrome oder Firefox prüfen und importieren.
 3. **Anmelden** – Autofill auf einer Webseite ausprobieren.
 
-[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
+[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
 
-Vor dem Download von 0.1.2-rc.2: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
+Vor dem Download von 0.1.2-rc.3: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
 
 ### Was wir bewusst nicht machen
 
@@ -185,7 +189,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 ~~~
 
-Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
+Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.3** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
 
 Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsklick → Öffnen** nötig sein.
 
@@ -256,7 +260,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
 

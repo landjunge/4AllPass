@@ -10,6 +10,7 @@ test("OPENAI_API_KEY alone is not high confidence and still asks", () => {
   const got = detectSetup({ fieldNames: ["OPENAI_API_KEY"] });
   assert.equal(got.providerId, "openai");
   assert.equal(got.credentialKind, "api");
+  assert.equal(got.domainHit, false);
   assert.equal(got.requiresConfirmation, true);
   assert.ok(got.confidence <= DETECT_FIELD_ONLY_MAX);
   assert.ok(got.confidence < DETECT_HIGH_MIN);
@@ -35,6 +36,7 @@ test("n8n + OpenAI field + api.openai.com is high and still asks", () => {
   });
   assert.equal(got.providerId, "openai");
   assert.equal(got.credentialKind, "api");
+  assert.equal(got.domainHit, true);
   assert.equal(got.targetApplication, "n8n");
   assert.equal(got.requiresConfirmation, true);
   assert.ok(got.confidence >= DETECT_HIGH_MIN);

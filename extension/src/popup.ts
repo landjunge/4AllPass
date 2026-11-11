@@ -1,3 +1,4 @@
+import type { SuggestionBinding } from "./api-fill-gate.ts";
 import { ext } from "./browser.ts";
 import { formatFillFailure, formatFillSuccess, type FillReason, type FillMode } from "./fill.ts";
 import { POPUP_SETTINGS_KEY, parsePopupSettings, popupSettingsForStore } from "./popup-settings.ts";
@@ -10,6 +11,7 @@ const suggestAccept = document.getElementById("suggest-accept") as HTMLButtonEle
 const suggestDeny = document.getElementById("suggest-deny") as HTMLButtonElement;
 let lastEntryId: string | undefined;
 let pickMode: "fill" | "suggest" = "fill";
+let suggestionBinding: SuggestionBinding | null = null;
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const errorEl = document.getElementById("error") as HTMLParagraphElement;
@@ -63,7 +65,11 @@ function renderPicks(entries: Array<{ id: string; title: string; username: strin
     button.textContent = `${entry.title || entry.username}`;
     button.addEventListener("click", () => {
       const type = pickMode === "suggest" ? "accept-suggestion" : "fill-tab";
-      void send({ type, entryId: entry.id }).then((filled) => {
+      void send({
+        type,
+        entryId: entry.id,
+        ...(type === "accept-suggestion" ? { binding: suggestionBinding } : {}),
+      }).then((filled) => {
         if (!filled.ok) showFillMiss(filled);
         else {
           statusEl.textContent = formatFillSuccess({
@@ -126,6 +132,7 @@ async function rememberSettings(vaultId?: string): Promise<void> {
 function hideSuggest(): void {
   suggestBox.hidden = true;
   suggestEl.textContent = "";
+  suggestionBinding = null;
 }
 
 async function showSuggest(): Promise<void> {
@@ -136,6 +143,7 @@ async function showSuggest(): Promise<void> {
     | null
     | undefined;
   if (!suggestion?.promptDe) return;
+  suggestionBinding = (result.binding as SuggestionBinding | null | undefined) ?? null;
   suggestEl.textContent = `${suggestion.promptDe} / ${suggestion.promptEn ?? ""}`.trim();
   suggestBox.hidden = false;
 }
@@ -222,6 +230,12 @@ async function requestTabOrigin(tab: chrome.tabs.Tab | undefined): Promise<void>
   }
 }
 
+async function requestSuggestionOrigin(binding: SuggestionBinding | null): Promise<void> {
+  if (!binding) return;
+  const tab = await ext.tabs.get(binding.tabId).catch(() => undefined);
+  await requestTabOrigin(tab);
+}
+
 document.getElementById("fill")?.addEventListener("click", () => {
   clearError();
   assistBtn.hidden = true;
@@ -252,11 +266,9 @@ document.getElementById("fill")?.addEventListener("click", () => {
 
 suggestAccept.addEventListener("click", () => {
   clearError();
-  void fillTargetTab()
-    .then(async (tab) => {
-      await requestTabOrigin(tab);
-      return send({ type: "accept-suggestion", tabId: tab?.id });
-    })
+  const binding = suggestionBinding;
+  void requestSuggestionOrigin(binding)
+    .then(() => send({ type: "accept-suggestion", binding }))
     .then((result) => {
       if (!result.ok) {
         showFillMiss(result);

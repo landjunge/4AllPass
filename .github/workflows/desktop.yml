@@ -20,9 +20,11 @@ on:
   push:
     branches: [ci/desktop-push-build-20261111]
 
-concurrency:
-  group: desktop-installers-${{ inputs.target || 'all' }}
-  cancel-in-progress: false
+# Concurrency temporarily disabled for the one-off rc.3 push build while the
+# dispatch queue is failing at startup. Restore after the candidate exists.
+# concurrency:
+#   group: desktop-installers-${{ inputs.target || 'all' }}
+#   cancel-in-progress: false
 
 # Default token cannot push tags. Release/rolling jobs opt in to contents: write.
 # Action refs are full commit SHAs (mutable @v4 tags are not).

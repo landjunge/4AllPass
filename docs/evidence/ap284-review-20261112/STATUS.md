@@ -18,7 +18,8 @@ updates and the partial Rust receipt fix were preserved and completed.
 - Success requires exit zero, actual JSON boolean `true`, matching
   `active_product`, integer `visible_family_windows: 1`, finite numeric x/y and
   finite positive width/height. Negative desktop origins are valid. An unknown
-  outcome flag overrides success. Nonzero exit is a known failure only with
+  outcome flag or non-null `error` contradicts and overrides success. Nonzero
+  exit is a known failure only with
   actual boolean `success: false` and `execution_outcome_unknown: false`.
 - Lost IPC responses map to `uncertain`; an adapter-level latch also blocks
   redispatch after the shared renderer is destroyed and mounted again. This
@@ -64,14 +65,44 @@ resumed nor modified. No productive app start, installation or release.
   `src-tauri/target/release/bundle/macos/4AllPass.app`. Subsequent source/signature
   evidence is kept with local artifacts at `dist/ap284-intel/verification.json`;
   this checkpoint does not claim that not-yet-built candidate passed.
-- Independent parent review and current-head CI remain separate gates.
+- Independent parent review accepted the implementation and the narrow parser
+  correction. CI and final candidate receipts are recorded for the resulting
+  committed head in the local artifact evidence above.
 
-## ThreadDesk synchronization unavailable
+## Parent review follow-up
 
-Destination remains AP board `7dd7ab68ab80`, not the Big Plan. Supplied previous
-entry/revision: `439d0f1753d6`, ordinal 32 (not independently observed).
-Pending stable external key: `ap284-native-corrections-20261112-v1`.
-No append has been attempted, so there is no uncertain write to repeat.
+The parent requested rejection of non-null errors on an otherwise valid success
+receipt. The narrow Rust parser regression passed locally:
+`cargo test --locked --lib family_switch::tests::rejects_success_with_non_null_error -- --exact --nocapture`
+(1 passed, 0 failed). It covers object/string/boolean/number/array errors,
+and confirms that absent/null errors still allow otherwise valid success.
+The parent independently read the three-file correction and accepted the fix
+and real parser test. The broader `e937` to `b303` review found no further P1/P2.
+The operator then authorized committing/pushing this accepted delta to PR284
+and one final Intel app build from the clean final commit. No further review
+permission is required for that scoped work. Its exact commit, CI, embedded
+source and signature receipts are retained with the local candidate evidence.
+The earlier completed app build is preserved at
+`dist/ap284-intel/previous-416bfe3.app`, with an explicit previous/intermediate
+receipt at `dist/ap284-intel/previous-416bfe3.json`. It is not the final source
+candidate. No build was interrupted and no unreviewed final rebuild was started.
+
+Open UI requirement: the current AP self projection is `confirmed` without a
+vault pulse. This honestly avoids asserting a false unlock, but final user-facing
+vault-state presentation remains open. No canonical shared-module fork or
+unapproved vault-proof contract was introduced.
+
+## ThreadDesk synchronization history and current uncertainty
+
+Destination remains AP board `7dd7ab68ab80`, not the Big Plan. On resumption,
+the API index and entry read independently confirmed latest entry
+`9f2c411baad2`, ordinal 33, following historical `439d0f1753d6` / 32.
+One progress append was then attempted with that observed predecessor and stable
+external key `ap284-native-corrections-20261112-v1`. It returned empty text,
+`isError: true`, `structuredContent: {"error_code":"INVALID_ARGUMENT"}`.
+The subsequent independent board read returned the same empty error envelope.
+The write outcome is unknown, not saved/failed by assumption. Never repeat this
+append blindly; reconcile by this external key when transport permits.
 
 Read attempt through `mcp__kirabridge__whiteboard_read` returned exactly:
 
@@ -84,5 +115,7 @@ The connected Apps read then returned `peer_disconnected`, operation
 `b2b18175a9f64dc1bdfc5ca264fb87da`, connection
 `ac65fc52cd004b0d80107d57639a6150`, task ID null. Accepted/started/completed and
 execution runtime were all `unknown`; automatic retry was `false`.
-No board write or write retry, connection/config change, or direct store access
-was performed. This file is a technical evidence checkpoint, not a plan copy.
+Those initial transport failures preceded the successful resumption reads and
+the single uncertain append above. No write retry, connection/config change,
+or direct store access was performed. This file is a technical evidence
+checkpoint, not a plan copy.

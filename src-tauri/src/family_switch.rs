@@ -58,6 +58,11 @@ fn map_outcome(status_success: bool, stdout: &[u8], target: &str) -> &'static st
             "uncertain"
         };
     }
+    // The success ABI carries no error. Contradictory receipts are unknown,
+    // even when the exit status and every success field appear valid.
+    if value.get("error").is_some_and(|error| !error.is_null()) {
+        return "uncertain";
+    }
     if value.get("success").and_then(|v| v.as_bool()) == Some(true)
         && value.get("active_product").and_then(|v| v.as_str()) == Some(target)
         && value.get("visible_family_windows").and_then(|v| v.as_i64()) == Some(1)
@@ -258,6 +263,25 @@ mod tests {
         ] {
             assert_eq!(mapped(out, false), "uncertain");
         }
+    }
+
+    #[test]
+    fn rejects_success_with_non_null_error() {
+        for error in [
+            json!({"code":"IO", "message":"fixture error"}),
+            json!("error"),
+            json!(false),
+            json!(0),
+            json!([]),
+        ] {
+            let mut out = receipt();
+            out["error"] = error;
+            assert_eq!(mapped(out, true), "uncertain");
+        }
+        let mut out = receipt();
+        out["error"] = Value::Null;
+        assert_eq!(mapped(out, true), "focused");
+        assert_eq!(mapped(receipt(), true), "focused");
     }
     #[test]
     fn unknown_and_inflight_block_reentry() {

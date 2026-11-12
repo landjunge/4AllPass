@@ -37,7 +37,8 @@ broker with a native-derived source PID. Its async IPC handler runs process I/O
 on a blocking worker with a 30-second deadline and a 64 KiB receipt limit.
 Success requires exit zero, boolean `success: true`, the requested active
 product, integer `visible_family_windows: 1`, finite x/y and positive finite
-width/height. An explicit unknown outcome overrides success. Unknown outcomes
+width/height, with no non-null `error`. An explicit unknown outcome overrides
+success. Unknown outcomes
 block further switches for this app process; late output cannot clear the
 block. Lost IPC responses remain uncertain in the header and block redispatch
 in the AP adapter across header remounts for that webview module lifetime.

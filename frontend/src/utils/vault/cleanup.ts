@@ -190,3 +190,21 @@ export function previewCleanup(entries: VaultEntry[], options: CleanupOptions = 
     summary: { similarGroups, stale },
   };
 }
+
+/** A computed preview plus the exact entry set it was computed from. */
+export interface CleanupRun {
+  /** The entry array this preview was computed from (compared by reference). */
+  entries: readonly VaultEntry[];
+  preview: CleanupPreview;
+}
+
+/**
+ * A stored preview stays valid only while the analyzed entry set is still the
+ * one on screen. Entries are replaced immutably — a history restore or any edit
+ * commits a new array — so reference equality is a precise binding: when the
+ * entries change, the old preview is discarded and a fresh explicit click is
+ * required. The panel never auto-reanalyzes.
+ */
+export function runMatchesEntries(run: CleanupRun | null, entries: readonly VaultEntry[]): boolean {
+  return run !== null && run.entries === entries;
+}

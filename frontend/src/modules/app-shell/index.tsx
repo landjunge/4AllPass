@@ -28,6 +28,7 @@ import { useDeviceManagement, type RevokeProgress } from "../device-management/i
 import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
 import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
+import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -68,6 +69,12 @@ interface AppActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  restoreSingleEntry(
+    vault: UnlockedVault,
+    selection: HistoricSelection,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
   hardRevoke(
@@ -264,6 +271,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async saveEntries(entries) {
         await vaultLifecycle.saveEntries(entries);
       },
+      restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
       async enableBiometrics() {
         return deviceManagement.enableBiometrics();
       },

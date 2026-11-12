@@ -18,6 +18,8 @@ import {
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
+import { restoreEntry } from "../../lib/entry-restore.ts";
+import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import { feedbackError, type NoticeCode } from "../feedback/index.ts";
 import type { LocalStoreStatus } from "../startup/index.ts";
 import { pullLocalEntries } from "./pull-local.ts";
@@ -59,6 +61,12 @@ export interface VaultLifecycleActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  restoreSingleEntry(
+    vault: UnlockedVault,
+    selection: HistoricSelection,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
   dismissRecoveryKey(): void;
   currentVault(): UnlockedVault | null;
   captureVaultLiveness(vault: UnlockedVault): VaultLiveness;
@@ -299,6 +307,24 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     }, "entries_saved");
   }, [adoptIfLive, captureLiveness, options]);
 
+  const restoreSingleEntry = useCallback(async (
+    vault: UnlockedVault,
+    selection: HistoricSelection,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean> => {
+    // Bind the liveness to the *exact* vault the caller captured before the
+    // first await. The restore commits on that original vault only; a lock,
+    // vault switch or edit in between makes the liveness stale and refuses.
+    const liveness = captureLiveness(vault);
+    return options.runWithStatus(async () => {
+      const committed = await restoreEntry({ current: vault, selection, entryId, liveness, isCancelled });
+      if (committed === null) return false;
+      adoptIfLive(liveness, committed);
+      return true;
+    }, "entries_saved");
+  }, [adoptIfLive, captureLiveness, options]);
+
   const dismissRecoveryKey = useCallback(() => setRecoveryKey(null), []);
 
   return {
@@ -322,6 +348,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     lock,
     pullLocalIntoOpenVault,
     saveEntries,
+    restoreSingleEntry,
     dismissRecoveryKey,
     currentVault,
     captureVaultLiveness: captureLiveness,

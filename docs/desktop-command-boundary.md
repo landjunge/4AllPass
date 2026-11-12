@@ -8,7 +8,7 @@ The separate [H2 local network slice](desktop-network-boundary.md) extends this
 same isolated binary only when explicitly selected; plain H3 stays socket-free.
 
 `src-tauri/src/command_contract.rs` supplies both the build AppManifest command
-names and the actual runtime handler registration. All nine own commands are
+names and the actual runtime handler registration. All ten own commands are
 subject to Tauri ACL in ordinary builds, without the native test feature.
 The capability identifiers are explicitly selected, so additional files are not
 silently enabled. Existing main plugin permissions are retained. The prompt has
@@ -26,10 +26,21 @@ or sidecar APIs. Rust emitting a decision does not need JS event permission.
 | open_browser_for_extension | allow | deny | deny |
 | open_autofill_demo | allow | deny | deny |
 | import_browser_logins | allow | deny | deny |
+| family_switch | allow | deny | deny |
 
 No remote capability is configured. This does not narrow the main window to
 locked/unlocked states; it remains the privileged human app context. Do not call
 this a device identity or hostile-process isolation boundary.
+
+`family_switch` accepts only a catalog ID and uses the fixed local KiraBridge
+broker with a native-derived source PID. Its async IPC handler runs process I/O
+on a blocking worker with a 30-second deadline and a 64 KiB receipt limit.
+Success requires exit zero, boolean `success: true`, the requested active
+product, integer `visible_family_windows: 1`, finite x/y and positive finite
+width/height. An explicit unknown outcome overrides success. Unknown outcomes
+block further switches for this app process; late output cannot clear the
+block. Lost IPC responses remain uncertain in the header. This neither proves
+vault unlock nor undoes any effects of a timed-out broker.
 
 ## Real native verification, without production startup
 
@@ -49,7 +60,7 @@ private directory. No real browser profiles, keychain, DB or network are used.
 The feature refuses the ordinary `run()` entry and is rejected for release builds. It is off in normal builds;
 `default-run=fourallpass` preserves ordinary CLI selection.
 
-The probe invokes the shared list of nine actual registered commands from each
+The probe invokes the shared list of ten actual registered commands from each
 window. Missing arguments prove permitted handler argument dispatch before any
 HTTP/import/browser-open action. ACL-denied and argument-validation errors are
 distinguished; command-not-found does not count. The no-argument listing reads

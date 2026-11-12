@@ -1,11 +1,12 @@
 /**
- * AP host wrapper for the shared five-product appbar (module 1.2.1, Franklin).
+ * AP host wrapper for the shared five-product appbar (module 1.2.2, Franklin).
  *
  * Loads the raw ES module from the pinned public bundle (`/networkpunkt/…`) and
  * binds only the host-specific hooks:
- * - `readSelf` maps the 4AllPass lock state to the appbar self-state vocabulary
- *   (`unlocked` / `locked` / `vaultUnknown`). "App open" is never reported as a
- *   connected peer.
+ * - `readSelf` uses the shared observation vocabulary. Stable local lock
+ *   states confirm this surface; transitions stay unknown. The header's
+ *   readSelf contract carries no scoped vault proof, so it never pulses as
+ *   an unlocked vault. The existing vault UI retains the actual lock status.
  * - `openTarget` forwards only the catalog id to the native `family_switch`
  *   command; in a browser/PWA it reports `missing`. No URL, pid or argv crosses
  *   this boundary from the web.
@@ -32,10 +33,9 @@ interface ProductHeaderModule {
   ): ProductHeaderApi;
 }
 
-export function mapLockState(lockState: string): string {
-  if (lockState === "UNLOCKED") return "unlocked";
-  if (lockState === "LOCKED") return "locked";
-  return "vaultUnknown";
+export function mapLockState(lockState: string): "confirmed" | "unknown" {
+  if (lockState === "UNLOCKED" || lockState === "LOCKED") return "confirmed";
+  return "unknown";
 }
 
 export async function mountFamilyHeader(

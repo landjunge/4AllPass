@@ -53,15 +53,21 @@ const FAMILY_OUTCOMES: readonly FamilySwitchOutcome[] = [
 
 /** Ask the native host to switch the visible family product. Catalog id only. */
 export async function familySwitch(targetId: string): Promise<FamilySwitchOutcome> {
+  let invoke: typeof import("@tauri-apps/api/core").invoke;
   try {
-    const { invoke } = await import("@tauri-apps/api/core");
+    ({ invoke } = await import("@tauri-apps/api/core"));
+  } catch {
+    return "missing";
+  }
+  try {
     const outcome = await invoke<string>("family_switch", { target: targetId });
     return FAMILY_OUTCOMES.includes(outcome as FamilySwitchOutcome)
       ? (outcome as FamilySwitchOutcome)
       : "uncertain";
   } catch {
-    // Browser / PWA or missing host: honest "missing", never a fake connected.
-    return "missing";
+    // Once dispatched, a lost IPC response may conceal an executed switch.
+    // The shared header blocks uncertain outcomes instead of offering retry.
+    return "uncertain";
   }
 }
 

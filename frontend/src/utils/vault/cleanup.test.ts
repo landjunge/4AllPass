@@ -5,6 +5,8 @@ import { emptyDraft, type VaultEntry } from "../../lib/entries.ts";
 import {
   DEFAULT_STALE_AFTER_DAYS,
   previewCleanup,
+  runMatchesEntries,
+  type CleanupRun,
   type SimilarGroup,
   type StaleFinding,
 } from "./cleanup.ts";
@@ -257,4 +259,36 @@ test("equal updatedAt breaks ties by the smaller id for deterministic ordering",
   const group = result.findings.find((f): f is SimilarGroup => f.kind === "similar");
   assert.ok(group);
   assert.deepEqual(group.entryIds, ["a", "b"]);
+});
+
+test("a computed preview is discarded when the entry set changes (restore)", () => {
+  const before = [
+    entry({ id: "a", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" }),
+    entry({ id: "b", host: "github.com", username: "me", password: "pw", updatedAt: "2026-02-01T00:00:00.000Z" }),
+  ];
+  const run: CleanupRun = { entries: before, preview: previewCleanup(before, { now: FIXED_NOW }) };
+  assert.equal(runMatchesEntries(run, before), true, "same entry set keeps the preview");
+  // A history restore replaces the array with different entries.
+  const restored = [
+    entry({ id: "c", host: "gitlab.com", username: "me", password: "pw", updatedAt: "2026-02-01T00:00:00.000Z" }),
+  ];
+  assert.equal(runMatchesEntries(run, restored), false, "changed entries discard the preview");
+});
+
+test("a stored empty result is discarded after a restore too", () => {
+  const before = [entry({ id: "only", host: "solo.example", username: "me", password: "pw", updatedAt: "2026-10-01T00:00:00.000Z" })];
+  const run: CleanupRun = { entries: before, preview: previewCleanup(before, { now: FIXED_NOW }) };
+  assert.equal(run.preview.findings.length, 0, "sanity: a single entry yields no candidates");
+  const restored = [entry({ id: "other", host: "solo.example", username: "me", password: "pw", updatedAt: "2026-10-01T00:00:00.000Z" })];
+  assert.equal(runMatchesEntries(run, restored), false, "an empty result must also be discarded on change");
+});
+
+test("runMatchesEntries is null-safe and binds by array reference", () => {
+  assert.equal(runMatchesEntries(null, []), false);
+  const entries = [entry({ id: "a", host: "x.example", username: "u", password: "p", updatedAt: "2026-01-01T00:00:00.000Z" })];
+  const run: CleanupRun = { entries, preview: previewCleanup(entries, { now: FIXED_NOW }) };
+  assert.equal(runMatchesEntries(run, entries), true);
+  // Immutable replacement with equal content still counts as a change.
+  const equalContent = [entry({ id: "a", host: "x.example", username: "u", password: "p", updatedAt: "2026-01-01T00:00:00.000Z" })];
+  assert.equal(runMatchesEntries(run, equalContent), false);
 });

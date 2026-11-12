@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { VaultEntry } from "../../types/vault.ts";
-import { previewCleanup, type CleanupPreview, type SimilarGroup, type StaleFinding } from "../../utils/vault/cleanup.ts";
+import {
+  previewCleanup,
+  runMatchesEntries,
+  type CleanupRun,
+  type SimilarGroup,
+  type StaleFinding,
+} from "../../utils/vault/cleanup.ts";
 import { formatAgeDays } from "../../utils/vault/labels.ts";
 
 /**
@@ -11,12 +17,18 @@ import { formatAgeDays } from "../../utils/vault/labels.ts";
  * explicit user click and shows similarity candidates and long-unchanged
  * entries. There is deliberately no keep/remove/delete/merge action here.
  * Titles, host and identity are shown; passwords are never rendered.
+ *
+ * The computed preview is bound to the entry set it was computed from: when
+ * the entries change (e.g. a history restore in the same settings pane), the
+ * stored result is discarded and a fresh explicit click is required — it is
+ * never auto-reanalyzed.
  */
 export function VaultCleanupPanel({ entries }: { entries: VaultEntry[] }): ReactNode {
   const { t } = useCopy();
-  const [preview, setPreview] = useState<CleanupPreview | null>(null);
+  const [run, setRun] = useState<CleanupRun | null>(null);
   const untitled = t({ de: "Ohne Titel", en: "Untitled" });
 
+  const preview = run && runMatchesEntries(run, entries) ? run.preview : null;
   const similar = preview
     ? preview.findings.filter((finding): finding is SimilarGroup => finding.kind === "similar")
     : [];
@@ -35,7 +47,12 @@ export function VaultCleanupPanel({ entries }: { entries: VaultEntry[] }): React
       </p>
 
       {preview === null ? (
-        <button type="button" className="primary" data-testid="cleanup-run" onClick={() => setPreview(previewCleanup(entries))}>
+        <button
+          type="button"
+          className="primary"
+          data-testid="cleanup-run"
+          onClick={() => setRun({ entries, preview: previewCleanup(entries) })}
+        >
           {t({ de: "Aufräumen prüfen", en: "Check cleanup" })}
         </button>
       ) : similar.length === 0 && stale.length === 0 ? (
@@ -46,7 +63,7 @@ export function VaultCleanupPanel({ entries }: { entries: VaultEntry[] }): React
               en: "No similar or long-unchanged entries found.",
             })}
           </p>
-          <button type="button" className="link" data-testid="cleanup-close" onClick={() => setPreview(null)}>
+          <button type="button" className="link" data-testid="cleanup-close" onClick={() => setRun(null)}>
             {t({ de: "Schließen", en: "Close" })}
           </button>
         </>
@@ -99,7 +116,7 @@ export function VaultCleanupPanel({ entries }: { entries: VaultEntry[] }): React
               </ul>
             </div>
           ) : null}
-          <button type="button" className="link" data-testid="cleanup-close" onClick={() => setPreview(null)}>
+          <button type="button" className="link" data-testid="cleanup-close" onClick={() => setRun(null)}>
             {t({ de: "Schließen", en: "Close" })}
           </button>
         </>

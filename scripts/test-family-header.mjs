@@ -44,7 +44,13 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.evaluate(async () => {
     window.calls = 0;
-    window.__TAURI_INTERNALS__ = { invoke: async () => { window.calls++; throw new Error("lost receipt"); } };
+    window.invokeResult = "focused";
+    window.__TAURI_INTERNALS__ = { invoke: async (command, args) => {
+      if (command !== "family_switch" || Object.keys(args).join() !== "target") throw new Error("invalid web/native contract");
+      window.calls++;
+      if (window.invokeResult === "lost") throw new Error("lost receipt");
+      return window.invokeResult;
+    } };
     const { mountFamilyHeader } = await import("/frontend/src/lib/family-header.ts");
     window.lock = "UNLOCKED";
     window.header = await mountFamilyHeader(document.querySelector("#header"), { locale: "de", lockState: () => window.lock });
@@ -61,19 +67,34 @@ try {
     await page.evaluate(lock => { window.lock = lock; window.header.refresh(); }, lock);
     await page.waitForFunction(expected => document.querySelector('[data-app-id="4allpass"]').dataset.state === expected, expected);
   }
+  const known = await page.evaluate(async () => {
+    const { familySwitch } = await import("/frontend/src/modules/desktop-adapter/index.ts");
+    const outcomes = [await familySwitch("threaddesk"), await familySwitch("kirabridge")];
+    window.calls = 0; window.invokeResult = "lost";
+    return outcomes;
+  });
+  assert.deepEqual(known, ["focused", "focused"], "known completion must permit the next explicit switch");
   const target = page.locator('[data-app-id="threaddesk"]');
   await target.click();
   await page.waitForFunction(() => document.querySelector('[data-app-id="threaddesk"]').getAttribute("aria-disabled") === "true");
   await page.waitForTimeout(700);
   await target.dispatchEvent("click");
   assert.equal(await page.evaluate(() => window.calls), 1, "lost IPC receipt must not offer a retry");
+  await page.evaluate(async () => {
+    window.header.destroy();
+    const { mountFamilyHeader } = await import("/frontend/src/lib/family-header.ts");
+    window.header = await mountFamilyHeader(document.querySelector("#header"), { locale: "de", lockState: () => window.lock });
+  });
+  await target.click();
+  await page.waitForFunction(() => document.querySelector('[data-app-id="threaddesk"]').getAttribute("aria-disabled") === "true");
+  assert.equal(await page.evaluate(() => window.calls), 1, "header remount must not redispatch a lost IPC outcome");
   await page.evaluate(() => { document.documentElement.lang = "en"; window.header.setLocale("en"); });
   await page.waitForFunction(() => document.querySelector(".np-appbar").lang === "en");
   assert.match(await target.getAttribute("aria-label"), /unknown|Check app/);
   await page.evaluate(() => window.header.destroy());
   assert.equal(await page.locator(".np-appbar").count(), 0);
   assert.equal(await page.locator("dialog").count(), 0);
-  console.log("PASS: real host/renderer self states, no false vault pulse, 44px targets/32px artwork, lost-IPC retry block, DE/EN, cleanup");
+  console.log("PASS: real host/renderer self states, no false vault pulse, 44px targets/32px artwork, lost-IPC retry block across remount, DE/EN, cleanup");
 } finally {
   await browser?.close();
   server.closeAllConnections();

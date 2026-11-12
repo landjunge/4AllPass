@@ -20,7 +20,10 @@ updates and the partial Rust receipt fix were preserved and completed.
   finite positive width/height. Negative desktop origins are valid. An unknown
   outcome flag overrides success. Nonzero exit is a known failure only with
   actual boolean `success: false` and `execution_outcome_unknown: false`.
-- Lost IPC responses map to `uncertain`, so the shared renderer blocks retry.
+- Lost IPC responses map to `uncertain`; an adapter-level latch also blocks
+  redispatch after the shared renderer is destroyed and mounted again. This
+  latch lasts for the webview module lifetime; the native unknown-outcome gate
+  lasts for the app process. Neither is durable across an app restart.
 - Local stable `LOCKED`/`UNLOCKED` observations use the shared `confirmed`
   vocabulary; transitions use `unknown`. The existing `readSelf` contract does
   not carry scoped vault proof: vault metadata stays unknown, no unlock pulse
@@ -39,9 +42,12 @@ resumed nor modified. No productive app start, installation or release.
 - Frontend typecheck: passed.
 - Host observations through the actual pinned normalizer: passed.
 - Normal frontend tests: 330 passed, zero failed/skipped.
+- The subsequent adapter-only remount latch was checked with the host test,
+  typecheck and browser regression; unchanged Rust selections were not repeated.
 - `node scripts/test-family-header.mjs`: passed in headless installed Chrome;
   real AP wrapper and shared renderer, stable/transition self states, no false
-  vault pulse, 44px targets/32px artwork, lost-IPC retry block, DE/EN, cleanup.
+  vault pulse, 44px targets/32px artwork, known completions permitting the next
+  explicit switch, lost-IPC retry block across header remount, DE/EN, cleanup.
 - `cargo test --locked --lib family_switch::tests -- --nocapture`: 7 passed;
   strict negative receipts, actual process exit, timeout/runtime responsiveness,
   oversized stdout, inherited stdout pipe and unknown/inflight retry block.

@@ -51,6 +51,10 @@ const FAMILY_OUTCOMES: readonly FamilySwitchOutcome[] = [
   "opened",
 ];
 
+// Survives header remounts. A lost native receipt must not become a fresh
+// dispatch merely because the shared renderer was destroyed and mounted again.
+let familySwitchBlocked = false;
+
 /** Ask the native host to switch the visible family product. Catalog id only. */
 export async function familySwitch(targetId: string): Promise<FamilySwitchOutcome> {
   let invoke: typeof import("@tauri-apps/api/core").invoke;
@@ -59,11 +63,15 @@ export async function familySwitch(targetId: string): Promise<FamilySwitchOutcom
   } catch {
     return "missing";
   }
+  if (familySwitchBlocked) return "uncertain";
+  familySwitchBlocked = true;
   try {
     const outcome = await invoke<string>("family_switch", { target: targetId });
-    return FAMILY_OUTCOMES.includes(outcome as FamilySwitchOutcome)
+    const result = FAMILY_OUTCOMES.includes(outcome as FamilySwitchOutcome)
       ? (outcome as FamilySwitchOutcome)
       : "uncertain";
+    familySwitchBlocked = result === "uncertain";
+    return result;
   } catch {
     // Once dispatched, a lost IPC response may conceal an executed switch.
     // The shared header blocks uncertain outcomes instead of offering retry.

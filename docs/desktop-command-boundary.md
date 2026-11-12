@@ -39,7 +39,9 @@ Success requires exit zero, boolean `success: true`, the requested active
 product, integer `visible_family_windows: 1`, finite x/y and positive finite
 width/height. An explicit unknown outcome overrides success. Unknown outcomes
 block further switches for this app process; late output cannot clear the
-block. Lost IPC responses remain uncertain in the header. This neither proves
+block. Lost IPC responses remain uncertain in the header and block redispatch
+in the AP adapter across header remounts for that webview module lifetime.
+These gates are not durable across an app restart. This neither proves
 vault unlock nor undoes any effects of a timed-out broker.
 
 ## Real native verification, without production startup

@@ -212,6 +212,36 @@ test("parse rejects a non-backup file", () => {
   assert.throws(() => parseBackupPackage(JSON.stringify({ kind: BACKUP_KIND })), BackupFormatError);
 });
 
+test("parse bounds declared entry count before base64 decoding", () => {
+  const entries = Array.from({ length: 100_001 }, () => "");
+  const big = JSON.stringify({
+    kind: BACKUP_KIND,
+    createdAt: "",
+    snapshot: {
+      vaultId: VAULT_ID, revision: 1, vaultKeyVersion: 1, cryptoProtocolVersion: 1,
+      envelopes: [], entries,
+      sealedManifest: { version: 1, encryption: "AES-256-GCM", nonce: "!!", ciphertext: "!!", tag: "!!" },
+    },
+  });
+  assert.throws(() => parseBackupPackage(big), BackupLimitExceededError);
+});
+
+test("parse bounds declared envelope count before base64 decoding", () => {
+  const envelopes = Array.from({ length: 1_001 }, () => ({
+    version: 1, type: "master", vaultKeyVersion: 1, encryption: "AES-256-GCM", nonce: "!!", ciphertext: "!!", tag: "!!",
+  }));
+  const big = JSON.stringify({
+    kind: BACKUP_KIND,
+    createdAt: "",
+    snapshot: {
+      vaultId: VAULT_ID, revision: 1, vaultKeyVersion: 1, cryptoProtocolVersion: 1,
+      envelopes, entries: [],
+      sealedManifest: { version: 1, encryption: "AES-256-GCM", nonce: "!!", ciphertext: "!!", tag: "!!" },
+    },
+  });
+  assert.throws(() => parseBackupPackage(big), BackupLimitExceededError);
+});
+
 // --- restore orchestration ---
 
 const PACK: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: {} as WireVaultSnapshot };

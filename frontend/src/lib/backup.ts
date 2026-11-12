@@ -18,6 +18,8 @@ import {
   assertFreshSnapshot,
   decodeVaultSnapshot,
   IntegrityError,
+  MANIFEST_ENTRIES_MAX,
+  MANIFEST_ENVELOPES_MAX,
   revisionFromManifest,
   verifySnapshotManifest,
   type WireVaultSnapshot,
@@ -124,8 +126,20 @@ export function parseBackupPackage(
   if (record.snapshot === undefined) {
     throw new BackupFormatError("backup file has no snapshot");
   }
+  // Bound the declared record counts before base64-decoding each one, using
+  // the same ceilings the manifest code already enforces (100k entries / 1k
+  // envelopes). A hostile file must not drive an unbounded decode loop.
+  const snapshotSource = asRecord(record.snapshot, "backup.snapshot");
+  const entriesLength = Array.isArray(snapshotSource.entries) ? snapshotSource.entries.length : 0;
+  const envelopesLength = Array.isArray(snapshotSource.envelopes) ? snapshotSource.envelopes.length : 0;
+  if (entriesLength > MANIFEST_ENTRIES_MAX) {
+    throw new BackupLimitExceededError(`backup declares ${entriesLength} entries (limit ${MANIFEST_ENTRIES_MAX})`);
+  }
+  if (envelopesLength > MANIFEST_ENVELOPES_MAX) {
+    throw new BackupLimitExceededError(`backup declares ${envelopesLength} envelopes (limit ${MANIFEST_ENVELOPES_MAX})`);
+  }
   // Structural validation: versions, base64 lengths, envelope/entry shapes.
-  const snapshot = decodeVaultSnapshot(record.snapshot);
+  const snapshot = decodeVaultSnapshot(snapshotSource);
   if (!snapshot.sealedManifest) {
     throw new IntegrityError("backup snapshot is missing its sealed manifest");
   }

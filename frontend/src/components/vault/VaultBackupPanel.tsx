@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { buildBackupPackage, downloadBackupFile } from "../../lib/backup.ts";
+import { BACKUP_FILE_LIMIT_BYTES, buildBackupPackage, downloadBackupFile } from "../../lib/backup.ts";
 import type { Line } from "../../lib/copy-mode.ts";
 import { CommitConflict, HistoricRevisionUnreadable } from "../../lib/vault-session.ts";
 import { useApp } from "../../state/app-state.tsx";
@@ -54,6 +54,15 @@ export function VaultBackupPanel(): ReactNode {
     const gen = actionGen.current;
     setBusy(true);
     setNotice(null);
+    // Reject an oversized file before reading it into memory.
+    if (file.size > BACKUP_FILE_LIMIT_BYTES) {
+      setNotice({
+        de: "Datei ist zu groß.",
+        en: "File is too large.",
+      });
+      setBusy(false);
+      return;
+    }
     let text: string;
     try {
       text = await file.text();
@@ -64,12 +73,9 @@ export function VaultBackupPanel(): ReactNode {
     }
     if (actionGen.current !== gen) return;
     try {
-      const committed = await restoreBackup(vault, text, () => actionGen.current !== gen);
-      if (!committed) return;
-      setNotice({
-        de: "Sicherung wiederhergestellt.",
-        en: "Backup restored.",
-      });
+      // Success is reported once by the lifecycle's global backup_restored
+      // notice; a cancelled restore reports nothing. Errors stay visible below.
+      await restoreBackup(vault, text, () => actionGen.current !== gen);
     } catch (error) {
       if (error instanceof CommitConflict) {
         setNotice({

@@ -193,6 +193,15 @@ Behalten-/Entfernen-/Löschen-/Zusammenführen-Aktion; Passwörter werden nie
 gezeigt. Gehört wie V7.3 unter Einstellungen → Sicherheit: Kontrolle, kein
 Alltag.
 
+**V7.5 Sicherung.** Eine Frage: *Wie behalte ich eine verschlüsselte Kopie?*
+Erstellt eine verschlüsselte Gesamtsicherung als Datei — nur Chiffretext,
+verschlüsselte Envelopes und Metadaten, **nie** Passwörter oder Schlüssel.
+Wiederherstellen prüft Integrität, Dateigrenzen, Version und Tresor-Identität
+und legt den Inhalt als **neuen** Stand an (Forward-Commit, nie zurückgedreht,
+nie automatisch überschrieben). Zum Wiederherstellen auf einem anderen Gerät
+braucht es Master-Passwort oder Recovery-Kit — keine portable Freigabe. Der
+Erfolgstext nennt den tatsächlichen Ausgang (Download gestartet ≠ gespeichert).
+
 > Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 
 ---

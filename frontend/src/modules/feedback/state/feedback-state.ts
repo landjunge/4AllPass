@@ -2,6 +2,7 @@ import type { Line } from "../../../lib/copy-mode.ts";
 import { describeError, type ErrorFeedback } from "../errors/describe-error.ts";
 
 export type NoticeCode =
+  | "backup_restored"
   | "device_soft_revoked"
   | "device_unlock_enabled"
   | "entries_imported"
@@ -59,6 +60,10 @@ export async function runWithStatus<T>(
 }
 
 const NOTICE_TEXT: Record<NoticeCode, Line> = {
+  backup_restored: {
+    de: "Sicherung wiederhergestellt. Der vorherige Stand bleibt weiter aufgehoben.",
+    en: "Backup restored. The previous state stays kept.",
+  },
   device_soft_revoked: {
     de: "Aus dem nächsten Sync genommen. Ein Gerät, das diesen Tresor-Schlüssel schon kennt, kennt ihn weiter.",
     en: "Removed from the next sync. A device that already knows this vault key still knows it.",

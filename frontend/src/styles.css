@@ -481,6 +481,11 @@ form.banner {
   margin-bottom: 4px;
 }
 
+.notice {
+  margin: 12px 0 0;
+  font-weight: 500;
+}
+
 .tabs .active {
   border-color: var(--accent);
   color: var(--accent-hi);

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DevicesPanel } from "../DevicesPanel.tsx";
 import { SettingsPanel } from "../SettingsPanel.tsx";
+import { VaultBackupPanel } from "./VaultBackupPanel.tsx";
 import { VaultCleanupPanel } from "./VaultCleanupPanel.tsx";
 import { VaultHistoryPanel } from "./VaultHistoryPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
@@ -76,6 +77,7 @@ export function VaultSettings({
         </section>
         <VaultHistoryPanel />
         <VaultCleanupPanel entries={entries} />
+        <VaultBackupPanel />
         </>
       ) : (
         <SettingsPanel />

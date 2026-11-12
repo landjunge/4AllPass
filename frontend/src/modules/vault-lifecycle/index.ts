@@ -19,6 +19,7 @@ import {
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
 import { restoreEntry } from "../../lib/entry-restore.ts";
+import { restoreBackup as runRestoreBackup } from "../../lib/backup.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import { feedbackError, type SuccessNotice } from "../feedback/index.ts";
 import type { LocalStoreStatus } from "../startup/index.ts";
@@ -67,6 +68,7 @@ export interface VaultLifecycleActions {
     entryId: string,
     isCancelled: () => boolean,
   ): Promise<boolean>;
+  restoreBackup(vault: UnlockedVault, text: string, isCancelled: () => boolean): Promise<boolean>;
   dismissRecoveryKey(): void;
   currentVault(): UnlockedVault | null;
   captureVaultLiveness(vault: UnlockedVault): VaultLiveness;
@@ -325,6 +327,20 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     }, (committed) => (committed ? "entries_saved" : null));
   }, [adoptIfLive, captureLiveness, options]);
 
+  const restoreBackup = useCallback(async (
+    vault: UnlockedVault,
+    text: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean> => {
+    const liveness = captureLiveness(vault);
+    return options.runWithStatus(async () => {
+      const committed = await runRestoreBackup({ current: vault, text, liveness, isCancelled });
+      if (committed === null) return false;
+      adoptIfLive(liveness, committed);
+      return true;
+    }, (committed) => (committed ? "backup_restored" : null));
+  }, [adoptIfLive, captureLiveness, options]);
+
   const dismissRecoveryKey = useCallback(() => setRecoveryKey(null), []);
 
   return {
@@ -349,6 +365,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     pullLocalIntoOpenVault,
     saveEntries,
     restoreSingleEntry,
+    restoreBackup,
     dismissRecoveryKey,
     currentVault,
     captureVaultLiveness: captureLiveness,

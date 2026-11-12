@@ -160,6 +160,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
 | Frühere Stände | Einstellungen → Sicherheit: ältere Stände ansehen und einen fehlenden Eintrag einzeln wiederherstellen; immer als neuer Stand, nie zurückgedreht |
 | Aufräumen | Vorschau unter Einstellungen → Sicherheit: zeigt nach ausdrücklichem Klick ähnliche Einträge und lange unveränderte Einträge mit ihrem Alter; reine Anzeige, keine Änderung |
+| Sicherung | Verschlüsselte Gesamtsicherung als Datei (nur Chiffretext) mit Integritätsprüfung und Wiederherstellung als neuer Stand; auf einem anderen Gerät braucht es Master-Passwort oder Recovery-Kit |
 | WebAuthn PRF | Im Protokoll beschrieben; in der Desktop-Webview noch nicht bewiesen |
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |
 | Sicherheitsprüfung | Noch kein unabhängiges Drittaudit |
@@ -260,7 +261,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
 
-Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. Under Settings → Security, earlier states can be viewed and a missing entry restored individually (always as a new state), and a read-only cleanup preview lists similar and long-unchanged entries. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
+Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. Under Settings → Security, earlier states can be viewed and a missing entry restored individually (always as a new state), a read-only cleanup preview lists similar and long-unchanged entries, and an encrypted full backup can be created and restored (ciphertext only; another device needs the master password or recovery kit). There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 

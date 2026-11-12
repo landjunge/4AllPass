@@ -77,6 +77,7 @@ interface AppActions {
     entryId: string,
     isCancelled: () => boolean,
   ): Promise<boolean>;
+  restoreBackup(vault: UnlockedVault, text: string, isCancelled: () => boolean): Promise<boolean>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
   hardRevoke(
@@ -265,6 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
         await vaultLifecycle.saveEntries(entries);
       },
       restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
+      restoreBackup: vaultLifecycle.restoreBackup,
       async enableBiometrics() {
         return deviceManagement.enableBiometrics();
       },

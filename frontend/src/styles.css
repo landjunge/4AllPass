@@ -66,6 +66,13 @@ header {
   gap: 12px;
 }
 
+.family-product-header {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
 .lang-switch {
   display: inline-flex;
   gap: 2px;

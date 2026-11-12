@@ -41,6 +41,30 @@ export async function dismissDesktopAccess(): Promise<void> {
   }
 }
 
+export type FamilySwitchOutcome = "focused" | "failed" | "uncertain" | "missing" | "opened";
+
+const FAMILY_OUTCOMES: readonly FamilySwitchOutcome[] = [
+  "focused",
+  "failed",
+  "uncertain",
+  "missing",
+  "opened",
+];
+
+/** Ask the native host to switch the visible family product. Catalog id only. */
+export async function familySwitch(targetId: string): Promise<FamilySwitchOutcome> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const outcome = await invoke<string>("family_switch", { target: targetId });
+    return FAMILY_OUTCOMES.includes(outcome as FamilySwitchOutcome)
+      ? (outcome as FamilySwitchOutcome)
+      : "uncertain";
+  } catch {
+    // Browser / PWA or missing host: honest "missing", never a fake connected.
+    return "missing";
+  }
+}
+
 export async function launchAtLoginEnabled(): Promise<boolean | null> {
   try {
     const { isEnabled } = await import("@tauri-apps/plugin-autostart");

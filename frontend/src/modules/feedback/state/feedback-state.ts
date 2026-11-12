@@ -30,6 +30,34 @@ export type FeedbackAction =
   | { type: "notice"; code: NoticeCode }
   | { type: "clear" };
 
+/**
+ * Success notice for a mutation. Either a fixed code, or a function of the
+ * action result so an aborted/cancelled action can report *no* success.
+ */
+export type SuccessNotice<T> = NoticeCode | ((result: T) => NoticeCode | null | undefined);
+
+/**
+ * Run a mutation through the feedback lifecycle: clear the error on start,
+ * show the success notice only when it resolves (and the predicate allows),
+ * and surface failures. Pure over the injected `dispatch`.
+ */
+export async function runWithStatus<T>(
+  dispatch: (action: FeedbackAction) => void,
+  action: () => Promise<T>,
+  success?: SuccessNotice<T>,
+): Promise<T> {
+  dispatch({ type: "action_started" });
+  try {
+    const result = await action();
+    const code = typeof success === "function" ? success(result) : success;
+    if (code) dispatch({ type: "notice", code });
+    return result;
+  } catch (failure) {
+    dispatch({ type: "action_failed", error: failure });
+    throw failure;
+  }
+}
+
 const NOTICE_TEXT: Record<NoticeCode, Line> = {
   device_soft_revoked: {
     de: "Aus dem nächsten Sync genommen. Ein Gerät, das diesen Tresor-Schlüssel schon kennt, kennt ihn weiter.",

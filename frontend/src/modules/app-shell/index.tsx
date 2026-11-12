@@ -19,15 +19,18 @@ import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
 import {
   feedbackReducer,
   initialFeedbackState,
+  runWithStatus,
   type ErrorFeedback,
   type NoticeCode,
   type NoticeFeedback,
+  type SuccessNotice,
 } from "../feedback/index.ts";
 import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
 import { useDeviceManagement, type RevokeProgress } from "../device-management/index.ts";
 import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
 import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
+import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -68,6 +71,12 @@ interface AppActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  restoreSingleEntry(
+    vault: UnlockedVault,
+    selection: HistoricSelection,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
   hardRevoke(
@@ -97,17 +106,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const updateLocalStoreRef = useRef<(status: LocalStoreStatus) => void>(() => undefined);
 
   const withStatus = useCallback(
-    async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
-      dispatchFeedback({ type: "action_started" });
-      try {
-        const result = await action();
-        if (success) dispatchFeedback({ type: "notice", code: success });
-        return result;
-      } catch (failure) {
-        dispatchFeedback({ type: "action_failed", error: failure });
-        throw failure;
-      }
-    },
+    <T,>(action: () => Promise<T>, success?: SuccessNotice<T>): Promise<T> =>
+      runWithStatus(dispatchFeedback, action, success),
     [],
   );
 
@@ -264,6 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async saveEntries(entries) {
         await vaultLifecycle.saveEntries(entries);
       },
+      restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
       async enableBiometrics() {
         return deviceManagement.enableBiometrics();
       },

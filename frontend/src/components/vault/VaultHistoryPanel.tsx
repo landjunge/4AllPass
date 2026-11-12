@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, type VaultRevisionSummary } from "../../lib/api.ts";
 import { decodeVaultSnapshot } from "@4allpass/crypto";
-import { HistoricRevisionUnreadable, openHistoricEntries } from "../../lib/vault-session.ts";
+import type { Line } from "../../lib/copy-mode.ts";
+import { entryIdExists, wipeVaultEntry } from "../../lib/entries.ts";
+import {
+  openHistoricSnapshot,
+  type HistoricSelection,
+} from "../../lib/historic-snapshot.ts";
+import {
+  CommitConflict,
+  HistoricRevisionUnreadable,
+} from "../../lib/vault-session.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { VaultEntry } from "../../types/vault.ts";
@@ -15,19 +24,31 @@ function formatWhen(iso: string): string {
 /**
  * V7.3 — Frühere Stände. One question: what was in the vault before?
  *
- * Opening an older state never rewinds anything: restoring writes the
- * recovered entries forward as a new state, and the state that was live stays
- * stored like every other one.
+ * Opening an older state never rewinds anything. Restoring a whole state (or a
+ * single entry) writes the recovered content forward as a new state; the state
+ * that was live stays stored like every other one. Single-entry restore only
+ * restores an entry whose id is missing from the current vault — it never
+ * merges, overwrites or renames, and it commits on the vault it was started
+ * against (a lock, vault switch or edit in between cancels the restore).
  */
 export function VaultHistoryPanel(): ReactNode {
   const { t } = useCopy();
-  const { vault, saveEntries } = useApp();
+  const { vault, saveEntries, restoreSingleEntry } = useApp();
   const [revisions, setRevisions] = useState<VaultRevisionSummary[] | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const [preview, setPreview] = useState<VaultEntry[] | null>(null);
+  const [selection, setSelection] = useState<HistoricSelection | null>(null);
   const [unreadable, setUnreadable] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [restoreNotice, setRestoreNotice] = useState<Line | null>(null);
+  // Invalidates an in-flight restore when the overlay is cancelled, a new
+  // revision is opened, or the panel unmounts.
+  const actionGen = useRef(0);
   const vaultId = vault?.vaultId ?? null;
+
+  useEffect(() => () => {
+    actionGen.current += 1;
+  }, []);
 
   const load = useCallback(async () => {
     if (!vaultId) return;
@@ -40,19 +61,35 @@ export function VaultHistoryPanel(): ReactNode {
 
   async function show(revision: number): Promise<void> {
     if (!vault) return;
+    actionGen.current += 1;
     setBusy(true);
     setOpen(revision);
     setPreview(null);
+    setSelection(null);
     setUnreadable(false);
+    setRestoreNotice(null);
     try {
       const wire = await api.getRevision(vault.vaultId, revision);
-      setPreview(openHistoricEntries(decodeVaultSnapshot(wire), vault));
+      const snapshot = decodeVaultSnapshot(wire);
+      const opened = openHistoricSnapshot(snapshot, vault);
+      setSelection({
+        vaultId: vault.vaultId,
+        revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+        manifestDigest: opened.manifestDigest,
+      });
+      setPreview(opened.entries);
     } catch (error) {
       if (error instanceof HistoricRevisionUnreadable) setUnreadable(true);
       else setOpen(null);
     } finally {
       setBusy(false);
     }
+  }
+
+  function closeOverlay(): void {
+    actionGen.current += 1;
+    setOpen(null);
   }
 
   async function restore(): Promise<void> {
@@ -62,6 +99,7 @@ export function VaultHistoryPanel(): ReactNode {
       await saveEntries(preview);
       setOpen(null);
       setPreview(null);
+      setSelection(null);
       await load();
     } catch {
       // The banner shows the reason.
@@ -70,9 +108,60 @@ export function VaultHistoryPanel(): ReactNode {
     }
   }
 
+  async function restoreSingle(entry: VaultEntry): Promise<void> {
+    if (!vault || !selection) return;
+    // Friendly, network-free rejection when the id is already present.
+    if (entryIdExists(vault.entries, entry.id)) {
+      setRestoreNotice({
+        de: "Dieser Eintrag ist bereits im Tresor.",
+        en: "This entry is already in the vault.",
+      });
+      return;
+    }
+    const gen = actionGen.current;
+    setBusy(true);
+    setRestoreNotice(null);
+    try {
+      const committed = await restoreSingleEntry(
+        vault,
+        selection,
+        entry.id,
+        () => actionGen.current !== gen,
+      );
+      if (!committed) return; // cancelled or unmounted while fetching
+      // Wipe the on-screen historical preview copy (the restored entry is now
+      // in the vault; the rest were not selected).
+      for (const row of preview ?? []) wipeVaultEntry(row);
+      setPreview(null);
+      setSelection(null);
+      setOpen(null);
+      await load();
+    } catch (error) {
+      if (error instanceof CommitConflict) {
+        setRestoreNotice({
+          de: "Der Tresor hat sich geändert. Bitte neu öffnen.",
+          en: "The vault changed. Please reopen.",
+        });
+      } else if (error instanceof HistoricRevisionUnreadable) {
+        setRestoreNotice({
+          de: "Dieser Stand ist vor einem Schlüsselwechsel und nicht wiederherstellbar.",
+          en: "This state is from before a key change and cannot be restored.",
+        });
+      } else {
+        setRestoreNotice({
+          de: "Wiederherstellen nicht möglich.",
+          en: "Restore is not possible.",
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!vault) return null;
 
   const older = (revisions ?? []).filter((row) => !row.isActive);
+  const untitled = t({ de: "Ohne Titel", en: "Untitled" });
 
   return (
     <section className="card" data-testid="settings-history">
@@ -132,7 +221,7 @@ export function VaultHistoryPanel(): ReactNode {
                     en: "This state is from before a key change. The current vault key does not fit it, so it can no longer be opened.",
                   })}
                 </p>
-                <button type="button" className="primary" onClick={() => setOpen(null)}>
+                <button type="button" className="primary" onClick={closeOverlay}>
                   {t({ de: "Schließen", en: "Close" })}
                 </button>
               </>
@@ -142,18 +231,37 @@ export function VaultHistoryPanel(): ReactNode {
               <>
                 <p className="hint">
                   {t({
-                    de: "Namen und Benutzer dieses Standes. Passwörter zeigt diese Liste nie.",
-                    en: "Names and usernames in this state. This list never shows passwords.",
+                    de: "Namen, Host und Benutzer dieses Standes. Passwörter zeigt diese Liste nie.",
+                    en: "Names, host and usernames in this state. This list never shows passwords.",
                   })}
                 </p>
                 <ul className="history-preview" data-testid="history-preview">
                   {preview.map((entry) => (
                     <li key={entry.id}>
-                      <strong>{entry.title}</strong>
-                      {entry.username ? <span className="muted"> · {entry.username}</span> : null}
+                      <span className="history-entry-line">
+                        <strong>{entry.title || untitled}</strong>
+                        {entry.host || entry.domain ? (
+                          <span className="muted"> · {entry.host || entry.domain}</span>
+                        ) : null}
+                        {entry.username ? <span className="muted"> · {entry.username}</span> : null}
+                      </span>
+                      <button
+                        type="button"
+                        className="link"
+                        data-testid={`history-restore-entry-${entry.id}`}
+                        disabled={busy}
+                        onClick={() => void restoreSingle(entry)}
+                      >
+                        {t({ de: "Wiederherstellen", en: "Restore" })}
+                      </button>
                     </li>
                   ))}
                 </ul>
+                {restoreNotice ? (
+                  <p className="notice" data-testid="history-restore-notice">
+                    {t(restoreNotice)}
+                  </p>
+                ) : null}
                 <p className="hint">
                   {t({
                     de: "Wiederherstellen ersetzt den jetzigen Inhalt durch diesen. Der jetzige Stand bleibt hier weiter aufgehoben.",
@@ -169,12 +277,7 @@ export function VaultHistoryPanel(): ReactNode {
                 >
                   {t({ de: "Diesen Stand wiederherstellen", en: "Restore this state" })}
                 </button>
-                <button
-                  type="button"
-                  className="link"
-                  data-testid="history-cancel"
-                  onClick={() => setOpen(null)}
-                >
+                <button type="button" className="link" data-testid="history-cancel" onClick={closeOverlay}>
                   {t({ de: "Abbrechen", en: "Cancel" })}
                 </button>
               </>

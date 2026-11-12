@@ -7,6 +7,7 @@ import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
 import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
+import { FamilyProductHeader } from "./components/FamilyProductHeader.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 import { HardRevokeProgress } from "./components/HardRevokeProgress.tsx";
@@ -41,9 +42,12 @@ export function App(): ReactNode {
     <div className="app np-ui">
       <header>
         <span className="brand">
-          <img src="/logo.png" width="36" height="36" alt="" />
-          <strong>4AllPass</strong>
+          <picture>
+            <source media="(prefers-color-scheme: light)" srcSet="/wordmark-light.svg" />
+            <img src="/wordmark-dark.svg" alt="4AllPass" height="22" />
+          </picture>
         </span>
+        <FamilyProductHeader />
         <LanguageSwitch />
         {email ? (
           <div className="header-actions">

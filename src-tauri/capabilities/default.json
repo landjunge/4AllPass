@@ -14,6 +14,7 @@
     "autostart:allow-is-enabled",
     "allow-access-prompt",
     "allow-access-dismiss",
+    "allow-family-switch",
     "allow-sidecar-http",
     "allow-list-browser-profiles",
     "allow-extension-install",

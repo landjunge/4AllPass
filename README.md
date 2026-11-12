@@ -161,6 +161,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Frühere Stände | Einstellungen → Sicherheit: ältere Stände ansehen und einen fehlenden Eintrag einzeln wiederherstellen; immer als neuer Stand, nie zurückgedreht |
 | Aufräumen | Vorschau unter Einstellungen → Sicherheit: zeigt nach ausdrücklichem Klick ähnliche Einträge und lange unveränderte Einträge mit ihrem Alter; reine Anzeige, keine Änderung |
 | Sicherung | Verschlüsselte Gesamtsicherung als Datei (nur Chiffretext) mit Integritätsprüfung und Wiederherstellung als neuer Stand; auf einem anderen Gerät braucht es Master-Passwort oder Recovery-Kit |
+| Produktleiste | Fünf-Produkt-Appbar im Kopf (eigene Wortmarke, mittige Original-Icons, DE/EN); Wechsel ruft den nativen `family_switch`-Host nur mit Katalog-ID auf — im Browser ehrlich deaktiviert, „App geöffnet“ ist nicht „verbunden“ |
 | WebAuthn PRF | Im Protokoll beschrieben; in der Desktop-Webview noch nicht bewiesen |
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |
 | Sicherheitsprüfung | Noch kein unabhängiges Drittaudit |

@@ -183,6 +183,14 @@ Wiederherstellen legt einen **neuen** Stand an; nichts wird zurückgedreht und
 nichts gelöscht. Gehört hierher, nicht auf den Desk: Stände sind Kontrolle,
 kein Alltag.
 
+**V7.4 Aufräumen-Vorschau.** Eine Frage: *Was sieht ähnlich aus, was ist alt?*
+Nach explizitem Klick zeigt eine rein clientseitige Analyse
+Ähnlichkeitskandidaten (gleiche Dienstgrenze + gleicher Benutzer) und lange
+unveränderte Einträge mit ihrem Alter. Nur Anzeige — es gibt **keine**
+Behalten-/Entfernen-/Löschen-/Zusammenführen-Aktion; Passwörter werden nie
+gezeigt. Gehört wie V7.3 unter Einstellungen → Sicherheit: Kontrolle, kein
+Alltag.
+
 > Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 
 ---

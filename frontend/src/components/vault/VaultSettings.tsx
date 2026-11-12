@@ -1,20 +1,23 @@
 import type { ReactNode } from "react";
 import { DevicesPanel } from "../DevicesPanel.tsx";
 import { SettingsPanel } from "../SettingsPanel.tsx";
+import { VaultCleanupPanel } from "./VaultCleanupPanel.tsx";
 import { VaultHistoryPanel } from "./VaultHistoryPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
-import type { SettingsPane } from "../../types/vault.ts";
+import type { SettingsPane, VaultEntry } from "../../types/vault.ts";
 
 export function VaultSettings({
   pane,
   onPaneChange,
   revision,
   vaultKeyVersion,
+  entries,
 }: {
   pane: SettingsPane;
   onPaneChange: (pane: SettingsPane) => void;
   revision: number;
   vaultKeyVersion: number;
+  entries: VaultEntry[];
 }): ReactNode {
   const { t } = useCopy();
   return (
@@ -72,6 +75,7 @@ export function VaultSettings({
           </dl>
         </section>
         <VaultHistoryPanel />
+        <VaultCleanupPanel entries={entries} />
         </>
       ) : (
         <SettingsPanel />

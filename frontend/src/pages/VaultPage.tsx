@@ -40,6 +40,7 @@ export function VaultPage(): ReactNode {
           onPaneChange={vault.setSettingsPane}
           revision={vault.vault.revision}
           vaultKeyVersion={vault.vault.vaultKeyVersion}
+          entries={vault.entries}
         />
       ) : vault.tab === "access" ? (
         <AccessPanel entries={vault.entries} onSeedDemo={() => vault.seedAccessDemo()} />

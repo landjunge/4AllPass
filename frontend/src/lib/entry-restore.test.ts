@@ -41,6 +41,7 @@ import {
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
 import { captureVaultLiveness, VaultLockedError } from "./vault-liveness.ts";
+import { runWithStatus, type FeedbackAction } from "../modules/feedback/index.ts";
 import {
   CommitConflict,
   HistoricRevisionUnreadable,
@@ -398,6 +399,68 @@ test("restoreEntry: a commit that resolves after lock is zeroized, not adopted",
   await assert.rejects(operation, VaultLockedError);
   assert.ok(events.includes("lock"));
   assert.ok(next.vaultKey.every((byte) => byte === 0));
+});
+
+test("a cancelled restore commits nothing and reports no saved feedback", async () => {
+  const current = vaultFixture([CURRENT]);
+  const restored = restoredFixture();
+  const fetch = deferred<VaultEntry[]>();
+  let cancelled = false;
+  const events: string[] = [];
+  const deps: RestoreEntryDependencies = {
+    resolve: () => fetch.promise,
+    commitEntries: async () => { events.push("commit"); return vaultFixture(); },
+    lock: (value) => lockVault(value),
+  };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+  const dispatched: FeedbackAction[] = [];
+
+  const operation = runWithStatus(
+    (action) => dispatched.push(action),
+    async () => {
+      const committed = await restoreEntry(
+        { current, selection: SELECTION, entryId: restored.id, liveness, isCancelled: () => cancelled },
+        deps,
+      );
+      return committed !== null;
+    },
+    (committed) => (committed ? "entries_saved" : null),
+  );
+
+  await settle();
+  cancelled = true;
+  fetch.resolve([...current.entries, restored]);
+
+  const result = await operation;
+  assert.equal(result, false);
+  assert.ok(!events.includes("commit"));
+  assert.equal(dispatched.filter((action) => action.type === "notice").length, 0);
+});
+
+test("a committed restore reports exactly one saved feedback", async () => {
+  const current = vaultFixture([CURRENT]);
+  const restored = restoredFixture();
+  const events: string[] = [];
+  const deps: RestoreEntryDependencies = {
+    resolve: async () => [...current.entries, restored],
+    commitEntries: async () => { events.push("commit"); return vaultFixture(); },
+    lock: (value) => lockVault(value),
+  };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+  const dispatched: FeedbackAction[] = [];
+
+  const result = await runWithStatus(
+    (action) => dispatched.push(action),
+    async () => {
+      const committed = await restoreEntry({ current, selection: SELECTION, entryId: restored.id, liveness }, deps);
+      return committed !== null;
+    },
+    (committed) => (committed ? "entries_saved" : null),
+  );
+
+  assert.equal(result, true);
+  assert.ok(events.includes("commit"));
+  assert.equal(dispatched.filter((action) => action.type === "notice" && action.code === "entries_saved").length, 1);
 });
 
 test("restoreEntry: a single-entry restore commit keeps the CAS conflict contract", async () => {

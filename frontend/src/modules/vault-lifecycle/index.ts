@@ -20,7 +20,7 @@ import {
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
 import { restoreEntry } from "../../lib/entry-restore.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
-import { feedbackError, type NoticeCode } from "../feedback/index.ts";
+import { feedbackError, type SuccessNotice } from "../feedback/index.ts";
 import type { LocalStoreStatus } from "../startup/index.ts";
 import { pullLocalEntries } from "./pull-local.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
@@ -28,7 +28,7 @@ import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
 export type LockState = "LOCKED" | "UNLOCKING" | "UNLOCKED" | "LOCKING";
 
-type RunWithStatus = <T>(action: () => Promise<T>, success?: NoticeCode) => Promise<T>;
+type RunWithStatus = <T>(action: () => Promise<T>, success?: SuccessNotice<T>) => Promise<T>;
 
 export interface UseVaultLifecycleOptions {
   runWithStatus: RunWithStatus;
@@ -322,7 +322,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
       if (committed === null) return false;
       adoptIfLive(liveness, committed);
       return true;
-    }, "entries_saved");
+    }, (committed) => (committed ? "entries_saved" : null));
   }, [adoptIfLive, captureLiveness, options]);
 
   const dismissRecoveryKey = useCallback(() => setRecoveryKey(null), []);

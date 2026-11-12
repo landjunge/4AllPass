@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, type VaultRevisionSummary } from "../../lib/api.ts";
 import { decodeVaultSnapshot } from "@4allpass/crypto";
-import { HistoricRevisionUnreadable, openHistoricEntries } from "../../lib/vault-session.ts";
+import type { Line } from "../../lib/copy-mode.ts";
+import { entryIdExists, wipeVaultEntry } from "../../lib/entries.ts";
+import { EntryAlreadyPresentError, resolveSingleEntryRestore } from "../../lib/entry-restore.ts";
+import {
+  openHistoricSnapshot,
+  type HistoricSelection,
+} from "../../lib/historic-snapshot.ts";
+import {
+  CommitConflict,
+  HistoricRevisionUnreadable,
+} from "../../lib/vault-session.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { VaultEntry } from "../../types/vault.ts";
@@ -15,9 +25,11 @@ function formatWhen(iso: string): string {
 /**
  * V7.3 — Frühere Stände. One question: what was in the vault before?
  *
- * Opening an older state never rewinds anything: restoring writes the
- * recovered entries forward as a new state, and the state that was live stays
- * stored like every other one.
+ * Opening an older state never rewinds anything. Restoring a whole state (or a
+ * single entry) writes the recovered content forward as a new state; the state
+ * that was live stays stored like every other one. Single-entry restore only
+ * restores an entry whose id is missing from the current vault — it never
+ * merges, overwrites or renames.
  */
 export function VaultHistoryPanel(): ReactNode {
   const { t } = useCopy();
@@ -25,8 +37,10 @@ export function VaultHistoryPanel(): ReactNode {
   const [revisions, setRevisions] = useState<VaultRevisionSummary[] | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const [preview, setPreview] = useState<VaultEntry[] | null>(null);
+  const [selection, setSelection] = useState<HistoricSelection | null>(null);
   const [unreadable, setUnreadable] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [restoreNotice, setRestoreNotice] = useState<Line | null>(null);
   const vaultId = vault?.vaultId ?? null;
 
   const load = useCallback(async () => {
@@ -43,10 +57,20 @@ export function VaultHistoryPanel(): ReactNode {
     setBusy(true);
     setOpen(revision);
     setPreview(null);
+    setSelection(null);
     setUnreadable(false);
+    setRestoreNotice(null);
     try {
       const wire = await api.getRevision(vault.vaultId, revision);
-      setPreview(openHistoricEntries(decodeVaultSnapshot(wire), vault));
+      const snapshot = decodeVaultSnapshot(wire);
+      const opened = openHistoricSnapshot(snapshot, vault);
+      setSelection({
+        vaultId: vault.vaultId,
+        revision,
+        vaultKeyVersion: snapshot.vaultKeyVersion,
+        manifestDigest: opened.manifestDigest,
+      });
+      setPreview(opened.entries);
     } catch (error) {
       if (error instanceof HistoricRevisionUnreadable) setUnreadable(true);
       else setOpen(null);
@@ -62,6 +86,7 @@ export function VaultHistoryPanel(): ReactNode {
       await saveEntries(preview);
       setOpen(null);
       setPreview(null);
+      setSelection(null);
       await load();
     } catch {
       // The banner shows the reason.
@@ -70,9 +95,59 @@ export function VaultHistoryPanel(): ReactNode {
     }
   }
 
+  async function restoreSingle(entry: VaultEntry): Promise<void> {
+    if (!vault || !selection) return;
+    // Friendly, network-free rejection when the id is already present.
+    if (entryIdExists(vault.entries, entry.id)) {
+      setRestoreNotice({
+        de: "Dieser Eintrag ist bereits im Tresor.",
+        en: "This entry is already in the vault.",
+      });
+      return;
+    }
+    setBusy(true);
+    setRestoreNotice(null);
+    try {
+      const next = await resolveSingleEntryRestore(vault, selection, entry.id);
+      await saveEntries(next);
+      // Wipe the on-screen historical preview copy: the restored entry is now
+      // in the vault, the rest were not selected.
+      for (const row of preview ?? []) wipeVaultEntry(row);
+      setPreview(null);
+      setSelection(null);
+      setOpen(null);
+      await load();
+    } catch (error) {
+      if (error instanceof EntryAlreadyPresentError) {
+        setRestoreNotice({
+          de: "Dieser Eintrag ist bereits im Tresor.",
+          en: "This entry is already in the vault.",
+        });
+      } else if (error instanceof CommitConflict) {
+        setRestoreNotice({
+          de: "Der Tresor hat sich geändert. Bitte neu öffnen.",
+          en: "The vault changed. Please reopen.",
+        });
+      } else if (error instanceof HistoricRevisionUnreadable) {
+        setRestoreNotice({
+          de: "Dieser Stand ist vor einem Schlüsselwechsel und nicht wiederherstellbar.",
+          en: "This state is from before a key change and cannot be restored.",
+        });
+      } else {
+        setRestoreNotice({
+          de: "Wiederherstellen nicht möglich.",
+          en: "Restore is not possible.",
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!vault) return null;
 
   const older = (revisions ?? []).filter((row) => !row.isActive);
+  const untitled = t({ de: "Ohne Titel", en: "Untitled" });
 
   return (
     <section className="card" data-testid="settings-history">
@@ -142,18 +217,37 @@ export function VaultHistoryPanel(): ReactNode {
               <>
                 <p className="hint">
                   {t({
-                    de: "Namen und Benutzer dieses Standes. Passwörter zeigt diese Liste nie.",
-                    en: "Names and usernames in this state. This list never shows passwords.",
+                    de: "Namen, Host und Benutzer dieses Standes. Passwörter zeigt diese Liste nie.",
+                    en: "Names, host and usernames in this state. This list never shows passwords.",
                   })}
                 </p>
                 <ul className="history-preview" data-testid="history-preview">
                   {preview.map((entry) => (
                     <li key={entry.id}>
-                      <strong>{entry.title}</strong>
-                      {entry.username ? <span className="muted"> · {entry.username}</span> : null}
+                      <span className="history-entry-line">
+                        <strong>{entry.title || untitled}</strong>
+                        {entry.host || entry.domain ? (
+                          <span className="muted"> · {entry.host || entry.domain}</span>
+                        ) : null}
+                        {entry.username ? <span className="muted"> · {entry.username}</span> : null}
+                      </span>
+                      <button
+                        type="button"
+                        className="link"
+                        data-testid={`history-restore-entry-${entry.id}`}
+                        disabled={busy}
+                        onClick={() => void restoreSingle(entry)}
+                      >
+                        {t({ de: "Wiederherstellen", en: "Restore" })}
+                      </button>
                     </li>
                   ))}
                 </ul>
+                {restoreNotice ? (
+                  <p className="notice" data-testid="history-restore-notice">
+                    {t(restoreNotice)}
+                  </p>
+                ) : null}
                 <p className="hint">
                   {t({
                     de: "Wiederherstellen ersetzt den jetzigen Inhalt durch diesen. Der jetzige Stand bleibt hier weiter aufgehoben.",

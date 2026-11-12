@@ -444,6 +444,22 @@ form.banner {
 .history-preview li {
   font-size: var(--text-base);
   overflow-wrap: anywhere;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-entry-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  column-gap: 4px;
+  min-width: 0;
+}
+
+.history-preview li button.link {
+  margin-left: 12px;
+  white-space: nowrap;
 }
 
 .cleanup-list {

@@ -358,6 +358,15 @@ async def test_bootstrap_snapshot_replay_and_rotation(client, account):
     )
     assert rotated.status_code == 200, rotated.text
 
+    # Original signed bytes, after a real VK1->VK2 rotation: stored receipt,
+    # no re-signing and no mutation.
+    replay_after_rotation = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers=signed
+    )
+    assert replay_after_rotation.status_code == 200, replay_after_rotation.text
+    assert replay_after_rotation.headers.get("X-4AP-Write-Replayed") == "true"
+    assert replay_after_rotation.json()["result"]["revision"] == 1
+
     # The retired key can no longer write.
     stale, _, _ = await _commit(
         client,
@@ -1115,3 +1124,60 @@ async def test_negative_signature_nonce_and_grant(client, account, engine):
         gh["X-4AP-Creation-Grant"] = token
         denied = await client.post(f"/api/v1/vaults/{vid}/devices", content=gbody, headers={**account, **gh})
         assert denied.status_code == 403, (name, denied.text)
+
+
+async def test_session_removed_yields_401_no_receipt(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert first.status_code == 200, first.text
+
+    logout = await client.post("/api/v1/auth/logout", headers=account)
+    assert logout.status_code == 204
+
+    replay = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert replay.status_code == 401
+    async with _AsyncSession(bind=engine) as db:
+        receipts = await db.scalar(
+            _select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id))
+        )
+        assert receipts == 2
+    revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=account)
+    assert revisions.status_code == 401
+
+
+async def test_unsigned_webauthn_challenge_does_not_touch_receipts(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert first.status_code == 200, first.text
+
+    challenge = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges",
+        json={"purpose": "create", "deviceId": DEVICE},
+        headers=account,
+    )
+    assert challenge.status_code == 200, challenge.text
+    assert challenge.json()["challenge"]
+    async with _AsyncSession(bind=engine) as db:
+        receipts = await db.scalar(
+            _select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id))
+        )
+        assert receipts == 2
+
+
+async def test_local_adopt_not_available_for_v2_signed_vault(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    response = await client.post("/api/v1/local/adopt-local-vault", headers=account)
+    assert response.status_code in {400, 403, 404}, response.text
+    async with _AsyncSession(bind=engine) as db:
+        owner = await db.scalar(_select(_Vault.owner_user_id).where(_Vault.id == _uuid.UUID(vault_id)))
+        receipts = await db.scalar(
+            _select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id))
+        )
+        assert owner is not None and receipts == 1

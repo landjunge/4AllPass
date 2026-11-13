@@ -840,7 +840,8 @@ def _two_clients(engine_a, engine_b, gate_old_writer: bool):
         async def hook(request):
             request.headers.setdefault("X-Device-Id", DEVICE)
 
-        return _Client(transport=_ASGITransport(app=app2), base_url="http://test", event_hooks={"request": [hook]})
+        base_url = "http://127.0.0.1" if get_settings().is_local() else "http://test"
+        return _Client(transport=_ASGITransport(app=app2), base_url=base_url, event_hooks={"request": [hook]})
 
     return build(engine_a, False), build(engine_b, gate_old_writer), entered, release
 
@@ -1234,7 +1235,15 @@ async def test_local_adopt_race_old_owner_signed_write_and_receipt(client, accou
                         content=new_raw, headers={**local, **new_headers},
                     )
                 )
-                await entered.wait()
+                gate = asyncio.create_task(entered.wait())
+                done, _ = await asyncio.wait({gate, writer}, return_when=asyncio.FIRST_COMPLETED)
+                if writer in done:
+                    gate.cancel()
+                    early = writer.result()
+                    raise AssertionError(
+                        f"old-owner request ended before the barrier: {early.status_code} {early.text}"
+                    )
+                await gate
 
                 adopted = await client.post("/api/v1/local/adopt-local-vault", headers=account)
                 assert adopted.status_code == 200, adopted.text

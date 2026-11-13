@@ -32,6 +32,11 @@ export {
   SEALS_PER_KEY_MAX,
   TAG_BYTES,
   VERSION_MAX,
+  WRITE_V2_DIGEST_BYTES,
+  WRITE_V2_ID_CHARS_MAX,
+  WRITE_V2_LABEL,
+  WRITE_V2_NONCE_BYTES,
+  WRITE_V2_PUBLIC_KEY_LABEL,
 } from "./constants.ts";
 
 export {
@@ -202,6 +207,23 @@ export {
   verifyRequesterSignature,
 } from "./requester.ts";
 export type { RequesterEnrollment, VerifyRequesterSignatureOptions } from "./requester.ts";
+
+export {
+  WRITE_V2_DRAFT_LAYOUT_REVISION,
+  WRITE_V2_ERROR_CODES,
+  WriteRequestV2Error,
+  decodeBase64UrlCanonicalV2,
+  parseWriteRequestV2Wire,
+  writePayloadDigestV2,
+  writePublicKeyDigestV2,
+  writeRequestBytesV2,
+  writeRequestV2Hex,
+} from "./requester.ts";
+export type {
+  WriteRequestV2,
+  WriteRequestV2ErrorCode,
+  WriteResourceTypeV2,
+} from "./requester.ts";
 
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

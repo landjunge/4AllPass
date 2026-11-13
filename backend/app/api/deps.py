@@ -143,10 +143,12 @@ async def get_writable_vault(
         )
     )
     if revoked.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="device is revoked for this vault",
+        detail = (
+            "device_revoked"
+            if vault.crypto_protocol_version >= 2
+            else "device is revoked for this vault"
         )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
     return vault
 
 

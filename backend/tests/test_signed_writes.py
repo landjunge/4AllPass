@@ -22,6 +22,8 @@ from app.core.write_request import (
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
+_ACCOUNT_EMAIL: str | None = None
+
 PASSWORD = "CorrectHorseBatteryStaple9!"
 EMAIL = "signed.writes@example.com"
 DEVICE = "dev_signed_writes_0001"
@@ -144,7 +146,9 @@ async def account(client):
     previous = settings.signed_writes_enabled
     settings.signed_writes_enabled = True
     try:
+        global _ACCOUNT_EMAIL
         email = f"signed-writes-{uuid.uuid4().hex}@example.com"
+        _ACCOUNT_EMAIL = email
         register = await client.post(
             "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
         )
@@ -579,14 +583,15 @@ import os
 import uuid as _uuid
 
 import pytest as _pytest
-from sqlalchemy import func as _func, select as _select
+from sqlalchemy import func as _func, select as _select, update as _update
 from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
 
 from app.api import deps as _deps
 from app.db.session import create_db_engine as _create_engine
 from app.models.snapshot import VaultSnapshot as _Snapshot
 from app.models.vault import Vault as _Vault
-from app.models.signed_write import VaultWriteKey as _Key, WriteReceipt as _Receipt
+from app.models.user import User as _User
+from app.models.signed_write import VaultWriteKey as _Key, WriteGrant as _Grant, WriteReceipt as _Receipt
 
 
 @_pytest.mark.skipif(
@@ -953,3 +958,160 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account, engine):
     finally:
         release.set()
         await engine2.dispose()
+
+
+def _snapshot_request(vault_id, priv, pub, *, base, revision, vk, op, nonce, manifest_obj=None, next_priv=None, next_pub=None):
+    payload = {
+        "expectedRevision": base, "revision": revision, "vaultKeyVersion": vk,
+        "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
+        "sealedManifest": manifest_obj or manifest(),
+    }
+    raw = body_bytes(payload)
+    headers, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
+        resource_type="vault", resource_id="", parent_id="",
+        base=base, result=revision, key_version=vk, result_key_version=vk,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(payload["sealedManifest"]),
+        payload_digest=write_payload_digest_v2(raw), operation_id=op, nonce=nonce,
+        has_next=next_priv is not None, next_pub=next_pub, next_priv=next_priv,
+    )
+    return headers, raw
+
+
+async def test_owner_transfer_and_foreign_bearer_404(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert first.status_code == 200, first.text
+
+    other_email = f"other-{uuid.uuid4().hex}@example.com"
+    reg = await client.post("/api/v1/auth/register", json={"email": other_email, "password": PASSWORD})
+    assert reg.status_code == 200
+    other_login = await client.post(
+        "/api/v1/auth/login", json={"email": other_email, "password": PASSWORD},
+        headers={"X-Device-Id": "dev_other_owner_0001"},
+    )
+    assert other_login.status_code == 200, other_login.text
+    other = {"Authorization": f"Bearer {other_login.json()['token']}", "X-Device-Id": "dev_other_owner_0001"}
+
+    foreign = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**other, **headers})
+    assert foreign.status_code == 404
+
+    async with _AsyncSession(bind=engine) as db:
+        async with db.begin():
+            other_id = await db.scalar(_select(_User.id).where(_User.email == other_email))
+            await db.execute(
+                _update(_Vault).where(_Vault.id == _uuid.UUID(vault_id)).values(owner_user_id=other_id)
+            )
+    old_owner = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert old_owner.status_code == 404
+    new_owner = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**other, **headers})
+    assert new_owner.status_code == 404
+    revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=other)
+    assert len(revisions.json()) == 1
+
+
+async def test_same_owner_other_device_and_route_mismatch(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert first.status_code == 200, first.text
+
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": _ACCOUNT_EMAIL, "password": PASSWORD},
+        headers={"X-Device-Id": "dev_same_owner_0002"},
+    )
+    other_device = {"Authorization": f"Bearer {login.json()['token']}", "X-Device-Id": "dev_same_owner_0002"}
+    wrong_device = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**other_device, **headers})
+    assert wrong_device.status_code == 404
+
+    cred = b64(b"cred-45")
+    body = body_bytes({"credentialId": cred, "rpId": "localhost", "mechanism": "prf", "prfSupported": True, "largeBlobSupported": False})
+    cred_headers, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
+        resource_type="credential", resource_id=cred, parent_id=DEVICE,
+        base=1, result=1, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(body), operation_id=op, nonce=nonce,
+    )
+    mismatch = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE}/credentials", content=body, headers={**account, **cred_headers}
+    )
+    assert mismatch.status_code == 409
+    assert mismatch.json()["detail"] == "write_operation_mismatch"
+
+
+async def test_self_revoke_keep_token_blocks_write_and_replay(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert first.status_code == 200, first.text
+
+    revoked = await client.delete(f"/api/v1/vaults/{vault_id}/devices/{DEVICE}", headers=account)
+    assert revoked.status_code == 200, revoked.text
+
+    replay = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert replay.status_code == 403
+    assert replay.json()["detail"] == "device_revoked"
+
+    new_headers, new_raw = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"))
+    blocked = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=new_raw, headers={**account, **new_headers})
+    assert blocked.status_code == 403
+
+    read = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=account)
+    assert read.status_code == 200
+    revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=account)
+    assert len(revisions.json()) == 1
+
+
+async def test_negative_signature_nonce_and_grant(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+    headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+    bad = dict(headers)
+    bad["X-4AP-Write-Signature"] = b64url(b"\x00" * 64)
+    rejected = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **bad})
+    assert rejected.status_code == 403
+    assert rejected.json()["detail"] == "write_signature_invalid"
+
+    ok = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
+    assert ok.status_code == 200, ok.text
+    reused_nonce = uuid.uuid4()
+    h2, r2 = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=reused_nonce, nonce=nonce, manifest_obj=manifest(b"m2"))
+    nonce_reuse = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=r2, headers={**account, **h2})
+    assert nonce_reuse.status_code == 409
+    assert nonce_reuse.json()["detail"] == "write_nonce_reused"
+
+    for name, mutate in (("expired", "expired"), ("purpose", "purpose")):
+        vid, token = await _create_v2_vault(client, account)
+        async with _AsyncSession(bind=engine) as db:
+            async with db.begin():
+                row = await db.scalar(_select(_Grant).where(_Grant.vault_id == _uuid.UUID(vid)))
+                if mutate == "expired":
+                    row.expires_at = __import__("datetime").datetime(2000, 1, 1, tzinfo=__import__("datetime").timezone.utc)
+                else:
+                    row.purpose = "other"
+        gpriv = Ed25519PrivateKey.generate()
+        gpub = gpriv.public_key().public_bytes_raw()
+        gbody = body_bytes({"deviceId": DEVICE})
+        gh, _ = sign(
+            priv=gpriv, pub=gpub, vault_id=vid, device_id=DEVICE,
+            method="POST", route="/api/v1/vaults/{vaultId}/devices",
+            resource_type="device", resource_id=DEVICE, parent_id="",
+            base=0, result=0, key_version=1, result_key_version=1,
+            has_manifest=False, manifest_digest=b"",
+            payload_digest=write_payload_digest_v2(gbody), operation_id=uuid.uuid4(),
+            nonce=uuid.uuid4().bytes, has_next=True, next_pub=gpub, next_priv=gpriv,
+        )
+        gh["X-4AP-Creation-Grant"] = token
+        denied = await client.post(f"/api/v1/vaults/{vid}/devices", content=gbody, headers={**account, **gh})
+        assert denied.status_code == 403, (name, denied.text)

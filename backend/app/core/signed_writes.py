@@ -332,15 +332,18 @@ async def prepare(
     # through to a new mutation (V3 §1.1 step 6).
     existing = await _lookup_receipt(db, vault.id, headers.operation_id)
     if existing is not None:
+        # Principal first: a foreign owner/device learns nothing (404).
+        if existing.owner_user_id != user_id or existing.device_id != device_id:
+            _fail(404, "not_found")
+        # Same principal, different route/resource: authorized caller, wrong
+        # operation context -> 409 (matrix 45), never a silent 404.
         if (
-            existing.owner_user_id != user_id
-            or existing.device_id != device_id
-            or existing.route != route
+            existing.route != route
             or existing.resource_type != resource_type
             or existing.resource_id != resource_id
             or existing.parent_id != parent_id
         ):
-            _fail(404, "not_found")
+            _fail(409, "write_operation_mismatch")
         context = existing.signed_context or {}
         incoming = {
             "nonce": headers.nonce.hex(),

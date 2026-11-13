@@ -1,7 +1,7 @@
 use std::{
     path::PathBuf,
     process::{Child, Command, Stdio},
-    sync::Mutex,
+    sync::{Mutex, OnceLock},
 };
 
 use tauri::Manager;
@@ -9,10 +9,65 @@ use tauri::Manager;
 pub const CORE_HOST: &str = "127.0.0.1";
 pub const CORE_PORT: u16 = 8788;
 
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+static TEST_CORE_PORT: OnceLock<u16> = OnceLock::new();
+
+/// Test-only: the native probe must supply a private ephemeral loopback port.
+/// Missing/invalid values fail before any task dir or sidecar spawn; there is no
+/// fallback to 8788.
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub fn configure_test_core_port() -> Result<u16, String> {
+    let scenario = std::env::var("FOURALLPASS_NATIVE_SCENARIO")
+        .unwrap_or_else(|_| "normal".to_owned());
+    let raw = match std::env::var("FOURALLPASS_TEST_CORE_PORT") {
+        Ok(raw) => raw,
+        // The existing normal-journey driver keeps its 8788 contract. Only the
+        // new migration scenarios require the isolated test port.
+        Err(_) if scenario == "normal" => {
+            TEST_CORE_PORT
+                .set(CORE_PORT)
+                .map_err(|_| "test core port already set".to_string())?;
+            return Ok(CORE_PORT);
+        }
+        Err(_) => {
+            return Err(
+                "FOURALLPASS_TEST_CORE_PORT is required for the native migration probe".into(),
+            )
+        }
+    };
+    let port: u16 = raw
+        .parse()
+        .map_err(|_| "invalid FOURALLPASS_TEST_CORE_PORT".to_string())?;
+    if port <= 1024 {
+        return Err("FOURALLPASS_TEST_CORE_PORT must be >1024".into());
+    }
+    if port == CORE_PORT && scenario != "normal" {
+        return Err(
+            "FOURALLPASS_TEST_CORE_PORT must not be 8788 for migration scenarios".into(),
+        );
+    }
+    TEST_CORE_PORT
+        .set(port)
+        .map_err(|_| "FOURALLPASS_TEST_CORE_PORT already set".to_string())?;
+    Ok(port)
+}
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub fn core_port() -> u16 {
+    *TEST_CORE_PORT
+        .get()
+        .expect("configure_test_core_port before any spawn")
+}
+
+#[cfg(not(all(feature = "native-normal-journey-probe", debug_assertions)))]
+pub fn core_port() -> u16 {
+    CORE_PORT
+}
+
 pub struct CoreProcess(pub Mutex<Option<Child>>);
 
 pub fn core_up() -> bool {
-    std::net::TcpStream::connect((CORE_HOST, CORE_PORT)).is_ok()
+    std::net::TcpStream::connect((CORE_HOST, core_port())).is_ok()
 }
 
 fn repo_root() -> PathBuf {
@@ -74,6 +129,10 @@ fn spawn_core_command(bin: PathBuf) -> Command {
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .env("FOURALLPASS_SIDECAR", "1");
+    #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+    {
+        command.arg("--port").arg(core_port().to_string());
+    }
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;

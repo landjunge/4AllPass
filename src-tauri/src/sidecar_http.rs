@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use crate::process::CORE_PORT;
+use crate::process::core_port;
 use crate::sidecar_target::core_api_url;
 
 #[derive(serde::Serialize)]
@@ -18,7 +18,7 @@ pub fn sidecar_http(
     headers: HashMap<String, String>,
     body: Option<String>,
 ) -> Result<SidecarHttpResult, String> {
-    request_core(CORE_PORT, method, path, headers, body)
+    request_core(core_port(), method, path, headers, body)
 }
 
 // A fixed loopback host; the normal command always supplies its fixed core port.

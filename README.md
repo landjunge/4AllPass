@@ -184,7 +184,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Import | Chrome und Firefox; Prüfung ohne sichtbare Passwörter in der Liste |
 | Autofill | Chromium, Firefox und Safari-Wrapper; kein automatisches Absenden |
 | KI-Zugriff | Im aktuellen Quellstand gesperrt; geschützter Produktionsweg fehlt |
-| Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
+| Recovery | Notfall-Kit; nach dem Öffnen mit dem Kit wird ein **neues Master-Passwort** gesetzt (frische Kit-Bestätigung, altes Passwort unbekannt), danach ein **separater** optionaler Geräte-Schritt; kein Zurücksetzen über den Server |
 | Gerätewiderruf | Ein Metadaten-Revoke sperrt Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen/Recovery bleiben. Der Guard läuft unter dem Vault-Lock und liest den Owner danach erneut; das Übernehmen eines lokalen Vaults prüft dieselbe Sperre, und ein paralleler Adopt endet ohne Teilübertragung (409). Ein aktives Gerät kann eine ID bewusst wieder eintragen; neue/legacy IDs bleiben bis zu signierten Writes offen. |
 | Frühere Stände | Einstellungen → Sicherheit: ältere Stände ansehen und einen fehlenden Eintrag einzeln wiederherstellen; immer als neuer Stand, nie zurückgedreht |
 | Aufräumen | Vorschau unter Einstellungen → Sicherheit: zeigt nach ausdrücklichem Klick ähnliche Einträge und lange unveränderte Einträge mit ihrem Alter; reine Anzeige, keine Änderung |

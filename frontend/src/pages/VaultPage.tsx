@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useApp } from "../state/app-state.tsx";
+import { RecoveryMasterDialog } from "../components/RecoveryMasterDialog.tsx";
 import { AccessBrokerHost } from "../components/AccessBrokerHost.tsx";
 import { AccessPanel } from "../components/AccessPanel.tsx";
 import { BrowserCards } from "../components/BrowserCards.tsx";
@@ -18,6 +20,7 @@ import {
 import { useVaultHealth, useVaultSearch, useVaultState } from "../hooks/vault/index.ts";
 
 export function VaultPage(): ReactNode {
+  const app = useApp();
   const vault = useVaultState();
   const search = useVaultSearch(vault.entries);
   const health = useVaultHealth(vault.entries);
@@ -26,6 +29,14 @@ export function VaultPage(): ReactNode {
 
   return (
     <div className="vault">
+      {app.recoveryMasterOffer?.vaultId === vault.vault.vaultId ? <RecoveryMasterDialog
+        offer={app.recoveryMasterOffer} error={app.error} passwordsCollide={app.passwordsCollide}
+        complete={app.completeRecoveryMasterOffer} dismiss={app.dismissRecoveryMasterOffer}
+        openDevices={() => {
+          app.dismissRecoveryMasterOffer();
+          vault.setTab("settings"); vault.setSettingsPane("devices");
+        }}
+      /> : null}
       <AccessBrokerHost entries={vault.entries} />
       <VaultTabs
         tab={vault.tab}

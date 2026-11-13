@@ -75,6 +75,8 @@ import type {
 } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import type { CommittedHardRevoke } from "./hard-revoke-result.ts";
+import { replaceMasterAfterRecovery } from "./recovery-master.ts";
+import { assertMasterPassword } from "./master-password.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
   decodeEntryPlaintext,
@@ -97,6 +99,19 @@ export { HistoricRevisionUnreadable } from "./historic-snapshot.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
 
+/** Pins produced by a commit that deferred adoption; written only when the
+ * coordinator adopts the exact returned revision. Metadata only, never keys. */
+const deferredPins = new Map<string, VaultRevision>();
+
+export function persistDeferredPin(vaultId: string, revision: number): void {
+  const key = `${vaultId}#${revision}`;
+  const pin = deferredPins.get(key);
+  if (pin) {
+    deferredPins.delete(key);
+    savePin(pin);
+  }
+}
+
 export interface UnlockedVault {
   vaultId: string;
   revision: number;
@@ -106,6 +121,8 @@ export interface UnlockedVault {
   envelopes: KeyEnvelope[];
   entries: VaultEntry[];
   unlockedWith: UnlockMethod;
+  /** Pin produced by the accepted snapshot; applied on adoption, not commit. */
+  acceptedPin?: VaultRevision;
   /** Defensive accepted legacy wire copy; ciphertext only. */
   wire?: VaultSnapshot;
   /**
@@ -440,8 +457,10 @@ async function acceptSnapshot(
   crossChecks: readonly CrossCheckEnvelope[] = [],
   rawWire?: WireVaultSnapshot,
   liveness?: VaultLiveness,
+  persistPin = true,
 ): Promise<UnlockedVault> {
   const { vault, pin } = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks, rawWire);
+  vault.acceptedPin = pin;
   // A legacy head cache must be the exact accepted raw wire. Re-encoding would
   // drop unknown fields, and an offline reopen would then migrate a lossy state.
   const cacheWire = snapshot.sealedManifest
@@ -468,7 +487,7 @@ async function acceptSnapshot(
     // Another tab may have advanced the pin while this adoption awaited the
     // cache. Never return the opened vault on that error path.
     assertFreshSnapshot(loadPin(pin.vaultId), pin);
-    savePin(pin);
+    if (persistPin) savePin(pin);
   } catch (error) {
     discardOpenedVault(vault);
     throw error;
@@ -612,6 +631,7 @@ export async function createVault(
   masterPassword: string,
   profileName: Argon2idProfileName = "standard",
 ): Promise<CreatedVault> {
+  assertMasterPassword(masterPassword);
   const profile = ARGON2ID_PROFILES[profileName];
   const summary = await api.createVault();
   const vaultId = summary.vaultId;
@@ -712,6 +732,15 @@ export async function unlockWithRecoveryKey(
   }
 }
 
+/** Set a new master after actual recovery unlock and a fresh kit confirmation. */
+export async function setMasterPasswordAfterRecovery(
+  vault: UnlockedVault,
+  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean },
+): Promise<UnlockedVault> {
+  return replaceMasterAfterRecovery(vault, options, (envelopes, vaultKey, masterWrappingKey) =>
+    commitSnapshot(vault, vault.entries, envelopes, { vaultKey, masterWrappingKey, deferPin: options.deferPin }));
+}
+
 export async function hasDeviceUnlock(vaultId: string): Promise<boolean> {
   try {
     return (await store().load(vaultId, deviceId())) !== null;
@@ -800,6 +829,10 @@ async function commitSnapshot(
   options?: {
     vaultKeyVersion?: number;
     vaultKey?: Uint8Array;
+    /** Cross-check the normalized returned master envelope before accepting. */
+    masterWrappingKey?: Uint8Array;
+    /** Defer the pin write until the caller adopts the returned vault. */
+    deferPin?: boolean | undefined;
     liveness?: VaultLiveness;
     /**
      * Persist the exact sealed-manifest digest before the POST. Awaited: the
@@ -871,13 +904,21 @@ async function commitSnapshot(
       committed,
       vaultKey,
       vault.unlockedWith,
-      [],
+      options?.masterWrappingKey
+        ? [{ envelope: masterEnvelopeOf(committed), wrappingKey: options.masterWrappingKey }]
+        : [],
       undefined,
       options?.liveness,
+      options?.deferPin ? false : true,
     );
     if (options?.liveness && !options.liveness.isLive()) {
       discardOpenedVault(accepted);
       throw new VaultLockedError();
+    }
+    if (options?.deferPin) {
+      const pin = accepted.acceptedPin;
+      if (pin) deferredPins.set(`${accepted.vaultId}#${pin.revision}`, pin);
+      delete accepted.acceptedPin;
     }
     return accepted;
   } catch (error) {

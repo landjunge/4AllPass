@@ -160,6 +160,38 @@ async function readLegacyBackup(page: Page, vaultId: string): Promise<Record<str
   }), vaultId);
 }
 
+/** Read the live head cache through a fresh IndexedDB connection. */
+async function readHeadCache(page: Page, vaultId: string): Promise<Record<string, unknown> | null> {
+  return page.evaluate(async (id) => new Promise((resolve, reject) => {
+    const open = indexedDB.open("4allpass-snapshot-cache", 1);
+    open.onupgradeneeded = () => {
+      if (!open.result.objectStoreNames.contains("wire")) open.result.createObjectStore("wire");
+    };
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction("wire", "readonly");
+      const get = tx.objectStore("wire").get(id);
+      get.onsuccess = () => { resolve((get.result as Record<string, unknown>) ?? null); db.close(); };
+      get.onerror = () => reject(get.error);
+    };
+  }), vaultId);
+}
+
+/** Key-order-insensitive JSON image for the backup-equals-wire check. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 test("DE/EN legacy banner, confirm once, focus", async ({ page, browser }) => {
   const { vaultId } = await setupLegacy(page);
   await page.getByTestId("language-de").click();
@@ -425,6 +457,62 @@ test("unknown raw fields are backed up verbatim and fail closed before POST", as
     posts: 0,
     reservation: reservation?.state,
     backupUnknownTop: backup?.futureTop,
+    data: "synthetic only",
+  });
+});
+
+test("online legacy unlock caches the raw wire; offline reopen migrates fail-closed", async ({ page, context, browser }) => {
+  const { vaultId, wire } = await setupLegacy(page, {
+    decorate: (raw) => {
+      raw.futureTop = { note: "offline keep" };
+      (raw.entries as Array<Record<string, unknown>>)[0]!.futureEntry = "keep-entry";
+      (raw.envelopes as Array<Record<string, unknown>>)[0]!.futureEnvelope = { nested: [4, 5, 6] };
+    },
+  });
+
+  // The online unlock must have written the exact raw wire, not a typed re-encode.
+  const headOnline = await readHeadCache(page, vaultId);
+  expect(headOnline?.futureTop).toEqual({ note: "offline keep" });
+  expect((headOnline?.entries as Array<Record<string, unknown>>)[0]?.futureEntry).toBe("keep-entry");
+  expect((headOnline?.envelopes as Array<Record<string, unknown>>)[0]?.futureEnvelope).toEqual({ nested: [4, 5, 6] });
+
+  // Offline: the snapshot GET fails; unlock must use the head cache.
+  await page.unroute(new RegExp(`/api/v1/vaults/${vaultId}/snapshot$`));
+  await page.route(new RegExp(`/api/v1/vaults/${vaultId}/snapshot$`), (route) => route.abort("failed"));
+  await page.reload();
+  await reachUnlockedLocalApp(page);
+  await expect(page.getByTestId("legacy-migration-banner")).toBeVisible();
+  await page.getByTestId("language-de").click();
+  const counter = countMigrationPosts(page, vaultId);
+  await page.getByTestId("legacy-migration-now").click();
+  await expect(page.getByTestId("legacy-migration-message")).toContainText("nicht verlustfrei");
+  await page.waitForTimeout(250);
+  expect(counter.count, "unsupported offline legacy must not POST").toBe(0);
+  counter.dispose();
+  const reservation = await readReservation(page, vaultId);
+  expect(reservation?.state).toBe("rejected");
+  await page.screenshot({ path: join(OUT, "offline-reopen-unsupported.png") });
+
+  // Genuinely new connection: the backup equals the online wire, unknown fields included.
+  const pageB = await context.newPage();
+  let backup: Record<string, unknown> | null = null;
+  try {
+    await pageB.goto("/");
+    backup = await readLegacyBackup(pageB, vaultId);
+    expect(backup, "offline legacy backup").not.toBeNull();
+    expect(canonical(backup)).toBe(canonical(wire));
+  } finally {
+    await pageB.close();
+  }
+  evidence("offline-reopen", {
+    browser: browser.browserType().name(),
+    version: browser.version(),
+    viewport: page.viewportSize(),
+    sourceHead: process.env.AP286_SOURCE_HEAD ?? "unknown",
+    posts: 0,
+    reservation: reservation?.state,
+    backupEqualsWire: true,
+    headUnknownTop: headOnline?.futureTop,
     data: "synthetic only",
   });
 });

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
   IntegrityError,
+  RollbackError,
   buildManifest,
   deriveRecoveryWrappingKey,
   encodeVaultSnapshot,
@@ -28,7 +29,7 @@ import {
   setMigrationAttemptStoreForTests,
   type MigrationAttempt,
 } from "./migration-attempt.ts";
-import { loadPin } from "./revision-pin.ts";
+import { loadPin, savePin } from "./revision-pin.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests, type SnapshotCache } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { captureVaultLiveness, VaultLockedError } from "./vault-liveness.ts";
@@ -905,6 +906,96 @@ test("MIG-25 a real lock at adoption plus cache await zeroizes the key and keeps
     assert.equal(vault.vaultKey.every((byte) => byte === 0), true);
     assert.equal(loadPin(vaultId)?.revision, 1);
     assert.equal((await migrationAttemptStore().load(vaultId))?.state, "prepared");
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-26 the legacy head cache keeps the exact raw wire across an offline reopen", async () => {
+  const vaultId = "legacy-mig-26";
+  const f = fixture(vaultId);
+  const cache = memorySnapshotCache();
+  setSnapshotCacheForTests(cache);
+  try {
+    const legacy = f.snapshot(1, false);
+    const raw = legacy.wire as unknown as Record<string, unknown> & {
+      entries: Array<Record<string, unknown>>;
+      envelopes: Array<Record<string, unknown>>;
+    };
+    raw.futureTop = { note: "head-cache keep" };
+    raw.entries[0]!.futureEntry = "keep-entry";
+    raw.envelopes[0]!.futureEnvelope = { nested: [1, 2, 3] };
+    api.getSnapshot = async () => raw as unknown as WireVaultSnapshot;
+    const vault = await unlockWithRecoveryKey(vaultId, f.shareKey);
+    const cached = (await cache.load(vaultId)) as unknown as Record<string, unknown> & {
+      entries: Array<Record<string, unknown>>;
+      envelopes: Array<Record<string, unknown>>;
+    };
+    assert.deepEqual(cached.futureTop, { note: "head-cache keep" });
+    assert.equal(cached.entries[0]?.futureEntry, "keep-entry");
+    assert.deepEqual(cached.envelopes[0]?.futureEnvelope, { nested: [1, 2, 3] });
+
+    // Offline reopen uses the head cache, not the server.
+    api.getSnapshot = async () => { throw new TypeError("offline"); };
+    const reopened = await unlockWithRecoveryKey(vaultId, f.shareKey);
+    assert.equal(isLegacyVault(reopened), true);
+
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => {
+      posts++;
+      return { ...payload, vaultId: id };
+    };
+    await assert.rejects(
+      () => migrateLegacySnapshot(reopened, { confirmed: true }),
+      (error: unknown) =>
+        error instanceof LegacyMigrationError &&
+        error.code === "legacy_wire_unsupported_metadata",
+    );
+    assert.equal(posts, 0);
+    assert.equal(loadPin(vaultId)?.revision, 1);
+    const backup = (await cache.loadLegacyBackup(vaultId)) as unknown as Record<string, unknown> & {
+      entries: Array<Record<string, unknown>>;
+      envelopes: Array<Record<string, unknown>>;
+    };
+    assert.deepEqual(backup.futureTop, { note: "head-cache keep" });
+    assert.equal(backup.entries[0]?.futureEntry, "keep-entry");
+    assert.deepEqual(backup.envelopes[0]?.futureEnvelope, { nested: [1, 2, 3] });
+    zeroize(vault.vaultKey);
+    zeroize(reopened.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-27 a newer pin during the cache await zeroizes the opened key", async () => {
+  const vaultId = "legacy-mig-27";
+  const f = fixture(vaultId);
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    const base = memorySnapshotCache();
+    const cache: SnapshotCache = {
+      load: (id) => base.load(id),
+      save: async (id, snapshot) => {
+        await base.save(id, snapshot);
+        // Another tab advanced the pin while this adoption awaited the cache.
+        savePin({ vaultId, revision: 3, vaultKeyVersion: 1, cryptoProtocolVersion: 1 });
+      },
+      remove: (id) => base.remove(id),
+      loadLegacyBackup: (id) => base.loadLegacyBackup(id),
+      saveLegacyBackup: (id, snapshot) => base.saveLegacyBackup(id, snapshot),
+      removeLegacyBackup: (id) => base.removeLegacyBackup(id),
+    };
+    setSnapshotCacheForTests(cache);
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => {
+      posts++;
+      return { ...payload, vaultId: id };
+    };
+    await assert.rejects(() => commitEntries(vault, vault.entries), RollbackError);
+    assert.equal(posts, 1);
+    assert.equal(vault.vaultKey.every((byte) => byte === 0), true);
+    assert.equal(loadPin(vaultId)?.revision, 3);
   } finally {
     f.dispose();
   }

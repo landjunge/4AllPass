@@ -442,8 +442,19 @@ async function acceptSnapshot(
   liveness?: VaultLiveness,
 ): Promise<UnlockedVault> {
   const { vault, pin } = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks, rawWire);
+  // A legacy head cache must be the exact accepted raw wire. Re-encoding would
+  // drop unknown fields, and an offline reopen would then migrate a lossy state.
+  const cacheWire = snapshot.sealedManifest
+    ? encodeVaultSnapshot(snapshot)
+    : rawWire
+      ? cloneWire(rawWire)
+      : null;
+  if (!cacheWire) {
+    discardOpenedVault(vault);
+    throw new IntegrityError("legacy raw wire missing; refusing a lossy head cache");
+  }
   try {
-    await snapshotCache().save(snapshot.vaultId, encodeVaultSnapshot(snapshot));
+    await snapshotCache().save(snapshot.vaultId, cacheWire);
   } catch {
     // Cache is best-effort. Unlock already succeeded.
   }
@@ -453,8 +464,15 @@ async function acceptSnapshot(
     discardOpenedVault(vault);
     throw new VaultLockedError();
   }
-  assertFreshSnapshot(loadPin(pin.vaultId), pin);
-  savePin(pin);
+  try {
+    // Another tab may have advanced the pin while this adoption awaited the
+    // cache. Never return the opened vault on that error path.
+    assertFreshSnapshot(loadPin(pin.vaultId), pin);
+    savePin(pin);
+  } catch (error) {
+    discardOpenedVault(vault);
+    throw error;
+  }
   return vault;
 }
 

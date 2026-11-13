@@ -579,13 +579,14 @@ import os
 import uuid as _uuid
 
 import pytest as _pytest
-from sqlalchemy import select as _select
+from sqlalchemy import func as _func, select as _select
 from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
 
 from app.api import deps as _deps
 from app.db.session import create_db_engine as _create_engine
 from app.models.snapshot import VaultSnapshot as _Snapshot
 from app.models.vault import Vault as _Vault
+from app.models.signed_write import VaultWriteKey as _Key, WriteReceipt as _Receipt
 
 
 @_pytest.mark.skipif(
@@ -786,13 +787,13 @@ from app.api.deps import get_current_user as _gcuser, get_db as _gdb, get_owned_
 from app.main import create_app as _create_app
 
 
-def _two_clients(engine, db_url: str, gate_old_writer: bool):
+def _two_clients(engine_a, engine_b, gate_old_writer: bool):
     import asyncio
 
     entered = asyncio.Event()
     release = asyncio.Event()
 
-    def build(gate: bool):
+    def build(engine, gate: bool):
         app2 = _create_app()
         factory = _sessionmaker(bind=engine, class_=_AsyncSession, expire_on_commit=False, autoflush=False)
 
@@ -813,11 +814,12 @@ def _two_clients(engine, db_url: str, gate_old_writer: bool):
                 db=_Depends(_gdb),
                 user=_Depends(_gcuser),
             ):
-                result = await _gwritable(request, vault, db, user)
+                # Ownership was already read by _gowned. Wait before the real
+                # vault lock so the rotation can acquire it while we wait.
                 if request.headers.get("X-Test-Barrier") == "old-writer":
                     entered.set()
                     await release.wait()
-                return result
+                return await _gwritable(request, vault, db, user)
 
             app2.dependency_overrides[_gwritable] = gated
 
@@ -826,10 +828,10 @@ def _two_clients(engine, db_url: str, gate_old_writer: bool):
 
         return _Client(transport=_ASGITransport(app=app2), base_url="http://test", event_hooks={"request": [hook]})
 
-    return build(False), build(gate_old_writer), entered, release
+    return build(engine_a, False), build(engine_b, gate_old_writer), entered, release
 
 
-async def test_duplicate_operation_two_engines_one_effect(client, account):
+async def test_duplicate_operation_two_engines_one_effect(client, account, engine):
     vault_id, grant = await _create_v2_vault(client, account)
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
@@ -857,7 +859,7 @@ async def test_duplicate_operation_two_engines_one_effect(client, account):
     )
 
     engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
-    c1, c2, _, _ = _two_clients(engine2, os.environ["FOURALLPASS_DATABASE_URL"], False)
+    c1, c2, _, _ = _two_clients(engine, engine2, False)
     try:
         async with c1, c2:
             async def send(c):
@@ -870,6 +872,14 @@ async def test_duplicate_operation_two_engines_one_effect(client, account):
         assert len(replayed) == 1
         revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=account)
         assert len(revisions.json()) == 2
+        async with _AsyncSession(bind=engine) as chk:
+            receipts = await chk.scalar(
+                _select(_func.count()).select_from(_Receipt).where(
+                    _Receipt.vault_id == _uuid.UUID(vault_id),
+                    _Receipt.operation_id == operation,
+                )
+            )
+            assert receipts == 1
     finally:
         await engine2.dispose()
 
@@ -878,7 +888,7 @@ async def test_duplicate_operation_two_engines_one_effect(client, account):
     "postgres" not in os.environ.get("FOURALLPASS_DATABASE_URL", ""),
     reason="real-engine rotation barrier runs on the Postgres CI job",
 )
-async def test_pg_rotation_beats_waiting_old_key_write(client, account):
+async def test_pg_rotation_beats_waiting_old_key_write(client, account, engine):
     vault_id, grant = await _create_v2_vault(client, account)
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
@@ -888,7 +898,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account):
     assert first.status_code == 200, first.text
 
     engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
-    normal, gated_client, entered, release = _two_clients(engine2, os.environ["FOURALLPASS_DATABASE_URL"], True)
+    _, gated_client, entered, release = _two_clients(engine, engine2, True)
     try:
         old_payload = {
             "expectedRevision": 1, "revision": 2, "vaultKeyVersion": 1,
@@ -907,7 +917,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account):
         )
         old_signed["X-Test-Barrier"] = "old-writer"
 
-        async with normal, gated_client:
+        async with gated_client:
             writer = asyncio.create_task(
                 gated_client.post(
                     f"/api/v1/vaults/{vault_id}/snapshots", content=old_raw, headers={**account, **old_signed}
@@ -917,7 +927,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account):
 
             new_priv = Ed25519PrivateKey.generate()
             rotated, _, _ = await _commit(
-                normal, account, vault_id, priv, pub,
+                client, account, vault_id, priv, pub,
                 revision=2, base=1, key_version=1, result_key_version=2,
                 manifest_obj=manifest(b"rotated"),
                 next_priv=new_priv,
@@ -931,6 +941,15 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account):
             assert stale.json()["detail"] in {
                 "write_revision_conflict", "write_key_version_mismatch"
             }
+            async with _AsyncSession(bind=engine) as chk:
+                rows = (
+                    await chk.execute(
+                        _select(_Key).where(_Key.vault_id == _uuid.UUID(vault_id)).order_by(_Key.key_version)
+                    )
+                ).scalars().all()
+                assert [(r.key_version, r.retired_at is not None) for r in rows] == [(1, True), (2, False)]
+            revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=account)
+            assert len(revisions.json()) == 2
     finally:
         release.set()
         await engine2.dispose()

@@ -1,3 +1,7 @@
+import type { VaultSummary } from "../../../lib/api.ts";
+import { isOfflineError } from "../../../lib/snapshot-cache.ts";
+import { loadOfflineBootstrap } from "../../../lib/offline-bootstrap.ts";
+
 export interface LocalStoreStatus {
   hasLocalVault: boolean;
   localEntries: number;
@@ -22,7 +26,9 @@ export interface StartupDependencies {
   isDesktop(): boolean;
   hasStorageOrigin(): boolean;
   restoreSession(email: string | null): void;
-  loadVaults(): Promise<unknown>;
+  loadVaults(): Promise<VaultSummary[]>;
+  restoreOffline(email: string, vaults: VaultSummary[]): void;
+  saveOfflineBootstrap(email: string, vaults: VaultSummary[]): void;
   reportWebviewCapabilities(): Promise<void>;
   setLocalMode(local: boolean): void;
   setLocalStore(status: LocalStoreStatus | null): void;
@@ -32,7 +38,8 @@ export interface StartupDependencies {
 async function restoreAuthenticatedSession(dependencies: StartupDependencies): Promise<void> {
   const account = await dependencies.gateway.me();
   dependencies.restoreSession(account.email);
-  await dependencies.loadVaults();
+  const vaults = await dependencies.loadVaults();
+  dependencies.saveOfflineBootstrap(account.email, vaults);
 }
 
 /**
@@ -63,7 +70,8 @@ export async function runStartup(dependencies: StartupDependencies): Promise<voi
     ) {
       const session = await dependencies.gateway.localSession();
       dependencies.restoreSession(session.email);
-      await dependencies.loadVaults();
+      const vaults = await dependencies.loadVaults();
+      dependencies.saveOfflineBootstrap(session.email, vaults);
       void dependencies.reportWebviewCapabilities().catch(() => undefined);
       return;
     }
@@ -71,7 +79,17 @@ export async function runStartup(dependencies: StartupDependencies): Promise<voi
     if (dependencies.hasToken()) {
       await restoreAuthenticatedSession(dependencies);
     }
-  } catch {
+  } catch (error) {
+    // Only a transport failure (no HTTP answer) may use the metadata fallback.
+    // 401/403/404/409/422/5xx stay server answers and never become "offline".
+    if (dependencies.hasToken() && isOfflineError(error)) {
+      const cached = loadOfflineBootstrap();
+      if (cached) {
+        dependencies.restoreSession(cached.email);
+        dependencies.restoreOffline(cached.email, cached.vaults);
+        return;
+      }
+    }
     if (dependencies.hasToken()) {
       try {
         await restoreAuthenticatedSession(dependencies);

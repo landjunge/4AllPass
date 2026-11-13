@@ -9,10 +9,13 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { api, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
 import { deviceId } from "../../lib/device-identity.ts";
+import { readActiveVaultId } from "../../lib/active-vault.ts";
+import { clearOfflineBootstrap } from "../../lib/offline-bootstrap.ts";
 import { listenDesktopLock } from "../desktop-adapter/index.ts";
 import { useAccount, type AccountState } from "../account/index.ts";
 import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
@@ -107,6 +110,7 @@ export function useApp(): AppState & AppActions {
 
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
+  const [offlineVaults, setOfflineVaults] = useState<VaultSummary[] | null>(null);
   const accountRef = useRef<AccountState | null>(null);
   const recoveryUnlockedRef = useRef<(vault: UnlockedVault) => void>(() => undefined);
   const onRecoveryUnlock = useCallback((vault: UnlockedVault) => recoveryUnlockedRef.current(vault), []);
@@ -220,6 +224,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     clearSignedOutState();
     clearDevices();
     clearMasterOffer();
+    clearOfflineBootstrap();
+    setOfflineVaults(null);
   }, [clearSignedOutState, clearDevices, clearMasterOffer]);
 
   const account = useAccount({
@@ -233,7 +239,25 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   accountRef.current = account;
 
   const restoreAccountSession = account.restoreSession;
-  const startup = useStartup({ restoreSession: restoreAccountSession, loadVaults: vaultLifecycle.loadVaults });
+  const loadVaultsOnline = vaultLifecycle.loadVaults;
+  const loadVaultsCached = useCallback(async (): Promise<VaultSummary[]> => {
+    const list = await loadVaultsOnline();
+    setOfflineVaults(null);
+    return list;
+  }, [loadVaultsOnline]);
+  const restoreOffline = useCallback((_email: string, vaults: VaultSummary[]) => {
+    setOfflineVaults(vaults);
+    const remembered = readActiveVaultId();
+    const id = remembered && vaults.some((vault) => vault.vaultId === remembered)
+      ? remembered
+      : vaults[0]?.vaultId;
+    if (id) void vaultLifecycle.selectVault(id);
+  }, [vaultLifecycle.selectVault]);
+  const startup = useStartup({
+    restoreSession: restoreAccountSession,
+    loadVaults: loadVaultsCached,
+    restoreOffline,
+  });
   updateLocalStoreRef.current = startup.updateLocalStore;
 
   const actions: AppActions = useMemo(
@@ -322,7 +346,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       email: account.email,
       localMode: startup.localMode,
       localStore: startup.localStore,
-      vaults: vaultLifecycle.vaults,
+      vaults: offlineVaults ?? vaultLifecycle.vaults,
       activeVaultId: vaultLifecycle.activeVaultId,
       lockState: vaultLifecycle.lockState,
       vault: vaultLifecycle.vault,

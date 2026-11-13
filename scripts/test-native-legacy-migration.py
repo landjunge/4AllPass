@@ -357,6 +357,18 @@ def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenari
     if not result_path.is_file():
         raise RuntimeError(f"native-result.json missing; private log: {log_path}")
     result = json.loads(result_path.read_text())
+    auth_diagnostics = []
+    for line in log_path.read_text(errors="replace").splitlines():
+        if "NATIVE_AUTH_DIAG " in line:
+            try:
+                auth_diagnostics.append(json.loads(line.split("NATIVE_AUTH_DIAG ", 1)[1]))
+            except json.JSONDecodeError:
+                pass
+    sidecar_remaining = subprocess.run(
+        ["pgrep", "-fl", f"fourallpass-core.*--port {test_port}"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     db = task / "data/vault.db"
     counts = db_counts(db)
     connection = sqlite3.connect(db.as_uri() + "?mode=ro", uri=True)
@@ -401,11 +413,27 @@ def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenari
         "seed": seed,
         "negativePortChecks": negatives,
         "nativeResult": result,
+        "authDiagnostics": auth_diagnostics,
+        "snapshotPostAttempts": result.get("snapshotPostAttempts"),
+        "restart": {
+            "originalChildPid": result.get("originalChildPid"),
+            "restartedChildPid": result.get("restartedChildPid"),
+            "newPid": result.get("restartedChildPid") not in (None, result.get("originalChildPid")),
+            "samePort": result.get("restartSamePort") == test_port,
+            "sameData": str(result.get("restartSameData")) == str(task / "data"),
+            "ownershipOk": result.get("ownSidecarRestarted") is True,
+        },
         "privateDbCounts": counts["counts"],
         "revisions": counts["revisions"],
         "noSyntheticPlaintextInDb": opaque,
         "portReleased": port_released,
         "remainingProbeProcesses": remaining,
+        "remainingSidecars": sidecar_remaining,
+        "endCondition": {
+            "portReleased": port_released,
+            "probeAbsent": not remaining,
+            "ownSidecarAbsent": not sidecar_remaining,
+        },
         "kdfMetadataWithoutSalt": kdf_metadata,
         "frontendDistTree": tree_digest(dist),
         "nativeLog": str(log_path),

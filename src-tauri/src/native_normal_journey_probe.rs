@@ -123,22 +123,27 @@ fn listener_is_owned(listener_pid: u32, child_pid: u32) -> bool {
     false
 }
 
-fn restart_own_sidecar(handle: &tauri::AppHandle) -> bool {
+fn restart_own_sidecar(handle: &tauri::AppHandle, original_child_pid: u32) -> Option<u32> {
     if crate::process::core_up()
         || crate::process_inspect::loopback_listen_pid(crate::process::core_port()).is_some()
     {
-        return false;
+        return None;
     }
     let Ok(child) = crate::process::spawn_core() else {
-        return false;
+        return None;
     };
     let pid = child.id();
+    if pid == original_child_pid {
+        return None;
+    }
     if let Some(state) = handle.try_state::<crate::CoreProcess>() {
         if let Ok(mut slot) = state.0.lock() {
             *slot = Some(child);
         }
     }
-    crate::loopback::wait_our_core(pid, Duration::from_secs(20)).is_ok()
+    crate::loopback::wait_our_core(pid, Duration::from_secs(20))
+        .ok()
+        .map(|_| pid)
 }
 
 pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> {
@@ -225,6 +230,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let mut listener_pid = None;
         let mut own_sidecar_stopped = false;
         let mut own_sidecar_restarted = false;
+        let mut restarted_child_pid: Option<u32> = None;
         while Instant::now() < deadline {
             listener_pid = listener_pid
                 .or_else(|| crate::process_inspect::loopback_listen_pid(crate::process::core_port()));
@@ -283,7 +289,8 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                             && phase == "restart-sidecar"
                             && own_sidecar_restarted == false
                         {
-                            own_sidecar_restarted = restart_own_sidecar(&handle);
+                            restarted_child_pid = restart_own_sidecar(&handle, child_pid);
+                            own_sidecar_restarted = restarted_child_pid.is_some();
                             let ack = if own_sidecar_restarted {
                                 "sidecar-restarted"
                             } else {
@@ -330,6 +337,12 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             "testPort":crate::process::core_port(),"portIsolation":"ephemeral-own",
             "ownSidecarStopped":own_sidecar_stopped,
             "ownSidecarRestarted":own_sidecar_restarted,
+            "originalChildPid":child_pid,
+            "restartedChildPid":restarted_child_pid,
+            "restartSamePort":crate::process::core_port(),
+            "restartSameData":root().join("data"),
+            "restartLifecycle":"spawn_core+wait_our_core+CoreProcess",
+            "snapshotPostAttempts":crate::sidecar_http::snapshot_post_attempts(),
             "seededData":std::env::var_os("FOURALLPASS_NATIVE_SEED_DATA").is_some(),
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,

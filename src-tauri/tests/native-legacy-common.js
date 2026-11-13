@@ -5,6 +5,38 @@
   const result = window.__NATIVE_MIGRATION__ = {
     done: false, passed: false, stage: "boot", phase: "", ack: "", checks: [],
   };
+  const EVENTS_KEY = "__nativeMigrationEvents";
+  const CHECKS_KEY = "__nativeMigrationChecks";
+  const RECEIPT_KEY = "__nativeMigrationReceiptBeforeReload";
+  const parseStored = (key, fallback) => {
+    try {
+      return JSON.parse(sessionStorage.getItem(key) || JSON.stringify(fallback));
+    } catch {
+      return fallback;
+    }
+  };
+  const logEvent = event => {
+    const events = parseStored(EVENTS_KEY, []);
+    events.push({ at: new Date().toISOString(), ...event });
+    sessionStorage.setItem(EVENTS_KEY, JSON.stringify(events));
+    result.phaseEvents = events;
+    return events;
+  };
+  const rememberReceipt = receipt => {
+    if (!receipt) return null;
+    const safe = {
+      state: receipt.state,
+      operationID: receipt.operationID,
+      baseRevision: receipt.baseRevision,
+      preparedManifestDigestLength:
+        typeof receipt.preparedManifestDigest === "string" ? receipt.preparedManifestDigest.length : null,
+    };
+    sessionStorage.setItem(RECEIPT_KEY, JSON.stringify(safe));
+    return safe;
+  };
+  const recalledReceipt = () => parseStored(RECEIPT_KEY, null);
+  result.phaseEvents = parseStored(EVENTS_KEY, []);
+  result.priorChecks = parseStored(CHECKS_KEY, []);
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const byId = id => document.querySelector(`[data-testid="${id}"]`);
   const text = id => (byId(id)?.textContent || "");
@@ -16,7 +48,13 @@
     }
     throw new Error(`stage-timeout:${stage}`);
   };
-  const check = name => result.checks.push(name);
+  const check = name => {
+    result.checks.push(name);
+    const all = parseStored(CHECKS_KEY, []);
+    all.push(name);
+    sessionStorage.setItem(CHECKS_KEY, JSON.stringify(all));
+    result.priorChecks = all;
+  };
   const fillField = (field, value) => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(field, value);
     field.dispatchEvent(new Event("input", { bubbles: true }));
@@ -190,10 +228,12 @@
       await wait("startup", () => byId("auth-submit") || byId("master-password") || byId("lock-state") || byId("vault-password"));
       if (!phaseAfterReload) {
         await signIn();
+        logEvent({ phase: "initial-login", mode: authMode(), result: "ui-ok" });
         await skipOnboarding();
         await unlock();
         await wait("legacy-banner", () => byId("legacy-migration-banner") && byId("legacy-migration-now"));
         check("legacy-banner");
+        logEvent({ phase: "legacy-banner", revision: wire?.revision ?? null });
         await sleep(1200);
         if (!byId("legacy-migration-banner")) throw new Error("banner-vanished-without-action");
         check("no-automatic-banner-dismiss");
@@ -202,6 +242,7 @@
         result.wireRevision = wire.revision;
         result.wireHasManifest = Boolean(wire.sealedManifest);
         check("head-cache-read");
+        logEvent({ phase: "head-cache", revision: wire.revision, manifest: Boolean(wire.sealedManifest) });
 
         if (kind === "unknown-fields") {
           const decorated = structuredClone(wire);
@@ -219,7 +260,9 @@
           await wait("wait-own-sidecar-stop", () => result.ack !== "", 300);
           if (result.ack !== "sidecar-stopped") throw new Error(`own-sidecar-stop-failed:${result.ack}`);
           check("own-sidecar-stopped");
+          logEvent({ phase: "own-sidecar-stopped", ack: result.ack, initializedContext: true });
           result.transportError = await ipcTransportProbe();
+          logEvent({ phase: "transport-probe", transportError: result.transportError });
           const offline = await tryUnlockSameContext();
           if (!offline.ok) {
             result.offlineBoundary = "initialized-context-cache-fallback-unavailable";
@@ -248,6 +291,9 @@
           await click("lock");
           await wait("locked", () => !unlocked() && !byId("legacy-migration-banner"));
           check("lock-hides-banner");
+          logEvent({ phase: "locked", bannerHidden: true });
+          result.phaseEvents = parseStored(EVENTS_KEY, []);
+          result.priorChecks = parseStored(CHECKS_KEY, []);
           result.passed = true;
           result.done = true;
           return;
@@ -257,6 +303,7 @@
         await wait("wait-own-sidecar-stop", () => result.ack !== "", 300);
         if (result.ack !== "sidecar-stopped") throw new Error(`own-sidecar-stop-failed:${result.ack}`);
         check("own-sidecar-stopped");
+        logEvent({ phase: "own-sidecar-stopped", ack: result.ack, beforePost: true });
         await click("legacy-migration-now");
         await wait("unknown-message", () =>
           text("legacy-migration-banner").includes("Ausgang ist unklar") ||
@@ -267,11 +314,14 @@
         result.receiptState = receipt.state;
         result.receiptBaseRevision = receipt.baseRevision;
         result.receiptDigest = typeof receipt.preparedManifestDigest === "string";
+        result.receiptBeforeReload = rememberReceipt(receipt);
+        logEvent({ phase: "unknown-receipt", receipt: result.receiptBeforeReload });
         check("reservation-unknown");
         result.phase = "restart-sidecar";
         await wait("wait-own-sidecar-restart", () => result.ack === "sidecar-restarted", 300);
         if (result.ack !== "sidecar-restarted") throw new Error("own-sidecar-restart-failed");
         check("own-sidecar-restarted");
+        logEvent({ phase: "restart-sidecar", ack: result.ack });
         sessionStorage.setItem("__nativeMigrationPhase", "after-unknown");
         location.reload();
         return;
@@ -291,6 +341,21 @@
         const receipt = await readReservation();
         if (!receipt || receipt.state !== "unknown") throw new Error("receipt-not-unknown-after-reload");
         result.receiptStateAfterReload = receipt.state;
+        result.receiptAfterReload = rememberReceipt(receipt);
+        const before = result.receiptBeforeReload || recalledReceipt();
+        if (!before || !result.receiptAfterReload || before.operationID !== result.receiptAfterReload.operationID) {
+          throw new Error("receipt-owner-changed-across-reload");
+        }
+        check("receipt-owner-stable");
+        check("receipt-unknown-after-reload");
+        logEvent({
+          phase: "after-reload",
+          receiptBefore: before,
+          receiptAfter: result.receiptAfterReload,
+          blocked: true,
+        });
+        result.phaseEvents = parseStored(EVENTS_KEY, []);
+        result.priorChecks = parseStored(CHECKS_KEY, []);
         const backup = await readBackup();
         if (!backup || backup.revision !== 1) throw new Error("known-backup-missing");
         result.knownBackupRevision = backup.revision;
@@ -298,6 +363,9 @@
         await click("lock");
         await wait("locked", () => !unlocked() && !byId("legacy-migration-banner"));
         check("lock-hides-banner");
+        logEvent({ phase: "locked", bannerHidden: true });
+        result.phaseEvents = parseStored(EVENTS_KEY, []);
+        result.priorChecks = parseStored(CHECKS_KEY, []);
         result.passed = true;
         result.done = true;
         return;

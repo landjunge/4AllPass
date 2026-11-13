@@ -1,7 +1,17 @@
 use std::{collections::HashMap, time::Duration};
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::process::core_port;
 use crate::sidecar_target::core_api_url;
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+static SNAPSHOT_POST_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub(crate) fn snapshot_post_attempts() -> usize {
+    SNAPSHOT_POST_ATTEMPTS.load(Ordering::SeqCst)
+}
 
 #[derive(serde::Serialize)]
 pub struct SidecarHttpResult {
@@ -81,6 +91,10 @@ pub fn sidecar_http(
 ) -> Result<SidecarHttpResult, String> {
     let diagnostic_path = path.clone();
     let diagnostic_body = body.clone();
+    #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+    if method.eq_ignore_ascii_case("POST") && path.ends_with("/snapshots") {
+        SNAPSHOT_POST_ATTEMPTS.fetch_add(1, Ordering::SeqCst);
+    }
     let result = request_core(core_port(), method, path, headers, body)?;
     #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
     auth_diagnostic(&diagnostic_path, &diagnostic_body, result.status, &result.body);

@@ -18,3 +18,8 @@
 # exactly the mistake the note above warns about.
 90ddc3742efa7e35d0b093a57975c2b8e03e63f1:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:20
 14c0454b41363185d02f2301c073fb89944c73f8:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:22
+
+# Recovery-journey Playwright fixture: new master password typed into a
+# throwaway local vault. Synthetic, no account/server behind it; the value was
+# changed in the follow-up commit, the fingerprint only covers the first commit.
+1d3bda217a55d7b81c51caedf1fd3c2fa68bdf8c:frontend/e2e/local/recovery-journey.spec.ts:generic-api-key:5

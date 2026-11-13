@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { clickAndType } from "../live/actions.ts";
 
 const VAULT_PASSWORD = "korrektes-pferd-batterie-heftklammer";
-const NEW_PASSWORD = "neues-meister-passwort-2026";
+const NEW_PASSWORD = "neues-pferd-batterie-heftklammer";
 
 /**
  * P05 journey: create → kit → lose master password → recovery unlock →

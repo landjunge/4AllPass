@@ -124,9 +124,14 @@ async def get_writable_vault(
     # revoked check below is therefore evaluated under the same lock that the
     # mutation holds until commit, not in a get-then-act window.
     await lock_vault_row(db, vault.id)
-    # Ownership was checked before the lock wait. Re-read the owner under the
-    # lock; a concurrent local-vault adoption may have transferred it, and the
-    # old owner's session must not write a stale-owned row.
+    # The vault object was loaded before the lock wait. Refresh owner, protocol
+    # version and the active-snapshot pointer under the lock so signed checks
+    # never run on a stale identity (head, rotation or ownership may have
+    # advanced while this request waited).
+    await db.refresh(
+        vault, attribute_names=["owner_user_id", "crypto_protocol_version", "active_snapshot_id"]
+    )
+    db.expire(vault, ["active_snapshot"])
     owner = await db.scalar(select(Vault.owner_user_id).where(Vault.id == vault.id))
     if owner is None or owner != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="vault not found")
@@ -138,10 +143,12 @@ async def get_writable_vault(
         )
     )
     if revoked.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="device is revoked for this vault",
+        detail = (
+            "device_revoked"
+            if vault.crypto_protocol_version >= 2
+            else "device is revoked for this vault"
         )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
     return vault
 
 

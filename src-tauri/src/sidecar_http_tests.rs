@@ -1,5 +1,6 @@
 use super::*;
 use crate::test_http_fixture::{Reply, Server};
+use std::io::{Read, Write};
 
 fn get(port: u16, path: &str) -> SidecarHttpResult {
     request_core(port, "GET".into(), path.into(), HashMap::new(), None).unwrap()
@@ -227,4 +228,341 @@ fn ordinary_api_credentials_and_query_values_remain_supported() {
     assert_eq!(get(source.address.port(), &query).status, 200);
     assert_eq!(source.count(), paths.len() + 1);
     assert_eq!(destination.count(), 0);
+}
+
+#[test]
+fn transport_kind_classification_is_type_based() {
+    assert_eq!(
+        transport_code(ureq::ErrorKind::ConnectionFailed),
+        Some(SidecarErrorCode::OfflineNetwork)
+    );
+    assert_eq!(
+        transport_code(ureq::ErrorKind::Dns),
+        Some(SidecarErrorCode::OfflineNetwork)
+    );
+    assert_eq!(transport_code(ureq::ErrorKind::Io), None);
+    for kind in [
+        ureq::ErrorKind::InvalidUrl,
+        ureq::ErrorKind::UnknownScheme,
+        ureq::ErrorKind::InsecureRequestHttpsOnly,
+        ureq::ErrorKind::TooManyRedirects,
+        ureq::ErrorKind::BadStatus,
+        ureq::ErrorKind::BadHeader,
+        ureq::ErrorKind::InvalidProxyUrl,
+        ureq::ErrorKind::ProxyConnect,
+        ureq::ErrorKind::ProxyUnauthorized,
+        ureq::ErrorKind::HTTP,
+    ] {
+        assert_eq!(transport_code(kind), None, "{kind:?}");
+    }
+}
+
+#[test]
+fn io_timeout_and_network_kinds_are_offline_local_errors_are_not() {
+    for kind in [
+        std::io::ErrorKind::TimedOut,
+        std::io::ErrorKind::WouldBlock,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic timeout")),
+            SidecarErrorCode::OfflineTimeout,
+            "{kind:?}"
+        );
+    }
+    for kind in [
+        std::io::ErrorKind::ConnectionRefused,
+        std::io::ErrorKind::ConnectionReset,
+        std::io::ErrorKind::ConnectionAborted,
+        std::io::ErrorKind::NotConnected,
+        std::io::ErrorKind::BrokenPipe,
+        std::io::ErrorKind::UnexpectedEof,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic network io")),
+            SidecarErrorCode::OfflineIo,
+            "{kind:?}"
+        );
+    }
+    assert_eq!(
+        io_code(&std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "synthetic permission"
+        )),
+        SidecarErrorCode::Capability
+    );
+    for kind in [
+        std::io::ErrorKind::InvalidData,
+        std::io::ErrorKind::InvalidInput,
+        std::io::ErrorKind::Unsupported,
+        std::io::ErrorKind::Other,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic local io")),
+            SidecarErrorCode::Protocol,
+            "{kind:?}"
+        );
+    }
+}
+
+#[derive(Debug)]
+struct SourceOnly(std::io::Error);
+
+impl std::fmt::Display for SourceOnly {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("synthetic transport wrapper")
+    }
+}
+
+impl StdError for SourceOnly {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&self.0)
+    }
+}
+
+#[test]
+fn source_chain_permission_denied_is_capability_not_offline() {
+    let source = SourceOnly(std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        "synthetic permission source",
+    ));
+    let io = io_source(&source).expect("typed io source");
+    assert_eq!(io.kind(), std::io::ErrorKind::PermissionDenied);
+    assert_eq!(io_code(io), SidecarErrorCode::Capability);
+    assert!(!matches!(
+        io_code(io),
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
+}
+
+#[test]
+fn validation_and_protocol_are_not_offline() {
+    let source = Server::start(|_| Reply {
+        status: 200,
+        location: None,
+        body: "unexpected request",
+    });
+    let invalid_path = request_core(
+        source.address.port(),
+        "GET".into(),
+        "/outside-api".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(invalid_path.code, SidecarErrorCode::Validation);
+    assert!(!matches!(
+        invalid_path.code,
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
+    let invalid_method = request_core(
+        source.address.port(),
+        "TRACE".into(),
+        "/api/v1/ok".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(invalid_method.code, SidecarErrorCode::Validation);
+    assert_eq!(source.count(), 0);
+}
+
+#[test]
+fn connection_refused_is_typed_offline() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            error.code,
+            SidecarErrorCode::OfflineNetwork
+                | SidecarErrorCode::OfflineTimeout
+                | SidecarErrorCode::OfflineIo
+        ),
+        "{:?}",
+        error.code
+    );
+}
+
+#[test]
+fn http_error_statuses_remain_results_not_offline() {
+    let source = Server::start(|request| Reply {
+        status: request
+            .split_whitespace()
+            .nth(1)
+            .unwrap()
+            .rsplit('/')
+            .next()
+            .unwrap()
+            .parse()
+            .unwrap(),
+        location: None,
+        body: "synthetic error body",
+    });
+    for code in [401, 403, 409, 422] {
+        let result = get(source.address.port(), &format!("/api/v1/{code}"));
+        assert_eq!(result.status, code);
+        assert_eq!(result.body, "synthetic error body");
+    }
+    assert_eq!(source.count(), 4);
+}
+
+#[test]
+fn malformed_http_response_is_protocol_not_offline() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            let _ = stream.write_all(b"HTTP/1.1 BAD\r\n\r\n");
+        }
+    });
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    handle.join().unwrap();
+}
+
+#[test]
+fn real_timeout_is_typed_offline() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let _handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            std::thread::sleep(std::time::Duration::from_secs(20));
+        }
+    });
+    let started = std::time::Instant::now();
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            error.code,
+            SidecarErrorCode::OfflineTimeout | SidecarErrorCode::OfflineIo
+        ),
+        "{:?}",
+        error.code
+    );
+    assert!(started.elapsed() >= std::time::Duration::from_secs(14));
+}
+
+fn raw_response(response: &'static [u8], stall: bool) -> (u16, std::thread::JoinHandle<()>) {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            let _ = stream.write_all(response);
+            if stall {
+                std::thread::sleep(std::time::Duration::from_secs(20));
+            }
+        }
+    });
+    (port, handle)
+}
+
+#[test]
+fn truncated_200_body_is_offline_io_not_empty_success() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::OfflineIo);
+    handle.join().unwrap();
+}
+
+#[test]
+fn truncated_401_body_is_protocol_not_offline() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    assert!(!matches!(
+        error.code,
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
+    handle.join().unwrap();
+}
+
+#[test]
+fn invalid_utf8_200_body_is_protocol_not_offline() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n\xff\xfe",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    handle.join().unwrap();
+}
+
+#[test]
+fn timeout_200_body_is_offline_timeout_not_empty_success() {
+    let (port, _handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        true,
+    );
+    let started = std::time::Instant::now();
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::OfflineTimeout);
+    assert!(started.elapsed() >= std::time::Duration::from_secs(14));
 }

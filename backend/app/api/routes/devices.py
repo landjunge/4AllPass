@@ -11,6 +11,8 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import get_db, get_owned_vault, get_session_store, get_writable_vault
 from app.api.rate_limit import enforce_write_rate_limit
 from app.core.sessions import SessionStore
+from app.core.signed_writes import active_manifest_digest, finalize, prepare
+from app.core.write_request import write_payload_digest_v2
 from app.core.config import get_settings
 from app.core.challenges import get_challenge_store, ChallengeStore
 from app.core.encoding import b64decode, b64encode, b64url_decode
@@ -151,6 +153,28 @@ async def register_device(
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
     await enforce_write_rate_limit(store, request, "device")
+    active = await load_active_snapshot(db, vault)
+    revision = active.revision if active is not None else 0
+    prepared = await prepare(
+        db,
+        vault=vault,
+        request=request,
+        user_id=vault.owner_user_id,
+        device_id=request.state.session_device_id,
+        method="POST",
+        route="/api/v1/vaults/{vaultId}/devices",
+        resource_type="device",
+        resource_id=payload.device_id,
+        parent_id="",
+        payload_digest=write_payload_digest_v2(await request.body()),
+        base_revision=revision,
+        result_revision=revision,
+        has_manifest=active is not None,
+        manifest_digest=active_manifest_digest(active),
+        payload_vault_key_version=active.vault_key_version if active is not None else None,
+        bootstrap_allowed=True,
+        creation_grant=request.headers.get("X-4AP-Creation-Grant"),
+    )
     result = await db.execute(
         select(Device)
         .where(Device.vault_id == vault.id, Device.device_id == payload.device_id)
@@ -180,6 +204,20 @@ async def register_device(
         # the active snapshot.
         device.revoked_at = None
         await db.flush()
+    if prepared is not None:
+        await finalize(
+            db,
+            prepared,
+            vault_id=vault.id,
+            status_code=200,
+            code="ok",
+            result={
+                "revision": revision,
+                "vaultKeyVersion": active.vault_key_version if active is not None else 0,
+                "manifestDigest": active_manifest_digest(active).hex() or None,
+                "resourceState": "revoked" if device.revoked_at is not None else "active",
+            },
+        )
     return _device_out(device, await _device_envelope_ids(db, vault))
 
 
@@ -247,6 +285,26 @@ async def register_credential(
     await enforce_write_rate_limit(store, request, "credential")
     device = await _get_device(db, vault, device_id)
     _require_active_device(device)
+    active = await load_active_snapshot(db, vault)
+    revision = active.revision if active is not None else 0
+    prepared = await prepare(
+        db,
+        vault=vault,
+        request=request,
+        user_id=vault.owner_user_id,
+        device_id=request.state.session_device_id,
+        method="POST",
+        route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
+        resource_type="credential",
+        resource_id=payload.credential_id,
+        parent_id=device.device_id,
+        payload_digest=write_payload_digest_v2(await request.body()),
+        base_revision=revision,
+        result_revision=revision,
+        has_manifest=active is not None,
+        manifest_digest=active_manifest_digest(active),
+        payload_vault_key_version=active.vault_key_version if active is not None else None,
+    )
     try:
         credential_id = b64decode(payload.credential_id, label="credentialId")
     except ValueError as exc:
@@ -319,6 +377,20 @@ async def register_credential(
             cred.sign_count = sign_count
             cred.rp_id = payload.rp_id
         await db.flush()
+    if prepared is not None:
+        await finalize(
+            db,
+            prepared,
+            vault_id=vault.id,
+            status_code=200,
+            code="ok",
+            result={
+                "revision": revision,
+                "vaultKeyVersion": active.vault_key_version if active is not None else 0,
+                "manifestDigest": active_manifest_digest(active).hex() or None,
+                "resourceState": "active",
+            },
+        )
     return _credential_out(cred, set())
 
 
@@ -347,6 +419,24 @@ async def put_device_key_envelope(
     if payload.device_id != device.device_id or payload.vault_id != vault.id:
         raise HTTPException(status_code=422, detail="envelope identity does not match path")
     snapshot = await _require_mirror_snapshot(db, vault, expected_revision)
+    prepared = await prepare(
+        db,
+        vault=vault,
+        request=request,
+        user_id=vault.owner_user_id,
+        device_id=request.state.session_device_id,
+        method="PUT",
+        route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope",
+        resource_type="credential",
+        resource_id=credential_id,
+        parent_id=device.device_id,
+        payload_digest=write_payload_digest_v2(await request.body()),
+        base_revision=expected_revision,
+        result_revision=expected_revision,
+        has_manifest=snapshot is not None,
+        manifest_digest=active_manifest_digest(snapshot),
+        payload_vault_key_version=snapshot.vault_key_version if snapshot is not None else None,
+    )
     snapshot_envelope = _device_envelope_in_snapshot(snapshot, device.device_id)
     if snapshot_envelope is None:
         raise HTTPException(
@@ -399,6 +489,20 @@ async def put_device_key_envelope(
         row.crypto_version = payload.version
         row.device_key_version = payload.device_key_version
     await db.flush()
+    if prepared is not None:
+        await finalize(
+            db,
+            prepared,
+            vault_id=vault.id,
+            status_code=200,
+            code="ok",
+            result={
+                "revision": snapshot.revision if snapshot is not None else 0,
+                "vaultKeyVersion": snapshot.vault_key_version if snapshot is not None else 0,
+                "manifestDigest": active_manifest_digest(snapshot).hex() or None,
+                "resourceState": "active",
+            },
+        )
     return payload
 
 

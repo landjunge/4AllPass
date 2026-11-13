@@ -175,7 +175,20 @@ export function snapshotCache(): SnapshotCache {
   return indexedDbSnapshotCache();
 }
 
+/** Typed desktop transport failure. Only the three actual local transport codes. */
+export type SidecarOfflineCode = "offline_network" | "offline_timeout" | "offline_io";
+
+export class OfflineTransportError extends Error {
+  readonly code: SidecarOfflineCode;
+
+  constructor(code: SidecarOfflineCode) {
+    super("desktop sidecar transport unavailable");
+    this.name = "OfflineTransportError";
+    this.code = code;
+  }
+}
+
 /** Network failed before an HTTP status existed. 4xx/5xx are not offline. */
 export function isOfflineError(error: unknown): boolean {
-  return error instanceof TypeError;
+  return error instanceof OfflineTransportError || error instanceof TypeError;
 }

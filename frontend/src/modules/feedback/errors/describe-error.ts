@@ -8,6 +8,7 @@ export type FeedbackErrorCode =
   | "authentication_failed"
   | "conflict"
   | "device_unlock_unavailable"
+  | "device_write_locked"
   | "hard_revoke_pending"
   | "empty_share"
   | "integrity_failed"
@@ -62,6 +63,10 @@ const ERROR_TEXT: Record<FeedbackErrorCode, Line> = {
   conflict: {
     de: "Der Tresor wurde inzwischen geändert. Bitte neu laden und erneut versuchen.",
     en: "The vault changed in the meantime. Reload and try again.",
+  },
+  device_write_locked: {
+    de: "Dieses Gerät ist für Schreibvorgänge gesperrt, weil es im Tresor widerrufen wurde. Lesen und Recovery bleiben möglich; führe die Änderung auf einem aktiven Gerät aus.",
+    en: "This device is blocked from writes because it was revoked in the vault. Reading and recovery still work; make the change on an active device.",
   },
   device_unlock_unavailable: {
     de: "Geräte-Entsperren ist hier nicht verfügbar. Bitte das Tresor-Passwort verwenden.",
@@ -190,6 +195,9 @@ function classify(error: unknown, status: number | undefined): FeedbackErrorCode
     }
   }
   if (status === 401) return "authentication_failed";
+  if (status === 403 && /revoked for this vault/i.test(String((error as Error)?.message ?? ""))) {
+    return "device_write_locked";
+  }
   if (status === 403) return "permission_denied";
   if (status === 404) return "not_found";
   if (status === 409) return "conflict";

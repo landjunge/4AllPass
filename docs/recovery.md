@@ -132,9 +132,13 @@ cannot restore access without it.
 1. User enters the key; the client normalizes and checksums it before doing any work.
 2. Derive RWK, unwrap the Recovery Envelope against `expectType: "recovery"` and the
    snapshot's `vaultKeyVersion`.
-3. The vault is unlocked, but the recovery secret is now "used": the client must
-   immediately offer to set a new Master Password (new Master Envelope) and to
-   re-enrol devices.
+3. The vault is unlocked, but the recovery secret is now "used": the client
+   immediately offers a new Master Password (new Master Envelope) and device
+   re-enrolment. The offer is deliberate: separating the two keeps the Vault Key
+   and the recovery envelope unchanged while the old master password is gone.
+   Skipping it leaves the vault open only until the next lock; the next unlock
+   needs the kit again. The implementation is `establishMasterAfterRecovery`
+   plus the recovery-master dialog; the committed snapshot is a new revision.
 
 ### Rotation (two operations — do not mix)
 

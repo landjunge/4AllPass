@@ -712,6 +712,43 @@ export async function unlockWithRecoveryKey(
   }
 }
 
+/**
+ * After a recovery unlock the old master password is unknown/missing. The user
+ * deliberately sets a new one: same Vault Key, same recovery envelope, new
+ * master salt. No old master password is read or required.
+ */
+export async function establishMasterAfterRecovery(
+  vault: UnlockedVault,
+  newMasterPassword: string,
+  liveness?: VaultLiveness,
+): Promise<UnlockedVault> {
+  if (vault.unlockedWith !== "recovery_key") {
+    throw new Error("a new master password is only offered after a recovery unlock");
+  }
+  liveness?.assertLive();
+  const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
+  if (!masterEnvelope?.kdf) throw new Error("snapshot has no master envelope");
+  const { salt: _oldSalt, ...kdfParams } = masterEnvelope.kdf;
+  const salt = generateSalt(16);
+  const masterKey = deriveMasterKey(newMasterPassword, salt, kdfParams);
+  try {
+    const nextEnvelope = wrapVaultKey({
+      vaultKey: vault.vaultKey,
+      wrappingKey: masterKey,
+      vaultId: vault.vaultId,
+      type: "master",
+      vaultKeyVersion: vault.vaultKeyVersion,
+      kdf: kdfParamsFrom(kdfParams, salt),
+    });
+    const envelopes = vault.envelopes.map((envelope) =>
+      envelope.type === "master" ? nextEnvelope : envelope,
+    );
+    return await commitSnapshot(vault, vault.entries, envelopes, liveness ? { liveness } : undefined);
+  } finally {
+    zeroize(masterKey);
+  }
+}
+
 export async function hasDeviceUnlock(vaultId: string): Promise<boolean> {
   try {
     return (await store().load(vaultId, deviceId())) !== null;

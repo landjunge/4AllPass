@@ -7,6 +7,7 @@ import type { VaultEntry } from "../../lib/entries.ts";
 import {
   commitEntries,
   createVault,
+  establishMasterAfterRecovery,
   findRecoverableRevision,
   migrateLegacySnapshot,
   restoreRecoveredRevision,
@@ -47,6 +48,8 @@ export interface VaultLifecycleState {
   vault: UnlockedVault | null;
   deviceUnlockAvailable: boolean;
   recoveryKey: string | null;
+  /** True after a recovery unlock until a new master password is set or skipped. */
+  recoveryMasterPending: boolean;
 }
 
 export interface VaultLifecycleActions {
@@ -58,6 +61,8 @@ export interface VaultLifecycleActions {
   restoreFromShare(fileText: string, shareKey: string, masterPassword: string): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
+  establishRecoveryMaster(newMasterPassword: string): Promise<void>;
+  skipRecoveryMaster(): void;
   findHeadRecovery(masterPassword: string): Promise<HeadRecovery | null>;
   restoreHeadRecovery(masterPassword: string, recovery: HeadRecovery): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -89,6 +94,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
   const [vault, setVault] = useState<UnlockedVault | null>(null);
   const [deviceUnlockAvailable, setDeviceUnlockAvailable] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
+  const [recoveryMasterSkipped, setRecoveryMasterSkipped] = useState(false);
   const vaultRef = useRef<UnlockedVault | null>(null);
   const lockEpoch = useRef(0);
 
@@ -96,6 +102,8 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     vaultRef.current = next;
     setVault(next);
     setLockState(next ? "UNLOCKED" : "LOCKED");
+    // A fresh recovery unlock must always re-offer the new master password.
+    setRecoveryMasterSkipped(false);
   }, []);
 
   const currentVault = useCallback(() => vaultRef.current, []);
@@ -115,6 +123,8 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     setLockState("LOCKED");
     void clearCopiedSecret().catch(() => undefined);
   }, []);
+
+  const recoveryMasterPending = Boolean(vault && vault.unlockedWith === "recovery_key" && !recoveryMasterSkipped);
 
   const captureLiveness = useCallback((current: UnlockedVault) =>
     captureVaultLiveness(current, () => lockEpoch.current, () => vaultRef.current), []);
@@ -271,6 +281,21 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     });
   }, [activeVaultId, adoptUnlocked, options]);
 
+  const establishRecoveryMaster = useCallback(async (newMasterPassword: string) => {
+    const current = vaultRef.current;
+    if (!current || current.unlockedWith !== "recovery_key") throw feedbackError("vault_locked");
+    if (options.passwordsCollide(newMasterPassword)) throw feedbackError("passwords_must_differ");
+    const liveness = captureLiveness(current);
+    await options.runWithStatus(async () => {
+      const next = await establishMasterAfterRecovery(current, newMasterPassword, liveness);
+      adoptIfLive(liveness, { ...next, unlockedWith: "master_password" });
+    }, "recovery_master_set");
+  }, [adoptIfLive, captureLiveness, options]);
+
+  const skipRecoveryMaster = useCallback(() => {
+    setRecoveryMasterSkipped(true);
+  }, []);
+
   const unlockWithBiometrics = useCallback(async (): Promise<DeviceUnlockMechanism> => {
     if (!activeVaultId) throw feedbackError("no_vault_selected");
     const epoch = lockEpoch.current;
@@ -369,6 +394,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     vault,
     deviceUnlockAvailable,
     recoveryKey,
+    recoveryMasterPending,
     loadVaults,
     clearVaultList,
     clearSignedOutState,
@@ -377,6 +403,8 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     restoreFromShare,
     unlockWithPassword,
     unlockWithRecovery,
+    establishRecoveryMaster,
+    skipRecoveryMaster,
     findHeadRecovery,
     restoreHeadRecovery,
     unlockWithBiometrics,

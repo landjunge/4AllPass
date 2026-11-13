@@ -9,6 +9,7 @@ import { VaultPage } from "./pages/VaultPage.tsx";
 import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
 import { FamilyProductHeader } from "./components/FamilyProductHeader.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { RecoveryMasterDialog } from "./components/RecoveryMasterDialog.tsx";
 import { LegacyMigrationBanner } from "./components/vault/LegacyMigrationBanner.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 import { HardRevokeProgress } from "./components/HardRevokeProgress.tsx";
@@ -24,6 +25,7 @@ export function App(): ReactNode {
     revokeProgress,
     reconcileHardRevoke,
     recoveryKey,
+    recoveryMasterPending,
     clearMessages,
     lock,
     signOut,
@@ -115,6 +117,7 @@ export function App(): ReactNode {
         )}
       </main>
 
+      {recoveryMasterPending ? <RecoveryMasterDialog /> : null}
       {recoveryKey ? <RecoveryKitDialog /> : null}
     </div>
   );

@@ -25,6 +25,7 @@ function localServer(port: string, dataPrefix: string) {
 
 const firstPort = process.env.E2E_LOCAL_PORT ?? "8790";
 const restorePort = process.env.E2E_RESTORE_PORT ?? "8792";
+const recoveryPort = process.env.E2E_RECOVERY_PORT ?? "8798";
 
 /**
  * First-run against the local one-process app (SQLite, no Vite, no Postgres).
@@ -52,9 +53,15 @@ export default defineConfig({
       testMatch: /restore-share/,
       use: { baseURL: `http://127.0.0.1:${restorePort}` },
     },
+    {
+      name: "recovery-journey",
+      testMatch: /recovery-journey/,
+      use: { baseURL: `http://127.0.0.1:${recoveryPort}` },
+    },
   ],
   webServer: [
     localServer(firstPort, "4ap-e2e-"),
     localServer(restorePort, "4ap-e2e-restore-"),
+    localServer(recoveryPort, "4ap-e2e-recovery-"),
   ],
 });

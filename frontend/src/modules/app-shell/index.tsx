@@ -52,6 +52,7 @@ interface AppState {
   error: ErrorFeedback | null;
   notice: NoticeFeedback | null;
   recoveryKey: string | null;
+  recoveryMasterPending: boolean;
 }
 
 interface AppActions {
@@ -65,6 +66,8 @@ interface AppActions {
   unlockWithPassword(masterPassword: string): Promise<void>;
   passwordsCollide(vaultPassword: string): boolean;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
+  establishRecoveryMaster(newMasterPassword: string): Promise<void>;
+  skipRecoveryMaster(): void;
   findHeadRecovery(masterPassword: string): Promise<HeadRecovery | null>;
   restoreHeadRecovery(masterPassword: string, recovery: HeadRecovery): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -256,6 +259,10 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async unlockWithRecovery(key) {
         await vaultLifecycle.unlockWithRecovery(key);
       },
+      async establishRecoveryMaster(newMasterPassword) {
+        await vaultLifecycle.establishRecoveryMaster(newMasterPassword);
+      },
+      skipRecoveryMaster: vaultLifecycle.skipRecoveryMaster,
       async unlockWithBiometrics() {
         return vaultLifecycle.unlockWithBiometrics();
       },
@@ -313,6 +320,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       error: feedback.error,
       notice: feedback.notice,
       recoveryKey: vaultLifecycle.recoveryKey,
+      recoveryMasterPending: vaultLifecycle.recoveryMasterPending,
       ...actions,
     }),
     [

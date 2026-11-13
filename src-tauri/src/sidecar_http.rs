@@ -10,6 +10,9 @@ use crate::sidecar_target::core_api_url;
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
 static SNAPSHOT_GET_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+static SNAPSHOT_FAULT_ACTIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
 static SNAPSHOT_POST_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
@@ -22,11 +25,19 @@ pub(crate) fn snapshot_post_attempts() -> usize {
     SNAPSHOT_POST_ATTEMPTS.load(Ordering::SeqCst)
 }
 
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub(crate) fn set_snapshot_fault_active(active: bool) {
+    SNAPSHOT_FAULT_ACTIVE.store(active, Ordering::SeqCst);
+}
+
 /// Test-only, tightly scoped snapshot transport fault. The auth/vault-list
 /// routes pass through to the real sidecar; only the named snapshot route
 /// returns the same typed offline error before any dispatch.
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
 fn snapshot_fault(path: &str) -> Option<SidecarError> {
+    if !SNAPSHOT_FAULT_ACTIVE.load(Ordering::SeqCst) {
+        return None;
+    }
     let mode = std::env::var("FOURALLPASS_NATIVE_SNAPSHOT_FAULT").ok()?;
     let is_get = path.starts_with("/api/v1/vaults/") && path.ends_with("/snapshot");
     let is_post = path.starts_with("/api/v1/vaults/") && path.ends_with("/snapshots");

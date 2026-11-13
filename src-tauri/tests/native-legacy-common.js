@@ -281,6 +281,10 @@
           decorated.envelopes[0].futureEnvelope = { nested: [4, 5, 6] };
           await writeHead(decorated);
           check("unknown-fields-headcache-written");
+          result.phase = "snapshot-fault-on";
+          await wait("wait-snapshot-fault-on", () => result.ack === "snapshot-fault-on", 300);
+          if (result.ack !== "snapshot-fault-on") throw new Error(`snapshot-fault-enable-failed:${result.ack}`);
+          check("snapshot-fault-enabled");
           result.stage = "snapshot-fault-probe";
           result.snapshotTransportError = await Promise.race([
             ipcSnapshotProbe(vaultId),

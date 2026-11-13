@@ -239,6 +239,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let mut outcome = json!({"done":false,"stage":"driver-timeout"});
         let mut listener_pid = None;
         let mut own_sidecar_stopped = false;
+        let mut snapshot_fault_enabled = false;
         let mut own_sidecar_restarted = false;
         let mut restarted_child_pid: Option<u32> = None;
         while Instant::now() < deadline {
@@ -260,6 +261,16 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                         outcome = value.clone();
                         let migration = scenario != "normal";
                         let phase = value["phase"].as_str().unwrap_or("");
+                        if scenario == "legacy-snapshot-fault"
+                            && phase == "snapshot-fault-on"
+                            && !snapshot_fault_enabled
+                        {
+                            crate::sidecar_http::set_snapshot_fault_active(true);
+                            snapshot_fault_enabled = true;
+                            let _ = window.eval(
+                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='snapshot-fault-on'",
+                            );
+                        }
                         let needs_stop = (scenario == "legacy-known" && phase == "before-post")
                             || (scenario == "legacy-unknown-fields" && phase == "before-offline");
                         if migration && needs_stop && !own_sidecar_stopped {
@@ -361,6 +372,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                 "post":crate::sidecar_http::snapshot_post_attempts(),
             },
             "snapshotFault":std::env::var("FOURALLPASS_NATIVE_SNAPSHOT_FAULT").ok(),
+            "snapshotFaultEnabled":snapshot_fault_enabled,
             "seededData":std::env::var_os("FOURALLPASS_NATIVE_SEED_DATA").is_some(),
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,

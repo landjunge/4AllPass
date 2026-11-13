@@ -13,6 +13,16 @@ export const RWK_SALT_LABEL = "4allpass-rwk-salt-v1";
 export const RWK_INFO_LABEL = "4allpass-recovery-wrap-v1";
 export const RECOVERY_CHECKSUM_LABEL = "4allpass-recovery-checksum-v1";
 
+/** Canonical signed WriteRequest preimage, v2 (ADR-015 step 3, not yet active). */
+export const WRITE_V2_LABEL = "4allpass-vault-write-v2";
+/** Domain label for the next-public-key digest signed during rotation. */
+export const WRITE_V2_PUBLIC_KEY_LABEL = "4allpass-write-public-key-v1";
+/** Signature nonce, framed by uint32be. Distinct from the 12-byte AES-GCM nonce. */
+export const WRITE_V2_NONCE_BYTES = 16;
+export const WRITE_V2_DIGEST_BYTES = 32;
+/** `device_id` is 1..128 characters in `schemas/device.py`; resourceId follows it. */
+export const WRITE_V2_ID_CHARS_MAX = 128;
+
 /** Emergency-Kit encoding: Crockford Base32 of `key || checksum`, groups of five. */
 export const RECOVERY_CHECKSUM_BYTES = 2;
 export const RECOVERY_GROUP_SIZE = 5;

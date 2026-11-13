@@ -23,3 +23,13 @@
 # throwaway local vault. Synthetic, no account/server behind it; the value was
 # changed in the follow-up commit, the fingerprint only covers the first commit.
 1d3bda217a55d7b81c51caedf1fd3c2fa68bdf8c:frontend/e2e/local/recovery-journey.spec.ts:generic-api-key:5
+
+# RFC 8032 §7.1 TEST 1 / TEST 2 are published, intentionally public test
+# vectors (https://www.rfc-editor.org/rfc/rfc8032.html#section-7.1), not
+# secrets. Commit 7ade42b stored their seeds and public keys as hex before
+# the fixture moved to byte arrays; these four historical findings are pinned
+# by exact fingerprint. Do not widen this to a path or rule allowlist.
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/generate-write-request-vectors.mjs:generic-api-key:76
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/generate-write-request-vectors.mjs:generic-api-key:84
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:32
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:39

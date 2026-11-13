@@ -1181,3 +1181,158 @@ async def test_local_adopt_not_available_for_v2_signed_vault(client, account, en
             _select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id))
         )
         assert owner is not None and receipts == 1
+
+
+@_pytest.mark.skipif(
+    "postgres" not in os.environ.get("FOURALLPASS_DATABASE_URL", ""),
+    reason="lock-wait barrier runs on the Postgres CI job; SQLite serializes earlier",
+)
+async def test_local_adopt_race_old_owner_signed_write_and_receipt(client, account, engine):
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+
+    settings = get_settings()
+    previous_profile = settings.profile
+    settings.profile = "local"
+    try:
+        local_session = await client.post(
+            "/api/v1/auth/local", headers={"X-Device-Id": DEVICE}
+        )
+        assert local_session.status_code == 200, local_session.text
+        local = {
+            "Authorization": f"Bearer {local_session.json()['token']}",
+            "X-Device-Id": DEVICE,
+        }
+
+        priv = Ed25519PrivateKey.generate()
+        pub = priv.public_key().public_bytes_raw()
+        async with _AsyncSession(bind=engine) as db:
+            async with db.begin():
+                local_user = await db.scalar(_select(_User).where(_User.email == LOCAL_ACCOUNT_EMAIL))
+                vault = _Vault(owner_user_id=local_user.id, crypto_protocol_version=2)
+                db.add(vault)
+                await db.flush()
+                vault_id = str(vault.id)
+                db.add(_Key(vault_id=vault.id, key_version=1, public_key=pub))
+
+        op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+        headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+        first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**local, **headers})
+        assert first.status_code == 200, first.text
+
+        engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
+        _, gated_client, entered, release = _two_clients(engine, engine2, True)
+        try:
+            new_headers, new_raw = _snapshot_request(
+                vault_id, priv, pub, base=1, revision=2, vk=1,
+                op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"),
+            )
+            new_headers["X-Test-Barrier"] = "old-writer"
+            async with gated_client:
+                writer = asyncio.create_task(
+                    gated_client.post(
+                        f"/api/v1/vaults/{vault_id}/snapshots",
+                        content=new_raw, headers={**local, **new_headers},
+                    )
+                )
+                await entered.wait()
+
+                adopted = await client.post("/api/v1/local/adopt-local-vault", headers=account)
+                assert adopted.status_code == 200, adopted.text
+
+                release.set()
+                stale = await writer
+                assert stale.status_code == 404, stale.text
+
+            replay = await client.post(
+                f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**local, **headers}
+            )
+            assert replay.status_code == 404
+
+            async with _AsyncSession(bind=engine) as db:
+                owner = await db.scalar(_select(_Vault.owner_user_id).where(_Vault.id == _uuid.UUID(vault_id)))
+                account_id = await db.scalar(_select(_User.id).where(_User.email == _ACCOUNT_EMAIL))
+                assert owner == account_id
+                revisions = (
+                    await db.execute(
+                        _select(_func.count()).select_from(_Snapshot).where(
+                            _Snapshot.vault_id == _uuid.UUID(vault_id)
+                        )
+                    )
+                ).scalar()
+                receipts = (
+                    await db.execute(
+                        _select(_func.count()).select_from(_Receipt).where(
+                            _Receipt.vault_id == _uuid.UUID(vault_id)
+                        )
+                    )
+                ).scalar()
+                assert revisions == 1
+                assert receipts == 1
+        finally:
+            release.set()
+            await engine2.dispose()
+    finally:
+        settings.profile = previous_profile
+
+
+async def _local_v2_fixture(client, engine):
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+
+    session = await client.post("/api/v1/auth/local", headers={"X-Device-Id": DEVICE})
+    assert session.status_code == 200, session.text
+    local = {"Authorization": f"Bearer {session.json()['token']}", "X-Device-Id": DEVICE}
+    priv = Ed25519PrivateKey.generate()
+    pub = priv.public_key().public_bytes_raw()
+    async with _AsyncSession(bind=engine) as db:
+        async with db.begin():
+            user = await db.scalar(_select(_User).where(_User.email == LOCAL_ACCOUNT_EMAIL))
+            vault = _Vault(owner_user_id=user.id, crypto_protocol_version=2)
+            db.add(vault)
+            await db.flush()
+            vault_id = str(vault.id)
+            db.add(_Key(vault_id=vault.id, key_version=1, public_key=pub))
+    return local, priv, pub, vault_id
+
+
+async def test_local_adopt_serialized_write_before_and_after(client, account, engine):
+    """SQLite: no barrier. Signed write, then adopt, then old owner is 404."""
+    settings = get_settings()
+    previous = settings.profile
+    settings.profile = "local"
+    try:
+        local, priv, pub, vault_id = await _local_v2_fixture(client, engine)
+        op, nonce = uuid.uuid4(), uuid.uuid4().bytes
+        headers, raw = _snapshot_request(vault_id, priv, pub, base=0, revision=1, vk=1, op=op, nonce=nonce)
+        first = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**local, **headers})
+        assert first.status_code == 200, first.text
+
+        adopted = await client.post("/api/v1/local/adopt-local-vault", headers=account)
+        assert adopted.status_code == 200, adopted.text
+
+        new_headers, new_raw = _snapshot_request(
+            vault_id, priv, pub, base=1, revision=2, vk=1,
+            op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"),
+        )
+        old_write = await client.post(
+            f"/api/v1/vaults/{vault_id}/snapshots", content=new_raw, headers={**local, **new_headers}
+        )
+        assert old_write.status_code == 404
+        replay = await client.post(
+            f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**local, **headers}
+        )
+        assert replay.status_code == 404
+
+        async with _AsyncSession(bind=engine) as db:
+            owner = await db.scalar(_select(_Vault.owner_user_id).where(_Vault.id == _uuid.UUID(vault_id)))
+            account_id = await db.scalar(_select(_User.id).where(_User.email == _ACCOUNT_EMAIL))
+            assert owner == account_id
+            revisions = (
+                await db.execute(_select(_func.count()).select_from(_Snapshot).where(_Snapshot.vault_id == _uuid.UUID(vault_id)))
+            ).scalar()
+            receipts = (
+                await db.execute(_select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id)))
+            ).scalar()
+            assert revisions == 1
+            assert receipts == 1
+    finally:
+        settings.profile = previous

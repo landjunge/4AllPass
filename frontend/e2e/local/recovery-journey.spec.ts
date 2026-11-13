@@ -55,8 +55,9 @@ test("kit recovery sets a new master and the vault reopens", async ({ page }) =>
   await expect(page.getByTestId("recovery-master-offer")).toContainText(/gespeichert|saved/i);
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
 
-  // Device enrolment is a separate step after the master commit; it only opens
-  // the existing devices UI (no automatic ceremony here).
+  // The optional device offer exists right after the master commit and is
+  // dismissed here. Lock deliberately clears the offer; it must not reappear.
+  await expect(page.getByTestId("recovery-open-devices")).toBeVisible();
   await page.getByTestId("recovery-open-devices").click();
   await expect(page.getByTestId("recovery-master-offer")).toHaveCount(0);
   await expect(page.getByTestId("tab-devices")).toHaveClass(/active/);
@@ -65,6 +66,8 @@ test("kit recovery sets a new master and the vault reopens", async ({ page }) =>
   await clickAndType(page, page.getByTestId("master-password"), NEW_PASSWORD);
   await page.getByTestId("unlock-submit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  await expect(page.getByTestId("recovery-master-offer")).toHaveCount(0);
+  await expect(page.getByTestId("revision")).toContainText("revision 2");
 
   // Lock during an in-flight commit: the delayed response must not re-adopt,
   // and the committed new password reopens later.
@@ -87,6 +90,8 @@ test("kit recovery sets a new master and the vault reopens", async ({ page }) =>
   );
   await page.getByTestId("confirm-recovery-master").click();
   await arrived; // deterministic: the request is held, no timing guess
+  // The server may still commit while the UI locks; this test does not claim
+  // the write is undone, only that no stale state is re-adopted.
   // Overlay simulates an external autolock/sign-out while the commit is in
   // flight; this is not a claim that the covered header is user-clickable.
   await page.getByTestId("lock").evaluate((element) => (element as HTMLElement).click());
@@ -104,6 +109,8 @@ test("kit recovery sets a new master and the vault reopens", async ({ page }) =>
   await clickAndType(page, page.getByTestId("master-password"), NEXT_PASSWORD);
   await page.getByTestId("unlock-submit").click();
   await expect(page.getByTestId("lock-state")).toHaveText("UNLOCKED");
+  await expect(page.getByTestId("recovery-master-offer")).toHaveCount(0);
+  await expect(page.getByTestId("revision")).toContainText("revision 3");
 
   // Skip drops the typed inputs; a new recovery does not show them again.
   await page.getByTestId("lock").click();

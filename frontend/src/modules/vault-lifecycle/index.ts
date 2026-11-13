@@ -38,6 +38,7 @@ export interface UseVaultLifecycleOptions {
   passwordsCollide(vaultPassword: string): boolean;
   onPasswordReuseWarning(): void;
   updateLocalStore(status: LocalStoreStatus): void;
+  onRecoveryUnlock(vault: UnlockedVault): void;
 }
 
 export interface VaultLifecycleState {
@@ -115,6 +116,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     setLockState("LOCKED");
     void clearCopiedSecret().catch(() => undefined);
   }, []);
+
 
   const captureLiveness = useCallback((current: UnlockedVault) =>
     captureVaultLiveness(current, () => lockEpoch.current, () => vaultRef.current), []);
@@ -263,6 +265,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
       try {
         const unlocked = await unlockWithRecoveryKey(activeVaultId, key);
         adoptUnlocked(epoch, unlocked);
+        options.onRecoveryUnlock(unlocked);
         writeActiveVaultId(activeVaultId);
       } catch (failure) {
         setLockState("LOCKED");

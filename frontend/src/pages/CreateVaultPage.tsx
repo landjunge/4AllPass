@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { FieldLabel } from "../components/vault/FieldLabel.tsx";
 import { useApp } from "../state/app-state.tsx";
+import { MASTER_PASSWORD_MIN_LENGTH } from "../lib/master-password.ts";
 import { useCopy } from "../state/copy-mode.tsx";
 
 export function CreateVaultPage({
@@ -54,7 +55,7 @@ export function CreateVaultPage({
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            minLength={10}
+            minLength={MASTER_PASSWORD_MIN_LENGTH}
             required
             data-testid="vault-password"
           />

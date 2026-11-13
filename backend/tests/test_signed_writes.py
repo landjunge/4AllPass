@@ -572,3 +572,207 @@ async def test_bootstrap_only_on_first_device_registration(client, account):
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "write_bootstrap_route_invalid"
+
+
+import asyncio
+import os
+import uuid as _uuid
+
+import pytest as _pytest
+from sqlalchemy import select as _select
+from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
+
+from app.api import deps as _deps
+from app.db.session import create_db_engine as _create_engine
+from app.models.snapshot import VaultSnapshot as _Snapshot
+from app.models.vault import Vault as _Vault
+
+
+@_pytest.mark.skipif(
+    "postgres" not in os.environ.get("FOURALLPASS_DATABASE_URL", ""),
+    reason="real-engine barrier test runs on the Postgres CI job",
+)
+async def test_pg_head_progress_during_lock_wait(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    first, _, _ = await _commit(
+        client, account, vault_id, priv, pub,
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+    )
+    assert first.status_code == 200, first.text
+
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    original = _deps.lock_vault_row
+
+    async def gated(db, vid):
+        entered.set()
+        await release.wait()
+        await original(db, vid)
+
+    _deps.lock_vault_row = gated
+    engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
+    try:
+        writer = asyncio.create_task(
+            _commit(
+                client, account, vault_id, priv, pub,
+                revision=2, base=1, key_version=1, result_key_version=1,
+                manifest_obj=manifest(b"m2"),
+            )
+        )
+        await entered.wait()
+        async with _AsyncSession(bind=engine2) as other:
+            async with other.begin():
+                await other.execute(
+                    _select(_Vault).where(_Vault.id == _uuid.UUID(vault_id)).with_for_update()
+                )
+                snap = _Snapshot(
+                    vault_id=_uuid.UUID(vault_id),
+                    revision=2,
+                    vault_key_version=1,
+                    crypto_protocol_version=2,
+                    sealed_manifest=manifest(b"m2"),
+                )
+                other.add(snap)
+                await other.flush()
+                await other.execute(
+                    _Vault.__table__.update()
+                    .where(_Vault.id == _uuid.UUID(vault_id))
+                    .values(active_snapshot_id=snap.id)
+                )
+        release.set()
+        response, _, _ = await writer
+        assert response.status_code == 409, response.text
+    finally:
+        release.set()
+        _deps.lock_vault_row = original
+        await engine2.dispose()
+
+
+async def test_signed_credential_post_and_replay(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    snapshot, _, _ = await _commit(
+        client, account, vault_id, priv, pub,
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+    )
+    assert snapshot.status_code == 200, snapshot.text
+
+    credential_id = b64(b"cred-0001")
+    payload = {
+        "credentialId": credential_id,
+        "rpId": "localhost",
+        "mechanism": "prf",
+        "prfSupported": True,
+        "largeBlobSupported": False,
+    }
+    raw = body_bytes(payload)
+    signed, _ = sign(
+        priv=priv, pub=pub,
+        vault_id=vault_id, device_id=DEVICE,
+        method="POST",
+        route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
+        resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
+        base=1, result=1, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(raw),
+        operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
+    )
+    response = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE}/credentials",
+        content=raw, headers={**account, **signed},
+    )
+    assert response.status_code == 200, response.text
+    replay = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE}/credentials",
+        content=raw, headers={**account, **signed},
+    )
+    assert replay.status_code == 200, replay.text
+    assert replay.headers.get("X-4AP-Write-Replayed") == "true"
+
+
+def device_envelope(device_id: str) -> dict:
+    return {
+        "version": 1,
+        "type": "device",
+        "vaultKeyVersion": 1,
+        "encryption": "AES-256-GCM",
+        "nonce": b64(bytes(range(12))),
+        "ciphertext": b64(b"device" * 4),
+        "tag": b64(bytes(range(16))),
+        "deviceId": device_id,
+        "deviceKeyVersion": 1,
+        "kdf": None,
+    }
+
+
+async def test_signed_device_key_envelope_put_and_replay(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    payload = {
+        "expectedRevision": 0,
+        "revision": 1,
+        "vaultKeyVersion": 1,
+        "cryptoProtocolVersion": 2,
+        "envelopes": [envelope(), device_envelope(DEVICE)],
+        "entries": [],
+        "sealedManifest": manifest(),
+    }
+    raw = body_bytes(payload)
+    signed, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
+        resource_type="vault", resource_id="", parent_id="",
+        base=0, result=1, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(raw),
+        operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
+    )
+    committed = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **signed}
+    )
+    assert committed.status_code == 200, committed.text
+
+    credential_id = b64(b"cred-env-01")
+    cred_raw = body_bytes(
+        {"credentialId": credential_id, "rpId": "localhost", "mechanism": "prf",
+         "prfSupported": True, "largeBlobSupported": False}
+    )
+    cred_signed, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
+        resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
+        base=1, result=1, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(cred_raw),
+        operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
+    )
+    cred = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices/{DEVICE}/credentials",
+        content=cred_raw, headers={**account, **cred_signed},
+    )
+    assert cred.status_code == 200, cred.text
+
+    env_payload = {
+        "version": 1, "vaultId": vault_id, "deviceId": DEVICE,
+        "credentialId": credential_id, "deviceKeyVersion": 1,
+        "encryption": "AES-256-GCM", "nonce": b64(bytes(range(12))),
+        "ciphertext": b64(b"mirror" * 4), "tag": b64(bytes(range(16))),
+    }
+    env_raw = body_bytes(env_payload)
+    env_signed, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="PUT",
+        route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope",
+        resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
+        base=1, result=1, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(env_raw),
+        operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
+    )
+    url = f"/api/v1/vaults/{vault_id}/devices/{DEVICE}/credentials/{credential_id}/device-key-envelope?expectedRevision=1"
+    put = await client.put(url, content=env_raw, headers={**account, **env_signed})
+    assert put.status_code == 200, put.text
+    replay = await client.put(url, content=env_raw, headers={**account, **env_signed})
+    assert replay.status_code == 200, replay.text
+    assert replay.headers.get("X-4AP-Write-Replayed") == "true"

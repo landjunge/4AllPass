@@ -13,6 +13,7 @@ import type {
 } from "@4allpass/crypto";
 
 import { deviceId } from "./device-identity.ts";
+import { OfflineTransportError, type SidecarOfflineCode } from "./snapshot-cache.ts";
 import { readStorageOrigin } from "./storage-origin.ts";
 
 const SIDECAR_API = "http://127.0.0.1:8788/api/v1";
@@ -38,6 +39,61 @@ const TOKEN_KEY = "4allpass.session";
 
 function tokenStore(): Storage {
   return "__TAURI_INTERNALS__" in window ? localStorage : sessionStorage;
+}
+
+export type SidecarErrorCode =
+  | "offline_network"
+  | "offline_timeout"
+  | "offline_io"
+  | "validation"
+  | "protocol"
+  | "capability"
+  | "internal";
+
+export class SidecarRequestError extends Error {
+  readonly code: SidecarErrorCode;
+
+  constructor(code: SidecarErrorCode) {
+    super("desktop sidecar request failed");
+    this.name = "SidecarRequestError";
+    this.code = code;
+  }
+}
+
+const OFFLINE_SIDECAR_CODES = new Set<SidecarErrorCode>([
+  "offline_network",
+  "offline_timeout",
+  "offline_io",
+]);
+const SIDECAR_ERROR_CODES = new Set<SidecarErrorCode>([
+  ...OFFLINE_SIDECAR_CODES,
+  "validation",
+  "protocol",
+  "capability",
+  "internal",
+]);
+
+function sidecarErrorCode(error: unknown): SidecarErrorCode | null {
+  if (typeof error !== "object" || error === null || !("code" in error)) return null;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" && SIDECAR_ERROR_CODES.has(code as SidecarErrorCode)
+    ? (code as SidecarErrorCode)
+    : null;
+}
+
+function isOfflineSidecarCode(code: SidecarErrorCode | null): code is SidecarOfflineCode {
+  return code !== null && OFFLINE_SIDECAR_CODES.has(code);
+}
+
+/** Map only the typed local transport codes to the offline/cache classifier. */
+export function classifySidecarTransportRejection(error: unknown): OfflineTransportError | null {
+  const code = sidecarErrorCode(error);
+  return isOfflineSidecarCode(code) ? new OfflineTransportError(code) : null;
+}
+
+/** Preserve validation/protocol/capability; never classify them as offline. */
+export function classifySidecarRequestError(error: unknown): SidecarRequestError {
+  return new SidecarRequestError(sidecarErrorCode(error) ?? "capability");
 }
 
 export interface AccountSession {
@@ -156,12 +212,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   let text: string;
   if (sidecarHttpEnabled()) {
     const { invoke } = await import("@tauri-apps/api/core");
-    const result = await invoke<{ status: number; body: string }>("sidecar_http", {
-      method,
-      path: `/api/v1${path}`,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : null,
-    });
+    let result: { status: number; body: string };
+    try {
+      result = await invoke<{ status: number; body: string }>("sidecar_http", {
+        method,
+        path: `/api/v1${path}`,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : null,
+      });
+    } catch (error) {
+      const offline = classifySidecarTransportRejection(error);
+      if (offline) throw offline;
+      throw classifySidecarRequestError(error);
+    }
     status = result.status;
     text = result.body;
   } else {

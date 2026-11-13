@@ -228,3 +228,147 @@ fn ordinary_api_credentials_and_query_values_remain_supported() {
     assert_eq!(source.count(), paths.len() + 1);
     assert_eq!(destination.count(), 0);
 }
+
+#[test]
+fn transport_kind_classification_is_type_based() {
+    assert_eq!(
+        transport_code(ureq::ErrorKind::ConnectionFailed),
+        Some(SidecarErrorCode::OfflineNetwork)
+    );
+    assert_eq!(
+        transport_code(ureq::ErrorKind::Dns),
+        Some(SidecarErrorCode::OfflineNetwork)
+    );
+    assert_eq!(
+        transport_code(ureq::ErrorKind::Io),
+        Some(SidecarErrorCode::OfflineIo)
+    );
+    for kind in [
+        ureq::ErrorKind::InvalidUrl,
+        ureq::ErrorKind::UnknownScheme,
+        ureq::ErrorKind::InsecureRequestHttpsOnly,
+        ureq::ErrorKind::TooManyRedirects,
+        ureq::ErrorKind::BadStatus,
+        ureq::ErrorKind::BadHeader,
+        ureq::ErrorKind::InvalidProxyUrl,
+        ureq::ErrorKind::ProxyConnect,
+        ureq::ErrorKind::ProxyUnauthorized,
+        ureq::ErrorKind::HTTP,
+    ] {
+        assert_eq!(transport_code(kind), None, "{kind:?}");
+    }
+}
+
+#[test]
+fn io_timeout_is_distinct_and_not_string_matched() {
+    assert_eq!(
+        io_code(&std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "synthetic timeout"
+        )),
+        SidecarErrorCode::OfflineTimeout
+    );
+    assert_eq!(
+        io_code(&std::io::Error::new(
+            std::io::ErrorKind::WouldBlock,
+            "synthetic would block"
+        )),
+        SidecarErrorCode::OfflineTimeout
+    );
+    assert_eq!(
+        io_code(&std::io::Error::new(
+            std::io::ErrorKind::ConnectionReset,
+            "synthetic reset"
+        )),
+        SidecarErrorCode::OfflineIo
+    );
+    assert_eq!(
+        io_code(&std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "synthetic permission"
+        )),
+        SidecarErrorCode::OfflineIo
+    );
+}
+
+#[test]
+fn validation_and_protocol_are_not_offline() {
+    let source = Server::start(|_| Reply {
+        status: 200,
+        location: None,
+        body: "unexpected request",
+    });
+    let invalid_path = request_core(
+        source.address.port(),
+        "GET".into(),
+        "/outside-api".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(invalid_path.code, SidecarErrorCode::Validation);
+    assert!(!matches!(
+        invalid_path.code,
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
+    let invalid_method = request_core(
+        source.address.port(),
+        "TRACE".into(),
+        "/api/v1/ok".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(invalid_method.code, SidecarErrorCode::Validation);
+    assert_eq!(source.count(), 0);
+}
+
+#[test]
+fn connection_refused_is_typed_offline() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            error.code,
+            SidecarErrorCode::OfflineNetwork
+                | SidecarErrorCode::OfflineTimeout
+                | SidecarErrorCode::OfflineIo
+        ),
+        "{:?}",
+        error.code
+    );
+}
+
+#[test]
+fn http_error_statuses_remain_results_not_offline() {
+    let source = Server::start(|request| Reply {
+        status: request
+            .split_whitespace()
+            .nth(1)
+            .unwrap()
+            .rsplit('/')
+            .next()
+            .unwrap()
+            .parse()
+            .unwrap(),
+        location: None,
+        body: "synthetic error body",
+    });
+    for code in [401, 403, 409, 422] {
+        let result = get(source.address.port(), &format!("/api/v1/{code}"));
+        assert_eq!(result.status, code);
+        assert_eq!(result.body, "synthetic error body");
+    }
+    assert_eq!(source.count(), 4);
+}

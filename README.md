@@ -123,6 +123,14 @@ currently opened content for the future. If an older version cannot carry metada
 over losslessly, the app stops before sending and leaves the vault unchanged. If
 the outcome becomes unknown, the app sends nothing further without positive proof.
 
+**Desktop-Verbindung / Desktop connection:** Ist der lokale Kern kurzzeitig nicht
+erreichbar, nutzt die App im bereits initialisierten oder gesperrten Kontext den
+lokal geprüften Stand, sofern die Frische-/PIN-Prüfung besteht. Ein vollständiger
+Offline-Neustart ist damit nicht zugesagt. / If the local core is briefly
+unreachable, the app uses the locally verified state in an already initialized or
+locked context when the freshness/pin check passes. A full offline restart is not
+claimed.
+
 ## Aktueller Funktionsstand / Current capabilities
 
 **Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.

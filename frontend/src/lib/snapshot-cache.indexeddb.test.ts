@@ -80,8 +80,21 @@ const operations: Array<{
     run: (cache) => cache.load(snapshot.vaultId),
   },
   {
+    // One transaction mode call with two deletes: head + legacy backup are atomic.
     name: "remove", mode: "readwrite", request: "delete", requests: ["delete", "delete"],
     result: undefined, run: (cache) => cache.remove(snapshot.vaultId),
+  },
+  {
+    name: "saveLegacyBackup", mode: "readwrite", request: "put", result: undefined,
+    run: (cache) => cache.saveLegacyBackup(snapshot.vaultId, snapshot),
+  },
+  {
+    name: "loadLegacyBackup", mode: "readonly", request: "get", result: snapshot,
+    run: (cache) => cache.loadLegacyBackup(snapshot.vaultId),
+  },
+  {
+    name: "removeLegacyBackup", mode: "readwrite", request: "delete", result: undefined,
+    run: (cache) => cache.removeLegacyBackup(snapshot.vaultId),
   },
 ];
 

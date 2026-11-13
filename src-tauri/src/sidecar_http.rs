@@ -8,11 +8,35 @@ use crate::process::core_port;
 use crate::sidecar_target::core_api_url;
 
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+static SNAPSHOT_GET_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
 static SNAPSHOT_POST_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub(crate) fn snapshot_get_attempts() -> usize {
+    SNAPSHOT_GET_ATTEMPTS.load(Ordering::SeqCst)
+}
 
 #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
 pub(crate) fn snapshot_post_attempts() -> usize {
     SNAPSHOT_POST_ATTEMPTS.load(Ordering::SeqCst)
+}
+
+/// Test-only, tightly scoped snapshot transport fault. The auth/vault-list
+/// routes pass through to the real sidecar; only the named snapshot route
+/// returns the same typed offline error before any dispatch.
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+fn snapshot_fault(path: &str) -> Option<SidecarError> {
+    let mode = std::env::var("FOURALLPASS_NATIVE_SNAPSHOT_FAULT").ok()?;
+    let is_get = path.starts_with("/api/v1/vaults/") && path.ends_with("/snapshot");
+    let is_post = path.starts_with("/api/v1/vaults/") && path.ends_with("/snapshots");
+    match mode.as_str() {
+        "get" if is_get => Some(SidecarError::new(SidecarErrorCode::OfflineNetwork)),
+        "post" if is_post => Some(SidecarError::new(SidecarErrorCode::OfflineNetwork)),
+        "both" if is_get || is_post => Some(SidecarError::new(SidecarErrorCode::OfflineNetwork)),
+        "none" | "" => None,
+        _ => None,
+    }
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -201,8 +225,19 @@ pub fn sidecar_http(
     let diagnostic_path = path.clone();
     let diagnostic_body = body.clone();
     #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
-    if method.eq_ignore_ascii_case("POST") && path.ends_with("/snapshots") {
-        SNAPSHOT_POST_ATTEMPTS.fetch_add(1, Ordering::SeqCst);
+    {
+        if method.eq_ignore_ascii_case("GET")
+            && path.starts_with("/api/v1/vaults/")
+            && path.ends_with("/snapshot")
+        {
+            SNAPSHOT_GET_ATTEMPTS.fetch_add(1, Ordering::SeqCst);
+        }
+        if method.eq_ignore_ascii_case("POST") && path.ends_with("/snapshots") {
+            SNAPSHOT_POST_ATTEMPTS.fetch_add(1, Ordering::SeqCst);
+        }
+        if let Some(error) = snapshot_fault(&path) {
+            return Err(error);
+        }
     }
     let result = request_core(core_port(), method, path, headers, body);
     #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]

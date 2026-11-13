@@ -58,6 +58,12 @@ pub fn run() {
     assert!(cfg!(debug_assertions), "debug-only probe");
     // Fail closed before parsing/creating the task dir or spawning a sidecar.
     crate::process::configure_test_core_port().expect("private test core port required");
+    if let Ok(mode) = std::env::var("FOURALLPASS_NATIVE_SNAPSHOT_FAULT") {
+        assert!(
+            matches!(mode.as_str(), "none" | "get" | "post" | "both"),
+            "invalid FOURALLPASS_NATIVE_SNAPSHOT_FAULT"
+        );
+    }
     assert_eq!(
         std::env::args().count(),
         2,
@@ -159,6 +165,10 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         ),
         "legacy-unknown-fields" => concat!(
             "window.__NATIVE_SCENARIO_KIND__='unknown-fields';\n",
+            include_str!("../tests/native-legacy-common.js")
+        ),
+        "legacy-snapshot-fault" => concat!(
+            "window.__NATIVE_SCENARIO_KIND__='snapshot-fault';\n",
             include_str!("../tests/native-legacy-common.js")
         ),
         other => panic!("unknown native scenario: {other}"),
@@ -323,10 +333,12 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let normal_ok = DOWNLOADED.load(Ordering::SeqCst)
             && fixture_empty
             && commands.get("list_browser_profiles").copied().unwrap_or(0) > 0;
-        let migration_ok = own_sidecar_stopped
-            && (scenario != "legacy-known" || own_sidecar_restarted)
-            && fixture_empty;
-        let scenario_ok = if migration { migration_ok } else { normal_ok };
+        let scenario_ok = match scenario.as_str() {
+            "legacy-known" => own_sidecar_stopped && own_sidecar_restarted && fixture_empty,
+            "legacy-unknown-fields" => own_sidecar_stopped && fixture_empty,
+            "legacy-snapshot-fault" => fixture_empty,
+            _ => normal_ok,
+        };
         let passed = outcome["passed"] == true
             && allowed
             && commands.get("sidecar_http").copied().unwrap_or(0) > 0
@@ -342,7 +354,11 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             "restartSamePort":crate::process::core_port(),
             "restartSameData":root().join("data"),
             "restartLifecycle":"spawn_core+wait_our_core+CoreProcess",
-            "snapshotPostAttempts":crate::sidecar_http::snapshot_post_attempts(),
+            "snapshotRouteAttempts":{
+                "get":crate::sidecar_http::snapshot_get_attempts(),
+                "post":crate::sidecar_http::snapshot_post_attempts(),
+            },
+            "snapshotFault":std::env::var("FOURALLPASS_NATIVE_SNAPSHOT_FAULT").ok(),
             "seededData":std::env::var_os("FOURALLPASS_NATIVE_SEED_DATA").is_some(),
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,

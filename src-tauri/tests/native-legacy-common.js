@@ -140,6 +140,31 @@
     }
   };
 
+  const ipcSnapshotProbe = async vaultId => {
+    const internals = window.__TAURI_INTERNALS__;
+    if (!internals || typeof internals.invoke !== "function") {
+      return { ok: false, error: "tauri-internals-unavailable" };
+    }
+    try {
+      await internals.invoke("sidecar_http", {
+        method: "GET",
+        path: `/api/v1/vaults/${vaultId}/snapshot`,
+        headers: {},
+        body: null,
+      });
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        typeof: typeof error,
+        constructor: error && error.constructor ? error.constructor.name : null,
+        isTypeError: error instanceof TypeError,
+        code: error && typeof error === "object" && "code" in error ? error.code : null,
+        message: String(error && error.message ? error.message : error).slice(0, 240),
+      };
+    }
+  };
+
   const tryUnlockSameContext = async () => {
     if (unlocked()) return { ok: true };
     await wait("offline-unlock-screen", () => byId("master-password"));
@@ -244,6 +269,58 @@
         result.wireHasManifest = Boolean(wire.sealedManifest);
         check("head-cache-read");
         logEvent({ phase: "head-cache", revision: wire.revision, manifest: Boolean(wire.sealedManifest) });
+
+        if (kind === "snapshot-fault") {
+          // Auth, vault list and the normal lifecycle stay real. Only the
+          // snapshot GET is failed by the debug probe before dispatch.
+          const vaultId = headCacheKey();
+          if (!vaultId) throw new Error("active-vault-missing");
+          const decorated = structuredClone(wire);
+          decorated.futureTop = { note: "offline keep" };
+          decorated.entries[0].futureEntry = "keep-entry";
+          decorated.envelopes[0].futureEnvelope = { nested: [4, 5, 6] };
+          await writeHead(decorated);
+          check("unknown-fields-headcache-written");
+          result.snapshotTransportError = await ipcSnapshotProbe(vaultId);
+          logEvent({ phase: "snapshot-fault-probe", transportError: result.snapshotTransportError });
+          await click("lock");
+          await wait("locked-before-snapshot-fault", () => !unlocked() && byId("master-password"));
+          check("locked-before-snapshot-fault");
+          const offline = await tryUnlockSameContext();
+          if (!offline.ok) {
+            result.offlineBoundary = "snapshot-fault-cache-fallback-unavailable";
+            result.error = `snapshot-fault-unlock-failed:${offline.error}`;
+            result.done = true;
+            result.passed = false;
+            return;
+          }
+          check("snapshot-fault-cache-unlock");
+          await wait("snapshot-fault-banner", () => byId("legacy-migration-banner") && byId("legacy-migration-now"));
+          await click("legacy-migration-now");
+          await wait("unsupported-message", () =>
+            text("legacy-migration-banner").includes("nicht verlustfrei") ||
+            text("legacy-migration-banner").includes("losslessly"));
+          check("unsupported-before-post");
+          const receipt = await readReservation();
+          if (!receipt || receipt.state !== "rejected") throw new Error("receipt-not-rejected");
+          result.receiptState = receipt.state;
+          const backup = await readBackup();
+          if (!backup) throw new Error("unknown-field-backup-missing");
+          if (backup.futureTop?.note !== "offline keep") throw new Error("unknown-top-not-preserved");
+          if (backup.entries?.[0]?.futureEntry !== "keep-entry") throw new Error("unknown-entry-not-preserved");
+          if (backup.envelopes?.[0]?.futureEnvelope?.nested?.[0] !== 4) throw new Error("unknown-envelope-not-preserved");
+          result.backupUnknownFields = true;
+          check("unknown-fields-backup-equal");
+          await click("lock");
+          await wait("locked", () => !unlocked() && !byId("legacy-migration-banner"));
+          check("lock-hides-banner");
+          logEvent({ phase: "locked", bannerHidden: true, snapshotFault: true });
+          result.phaseEvents = parseStored(EVENTS_KEY, []);
+          result.priorChecks = parseStored(CHECKS_KEY, []);
+          result.passed = true;
+          result.done = true;
+          return;
+        }
 
         if (kind === "unknown-fields") {
           const decorated = structuredClone(wire);

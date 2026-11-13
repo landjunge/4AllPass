@@ -300,6 +300,34 @@ def db_counts(db: Path) -> dict:
     return {"counts": counts, "revisions": revisions}
 
 
+def negative_snapshot_fault_check(binary: Path, output: Path, base_env: dict) -> dict:
+    port = choose_port()
+    task = output / f"fault-invalid-{uuid.uuid4().hex}"
+    env = dict(base_env)
+    env.pop("TAURI_CONFIG", None)
+    env["FOURALLPASS_TEST_CORE_PORT"] = str(port)
+    env["FOURALLPASS_NATIVE_SCENARIO"] = "legacy-snapshot-fault"
+    env["FOURALLPASS_NATIVE_SNAPSHOT_FAULT"] = "invalid"
+    env["FOURALLPASS_DATA_DIR"] = str(task / "data")
+    log_path = output / "fault-invalid.log"
+    with log_path.open("w") as log:
+        result = subprocess.run(
+            [str(binary), str(task)],
+            cwd=output,
+            env=env,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            timeout=30,
+        )
+    return {
+        "returncode": result.returncode,
+        "task_absent": not task.exists(),
+        "data_absent": not (task / "data").exists(),
+        "failed_before_spawn": result.returncode != 0 and not task.exists(),
+        "log": str(log_path),
+    }
+
+
 def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenario: str, python: Path) -> dict:
     test_port = choose_port()
     seed_port = choose_port()
@@ -319,6 +347,9 @@ def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenari
     env["FOURALLPASS_TEST_CORE_PORT"] = str(test_port)
     env["FOURALLPASS_NATIVE_SCENARIO"] = scenario
     env["FOURALLPASS_NATIVE_SEED_DATA"] = seed["seed_data"]
+    env["FOURALLPASS_NATIVE_SNAPSHOT_FAULT"] = (
+        "get" if scenario == "legacy-snapshot-fault" else "none"
+    )
     env["FOURALLPASS_NATIVE_ACCOUNT_EMAIL"] = ACCOUNT_EMAIL
     env["FOURALLPASS_NATIVE_ACCOUNT_PASSWORD"] = ACCOUNT_PASSWORD
     env["FOURALLPASS_NATIVE_VAULT_PASSWORD"] = VAULT_PASSWORD
@@ -415,6 +446,8 @@ def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenari
         "nativeResult": result,
         "authDiagnostics": auth_diagnostics,
         "snapshotPostAttempts": result.get("snapshotPostAttempts"),
+        "snapshotRouteAttempts": result.get("snapshotRouteAttempts"),
+        "snapshotFault": result.get("snapshotFault"),
         "restart": {
             "originalChildPid": result.get("originalChildPid"),
             "restartedChildPid": result.get("restartedChildPid"),
@@ -455,8 +488,8 @@ def main() -> None:
     parser.add_argument("--build-dir", type=Path)
     parser.add_argument(
         "--scenarios",
-        default="legacy-known,legacy-unknown-fields",
-        help="comma-separated legacy-known,legacy-unknown-fields",
+        default="legacy-known,legacy-unknown-fields,legacy-snapshot-fault",
+        help="comma-separated legacy-known,legacy-unknown-fields,legacy-snapshot-fault",
     )
     args = parser.parse_args()
     if sys.platform != "darwin":
@@ -606,8 +639,14 @@ def main() -> None:
     binary = build / "cargo-target/debug/fourallpass-normal-journey-probe"
     shutil.copy2(sidecar, binary.parent / "fourallpass-core")
     scenarios = [item.strip() for item in args.scenarios.split(",") if item.strip()]
-    if not scenarios or any(item not in {"legacy-known", "legacy-unknown-fields"} for item in scenarios):
+    if not scenarios or any(
+        item not in {"legacy-known", "legacy-unknown-fields", "legacy-snapshot-fault"}
+        for item in scenarios
+    ):
         parser.error("unknown scenario selection")
+    fault_negative = negative_snapshot_fault_check(binary, output, env)
+    if not fault_negative["failed_before_spawn"]:
+        raise RuntimeError("invalid snapshot fault did not fail closed before spawn")
     results = [
         run_scenario(binary, output, env, dist, scenario, python) for scenario in scenarios
     ]
@@ -632,6 +671,7 @@ def main() -> None:
             if args.release_dist
             else None
         ),
+        "snapshotFaultNegative": fault_negative,
         "scenarios": results,
     }
     (output / "run.json").write_text(json.dumps(run_evidence, indent=2) + "\n")

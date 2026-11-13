@@ -69,6 +69,12 @@ does not guarantee storage against eviction, disk loss or power failure;
 online snapshot-cache writes remain best-effort. It adds no device-possession
 proof and does not change the existing unlock mechanism's security rank.
 
+The PWA's offline bootstrap stores only account email, the last online vault
+list, a SHA-256 fingerprint of the session token and the storage origin. It is
+bound to that token and origin and restores identity/list only; it is not server
+authentication or write permission. The encrypted snapshot cache and freshness
+pin still gate offline unlock. Same-origin XSS can read this metadata.
+
 ## User-facing copy
 
 CSV review follows complete logical-record parsing. Multiline password fields

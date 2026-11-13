@@ -239,10 +239,7 @@ fn transport_kind_classification_is_type_based() {
         transport_code(ureq::ErrorKind::Dns),
         Some(SidecarErrorCode::OfflineNetwork)
     );
-    assert_eq!(
-        transport_code(ureq::ErrorKind::Io),
-        Some(SidecarErrorCode::OfflineIo)
-    );
+    assert_eq!(transport_code(ureq::ErrorKind::Io), None);
     for kind in [
         ureq::ErrorKind::InvalidUrl,
         ureq::ErrorKind::UnknownScheme,
@@ -260,35 +257,82 @@ fn transport_kind_classification_is_type_based() {
 }
 
 #[test]
-fn io_timeout_is_distinct_and_not_string_matched() {
-    assert_eq!(
-        io_code(&std::io::Error::new(
-            std::io::ErrorKind::TimedOut,
-            "synthetic timeout"
-        )),
-        SidecarErrorCode::OfflineTimeout
-    );
-    assert_eq!(
-        io_code(&std::io::Error::new(
-            std::io::ErrorKind::WouldBlock,
-            "synthetic would block"
-        )),
-        SidecarErrorCode::OfflineTimeout
-    );
-    assert_eq!(
-        io_code(&std::io::Error::new(
-            std::io::ErrorKind::ConnectionReset,
-            "synthetic reset"
-        )),
-        SidecarErrorCode::OfflineIo
-    );
+fn io_timeout_and_network_kinds_are_offline_local_errors_are_not() {
+    for kind in [
+        std::io::ErrorKind::TimedOut,
+        std::io::ErrorKind::WouldBlock,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic timeout")),
+            SidecarErrorCode::OfflineTimeout,
+            "{kind:?}"
+        );
+    }
+    for kind in [
+        std::io::ErrorKind::ConnectionRefused,
+        std::io::ErrorKind::ConnectionReset,
+        std::io::ErrorKind::ConnectionAborted,
+        std::io::ErrorKind::NotConnected,
+        std::io::ErrorKind::BrokenPipe,
+        std::io::ErrorKind::UnexpectedEof,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic network io")),
+            SidecarErrorCode::OfflineIo,
+            "{kind:?}"
+        );
+    }
     assert_eq!(
         io_code(&std::io::Error::new(
             std::io::ErrorKind::PermissionDenied,
             "synthetic permission"
         )),
-        SidecarErrorCode::OfflineIo
+        SidecarErrorCode::Capability
     );
+    for kind in [
+        std::io::ErrorKind::InvalidData,
+        std::io::ErrorKind::InvalidInput,
+        std::io::ErrorKind::Unsupported,
+        std::io::ErrorKind::Other,
+    ] {
+        assert_eq!(
+            io_code(&std::io::Error::new(kind, "synthetic local io")),
+            SidecarErrorCode::Protocol,
+            "{kind:?}"
+        );
+    }
+}
+
+#[derive(Debug)]
+struct SourceOnly(std::io::Error);
+
+impl std::fmt::Display for SourceOnly {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("synthetic transport wrapper")
+    }
+}
+
+impl StdError for SourceOnly {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&self.0)
+    }
+}
+
+#[test]
+fn source_chain_permission_denied_is_capability_not_offline() {
+    let source = SourceOnly(std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        "synthetic permission source",
+    ));
+    let io = io_source(&source).expect("typed io source");
+    assert_eq!(io.kind(), std::io::ErrorKind::PermissionDenied);
+    assert_eq!(io_code(io), SidecarErrorCode::Capability);
+    assert!(!matches!(
+        io_code(io),
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
 }
 
 #[test]
@@ -371,4 +415,60 @@ fn http_error_statuses_remain_results_not_offline() {
         assert_eq!(result.body, "synthetic error body");
     }
     assert_eq!(source.count(), 4);
+}
+
+#[test]
+fn malformed_http_response_is_protocol_not_offline() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            let _ = stream.write_all(b"HTTP/1.1 BAD\r\n\r\n");
+        }
+    });
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    handle.join().unwrap();
+}
+
+#[test]
+fn real_timeout_is_typed_offline() {
+    use std::io::Read;
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let _handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            std::thread::sleep(std::time::Duration::from_secs(20));
+        }
+    });
+    let started = std::time::Instant::now();
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            error.code,
+            SidecarErrorCode::OfflineTimeout | SidecarErrorCode::OfflineIo
+        ),
+        "{:?}",
+        error.code
+    );
+    assert!(started.elapsed() >= std::time::Duration::from_secs(14));
 }

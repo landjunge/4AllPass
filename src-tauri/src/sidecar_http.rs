@@ -9,6 +9,67 @@ pub struct SidecarHttpResult {
     body: String,
 }
 
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+fn auth_diagnostic(path: &str, body: &Option<String>, status: u16, response: &str) {
+    if path != "/api/v1/auth/login" && path != "/api/v1/auth/register" {
+        return;
+    }
+    let request = body
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok());
+    let keys = request
+        .as_ref()
+        .and_then(serde_json::Value::as_object)
+        .map(|object| {
+            let mut keys: Vec<String> = object.keys().cloned().collect();
+            keys.sort();
+            keys
+        });
+    let text = |key: &str| {
+        request
+            .as_ref()
+            .and_then(|value| value.get(key))
+            .and_then(serde_json::Value::as_str)
+            .map(str::len)
+    };
+    let detail = serde_json::from_str::<serde_json::Value>(response)
+        .ok()
+        .and_then(|value| value.get("detail").cloned());
+    let sanitized = match detail {
+        Some(serde_json::Value::Array(items)) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(|item| {
+                    serde_json::json!({
+                        "loc": item.get("loc").cloned().unwrap_or(serde_json::Value::Null),
+                        "type": item.get("type").cloned().unwrap_or(serde_json::Value::Null),
+                    })
+                })
+                .collect(),
+        ),
+        Some(other) => serde_json::json!({
+            "kind": match other {
+                serde_json::Value::String(_) => "string",
+                serde_json::Value::Object(_) => "object",
+                _ => "other",
+            }
+        }),
+        None => serde_json::Value::Null,
+    };
+    eprintln!(
+        "NATIVE_AUTH_DIAG {}",
+        serde_json::json!({
+            "path": path,
+            "status": status,
+            "request_keys": keys,
+            "email_len": text("email"),
+            "password_len": text("password"),
+            "detail": sanitized,
+        })
+    );
+}
+
 /// Talk to the core we spawned. The webview must not fetch :8788 itself
 /// (WKWebView blocks or CORS-fails that). Never navigate the webview there.
 #[tauri::command]
@@ -18,7 +79,12 @@ pub fn sidecar_http(
     headers: HashMap<String, String>,
     body: Option<String>,
 ) -> Result<SidecarHttpResult, String> {
-    request_core(core_port(), method, path, headers, body)
+    let diagnostic_path = path.clone();
+    let diagnostic_body = body.clone();
+    let result = request_core(core_port(), method, path, headers, body)?;
+    #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+    auth_diagnostic(&diagnostic_path, &diagnostic_body, result.status, &result.body);
+    Ok(result)
 }
 
 // A fixed loopback host; the normal command always supplies its fixed core port.

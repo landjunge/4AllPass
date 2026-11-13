@@ -421,6 +421,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--build-python", type=Path, required=True)
     parser.add_argument("--release-dist", type=Path)
+    parser.add_argument(
+        "--scenarios",
+        default="legacy-known,legacy-unknown-fields",
+        help="comma-separated legacy-known,legacy-unknown-fields",
+    )
     args = parser.parse_args()
     if sys.platform != "darwin":
         parser.error("requires native macOS WKWebView")
@@ -568,7 +573,9 @@ def main() -> None:
     )
     binary = build / "cargo-target/debug/fourallpass-normal-journey-probe"
     shutil.copy2(sidecar, binary.parent / "fourallpass-core")
-    scenarios = ["legacy-known", "legacy-unknown-fields"]
+    scenarios = [item.strip() for item in args.scenarios.split(",") if item.strip()]
+    if not scenarios or any(item not in {"legacy-known", "legacy-unknown-fields"} for item in scenarios):
+        parser.error("unknown scenario selection")
     results = [
         run_scenario(binary, output, env, dist, scenario, python) for scenario in scenarios
     ]

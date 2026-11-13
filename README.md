@@ -194,6 +194,8 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |
 | Sicherheitsprüfung | Noch kein unabhängiges Drittaudit |
 
+**Darstellung:** Die Desktop-App hat eine feste dunkle Oberfläche. Deshalb zeigt ihr Kopfbereich immer die für dunklen Grund gezeichnete Wortmarke – unabhängig davon, ob das Betriebssystem hell oder dunkel eingestellt ist. README, Produktseite und Browser-Symbole wählen weiterhin passend zum System; die App selbst wechselt ihr Erscheinungsbild nicht.
+
 Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten braucht es weiterhin Vorsicht und ein sicheres Backup.
 
 ### Lizenz
@@ -299,6 +301,8 @@ Import passwords from Chrome or Firefox, keep the vault on your device, and opti
 Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. Signed writes (v2) can be verified server-side for new vaults: Ed25519 over the canonical preimage, an idempotent receipt and atomic rotation. They stay behind `FOURALLPASS_SIGNED_WRITES_ENABLED` (default off), never upgrade an existing vault, and destructive revoke/recovery reads remain intentionally unsigned. Ownership is re-read under the lock: an old-owner session gets 404 after a transfer, and a concurrent adopt ends without partial transfer (409). A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
 
 The five-product appbar loads its existing module CSS (44×44 targets, helper text visually hidden but available to screen readers), and the DE/EN choice also sets the document language (`<html lang>`). Switching a product calls the native `family_switch` host with the catalog id only; in the browser it stays honestly disabled, and “App opened” is not “connected”.
+
+The desktop app keeps a fixed dark surface, so its header always shows the wordmark drawn for that background — independent of the operating system's light or dark setting. README, product page and browser favicons still adapt to the system; the app itself does not switch themes.
 
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 

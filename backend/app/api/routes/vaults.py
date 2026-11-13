@@ -188,6 +188,10 @@ async def post_snapshot(
     try:
         snapshot = await commit_snapshot(db, vault, payload)
     except RevisionConflict as exc:
+        # prepare() already flushed the receipt claim, nonce and any rotation
+        # key rows. A handled conflict must not let get_db commit those side
+        # effects with an unchanged snapshot head.
+        await db.rollback()
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={"detail": "revision conflict", "currentRevision": exc.current_revision},

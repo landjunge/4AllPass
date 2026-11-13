@@ -600,7 +600,7 @@ from app.db.session import create_db_engine as _create_engine
 from app.models.snapshot import VaultSnapshot as _Snapshot
 from app.models.vault import Vault as _Vault
 from app.models.user import User as _User
-from app.models.signed_write import VaultWriteKey as _Key, WriteGrant as _Grant, WriteReceipt as _Receipt
+from app.models.signed_write import VaultWriteKey as _Key, WriteGrant as _Grant, WriteNonce as _Nonce, WriteReceipt as _Receipt
 
 
 @_pytest.mark.skipif(
@@ -1345,3 +1345,91 @@ async def test_local_adopt_serialized_write_before_and_after(client, account, en
             assert receipts == 1
     finally:
         settings.profile = previous
+
+
+async def _rotation_request(vault_id, priv, pub, next_priv, next_pub, *, base, revision, payload_vk):
+    payload = {
+        "expectedRevision": base, "revision": revision, "vaultKeyVersion": payload_vk,
+        "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
+        "sealedManifest": manifest(b"rot"),
+    }
+    raw = body_bytes(payload)
+    headers, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
+        resource_type="vault", resource_id="", parent_id="",
+        base=base, result=revision, key_version=1, result_key_version=2,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(payload["sealedManifest"]),
+        payload_digest=write_payload_digest_v2(raw), operation_id=uuid.uuid4(),
+        nonce=uuid.uuid4().bytes, has_next=True, next_pub=next_pub, next_priv=next_priv,
+    )
+    return headers, raw
+
+
+async def _signed_state(engine, vault_id):
+    async with _AsyncSession(bind=engine) as db:
+        pointer = await db.scalar(_select(_Vault.active_snapshot_id).where(_Vault.id == _uuid.UUID(vault_id)))
+        head = await db.scalar(_select(_Snapshot).where(_Snapshot.id == pointer)) if pointer else None
+        keys = (
+            await db.execute(_select(_Key).where(_Key.vault_id == _uuid.UUID(vault_id)).order_by(_Key.key_version))
+        ).scalars().all()
+        receipts = (
+            await db.execute(_select(_func.count()).select_from(_Receipt).where(_Receipt.vault_id == _uuid.UUID(vault_id)))
+        ).scalar()
+        nonces = (
+            await db.execute(_select(_func.count()).select_from(_Nonce).where(_Nonce.vault_id == _uuid.UUID(vault_id)))
+        ).scalar()
+        return {
+            "revision": head.revision if head else None,
+            "vk": head.vault_key_version if head else None,
+            "keys": [(k.key_version, k.retired_at is not None) for k in keys],
+            "receipts": receipts,
+            "nonces": nonces,
+        }
+
+
+async def test_conflict_rolls_back_prepare_side_effects(client, account, engine):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    first, _, _ = await _commit(
+        client, account, vault_id, priv, pub,
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+    )
+    assert first.status_code == 200, first.text
+    before = await _signed_state(engine, vault_id)
+    assert before["revision"] == 1 and before["keys"] == [(1, False)]
+
+    new_priv = Ed25519PrivateKey.generate()
+    new_pub = new_priv.public_key().public_bytes_raw()
+
+    # Valid signature, stale base (0 while head is 1).
+    stale, stale_raw = await _rotation_request(
+        vault_id, priv, pub, new_priv, new_pub, base=0, revision=2, payload_vk=2
+    )
+    stale_resp = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=stale_raw, headers={**account, **stale}
+    )
+    assert stale_resp.status_code == 409, stale_resp.text
+    assert await _signed_state(engine, vault_id) == before
+
+    # Valid signature, skipped result revision (3 instead of 2).
+    skipped, skipped_raw = await _rotation_request(
+        vault_id, priv, pub, new_priv, new_pub, base=1, revision=3, payload_vk=2
+    )
+    skipped_resp = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=skipped_raw, headers={**account, **skipped}
+    )
+    assert skipped_resp.status_code == 409, skipped_resp.text
+    assert await _signed_state(engine, vault_id) == before
+
+    # The same key material still works for the correct rotation.
+    good, good_raw = await _rotation_request(
+        vault_id, priv, pub, new_priv, new_pub, base=1, revision=2, payload_vk=2
+    )
+    ok = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=good_raw, headers={**account, **good}
+    )
+    assert ok.status_code == 200, ok.text
+    after = await _signed_state(engine, vault_id)
+    assert after["revision"] == 2 and after["vk"] == 2
+    assert after["keys"] == [(1, True), (2, False)]

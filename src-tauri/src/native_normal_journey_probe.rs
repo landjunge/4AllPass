@@ -108,7 +108,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
     // the private download destination and DOM driver. Core ownership already passed.
     let scenario = std::env::var("FOURALLPASS_NATIVE_SCENARIO")
         .unwrap_or_else(|_| "normal".to_owned());
-    let driver_script: &'static str = match scenario.as_str() {
+    let base_script: &'static str = match scenario.as_str() {
         "normal" => include_str!("../tests/native-normal-journey.js"),
         "legacy-known" => concat!(
             "window.__NATIVE_SCENARIO_KIND__='known';\n",
@@ -120,6 +120,17 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         ),
         other => panic!("unknown native scenario: {other}"),
     };
+    let fixture_prefix = if scenario == "normal" {
+        String::new()
+    } else {
+        let fixture = json!({
+            "email": std::env::var("FOURALLPASS_NATIVE_ACCOUNT_EMAIL").unwrap_or_default(),
+            "password": std::env::var("FOURALLPASS_NATIVE_ACCOUNT_PASSWORD").unwrap_or_default(),
+            "vaultPassword": std::env::var("FOURALLPASS_NATIVE_VAULT_PASSWORD").unwrap_or_default(),
+        });
+        format!("window.__NATIVE_FIXTURE__={fixture};\n")
+    };
+    let driver_script = format!("{fixture_prefix}{base_script}");
     let config = app.config().app.windows[0].clone();
     WebviewWindowBuilder::from_config(app, &config)?
         .on_navigation(|url| {
@@ -164,7 +175,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         })
         .on_page_load(move |window, payload| {
             if payload.event() == PageLoadEvent::Finished {
-                let _ = window.eval(driver_script);
+                let _ = window.eval(&driver_script);
             }
         })
         .build()?;

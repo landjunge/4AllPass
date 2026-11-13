@@ -319,6 +319,9 @@ def run_scenario(binary: Path, output: Path, base_env: dict, dist: Path, scenari
     env["FOURALLPASS_TEST_CORE_PORT"] = str(test_port)
     env["FOURALLPASS_NATIVE_SCENARIO"] = scenario
     env["FOURALLPASS_NATIVE_SEED_DATA"] = seed["seed_data"]
+    env["FOURALLPASS_NATIVE_ACCOUNT_EMAIL"] = ACCOUNT_EMAIL
+    env["FOURALLPASS_NATIVE_ACCOUNT_PASSWORD"] = ACCOUNT_PASSWORD
+    env["FOURALLPASS_NATIVE_VAULT_PASSWORD"] = VAULT_PASSWORD
     with log_path.open("w") as log:
         proc = subprocess.Popen(
             [str(binary), str(task)],

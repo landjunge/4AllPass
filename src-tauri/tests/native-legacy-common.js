@@ -30,9 +30,16 @@
     await sleep(150);
   };
   const unlocked = () => byId("lock-state")?.textContent === "UNLOCKED";
-  const accountEmail = "native-migration-fixture@example.invalid";
-  const accountPassword = "Native migration account fixture 2026!";
-  const vaultPassword = "Native legacy vault fixture 2026!";
+  const fixture = window.__NATIVE_FIXTURE__ || {};
+  const accountEmail = fixture.email;
+  const accountPassword = fixture.password;
+  const vaultPassword = fixture.vaultPassword;
+  if (!accountEmail || !accountPassword || !vaultPassword) {
+    result.error = "native-fixture-contract-missing";
+    result.done = true;
+    result.passed = false;
+    return;
+  }
 
   const openDb = (name, version, store) => new Promise((resolve, reject) => {
     const req = indexedDB.open(name, version);
@@ -84,14 +91,29 @@
     }
   };
 
+  const authMode = () => {
+    const submit = byId("auth-submit");
+    const submitLabel = (submit?.textContent || "").trim();
+    if (/^(Anmelden|Sign in)$/i.test(submitLabel)) return "sign-in";
+    if (/^(Konto anlegen|Create account)$/i.test(submitLabel)) return "sign-up";
+    const heading = (document.querySelector("form.auth h2")?.textContent || "").trim();
+    if (/^(Anmelden|Sign in)$/i.test(heading)) return "sign-in";
+    if (/^(Konto anlegen|Create account)$/i.test(heading)) return "sign-up";
+    return "unknown";
+  };
+
   const signIn = async () => {
     if (byId("auth-submit")) {
-      // The first-run form defaults to account creation; the seeded account
-      // already exists, so switch to the login mode first.
-      if (byId("auth-switch")) {
+      // The app defaults to sign-up on a fresh store and sign-in when it
+      // remembered the e-mail. Only switch when the current mode is sign-up.
+      let mode = authMode();
+      if (mode === "sign-up") {
+        if (!byId("auth-switch")) throw new Error("auth-mode-switch-missing");
         byId("auth-switch").click();
         await sleep(250);
+        mode = authMode();
       }
+      if (mode !== "sign-in") throw new Error(`auth-mode-unexpected:${mode}`);
       fillField(document.querySelector('input[type="email"]'), accountEmail);
       fillField(document.querySelector('input[type="password"]'), accountPassword);
       await sleep(100);

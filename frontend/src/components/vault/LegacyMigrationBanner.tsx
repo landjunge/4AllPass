@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import {
@@ -7,8 +7,9 @@ import {
   type LegacyMigrationOutcome,
 } from "../../lib/vault-session.ts";
 import {
-  loadMigrationAttempt,
+  MigrationAttemptUnavailableError,
   migrationAttemptBlocks,
+  migrationAttemptStore,
 } from "../../lib/migration-attempt.ts";
 import { VaultLockedError } from "../../lib/vault-liveness.ts";
 import { BLOCKED, LegacyMigrationBannerView } from "./LegacyMigrationBannerView.ts";
@@ -24,11 +25,37 @@ export function LegacyMigrationBanner(): ReactNode {
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [blockedState, setBlockedState] = useState(false);
+  const [persistedBlocked, setPersistedBlocked] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Authoritative state lives in IndexedDB; a reload must keep UNKNOWN blocked.
+  useEffect(() => {
+    if (lockState !== "UNLOCKED" || !vault) {
+      setPersistedBlocked(false);
+      return;
+    }
+    let cancelled = false;
+    const identity = {
+      vaultId: vault.vaultId,
+      revision: vault.revision,
+      vaultKeyVersion: vault.vaultKeyVersion,
+    };
+    void migrationAttemptStore().load(identity.vaultId).then(
+      (record) => {
+        if (!cancelled) setPersistedBlocked(migrationAttemptBlocks(record, identity));
+      },
+      () => {
+        // Fail closed: without a readable reservation, never offer a POST.
+        if (!cancelled) setPersistedBlocked(true);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [lockState, vault?.vaultId, vault?.revision, vault?.vaultKeyVersion]);
 
   if (lockState !== "UNLOCKED" || !vault || dismissed) return null;
   const legacy = isLegacyVault(vault);
-  const persistedBlocked = migrationAttemptBlocks(loadMigrationAttempt(vault.vaultId), vault);
   const blocked = blockedState || persistedBlocked;
   if (!legacy && !message) return null;
 
@@ -58,11 +85,23 @@ export function LegacyMigrationBanner(): ReactNode {
     if (error instanceof VaultLockedError) {
       return t({ de: "Der Tresor wurde gesperrt. Bitte erneut öffnen.", en: "The vault was locked. Please open it again." });
     }
+    if (error instanceof MigrationAttemptUnavailableError) {
+      return t({
+        de: "Die lokale Sperre konnte nicht sicher gesetzt werden. Es wurde nichts geändert.",
+        en: "The local reservation could not be set safely. Nothing was changed.",
+      });
+    }
     if (error instanceof LegacyMigrationError) {
       if (error.code.startsWith("legacy_backup")) {
         return t({
           de: "Die lokale Sicherung konnte nicht bestätigt werden. Es wurde nichts geändert.",
           en: "The local backup could not be confirmed. Nothing was changed.",
+        });
+      }
+      if (error.code === "legacy_wire_unsupported_metadata") {
+        return t({
+          de: "Der Tresor enthält Metadaten, die diese Version nicht verlustfrei übernehmen kann. Es wurde nichts geändert.",
+          en: "The vault contains metadata this version cannot carry over losslessly. Nothing was changed.",
         });
       }
       if (error.code === "legacy_migration_rejected") {

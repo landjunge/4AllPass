@@ -95,7 +95,10 @@ function countMigrationPosts(page: Page, vaultId: string) {
   };
 }
 
-async function setupLegacy(page: Page): Promise<{ vaultId: string; wire: unknown }> {
+async function setupLegacy(
+  page: Page,
+  options: { decorate?: (wire: Record<string, unknown>) => void } = {},
+): Promise<{ vaultId: string; wire: Record<string, unknown> }> {
   await page.goto("/");
   await reachUnlockedLocalApp(page);
   const vaultId = await page.evaluate(() => localStorage.getItem("4allpass.active-vault"));
@@ -105,7 +108,8 @@ async function setupLegacy(page: Page): Promise<{ vaultId: string; wire: unknown
   await page.evaluate((id) => {
     localStorage.removeItem(`4allpass.pin.${id}`);
   }, vaultId!);
-  const wire = fakeLegacyWire(vaultId!);
+  const wire = fakeLegacyWire(vaultId!) as unknown as Record<string, unknown>;
+  options.decorate?.(wire);
   await page.route(new RegExp(`/api/v1/vaults/${vaultId}/snapshot$`), (route) =>
     route.fulfill({
       status: 200,
@@ -118,6 +122,42 @@ async function setupLegacy(page: Page): Promise<{ vaultId: string; wire: unknown
   await expect(page.getByTestId("legacy-migration-banner")).toBeVisible();
   await page.getByTestId("language-de").click();
   return { vaultId: vaultId!, wire };
+}
+
+/** Read the durable reservation through IndexedDB (same origin, shared). */
+async function readReservation(page: Page, vaultId: string): Promise<Record<string, unknown> | null> {
+  return page.evaluate(async (id) => new Promise((resolve, reject) => {
+    const open = indexedDB.open("4allpass-legacy-migration", 1);
+    open.onupgradeneeded = () => {
+      if (!open.result.objectStoreNames.contains("attempts")) open.result.createObjectStore("attempts");
+    };
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction("attempts", "readonly");
+      const get = tx.objectStore("attempts").get(id);
+      get.onsuccess = () => { resolve((get.result as Record<string, unknown>) ?? null); db.close(); };
+      get.onerror = () => reject(get.error);
+    };
+  }), vaultId);
+}
+
+/** Open a fresh connection and read the durable legacy backup. */
+async function readLegacyBackup(page: Page, vaultId: string): Promise<Record<string, unknown> | null> {
+  return page.evaluate(async (id) => new Promise((resolve, reject) => {
+    const open = indexedDB.open("4allpass-snapshot-cache", 1);
+    open.onupgradeneeded = () => {
+      if (!open.result.objectStoreNames.contains("wire")) open.result.createObjectStore("wire");
+    };
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction("wire", "readonly");
+      const get = tx.objectStore("wire").get(`legacy:${id}`);
+      get.onsuccess = () => { resolve((get.result as Record<string, unknown>) ?? null); db.close(); };
+      get.onerror = () => reject(get.error);
+    };
+  }), vaultId);
 }
 
 test("DE/EN legacy banner, confirm once, focus", async ({ page, browser }) => {
@@ -207,10 +247,7 @@ test("UNKNOWN blocks after reload with no further POST", async ({ page, browser 
   await page.getByTestId("legacy-migration-now").click();
   await expect(page.getByTestId("legacy-migration-banner")).toContainText("Ausgang ist unklar");
   expect(posts).toBe(1);
-  const before = await page.evaluate((id) => {
-    const raw = localStorage.getItem(`4allpass.legacy-migration.${id}`);
-    return raw ? JSON.parse(raw) as Record<string, unknown> : null;
-  }, vaultId);
+  const before = await readReservation(page, vaultId);
   expect(before?.state).toBe("unknown");
   expect(before?.baseRevision).toBe(1);
   expect(typeof before?.preparedManifestDigest).toBe("string");
@@ -222,10 +259,7 @@ test("UNKNOWN blocks after reload with no further POST", async ({ page, browser 
   await expect(page.getByTestId("legacy-migration-blocked")).toContainText("letzte Versuch ist unklar");
   await expect(page.getByTestId("legacy-migration-now")).toBeDisabled();
   expect(posts).toBe(1);
-  const after = await page.evaluate((id) => {
-    const raw = localStorage.getItem(`4allpass.legacy-migration.${id}`);
-    return raw ? JSON.parse(raw) as Record<string, unknown> : null;
-  }, vaultId);
+  const after = await readReservation(page, vaultId);
   expect(after?.state).toBe("unknown");
   await page.screenshot({ path: join(OUT, "de-unknown-reload.png") });
   evidence("unknown", {
@@ -255,6 +289,142 @@ test("lock hides the banner without a migration POST", async ({ page }) => {
     posts: counter.count,
     state: "LOCKED",
     counter: "page.on(request) migration POSTs",
+    data: "synthetic only",
+  });
+});
+
+test("two independent pages share one reservation: max one POST, no receipt clobber", async ({ page, context, browser }) => {
+  const { vaultId } = await setupLegacy(page);
+
+  // Second, independent page in the same browser context: same origin, same
+  // IndexedDB origin storage. Synthetic wire only.
+  const pageB = await context.newPage();
+  try {
+    await pageB.goto("/");
+    await pageB.evaluate((id) => localStorage.setItem("4allpass.active-vault", id), vaultId);
+    await pageB.evaluate((id) => localStorage.removeItem(`4allpass.pin.${id}`), vaultId);
+    const wireB = fakeLegacyWire(vaultId);
+    await pageB.route(new RegExp(`/api/v1/vaults/${vaultId}/snapshot$`), (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(wireB),
+      }),
+    );
+    await reachUnlockedLocalApp(pageB);
+    await expect(pageB.getByTestId("legacy-migration-banner")).toBeVisible();
+    await pageB.getByTestId("language-de").click();
+    await expect(pageB.getByTestId("legacy-migration-now")).toBeEnabled();
+    expect(await pageB.evaluate(() => localStorage.getItem("4allpass.active-vault"))).toBe(vaultId);
+    // Let page B load the empty reservation before page A claims it.
+    await pageB.waitForTimeout(500);
+
+    let postsA = 0;
+    let releasePost: (() => void) | null = null;
+    const gate = new Promise<void>((resolve) => { releasePost = resolve; });
+    await page.route(new RegExp(`/api/v1/vaults/${vaultId}/snapshots$`), async (route) => {
+      postsA += 1;
+      await gate;
+      const body = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...body, vaultId }),
+      });
+    });
+    let postsB = 0;
+    await pageB.route(new RegExp(`/api/v1/vaults/${vaultId}/snapshots$`), async (route) => {
+      postsB += 1;
+      await route.abort("failed");
+    });
+
+    // Page A claims and parks immediately before its POST.
+    void page.getByTestId("legacy-migration-now").click();
+    await expect.poll(() => postsA).toBe(1);
+    const during = await readReservation(pageB, vaultId);
+    expect(during?.state).toBe("prepared");
+    const owner = during?.operationID;
+    expect(typeof owner).toBe("string");
+
+    // Page B still had an enabled button from its earlier empty read. Its
+    // migration must hit the durable reservation, not a second POST.
+    await pageB.getByTestId("legacy-migration-now").click();
+    await expect(pageB.getByTestId("legacy-migration-message")).toContainText("letzte Versuch ist unklar");
+    await expect(pageB.getByTestId("legacy-migration-now")).toBeDisabled();
+    await pageB.waitForTimeout(250);
+    expect(postsB, "second page must not POST").toBe(0);
+    const afterB = await readReservation(pageB, vaultId);
+    expect(afterB?.operationID).toBe(owner);
+    expect(afterB?.state).toBe("prepared");
+
+    releasePost!();
+    await expect(page.getByTestId("legacy-migration-banner")).toContainText("Tresor aktualisiert");
+    expect(postsA).toBe(1);
+    expect(postsB).toBe(0);
+    const resolved = await readReservation(pageB, vaultId);
+    expect(resolved?.operationID).toBe(owner);
+    expect(resolved?.state).toBe("resolved");
+    await pageB.screenshot({ path: join(OUT, "two-page-blocked.png") });
+    evidence("two-page", {
+      browser: browser.browserType().name(),
+      version: browser.version(),
+      viewport: page.viewportSize(),
+      sourceHead: process.env.AP286_SOURCE_HEAD ?? "unknown",
+      postsA,
+      postsB,
+      owner,
+      during: during?.state,
+      afterB: afterB?.state,
+      resolved: resolved?.state,
+      data: "synthetic only",
+    });
+  } finally {
+    await pageB.close();
+  }
+});
+
+test("unknown raw fields are backed up verbatim and fail closed before POST", async ({ page, context, browser }) => {
+  const { vaultId } = await setupLegacy(page, {
+    decorate: (raw) => {
+      raw.futureTop = { note: "keep me" };
+      (raw.entries as Array<Record<string, unknown>>)[0]!.futureEntry = "keep-entry";
+      (raw.envelopes as Array<Record<string, unknown>>)[0]!.futureEnvelope = { nested: [1, 2, 3] };
+    },
+  });
+  const counter = countMigrationPosts(page, vaultId);
+  await page.getByTestId("legacy-migration-now").click();
+  await expect(page.getByTestId("legacy-migration-message")).toContainText("nicht verlustfrei");
+  await page.waitForTimeout(250);
+  expect(counter.count, "unsupported metadata must not POST").toBe(0);
+  counter.dispose();
+  const reservation = await readReservation(page, vaultId);
+  expect(reservation?.state).toBe("rejected");
+  await page.screenshot({ path: join(OUT, "unsupported-metadata.png") });
+
+  // Genuinely new connection: read the legacy backup from IndexedDB directly.
+  const pageB = await context.newPage();
+  let backup: Record<string, unknown> | null = null;
+  try {
+    await pageB.goto("/");
+    backup = await readLegacyBackup(pageB, vaultId);
+    expect(backup, "durable legacy backup").not.toBeNull();
+    expect(backup?.revision).toBe(1);
+    expect(backup?.sealedManifest).toBeUndefined();
+    expect(backup?.futureTop).toEqual({ note: "keep me" });
+    expect((backup?.entries as Array<Record<string, unknown>>)[0]?.futureEntry).toBe("keep-entry");
+    expect((backup?.envelopes as Array<Record<string, unknown>>)[0]?.futureEnvelope).toEqual({ nested: [1, 2, 3] });
+    expect((backup?.entries as Array<Record<string, unknown>>)[0]?.id).toBe("legacy_browser_1");
+  } finally {
+    await pageB.close();
+  }
+  evidence("unsupported-metadata", {
+    browser: browser.browserType().name(),
+    version: browser.version(),
+    viewport: page.viewportSize(),
+    sourceHead: process.env.AP286_SOURCE_HEAD ?? "unknown",
+    posts: 0,
+    reservation: reservation?.state,
+    backupUnknownTop: backup?.futureTop,
     data: "synthetic only",
   });
 });

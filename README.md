@@ -110,15 +110,18 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 „Jetzt aktualisieren“ oder „Später“; ohne deine Bestätigung wird nichts migriert.
 Vor dem Update legt 4AllPass eine verschlüsselte lokale Sicherung des alten
 Stands ab. Der bisherige Serverstand lässt sich nicht nachträglich beweisen; das
-Update versiegelt den aktuell geöffneten Inhalt für die Zukunft. Bleibt der
-Ausgang unklar, sendet die App ohne positiven Beleg nichts weiter.
+Update versiegelt den aktuell geöffneten Inhalt für die Zukunft. Kann eine
+ältere Version Metadaten nicht verlustfrei übernehmen, bricht die App vor dem
+Senden ab und lässt den Tresor unverändert. Bleibt der Ausgang unklar, sendet die
+App ohne positiven Beleg nichts weiter.
 
 **English:** Older vaults without a manifest remain readable. A banner offers
 “Update now” or “Later”; nothing is migrated without your confirmation. Before
 updating, 4AllPass stores an encrypted local backup of the old state. The
 previous server state cannot be proven retroactively; the update seals the
-currently opened content for the future. If the outcome becomes unknown, the app
-sends nothing further without positive proof.
+currently opened content for the future. If an older version cannot carry metadata
+over losslessly, the app stops before sending and leaves the vault unchanged. If
+the outcome becomes unknown, the app sends nothing further without positive proof.
 
 ## Aktueller Funktionsstand / Current capabilities
 

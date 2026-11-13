@@ -19,7 +19,6 @@ import {
 import {
   emptyDraft,
   encodeEntryPlaintext,
-  type VaultEntry,
 } from "../frontend/src/modules/entries/index.ts";
 
 const [vaultId, password, out] = process.argv.slice(2);
@@ -40,7 +39,7 @@ try {
     vaultKeyVersion: 1,
     kdf: kdfParamsFrom(profile, salt),
   });
-  const item: VaultEntry = {
+  const item = {
     ...emptyDraft("web"),
     id: "native-legacy-entry-1",
     title: "Native legacy fixture",

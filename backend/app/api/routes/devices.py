@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_owned_vault, get_session_store
+from app.api.deps import get_db, get_owned_vault, get_session_store, get_writable_vault
 from app.api.rate_limit import enforce_write_rate_limit
 from app.core.sessions import SessionStore
 from app.core.config import get_settings
@@ -146,7 +146,7 @@ async def list_devices(
 async def register_device(
     payload: RegisterDeviceRequest,
     request: Request,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
@@ -197,7 +197,7 @@ async def get_device(
 async def revoke_device(
     device_id: str,
     request: Request,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> DeviceSummary:
@@ -239,7 +239,7 @@ async def register_credential(
     device_id: str,
     payload: RegisterCredentialRequest,
     request: Request,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
     challenges: Annotated[ChallengeStore, Depends(get_challenge_store)],
@@ -328,7 +328,7 @@ async def put_device_key_envelope(
     credential_id: str,
     payload: WireDeviceKeyEnvelope,
     request: Request,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
     expected_revision: Annotated[int, Query(alias="expectedRevision")],

@@ -412,6 +412,42 @@ still follows successful opening and remains best-effort.
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
+  **Interim write guard (AP-E03-P04):** a session whose device id has a revoked
+  `Device` row in the addressed vault may still read (snapshot, revisions,
+  recovery) but receives HTTP 403 for every mutation: snapshot commit, device
+  POST (including its own re-enrol), device DELETE, credentials POST,
+  Device-Key-Envelope PUT, and both WebAuthn challenge routes. Ownership stays
+  first: foreign vaults are 404. A device revoked in vault A can still write
+  vault B, and a device without a row (legacy or newly claimed id) still writes
+  — the bearer-only gap and ADR-015 §3 (signed writes) remain open. An active
+  device may still re-enrol a revoked id; only the revoked device itself is
+  blocked. The guard takes the vault row lock before the revoked check
+  (`backend/app/db/locking.py`; Postgres `SELECT … FOR UPDATE`, SQLite
+  `BEGIN IMMEDIATE`), so revoke and admitted mutations serialize instead of a
+  get-then-act window. `POST /local/adopt-local-vault` locks all local vaults in
+  sorted order and checks the session device for a revoked row in any of them
+  before transferring ownership; a row whose owner changed under the lock
+  produces 409 `local_vault_changed` and no partial transfer. The write guard
+  also re-reads the owner under the lock, so an old-owner session that waited
+  while a transfer committed gets 404 instead of writing a stale-owned row.
+  Session revocation itself remains user+device-global: revoking in vault A
+  invalidates the device's existing sessions for vault B too; login and a fresh
+  vault-B write still work because the write guard is vault-scoped. Covered by
+  `backend/tests/security/test_revoked_device_writes.py` and
+  `backend/tests/test_local.py`.
+
+  Deutsch: Ein `DELETE /devices/{id}` bleibt reine Metadaten-Revokation, kein
+  kryptografisches Löschen. Als Zwischenschritt darf eine Session, deren
+  Geräte-ID im betroffenen Vault eine revozierte `Device`-Zeile hat, weiterhin
+  **lesen** (Snapshot, Revisionen, Recovery), aber **keine Mutation** mehr
+  ausführen: Snapshot-Commit, Device-POST (auch das eigene Re-Enrol), Device-
+  DELETE, Credential-POST, Device-Key-Envelope-PUT und beide WebAuthn-Challenge-
+  Routen antworten mit 403. Fremde Vaults bleiben 404. Ein in Vault A
+  revoziertes Gerät darf Vault B weiter beschreiben; ein Gerät ohne Zeile
+  (Legacy oder neu behauptete ID) schreibt weiter — diese Bearer-Lücke und
+  ADR-015 §3 (signierte Writes) bleiben offen. Ein aktives Gerät darf eine
+  revozierte ID weiterhin neu einschreiben; nur das revozierte Gerät selbst ist
+  blockiert. Belegt durch `backend/tests/security/test_revoked_device_writes.py`.
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
   Snapshot-cache and device-unlock-record loads, saves and removals succeed

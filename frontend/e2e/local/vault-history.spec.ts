@@ -50,6 +50,7 @@ test("an accidentally deleted entry comes back from an earlier state", async ({ 
 
   const revisionBefore = revisionNumber((await page.getByTestId("revision").textContent()) ?? "");
   const pinBefore = await pinSnapshot(page);
+  expect(pinBefore).toHaveLength(1);
 
   const rows = page.getByTestId("history-list").getByRole("button");
   await expect(rows.first()).toBeVisible();

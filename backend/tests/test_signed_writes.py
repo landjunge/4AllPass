@@ -776,3 +776,161 @@ async def test_signed_device_key_envelope_put_and_replay(client, account):
     replay = await client.put(url, content=env_raw, headers={**account, **env_signed})
     assert replay.status_code == 200, replay.text
     assert replay.headers.get("X-4AP-Write-Replayed") == "true"
+
+
+from fastapi import Depends as _Depends, Request as _Request
+from httpx import ASGITransport as _ASGITransport, AsyncClient as _Client
+from sqlalchemy.ext.asyncio import async_sessionmaker as _sessionmaker
+
+from app.api.deps import get_current_user as _gcuser, get_db as _gdb, get_owned_vault as _gowned, get_writable_vault as _gwritable
+from app.main import create_app as _create_app
+
+
+def _two_clients(engine, db_url: str, gate_old_writer: bool):
+    import asyncio
+
+    entered = asyncio.Event()
+    release = asyncio.Event()
+
+    def build(gate: bool):
+        app2 = _create_app()
+        factory = _sessionmaker(bind=engine, class_=_AsyncSession, expire_on_commit=False, autoflush=False)
+
+        async def override_db():
+            async with factory() as session:
+                try:
+                    yield session
+                    await session.commit()
+                except Exception:
+                    await session.rollback()
+                    raise
+
+        app2.dependency_overrides[_gdb] = override_db
+        if gate:
+            async def gated(
+                request: _Request,
+                vault=_Depends(_gowned),
+                db=_Depends(_gdb),
+                user=_Depends(_gcuser),
+            ):
+                result = await _gwritable(request, vault, db, user)
+                if request.headers.get("X-Test-Barrier") == "old-writer":
+                    entered.set()
+                    await release.wait()
+                return result
+
+            app2.dependency_overrides[_gwritable] = gated
+
+        async def hook(request):
+            request.headers.setdefault("X-Device-Id", DEVICE)
+
+        return _Client(transport=_ASGITransport(app=app2), base_url="http://test", event_hooks={"request": [hook]})
+
+    return build(False), build(gate_old_writer), entered, release
+
+
+async def test_duplicate_operation_two_engines_one_effect(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    first, _, _ = await _commit(
+        client, account, vault_id, priv, pub,
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+    )
+    assert first.status_code == 200, first.text
+
+    operation = uuid.uuid4()
+    nonce = uuid.uuid4().bytes
+    payload = {
+        "expectedRevision": 1, "revision": 2, "vaultKeyVersion": 1,
+        "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
+        "sealedManifest": manifest(b"m2"),
+    }
+    raw = body_bytes(payload)
+    signed, _ = sign(
+        priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+        method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
+        resource_type="vault", resource_id="", parent_id="",
+        base=1, result=2, key_version=1, result_key_version=1,
+        has_manifest=True, manifest_digest=sealed_manifest_digest(payload["sealedManifest"]),
+        payload_digest=write_payload_digest_v2(raw),
+        operation_id=operation, nonce=nonce,
+    )
+
+    engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
+    c1, c2, _, _ = _two_clients(engine2, os.environ["FOURALLPASS_DATABASE_URL"], False)
+    try:
+        async with c1, c2:
+            async def send(c):
+                return await c.post(
+                    f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **signed}
+                )
+            r1, r2 = await asyncio.gather(send(c1), send(c2))
+        assert sorted([r1.status_code, r2.status_code]) == [200, 200], (r1.text, r2.text)
+        replayed = [r for r in (r1, r2) if r.headers.get("X-4AP-Write-Replayed") == "true"]
+        assert len(replayed) == 1
+        revisions = await client.get(f"/api/v1/vaults/{vault_id}/revisions", headers=account)
+        assert len(revisions.json()) == 2
+    finally:
+        await engine2.dispose()
+
+
+@_pytest.mark.skipif(
+    "postgres" not in os.environ.get("FOURALLPASS_DATABASE_URL", ""),
+    reason="real-engine rotation barrier runs on the Postgres CI job",
+)
+async def test_pg_rotation_beats_waiting_old_key_write(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+    first, _, _ = await _commit(
+        client, account, vault_id, priv, pub,
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+    )
+    assert first.status_code == 200, first.text
+
+    engine2 = _create_engine(os.environ["FOURALLPASS_DATABASE_URL"])
+    normal, gated_client, entered, release = _two_clients(engine2, os.environ["FOURALLPASS_DATABASE_URL"], True)
+    try:
+        old_payload = {
+            "expectedRevision": 1, "revision": 2, "vaultKeyVersion": 1,
+            "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
+            "sealedManifest": manifest(b"old"),
+        }
+        old_raw = body_bytes(old_payload)
+        old_signed, _ = sign(
+            priv=priv, pub=pub, vault_id=vault_id, device_id=DEVICE,
+            method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
+            resource_type="vault", resource_id="", parent_id="",
+            base=1, result=2, key_version=1, result_key_version=1,
+            has_manifest=True, manifest_digest=sealed_manifest_digest(old_payload["sealedManifest"]),
+            payload_digest=write_payload_digest_v2(old_raw),
+            operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
+        )
+        old_signed["X-Test-Barrier"] = "old-writer"
+
+        async with normal, gated_client:
+            writer = asyncio.create_task(
+                gated_client.post(
+                    f"/api/v1/vaults/{vault_id}/snapshots", content=old_raw, headers={**account, **old_signed}
+                )
+            )
+            await entered.wait()
+
+            new_priv = Ed25519PrivateKey.generate()
+            rotated, _, _ = await _commit(
+                normal, account, vault_id, priv, pub,
+                revision=2, base=1, key_version=1, result_key_version=2,
+                manifest_obj=manifest(b"rotated"),
+                next_priv=new_priv,
+                next_pub=new_priv.public_key().public_bytes_raw(),
+            )
+            assert rotated.status_code == 200, rotated.text
+
+            release.set()
+            stale = await writer
+            assert stale.status_code == 409, stale.text
+            assert stale.json()["detail"] in {
+                "write_revision_conflict", "write_key_version_mismatch"
+            }
+    finally:
+        release.set()
+        await engine2.dispose()

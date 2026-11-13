@@ -86,10 +86,21 @@
 
   const signIn = async () => {
     if (byId("auth-submit")) {
+      // The first-run form defaults to account creation; the seeded account
+      // already exists, so switch to the login mode first.
+      if (byId("auth-switch")) {
+        byId("auth-switch").click();
+        await sleep(250);
+      }
       fillField(document.querySelector('input[type="email"]'), accountEmail);
       fillField(document.querySelector('input[type="password"]'), accountPassword);
       await sleep(100);
       await click("auth-submit");
+      await sleep(500);
+      const error = byId("error-banner");
+      if (error && (error.textContent || "").trim()) {
+        throw new Error("account-login-failed:" + (error.textContent || "").trim());
+      }
       check("account-login");
     }
     // Account UI may show the vault create/unlock screen next; the seeded vault

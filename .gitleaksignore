@@ -18,3 +18,13 @@
 # exactly the mistake the note above warns about.
 90ddc3742efa7e35d0b093a57975c2b8e03e63f1:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:20
 14c0454b41363185d02f2301c073fb89944c73f8:frontend/e2e/local/poisoned-head-recovery.spec.ts:generic-api-key:22
+
+# RFC 8032 §7.1 TEST 1 / TEST 2 are published, intentionally public test
+# vectors (https://www.rfc-editor.org/rfc/rfc8032.html#section-7.1), not
+# secrets. Commit 7ade42b stored their seeds and public keys as hex before
+# the fixture moved to byte arrays; these four historical findings are pinned
+# by exact fingerprint. Do not widen this to a path or rule allowlist.
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/generate-write-request-vectors.mjs:generic-api-key:76
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/generate-write-request-vectors.mjs:generic-api-key:84
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:32
+7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:39

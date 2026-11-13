@@ -31,6 +31,8 @@ src/
   revision.ts           evaluateRevision / rollback, downgrade, equivocation
   snapshot.ts           verifySnapshot / unlockSnapshot (vault-revision.md §6)
   wire.ts               JSON encode/decode for server transport (strict)
+  requester.ts          requester identity (Ed25519 verify) + canonical v2
+                        signed-write preimage, Draft Rev2 (bytes only, no signing)
   random.ts             CSPRNG helpers
   memory.ts             best-effort zeroize
 ```
@@ -44,6 +46,7 @@ src/
 - Opening is done against an expectation. AAD built from an object's own fields proves self-consistency, not identity.
 - Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshotManifest` returns those copies — **apply them**, not the objects you passed in.
 - Identifiers must be well-formed UTF-16. A lone surrogate has no UTF-8 encoding and would collapse two identities into one U+FFFD.
+- Signed writes are not canonical JSON. `writeRequestBytesV2` is the exact v2 preimage from the contract: framed fields, presence as framed uint32 `0|1` with an empty digest, and the 1..128-character id bound — a 128-emoji id is 512 bytes and still valid. Draft Rev2 binds `deviceId` directly after `vaultId`; the server must match it to `X-Device-Id`.
 - `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.
 - The printed Recovery Key is never used as an AES key; `deriveRecoveryWrappingKey` first.

@@ -247,17 +247,32 @@ export async function signWriteV2(
   return { request, canonical, signature, headers };
 }
 
-function validReceipt(payload: unknown): boolean {
+export interface SignedWriteExpectation {
+  operationId: string;
+  vaultId: string;
+  route: string;
+  resourceType: string;
+  resourceId: string;
+  parentId: string;
+}
+
+function validReceipt(payload: unknown, expected: SignedWriteExpectation): boolean {
   if (typeof payload !== "object" || payload === null) return false;
   const receipt = payload as Record<string, unknown>;
+  const resource = receipt.resource as Record<string, unknown> | undefined;
+  const outcome = receipt.outcome as Record<string, unknown> | undefined;
   return (
-    typeof receipt.schema === "string" &&
-    receipt.schema.startsWith("4allpass-write-receipt-v") &&
+    receipt.schema === "4allpass-write-receipt-v1" &&
     receipt.bodyAvailable === false &&
-    typeof receipt.operationId === "string" &&
-    typeof receipt.outcome === "object" &&
-    receipt.outcome !== null &&
-    typeof (receipt.outcome as Record<string, unknown>).status === "number"
+    receipt.operationId === expected.operationId &&
+    receipt.vaultId === expected.vaultId &&
+    receipt.route === expected.route &&
+    resource?.type === expected.resourceType &&
+    resource?.id === expected.resourceId &&
+    resource?.parentId === expected.parentId &&
+    typeof outcome?.status === "number" &&
+    outcome.status >= 200 &&
+    outcome.status < 300
   );
 }
 
@@ -276,11 +291,15 @@ export function classifySignedWriteResponse(
   status: number,
   headers: Headers,
   payload: unknown,
+  expected?: SignedWriteExpectation,
 ): SignedWriteOutcome {
   const replayHeader = headers.get("X-4AP-Write-Replayed") === "true";
   const success = status >= 200 && status < 300;
   if (success && replayHeader) {
-    if (!validReceipt(payload)) {
+    if (!expected) {
+      return { kind: "unknown", reason: "missing_receipt_expectation" };
+    }
+    if (!validReceipt(payload, expected)) {
       return { kind: "unknown", reason: "invalid_replay_receipt" };
     }
     return { kind: "replayed", status, receipt: payload };

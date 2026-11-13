@@ -58,7 +58,8 @@ const s1 = await signWriteV2({
 const first = await req(`/api/v1/vaults/${vaultId}/snapshots`, { method: "POST", token, body: snap1, headers: s1.headers });
 if (first.status !== 200) throw new Error(`snapshot ${first.status} ${json(first.data)}`);
 const replay = await req(`/api/v1/vaults/${vaultId}/snapshots`, { method: "POST", token, body: snap1, headers: s1.headers });
-if (replay.status !== 200 || classifySignedWriteResponse(replay.status, replay.headers, replay.data).kind !== "replayed") throw new Error("replay");
+const replayExpectation = { operationId: s1.request.operationId, vaultId, route: "/api/v1/vaults/{vaultId}/snapshots", resourceType: "vault", resourceId: "", parentId: "" };
+if (replay.status !== 200 || classifySignedWriteResponse(replay.status, replay.headers, replay.data, replayExpectation).kind !== "replayed") throw new Error("replay");
 
 const tampered = JSON.parse(snap1); tampered.sealedManifest.ciphertext = b64(new TextEncoder().encode("different"));
 const conflict = await req(`/api/v1/vaults/${vaultId}/snapshots`, { method: "POST", token, body: json(tampered), headers: s1.headers });

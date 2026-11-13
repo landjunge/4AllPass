@@ -65,7 +65,18 @@ describe("v2 client signer", () => {
       bodyAvailable: false,
       outcome: { status: 200, code: "ok" },
     };
-    assert.equal(classifySignedWriteResponse(200, h, receipt).kind, "replayed");
+    const expected = {
+      operationId: receipt.operationId,
+      vaultId: "6f0c1c1a-3f4e-4c1d-9a7e-2b8d0f5a1c33",
+      route: "/api/v1/vaults/{vaultId}/snapshots",
+      resourceType: "vault",
+      resourceId: "",
+      parentId: "",
+    };
+    const bound = { ...receipt, vaultId: expected.vaultId, route: expected.route, resource: { type: "vault", id: "", parentId: "" } };
+    assert.equal(classifySignedWriteResponse(200, h, bound, expected).kind, "replayed");
+    assert.equal(classifySignedWriteResponse(200, h, receipt, expected).kind, "unknown");
+    assert.equal(classifySignedWriteResponse(200, h, bound).kind, "unknown");
     assert.deepEqual(classifySignedWriteResponse(403, new Headers(), { detail: "device_revoked" }), {
       kind: "rejected",
       status: 403,
@@ -157,14 +168,29 @@ describe("v2 client signer fail-closed checks", () => {
     });
     assert.deepEqual(classifySignedWriteResponse(200, replay, {}), {
       kind: "unknown",
-      reason: "invalid_replay_receipt",
+      reason: "missing_receipt_expectation",
     });
+    assert.deepEqual(
+      classifySignedWriteResponse(200, replay, {}, {
+        operationId: "x", vaultId: "v", route: "r", resourceType: "vault", resourceId: "", parentId: "",
+      }),
+      { kind: "unknown", reason: "invalid_replay_receipt" },
+    );
     const receipt = {
       schema: "4allpass-write-receipt-v1",
       operationId: "0b9d2b7e-5a41-4c8f-8f0e-6d1c2a3b4c5d",
       bodyAvailable: false,
       outcome: { status: 200, code: "ok" },
     };
-    assert.equal(classifySignedWriteResponse(200, replay, receipt).kind, "replayed");
+    const expected2 = {
+      operationId: receipt.operationId,
+      vaultId: "6f0c1c1a-3f4e-4c1d-9a7e-2b8d0f5a1c33",
+      route: "/api/v1/vaults/{vaultId}/snapshots",
+      resourceType: "vault",
+      resourceId: "",
+      parentId: "",
+    };
+    const bound2 = { ...receipt, vaultId: expected2.vaultId, route: expected2.route, resource: { type: "vault", id: "", parentId: "" } };
+    assert.equal(classifySignedWriteResponse(200, replay, bound2, expected2).kind, "replayed");
   });
 });

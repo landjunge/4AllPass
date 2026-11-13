@@ -11,7 +11,8 @@ import { loadPin } from "./revision-pin.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import {
-  CommitConflict, commitEntries, createVault, lock, setMasterPasswordAfterRecovery,
+  CommitConflict, commitEntries, createVault, hardRevokeDevice, lock,
+  rotateCompromisedRecovery, setMasterPasswordAfterRecovery,
   unlockWithMasterPassword, unlockWithRecoveryKey,
 } from "./vault-session.ts";
 import { replaceMasterAfterRecovery } from "./recovery-master.ts";
@@ -239,4 +240,48 @@ test("actual reset completed after manual lock/account clear cannot reopen or re
   assert.ok(result && (result as typeof vault).vaultKey.every((b) => b === 0));
   assert.ok(!(result as typeof vault | null)?.entries[0]?.password);
   assert.equal(loadPin(ID)?.revision, 2, "a stale commit must not move the pin; the server head advances, the UI stays locked");
+});
+
+test("trusted kit still opens the head after a hard revoke (user flow)", async () => {
+  const vault = await unlockWithMasterPassword(ID, OLD);
+  const revoked = await hardRevokeDevice(vault, {
+    targetDeviceId: "dev_other_synthetic_revoke",
+    masterPassword: OLD,
+    recoveryKeyText: kit,
+  });
+  assert.equal(revoked.vault.vaultKeyVersion, 2);
+  assert.equal(revoked.vault.revision, 3);
+  lock(revoked.vault);
+
+  const reopened = await unlockWithRecoveryKey(ID, kit);
+  assert.equal(reopened.vaultKeyVersion, 2);
+  assert.equal(reopened.entries[0]?.password, "synthetic-entry-only");
+  lock(reopened);
+});
+
+test("rotated kit: old print opens a historic copy, not the new head; new print opens the head", async () => {
+  const vault = await unlockWithMasterPassword(ID, OLD);
+  const historic = structuredClone(head);
+  const rotated = await rotateCompromisedRecovery(vault, {
+    masterPassword: OLD,
+    previousRecoveryKeyText: kit,
+  });
+  assert.equal(rotated.vault.vaultKeyVersion, 2);
+  assert.notEqual(rotated.recoveryKey, kit);
+
+  await assert.rejects(() => unlockWithRecoveryKey(ID, kit), AuthFailureError);
+  const byNew = await unlockWithRecoveryKey(ID, rotated.recoveryKey);
+  assert.equal(byNew.vaultKeyVersion, 2);
+  assert.equal(byNew.entries[0]?.password, "synthetic-entry-only");
+  lock(byNew);
+
+  // A copied historic snapshot (fresh profile, no pin) still opens with the old
+  // print; it does not become the current head.
+  clearTestStorage();
+  setSnapshotCacheForTests(memorySnapshotCache());
+  api.getSnapshot = async () => structuredClone(historic);
+  const historicVault = await unlockWithRecoveryKey(ID, kit);
+  assert.equal(historicVault.vaultKeyVersion, 1);
+  assert.equal(historicVault.entries[0]?.password, "synthetic-entry-only");
+  lock(historicVault);
 });

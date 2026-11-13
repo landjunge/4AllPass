@@ -9,6 +9,7 @@ export type NoticeCode =
   | "entries_saved"
   | "password_reuse_warning"
   | "recovery_compromised_rotated"
+  | "recovery_master_set"
   | "recovery_replaced"
   | "share_restored"
   | "vault_created"
@@ -87,6 +88,10 @@ const NOTICE_TEXT: Record<NoticeCode, Line> = {
   recovery_compromised_rotated: {
     de: "Tresor-Schlüssel gewechselt, weil das Recovery-Kit gestohlen sein kann. Neuen Schlüssel sichern.",
     en: "Vault key rotated because the recovery kit may be stolen. Save the new kit.",
+  },
+  recovery_master_set: {
+    de: "Neues Master-Passwort gesetzt. Alte Geräte müssen neu eingerichtet werden.",
+    en: "New master password set. Devices must be enrolled again.",
   },
   recovery_replaced: {
     de: "Neuer Recovery-Schlüssel gedruckt. Der alte öffnet diesen Stand nicht mehr.",

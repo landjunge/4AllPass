@@ -219,6 +219,8 @@ def negative_port_checks(binary: Path, output: Path, base_env: dict) -> dict:
     for name, value in cases.items():
         task = output / f"port-{name}-{uuid.uuid4().hex}"
         env = dict(base_env)
+        env.pop("TAURI_CONFIG", None)
+        env["FOURALLPASS_NATIVE_SCENARIO"] = "legacy-known"
         env.pop("FOURALLPASS_TEST_CORE_PORT", None)
         if value is not None:
             env["FOURALLPASS_TEST_CORE_PORT"] = value
@@ -243,6 +245,8 @@ def negative_port_checks(binary: Path, output: Path, base_env: dict) -> dict:
     occupied_port = choose_port()
     task = output / f"port-occupied-{uuid.uuid4().hex}"
     env = dict(base_env)
+    env.pop("TAURI_CONFIG", None)
+    env["FOURALLPASS_NATIVE_SCENARIO"] = "legacy-known"
     env["FOURALLPASS_TEST_CORE_PORT"] = str(occupied_port)
     env["FOURALLPASS_DATA_DIR"] = str(task / "data")
     with socket.socket() as listener:

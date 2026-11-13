@@ -20,6 +20,8 @@ from app.core.write_request import (
     write_request_bytes_v2,
 )
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
 PASSWORD = "CorrectHorseBatteryStaple9!"
 EMAIL = "signed.writes@example.com"
 DEVICE = "dev_signed_writes_0001"

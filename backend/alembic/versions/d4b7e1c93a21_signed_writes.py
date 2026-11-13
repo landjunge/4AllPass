@@ -14,6 +14,8 @@ from typing import Union
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.types import OpaqueJSON
+
 revision: str = "d4b7e1c93a21"
 down_revision: Union[str, None] = "c3f8d10a62b4"
 branch_labels = None
@@ -49,7 +51,7 @@ def upgrade() -> None:
         sa.Column("status", sa.String(16), nullable=False),
         sa.Column("outcome_status", sa.Integer(), nullable=True),
         sa.Column("outcome_code", sa.String(64), nullable=True),
-        sa.Column("result", sa.JSON(), nullable=True),
+        sa.Column("result", OpaqueJSON, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.UniqueConstraint("vault_id", "operation_id", name="uq_write_receipts_vault_operation"),
     )

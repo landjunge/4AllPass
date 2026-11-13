@@ -133,9 +133,9 @@ claimed.
 
 ## Aktueller Funktionsstand / Current capabilities
 
-**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen. Signierte Schreibvorgänge (v2) sind derzeit nur als kanonische Kodierung vorbereitet und **nicht aktiv**; die bisherigen Schreib- und Revoke-Grenzen gelten unverändert.
 
-**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet.
+**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet. Signed vault writes (v2) are prepared only as a canonical encoding and are **not active**; the existing write and revoke boundaries still apply.
 
 Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. / Source and distributed downloads are separate: existing v0.1.2-rc.2 packages do not automatically include the later source correction. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
 

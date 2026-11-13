@@ -559,7 +559,7 @@ async def test_old_owner_write_is_rechecked_after_a_concurrent_owner_transfer(cl
     token_a = await _login(client, email_a, DEVICE_A)
 
     email_b, _ = await _signup(client)
-    async with AsyncSession(bind=engine) as session:
+    async with AsyncSession(bind=engine, expire_on_commit=False) as session:
         user_b = (
             await session.execute(select(User).where(User.email == email_b))
         ).scalar_one()
@@ -592,7 +592,7 @@ async def test_old_owner_write_is_rechecked_after_a_concurrent_owner_transfer(cl
         await asyncio.wait_for(entered.wait(), 2)
 
         async def transfer_owner():
-            async with AsyncSession(bind=engine) as session:
+            async with AsyncSession(bind=engine, expire_on_commit=False) as session:
                 row = await session.get(Vault, _uuid.UUID(vault_id))
                 assert row is not None
                 row.owner_user_id = user_b.id
@@ -609,8 +609,125 @@ async def test_old_owner_write_is_rechecked_after_a_concurrent_owner_transfer(cl
         response = await write
         await asyncio.wait_for(transfer, 2)
         assert response.status_code == (200 if sqlite else 404), response.text
-        async with AsyncSession(bind=engine) as session:
+        async with AsyncSession(bind=engine, expire_on_commit=False) as session:
             row = await session.get(Vault, _uuid.UUID(vault_id))
             assert row is not None and row.owner_user_id == user_b.id
     finally:
         deps_module.lock_vault_row = original
+
+
+async def test_two_adopters_real_db_engine_one_owner(engine, tmp_path, monkeypatch):
+    """Postgres CI runs this on the real engine fixture; SQLite serializes earlier.
+
+    Both requests read the LOCAL vault ids before the lock. B waits at the lock
+    barrier, A commits the owner change, then B must see 409/no transfer. The
+    frozen 174 code (id-only re-select) would transfer the Vault to B as well.
+    """
+    from uuid import UUID
+
+    from httpx import ASGITransport, AsyncClient as HttpxAsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from app.api.routes import local_meta
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+    from app.core.config import get_settings
+    from app.db.session import get_db
+    from app.main import create_app
+    from app.models.user import User
+    from app.models.vault import Vault
+
+    dist = tmp_path / "local-dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<!doctype html><title>local</title>", encoding="utf-8")
+    monkeypatch.setenv("FOURALLPASS_PROFILE", "local")
+    monkeypatch.setenv("FOURALLPASS_UI_DIST", str(dist))
+    get_settings.cache_clear()
+    local_app = create_app()
+    factory = async_sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
+    )
+
+    async def override_get_db():
+        async with factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    local_app.dependency_overrides[get_db] = override_get_db
+    try:
+        async with AsyncSession(bind=engine, expire_on_commit=False) as session:
+            local = User(email=LOCAL_ACCOUNT_EMAIL)
+            session.add(local)
+            await session.flush()
+            vault = Vault(owner_user_id=local.id, crypto_protocol_version=1)
+            session.add(vault)
+            await session.commit()
+            vault_id = str(vault.id)
+            local_id = local.id
+
+        async with HttpxAsyncClient(
+            transport=ASGITransport(app=local_app), base_url="http://127.0.0.1:8788"
+        ) as local_client:
+            users = []
+            for index, email in enumerate(("engine-adopt-a@example.com", "engine-adopt-b@example.com")):
+                device = {"X-Device-Id": f"dev_engineadopt000000{index:03d}"}
+                registered = await local_client.post(
+                    "/api/v1/auth/register",
+                    json={"email": email, "password": "account-password-1234"},
+                    headers=device,
+                )
+                assert registered.status_code == 200, registered.text
+                users.append({**device, "Authorization": f"Bearer {registered.json()['token']}"})
+
+            original = local_meta.lock_vault_rows
+            entered = asyncio.Event()
+            release = asyncio.Event()
+            calls = 0
+
+            async def gated(db, vault_ids):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    entered.set()
+                    await release.wait()
+                return await original(db, vault_ids)
+
+            local_meta.lock_vault_rows = gated
+            try:
+                first = asyncio.create_task(
+                    local_client.post("/api/v1/local/adopt-local-vault", headers=users[1])
+                )
+                await asyncio.wait_for(entered.wait(), 2)
+                second = asyncio.create_task(
+                    local_client.post("/api/v1/local/adopt-local-vault", headers=users[0])
+                )
+                await asyncio.sleep(0.3)
+                release.set()
+                responses = await asyncio.gather(first, second)
+            finally:
+                local_meta.lock_vault_rows = original
+
+        assert all(response.status_code in {200, 409} for response in responses)
+        winners = [
+            response
+            for response in responses
+            if response.status_code == 200 and response.json().get("vaultId")
+        ]
+        assert len(winners) == 1, [response.text for response in responses]
+        assert winners[0].json()["vaultId"] == vault_id
+        winner_index = responses.index(winners[0])
+        async with AsyncSession(bind=engine, expire_on_commit=False) as session:
+            row = await session.get(Vault, UUID(vault_id))
+            assert row is not None
+            assert row.owner_user_id != local_id
+            owner = await session.get(User, row.owner_user_id)
+            assert owner is not None
+            # winner_index 0 is user B, index 1 is user A
+            expected_email = ("engine-adopt-b@example.com", "engine-adopt-a@example.com")[winner_index]
+            assert owner.email == expected_email
+    finally:
+        local_app.dependency_overrides.clear()
+        get_settings.cache_clear()

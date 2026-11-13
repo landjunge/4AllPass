@@ -119,6 +119,14 @@ test("a new master password is only offered after a recovery unlock", async () =
   await assert.rejects(() => establishMasterAfterRecovery(vault, NEW_PASSWORD), /recovery unlock/);
 });
 
+test("empty or too-short new master passwords are rejected at the library boundary", async () => {
+  const { vault } = buildVault();
+  const state = mockCommit();
+  await assert.rejects(() => establishMasterAfterRecovery(vault, ""), /at least 10/);
+  await assert.rejects(() => establishMasterAfterRecovery(vault, "short"), /at least 10/);
+  assert.equal(state.calls, 0);
+});
+
 test("a lock during the flow aborts before any commit", async () => {
   const { vault } = buildVault();
   const state = mockCommit();

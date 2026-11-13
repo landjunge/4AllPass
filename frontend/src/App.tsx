@@ -25,7 +25,6 @@ export function App(): ReactNode {
     revokeProgress,
     reconcileHardRevoke,
     recoveryKey,
-    recoveryMasterPending,
     clearMessages,
     lock,
     signOut,
@@ -117,7 +116,7 @@ export function App(): ReactNode {
         )}
       </main>
 
-      {recoveryMasterPending ? <RecoveryMasterDialog /> : null}
+      <RecoveryMasterDialog />
       {recoveryKey ? <RecoveryKitDialog /> : null}
     </div>
   );

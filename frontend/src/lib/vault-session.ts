@@ -725,6 +725,11 @@ export async function establishMasterAfterRecovery(
   if (vault.unlockedWith !== "recovery_key") {
     throw new Error("a new master password is only offered after a recovery unlock");
   }
+  // Same floor as the create-vault form. This is the library boundary: direct
+  // callers cannot set an empty or trivially short master password.
+  if (typeof newMasterPassword !== "string" || newMasterPassword.length < 10) {
+    throw new Error("master password must be at least 10 characters");
+  }
   liveness?.assertLive();
   const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
   if (!masterEnvelope?.kdf) throw new Error("snapshot has no master envelope");

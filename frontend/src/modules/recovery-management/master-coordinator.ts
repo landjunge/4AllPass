@@ -1,6 +1,6 @@
 import { lock, setMasterPasswordAfterRecovery, type UnlockedVault } from "../../lib/vault-session.ts";
 import { feedbackError } from "../feedback/index.ts";
-import { savePin } from "../../lib/revision-pin.ts";
+import { persistDeferredPin } from "../../lib/vault-session.ts";
 
 export interface RecoveryMasterOffer { vaultId: string; stage: "password" | "devices"; busy: boolean }
 interface Callbacks {
@@ -69,7 +69,7 @@ export function createRecoveryMasterCoordinator(
         return;
       }
       // Adopt only here; a deferred pin from the commit is written now.
-      if (next.acceptedPin) savePin(next.acceptedPin);
+      persistDeferredPin(next.vaultId, next.revision);
       // Commit adoption is complete before offering any separate device step.
       callbacks().replaceUnlockedVault(next);
       context = next;

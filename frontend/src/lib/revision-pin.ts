@@ -56,9 +56,5 @@ export function savePin(pin: VaultRevision): void {
   if (pin.manifestDigest) {
     stored.manifestDigest = bytesToBase64(pin.manifestDigest);
   }
-  // The pin stores only revision/VK version/manifest digest, never key
-  // material. CodeQL follows it from an UnlockedVault return; the alert is a
-  // false positive for this documented metadata.
-  // lgtm[js/clear-text-storage-of-sensitive-data]
   localStorage.setItem(PIN_PREFIX + pin.vaultId, JSON.stringify(stored));
 }

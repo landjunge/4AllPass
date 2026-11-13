@@ -98,6 +98,19 @@ export { HistoricRevisionUnreadable } from "./historic-snapshot.ts";
 
 export type UnlockMethod = "master_password" | "recovery_key" | DeviceUnlockMechanism;
 
+/** Pins produced by a commit that deferred adoption; written only when the
+ * coordinator adopts the exact returned revision. Metadata only, never keys. */
+const deferredPins = new Map<string, VaultRevision>();
+
+export function persistDeferredPin(vaultId: string, revision: number): void {
+  const key = `${vaultId}#${revision}`;
+  const pin = deferredPins.get(key);
+  if (pin) {
+    deferredPins.delete(key);
+    savePin(pin);
+  }
+}
+
 export interface UnlockedVault {
   vaultId: string;
   revision: number;
@@ -899,6 +912,11 @@ async function commitSnapshot(
     if (options?.liveness && !options.liveness.isLive()) {
       discardOpenedVault(accepted);
       throw new VaultLockedError();
+    }
+    if (options?.deferPin) {
+      const pin = accepted.acceptedPin;
+      if (pin) deferredPins.set(`${accepted.vaultId}#${pin.revision}`, pin);
+      delete accepted.acceptedPin;
     }
     return accepted;
   } catch (error) {

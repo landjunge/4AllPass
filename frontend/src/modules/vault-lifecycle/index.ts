@@ -20,7 +20,6 @@ import {
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
-import { savePin } from "../../lib/revision-pin.ts";
 import { restoreEntry } from "../../lib/entry-restore.ts";
 import { restoreBackup as runRestoreBackup } from "../../lib/backup.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
@@ -98,8 +97,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     vaultRef.current = next;
     setVault(next);
     setLockState(next ? "UNLOCKED" : "LOCKED");
-    // The commit may have deferred the pin for stale-safe adoption.
-    if (next?.acceptedPin) savePin(next.acceptedPin);
   }, []);
 
   const currentVault = useCallback(() => vaultRef.current, []);

@@ -1,7 +1,7 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import type { webcrypto } from "node:crypto";
-import { bytesToHex } from "./encoding/bytes.ts";
-import { writeRequestBytesV2, type WriteRequestV2 } from "./requester.ts";
+import { bytesToHex, equalBytes } from "./encoding/bytes.ts";
+import { writeRequestBytesV2, writePublicKeyDigestV2, type WriteRequestV2 } from "./requester.ts";
 
 /**
  * Client half of the v2 signed-write path (ADR-015 step 3).
@@ -74,13 +74,18 @@ function pkcs8FromSeed(seed: Uint8Array): Uint8Array {
   return out;
 }
 
-async function importSeed(seed: Uint8Array): Promise<webcrypto.CryptoKey> {
-  const subtle = subtleCrypto();
+async function importSeed(
+  seed: Uint8Array,
+  subtle: webcrypto.SubtleCrypto | undefined = subtleCrypto(),
+): Promise<webcrypto.CryptoKey> {
   if (!subtle) throw new SignerUnavailableError("no SubtleCrypto");
+  const der = pkcs8FromSeed(seed);
   try {
-    return await subtle.importKey("pkcs8", pkcs8FromSeed(seed), "Ed25519", false, ["sign"]);
+    return await subtle.importKey("pkcs8", der, "Ed25519", false, ["sign"]);
   } catch {
     throw new SignerUnavailableError("Ed25519 PKCS#8 import is unavailable");
+  } finally {
+    der.fill(0);
   }
 }
 
@@ -89,8 +94,10 @@ async function importSeed(seed: Uint8Array): Promise<webcrypto.CryptoKey> {
  * §7.1 TEST 1 signature. A user agent that cannot sign the known vector cannot
  * produce a v2 write either.
  */
-export async function probeSigner(): Promise<SignerProbe> {
-  const subtle = subtleCrypto();
+export async function probeSigner(
+  options: { subtle?: webcrypto.SubtleCrypto | null } = {},
+): Promise<SignerProbe> {
+  const subtle = options.subtle === undefined ? subtleCrypto() : options.subtle ?? undefined;
   if (!subtle) return { available: false, reason: "no SubtleCrypto" };
   const seed = Uint8Array.from(
     "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
@@ -105,7 +112,7 @@ export async function probeSigner(): Promise<SignerProbe> {
   const expected =
     "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b";
   try {
-    const privateKey = await importSeed(seed);
+    const privateKey = await importSeed(seed, subtle);
     const signature = new Uint8Array(await subtle.sign("Ed25519", privateKey, new Uint8Array(0)));
     if (bytesToHex(signature) !== expected) {
       return { available: false, reason: "Ed25519 sign does not match RFC 8032" };
@@ -113,8 +120,9 @@ export async function probeSigner(): Promise<SignerProbe> {
     const verifyKey = await subtle.importKey("raw", publicKey, "Ed25519", false, ["verify"]);
     const verified = await subtle.verify("Ed25519", verifyKey, signature, new Uint8Array(0));
     return verified ? { available: true } : { available: false, reason: "Ed25519 verify failed" };
-  } catch (error) {
-    return { available: false, reason: error instanceof Error ? error.message : "probe failed" };
+  } catch {
+    // Never echo an underlying error object: it can carry runtime internals.
+    return { available: false, reason: "Ed25519 probe failed" };
   }
 }
 
@@ -179,6 +187,17 @@ export async function signWriteV2(
   if (fields.nonce.length !== WRITE_NONCE_BYTES) {
     throw new SignedWriteInputError("nonce must be 16 bytes");
   }
+  if (fields.hasNextKey !== Boolean(next)) {
+    throw new SignedWriteInputError("hasNextKey and next key must agree");
+  }
+  if (fields.hasNextKey && next) {
+    if (next.publicKey.length !== WRITE_PUBLIC_KEY_BYTES) {
+      throw new SignedWriteInputError("next publicKey must be 32 bytes");
+    }
+    if (!equalBytes(writePublicKeyDigestV2(next.publicKey), fields.nextPublicKeyDigest)) {
+      throw new SignedWriteInputError("nextPublicKeyDigest does not match next key");
+    }
+  }
   const request: WriteRequestV2 = {
     vaultId: fields.vaultId,
     deviceId: fields.deviceId,
@@ -228,6 +247,20 @@ export async function signWriteV2(
   return { request, canonical, signature, headers };
 }
 
+function validReceipt(payload: unknown): boolean {
+  if (typeof payload !== "object" || payload === null) return false;
+  const receipt = payload as Record<string, unknown>;
+  return (
+    typeof receipt.schema === "string" &&
+    receipt.schema.startsWith("4allpass-write-receipt-v") &&
+    receipt.bodyAvailable === false &&
+    typeof receipt.operationId === "string" &&
+    typeof receipt.outcome === "object" &&
+    receipt.outcome !== null &&
+    typeof (receipt.outcome as Record<string, unknown>).status === "number"
+  );
+}
+
 export type SignedWriteOutcome =
   | { kind: "ok"; status: number; body: unknown }
   | { kind: "replayed"; status: number; receipt: unknown }
@@ -244,11 +277,19 @@ export function classifySignedWriteResponse(
   headers: Headers,
   payload: unknown,
 ): SignedWriteOutcome {
-  if (headers.get("X-4AP-Write-Replayed") === "true") {
+  const replayHeader = headers.get("X-4AP-Write-Replayed") === "true";
+  const success = status >= 200 && status < 300;
+  if (success && replayHeader) {
+    if (!validReceipt(payload)) {
+      return { kind: "unknown", reason: "invalid_replay_receipt" };
+    }
     return { kind: "replayed", status, receipt: payload };
   }
-  if (status >= 200 && status < 300) {
+  if (success) {
     return { kind: "ok", status, body: payload };
+  }
+  if (replayHeader) {
+    return { kind: "unknown", reason: "replay_header_on_error" };
   }
   const detail =
     typeof payload === "object" && payload !== null && "detail" in payload

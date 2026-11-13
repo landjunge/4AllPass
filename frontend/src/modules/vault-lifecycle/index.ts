@@ -7,7 +7,6 @@ import type { VaultEntry } from "../../lib/entries.ts";
 import {
   commitEntries,
   createVault,
-  establishMasterAfterRecovery,
   findRecoverableRevision,
   migrateLegacySnapshot,
   restoreRecoveredRevision,
@@ -21,6 +20,7 @@ import {
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
+import { savePin } from "../../lib/revision-pin.ts";
 import { restoreEntry } from "../../lib/entry-restore.ts";
 import { restoreBackup as runRestoreBackup } from "../../lib/backup.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
@@ -39,6 +39,7 @@ export interface UseVaultLifecycleOptions {
   passwordsCollide(vaultPassword: string): boolean;
   onPasswordReuseWarning(): void;
   updateLocalStore(status: LocalStoreStatus): void;
+  onRecoveryUnlock(vault: UnlockedVault): void;
 }
 
 export interface VaultLifecycleState {
@@ -48,8 +49,6 @@ export interface VaultLifecycleState {
   vault: UnlockedVault | null;
   deviceUnlockAvailable: boolean;
   recoveryKey: string | null;
-  /** True after a recovery unlock until a new master password is set or skipped. */
-  recoveryMasterPending: boolean;
 }
 
 export interface VaultLifecycleActions {
@@ -61,8 +60,6 @@ export interface VaultLifecycleActions {
   restoreFromShare(fileText: string, shareKey: string, masterPassword: string): Promise<void>;
   unlockWithPassword(masterPassword: string): Promise<void>;
   unlockWithRecovery(recoveryKey: string): Promise<void>;
-  establishRecoveryMaster(newMasterPassword: string): Promise<void>;
-  skipRecoveryMaster(): void;
   findHeadRecovery(masterPassword: string): Promise<HeadRecovery | null>;
   restoreHeadRecovery(masterPassword: string, recovery: HeadRecovery): Promise<void>;
   unlockWithBiometrics(): Promise<DeviceUnlockMechanism>;
@@ -94,7 +91,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
   const [vault, setVault] = useState<UnlockedVault | null>(null);
   const [deviceUnlockAvailable, setDeviceUnlockAvailable] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
-  const [recoveryMasterSkipped, setRecoveryMasterSkipped] = useState(false);
   const vaultRef = useRef<UnlockedVault | null>(null);
   const lockEpoch = useRef(0);
 
@@ -102,8 +98,8 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     vaultRef.current = next;
     setVault(next);
     setLockState(next ? "UNLOCKED" : "LOCKED");
-    // A fresh recovery unlock must always re-offer the new master password.
-    setRecoveryMasterSkipped(false);
+    // The commit may have deferred the pin for stale-safe adoption.
+    if (next?.acceptedPin) savePin(next.acceptedPin);
   }, []);
 
   const currentVault = useCallback(() => vaultRef.current, []);
@@ -124,7 +120,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     void clearCopiedSecret().catch(() => undefined);
   }, []);
 
-  const recoveryMasterPending = Boolean(vault && vault.unlockedWith === "recovery_key" && !recoveryMasterSkipped);
 
   const captureLiveness = useCallback((current: UnlockedVault) =>
     captureVaultLiveness(current, () => lockEpoch.current, () => vaultRef.current), []);
@@ -273,6 +268,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
       try {
         const unlocked = await unlockWithRecoveryKey(activeVaultId, key);
         adoptUnlocked(epoch, unlocked);
+        options.onRecoveryUnlock(unlocked);
         writeActiveVaultId(activeVaultId);
       } catch (failure) {
         setLockState("LOCKED");
@@ -280,21 +276,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
       }
     });
   }, [activeVaultId, adoptUnlocked, options]);
-
-  const establishRecoveryMaster = useCallback(async (newMasterPassword: string) => {
-    const current = vaultRef.current;
-    if (!current || current.unlockedWith !== "recovery_key") throw feedbackError("vault_locked");
-    if (options.passwordsCollide(newMasterPassword)) throw feedbackError("passwords_must_differ");
-    const liveness = captureLiveness(current);
-    await options.runWithStatus(async () => {
-      const next = await establishMasterAfterRecovery(current, newMasterPassword, liveness);
-      adoptIfLive(liveness, { ...next, unlockedWith: "master_password" });
-    }, "recovery_master_set");
-  }, [adoptIfLive, captureLiveness, options]);
-
-  const skipRecoveryMaster = useCallback(() => {
-    setRecoveryMasterSkipped(true);
-  }, []);
 
   const unlockWithBiometrics = useCallback(async (): Promise<DeviceUnlockMechanism> => {
     if (!activeVaultId) throw feedbackError("no_vault_selected");
@@ -394,7 +375,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     vault,
     deviceUnlockAvailable,
     recoveryKey,
-    recoveryMasterPending,
     loadVaults,
     clearVaultList,
     clearSignedOutState,
@@ -403,8 +383,6 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     restoreFromShare,
     unlockWithPassword,
     unlockWithRecovery,
-    establishRecoveryMaster,
-    skipRecoveryMaster,
     findHeadRecovery,
     restoreHeadRecovery,
     unlockWithBiometrics,

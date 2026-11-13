@@ -21,6 +21,7 @@ export type FeedbackErrorCode =
   | "passwords_must_differ"
   | "permission_denied"
   | "protocol_error"
+  | "recovery_context_required"
   | "rollback_detected"
   | "service_unavailable"
   | "unexpected"
@@ -63,6 +64,10 @@ const ERROR_TEXT: Record<FeedbackErrorCode, Line> = {
   conflict: {
     de: "Der Tresor wurde inzwischen geändert. Bitte neu laden und erneut versuchen.",
     en: "The vault changed in the meantime. Reload and try again.",
+  },
+  recovery_context_required: {
+    de: "Bitte diesen Tresor erneut mit dem Recovery-Schlüssel öffnen, bevor du ein neues Tresor-Passwort wählst.",
+    en: "Open this vault again with the recovery key before choosing a new vault password.",
   },
   device_write_locked: {
     de: "Dieses Gerät ist für Schreibvorgänge gesperrt, weil es im Tresor widerrufen wurde. Lesen und Recovery bleiben möglich; führe die Änderung auf einem aktiven Gerät aus.",

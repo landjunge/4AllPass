@@ -290,6 +290,26 @@ commits that re-attach a revoked device’s envelope (HTTP 422).
 
 ---
 
+### Recovery after a lost master password
+
+Actual recovery-key unlock immediately offers a new master password (two fields,
+Create’s existing mismatch/account-password separation rules) and explicit device
+re-enrolment. Writing requires a fresh kit confirmation that unwraps to the current
+verified VK; no old master password is needed and a mode flag is not sufficient.
+The existing KDF parameters are validated/reused with a fresh salt. The normalized
+returned master envelope is cross-checked with the new master key before pin/cache
+adoption. This is CAS revision N→N+1 with the same VK/VKversion and unchanged kit/
+device envelopes. A separate result buffer prevents stale callback cleanup from
+wiping another live key object. Vault/account changes or lock cannot reopen the UI.
+No new password/kit/VK is sent to the backend or persisted in offer state.
+
+The device offer only opens existing Devices UI; it issues no automatic ceremony
+or revocation. Password replacement does **not** revoke previous VK holders, even
+for future snapshots under the unchanged VK. Old snapshots/passwords can still
+recover that VK. Kit/key compromise needs the separate rotation path. Lost CAS
+responses, physical authenticator/PRF, native package acceptance and complete P05
+remain separate. See [recovery lifecycle](recovery.md#pwa-continuation-after-kit-unlock).
+
 ## 5. Snapshot atomicity
 
 `POST /vaults/{vault_id}/snapshots`:

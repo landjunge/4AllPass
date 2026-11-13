@@ -75,6 +75,7 @@ import type {
 } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
 import type { CommittedHardRevoke } from "./hard-revoke-result.ts";
+import { replaceMasterAfterRecovery } from "./recovery-master.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
   decodeEntryPlaintext,
@@ -106,6 +107,8 @@ export interface UnlockedVault {
   envelopes: KeyEnvelope[];
   entries: VaultEntry[];
   unlockedWith: UnlockMethod;
+  /** Pin produced by the accepted snapshot; applied on adoption, not commit. */
+  acceptedPin?: VaultRevision;
   /** Defensive accepted legacy wire copy; ciphertext only. */
   wire?: VaultSnapshot;
   /**
@@ -440,8 +443,10 @@ async function acceptSnapshot(
   crossChecks: readonly CrossCheckEnvelope[] = [],
   rawWire?: WireVaultSnapshot,
   liveness?: VaultLiveness,
+  persistPin = true,
 ): Promise<UnlockedVault> {
   const { vault, pin } = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks, rawWire);
+  vault.acceptedPin = pin;
   // A legacy head cache must be the exact accepted raw wire. Re-encoding would
   // drop unknown fields, and an offline reopen would then migrate a lossy state.
   const cacheWire = snapshot.sealedManifest
@@ -468,7 +473,7 @@ async function acceptSnapshot(
     // Another tab may have advanced the pin while this adoption awaited the
     // cache. Never return the opened vault on that error path.
     assertFreshSnapshot(loadPin(pin.vaultId), pin);
-    savePin(pin);
+    if (persistPin) savePin(pin);
   } catch (error) {
     discardOpenedVault(vault);
     throw error;
@@ -712,46 +717,13 @@ export async function unlockWithRecoveryKey(
   }
 }
 
-/**
- * After a recovery unlock the old master password is unknown/missing. The user
- * deliberately sets a new one: same Vault Key, same recovery envelope, new
- * master salt. No old master password is read or required.
- */
-export async function establishMasterAfterRecovery(
+/** Set a new master after actual recovery unlock and a fresh kit confirmation. */
+export async function setMasterPasswordAfterRecovery(
   vault: UnlockedVault,
-  newMasterPassword: string,
-  liveness?: VaultLiveness,
+  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean },
 ): Promise<UnlockedVault> {
-  if (vault.unlockedWith !== "recovery_key") {
-    throw new Error("a new master password is only offered after a recovery unlock");
-  }
-  // Same floor as the create-vault form. This is the library boundary: direct
-  // callers cannot set an empty or trivially short master password.
-  if (typeof newMasterPassword !== "string" || newMasterPassword.length < 10) {
-    throw new Error("master password must be at least 10 characters");
-  }
-  liveness?.assertLive();
-  const masterEnvelope = vault.envelopes.find((candidate) => candidate.type === "master");
-  if (!masterEnvelope?.kdf) throw new Error("snapshot has no master envelope");
-  const { salt: _oldSalt, ...kdfParams } = masterEnvelope.kdf;
-  const salt = generateSalt(16);
-  const masterKey = deriveMasterKey(newMasterPassword, salt, kdfParams);
-  try {
-    const nextEnvelope = wrapVaultKey({
-      vaultKey: vault.vaultKey,
-      wrappingKey: masterKey,
-      vaultId: vault.vaultId,
-      type: "master",
-      vaultKeyVersion: vault.vaultKeyVersion,
-      kdf: kdfParamsFrom(kdfParams, salt),
-    });
-    const envelopes = vault.envelopes.map((envelope) =>
-      envelope.type === "master" ? nextEnvelope : envelope,
-    );
-    return await commitSnapshot(vault, vault.entries, envelopes, liveness ? { liveness } : undefined);
-  } finally {
-    zeroize(masterKey);
-  }
+  return replaceMasterAfterRecovery(vault, options, (envelopes, vaultKey, masterWrappingKey) =>
+    commitSnapshot(vault, vault.entries, envelopes, { vaultKey, masterWrappingKey, deferPin: options.deferPin }));
 }
 
 export async function hasDeviceUnlock(vaultId: string): Promise<boolean> {
@@ -842,6 +814,10 @@ async function commitSnapshot(
   options?: {
     vaultKeyVersion?: number;
     vaultKey?: Uint8Array;
+    /** Cross-check the normalized returned master envelope before accepting. */
+    masterWrappingKey?: Uint8Array;
+    /** Defer the pin write until the caller adopts the returned vault. */
+    deferPin?: boolean | undefined;
     liveness?: VaultLiveness;
     /**
      * Persist the exact sealed-manifest digest before the POST. Awaited: the
@@ -913,9 +889,12 @@ async function commitSnapshot(
       committed,
       vaultKey,
       vault.unlockedWith,
-      [],
+      options?.masterWrappingKey
+        ? [{ envelope: masterEnvelopeOf(committed), wrappingKey: options.masterWrappingKey }]
+        : [],
       undefined,
       options?.liveness,
+      options?.deferPin ? false : true,
     );
     if (options?.liveness && !options.liveness.isLive()) {
       discardOpenedVault(accepted);

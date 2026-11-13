@@ -8,7 +8,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db, get_owned_vault, get_session_store
+from app.api.deps import (
+    get_current_user,
+    get_db,
+    get_owned_vault,
+    get_session_store,
+    get_writable_vault,
+)
 from app.api.rate_limit import enforce_write_rate_limit
 from app.core.config import get_settings
 from app.core.sessions import SessionStore
@@ -114,7 +120,7 @@ async def get_revision(
 async def post_snapshot(
     payload: SnapshotCommit,
     request: Request,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
     store: Annotated[SessionStore, Depends(get_session_store)],
 ) -> WireVaultSnapshot | JSONResponse:

@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db, get_owned_vault
+from app.api.deps import get_current_user, get_db, get_writable_vault
 from app.core.challenges import ChallengeStore, get_challenge_store
 from app.core.config import get_settings
 from app.core.encoding import b64decode, b64encode
@@ -45,7 +45,7 @@ async def _rate_limit(store: SessionStore, user: User, vault: Vault) -> None:
 @router.post("", response_model=IssuedChallengeOut)
 async def issue_challenge(
     payload: IssueChallengeRequest,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     user: Annotated[User, Depends(get_current_user)],
     challenges: Annotated[ChallengeStore, Depends(get_challenge_store)],
     sessions: Annotated[SessionStore, Depends(get_session_store)],
@@ -83,7 +83,7 @@ def _assertion_fields(payload: ConsumeChallengeRequest) -> bool:
 async def consume_challenge(
     challenge_id: UUID,
     payload: ConsumeChallengeRequest,
-    vault: Annotated[Vault, Depends(get_owned_vault)],
+    vault: Annotated[Vault, Depends(get_writable_vault)],
     user: Annotated[User, Depends(get_current_user)],
     challenges: Annotated[ChallengeStore, Depends(get_challenge_store)],
     db: Annotated[AsyncSession, Depends(get_db)],

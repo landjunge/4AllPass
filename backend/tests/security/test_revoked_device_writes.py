@@ -704,9 +704,22 @@ async def test_two_adopters_real_db_engine_one_owner(engine, tmp_path, monkeypat
                 second = asyncio.create_task(
                     local_client.post("/api/v1/local/adopt-local-vault", headers=users[0])
                 )
-                await asyncio.sleep(0.3)
-                release.set()
-                responses = await asyncio.gather(first, second)
+                if engine.dialect.name == "sqlite":
+                    # SQLite's BEGIN IMMEDIATE serializes before the second can
+                    # select ids; let the gated adopter finish first.
+                    release.set()
+                    responses = await asyncio.gather(first, second)
+                else:
+                    # Postgres: the second adopter must actually commit the
+                    # owner change while the first is held at the pre-lock gate.
+                    second_response = await asyncio.wait_for(second, 10)
+                    assert second_response.status_code == 200, second_response.text
+                    assert second_response.json().get("vaultId") == vault_id
+                    release.set()
+                    first_response = await first
+                    assert first_response.status_code == 409, first_response.text
+                    assert first_response.json().get("detail") == "local_vault_changed"
+                    responses = [first_response, second_response]
             finally:
                 local_meta.lock_vault_rows = original
 

@@ -97,6 +97,28 @@ export interface UnlockedVault {
   envelopes: KeyEnvelope[];
   entries: VaultEntry[];
   unlockedWith: UnlockMethod;
+  /** The exact wire snapshot this state was opened from. Ciphertext only. */
+  wire?: VaultSnapshot;
+}
+
+export class LegacyMigrationError extends Error {
+  readonly code: string;
+  constructor(code: string, message = "legacy manifest migration failed") {
+    super(message);
+    this.name = "LegacyMigrationError";
+    this.code = code;
+  }
+}
+
+export type LegacyMigrationOutcome =
+  | { status: "migrated"; vault: UnlockedVault }
+  | { status: "conflict"; vault?: UnlockedVault }
+  | { status: "already"; vault: UnlockedVault }
+  | { status: "declined" }
+  | { status: "unknown" };
+
+export function isLegacyVault(vault: UnlockedVault | null | undefined): boolean {
+  return Boolean(vault?.wire && !vault.wire.sealedManifest);
 }
 
 export class DeviceUnlockNotPossible extends Error {
@@ -356,6 +378,7 @@ function openSnapshot(
     envelopes: envelopesToKeep,
     entries: sortedEntries,
     unlockedWith,
+    wire: snapshot,
   };
 }
 
@@ -695,6 +718,8 @@ async function commitSnapshot(
     vaultKeyVersion?: number;
     vaultKey?: Uint8Array;
     liveness?: VaultLiveness;
+    /** Capture the exact sealed-manifest digest that is about to be posted. */
+    onPrepared?: (manifestDigest: Uint8Array) => void;
   },
 ): Promise<UnlockedVault> {
   // Check before any entry plaintext is encrypted. There is no await between
@@ -727,6 +752,7 @@ async function commitSnapshot(
     envelopes,
     encrypted,
   );
+  options?.onPrepared?.(sealedManifestDigest(sealedManifest));
 
   try {
     const committed = decodeVaultSnapshot(
@@ -755,6 +781,125 @@ async function commitSnapshot(
       throw new CommitConflict(error.currentRevision);
     }
     throw error;
+  }
+}
+
+function envelopeIdentity(envelope: KeyEnvelope): string {
+  return `${envelope.type}:${envelope.deviceId ?? ""}`;
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+/**
+ * Explicit opt-in migration of a legacy manifestless snapshot.
+ *
+ * The legacy head is only server-asserted. The re-commit attests the set that
+ * was opened under the Vault Key at this moment; the new manifest authenticates
+ * that state forward. It never proves the pre-migration revision/set was
+ * original. A durable ciphertext backup of the legacy wire snapshot is verified
+ * before any POST. An unknown outcome is never retried: only the exact expected
+ * revision plus the prepared manifest digest (or a verified head) counts as
+ * success. A legacy head after a lost response proves nothing.
+ */
+export async function migrateLegacySnapshot(
+  vault: UnlockedVault,
+  options: { confirmed?: boolean; liveness?: VaultLiveness } = {},
+): Promise<LegacyMigrationOutcome> {
+  if (options.confirmed !== true) return { status: "declined" };
+  const wire = vault.wire;
+  if (!wire) throw new LegacyMigrationError("legacy_wire_missing");
+  if (wire.sealedManifest) return { status: "already", vault };
+  if (
+    wire.vaultId !== vault.vaultId ||
+    wire.revision !== vault.revision ||
+    wire.vaultKeyVersion !== vault.vaultKeyVersion
+  ) {
+    throw new LegacyMigrationError("legacy_wire_mismatch");
+  }
+  const wireEntries = wire.entries.map((entry) => entry.id).sort();
+  const openedEntries = vault.entries.map((entry) => entry.id).sort();
+  if (!sameStrings(wireEntries, openedEntries)) {
+    throw new LegacyMigrationError("legacy_entry_set_mismatch");
+  }
+  const wireEnvelopes = wire.envelopes.map(envelopeIdentity).sort();
+  const openedEnvelopes = vault.envelopes.map(envelopeIdentity).sort();
+  if (!sameStrings(wireEnvelopes, openedEnvelopes)) {
+    throw new LegacyMigrationError("legacy_envelope_set_mismatch");
+  }
+
+  // Positive durable backup BEFORE the effect. No plaintext, no keys.
+  const backup = encodeVaultSnapshot(wire);
+  try {
+    const cache = snapshotCache();
+    await cache.save(vault.vaultId, backup);
+    const readback = await cache.load(vault.vaultId);
+    if (!readback || JSON.stringify(readback) !== JSON.stringify(backup)) {
+      throw new LegacyMigrationError("legacy_backup_unverified");
+    }
+  } catch (error) {
+    if (error instanceof LegacyMigrationError) throw error;
+    throw new LegacyMigrationError("legacy_backup_failed");
+  }
+
+  let preparedDigest: Uint8Array | null = null;
+  try {
+    const committed = await commitSnapshot(vault, vault.entries, vault.envelopes, {
+      ...(options.liveness ? { liveness: options.liveness } : {}),
+      onPrepared: (digest) => {
+        preparedDigest = digest;
+      },
+    });
+    if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+    return { status: "migrated", vault: committed };
+  } catch (error) {
+    if (error instanceof CommitConflict) {
+      try {
+        const head = await fetchFreshSnapshot(vault.vaultId);
+        if (!head.sealedManifest) return { status: "conflict" };
+        const accepted = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
+        if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+        return { status: "conflict", vault: accepted };
+      } catch (headError) {
+        if (headError instanceof VaultLockedError) throw headError;
+        return { status: "unknown" };
+      }
+    }
+    if (error instanceof VaultLockedError || error instanceof LegacyMigrationError) throw error;
+    if (error instanceof ApiError && error.status !== 409 && error.status < 500) {
+      throw new LegacyMigrationError("legacy_migration_rejected");
+    }
+    const prepared = preparedDigest;
+    if (!prepared) throw error;
+    // UNKNOWN: a read cannot prove non-acceptance (inflight/stale read). Only
+    // the exact prepared revision + manifest digest is success; a legacy head
+    // is not evidence either way and must not trigger another POST.
+    try {
+      const head = await fetchFreshSnapshot(vault.vaultId);
+      if (
+        head.revision === vault.revision + 1 &&
+        head.sealedManifest &&
+        equalBytes(sealedManifestDigest(head.sealedManifest), prepared)
+      ) {
+        verifySnapshotManifest(
+          head.sealedManifest,
+          { entries: head.entries, envelopes: head.envelopes },
+          {
+            vaultKey: vault.vaultKey,
+            vaultId: head.vaultId,
+            revision: head.revision,
+            vaultKeyVersion: head.vaultKeyVersion,
+          },
+        );
+        const accepted = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
+        if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+        return { status: "migrated", vault: accepted };
+      }
+    } catch (headError) {
+      if (headError instanceof VaultLockedError) throw headError;
+    }
+    return { status: "unknown" };
   }
 }
 

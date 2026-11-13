@@ -29,7 +29,7 @@ import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
 import { useDeviceManagement, type RevokeProgress } from "../device-management/index.ts";
 import { useRecoveryManagement } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
-import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
+import type { HeadRecovery, LegacyMigrationOutcome, UnlockedVault } from "../../lib/vault-session.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
@@ -71,6 +71,7 @@ interface AppActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  migrateLegacyVault(): Promise<LegacyMigrationOutcome>;
   restoreSingleEntry(
     vault: UnlockedVault,
     selection: HistoricSelection,
@@ -264,6 +265,9 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
       async saveEntries(entries) {
         await vaultLifecycle.saveEntries(entries);
+      },
+      async migrateLegacyVault() {
+        return vaultLifecycle.migrateLegacyVault();
       },
       restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
       restoreBackup: vaultLifecycle.restoreBackup,

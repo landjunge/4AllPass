@@ -155,6 +155,41 @@ proceed instead of silently downgrading.
 
 Pin-on-first-use is intentional: a brand-new client has no prior revision. After the first successful unlock, the pin is stored locally (outside the server’s control).
 
+### 3.1.1 Legacy manifest migration (explicit opt-in)
+
+A manifestless snapshot is only server-asserted. The PWA offers a per-vault
+migration in the unlock flow; it never commits automatically at unlock or install.
+The user sees (DE/EN):
+
+> Dieser Tresor ist älter und noch nicht als Ganzes versiegelt. Beim Aktualisieren
+> wird der aktuell geöffnete Inhalt für die Zukunft mit einer Integritätsprüfung
+> versehen. Der bisherige Serverstand lässt sich nicht nachträglich beweisen. Eine
+> verschlüsselte Sicherung wird vorher lokal abgelegt.
+
+> This vault is older and not yet sealed as a whole. Updating seals the currently
+> opened content with an integrity check for the future. The previous server state
+> cannot be proven retroactively. An encrypted backup is stored locally first.
+
+Before the first POST the client stores and verifies the ciphertext wire backup
+locally; if that fails, nothing is sent. The re-commit uses the existing
+`sealManifest` / `commitSnapshot` path at `N+1` under the same Vault Key with CAS,
+echo verification and the lock epoch. It attests the set that was opened at
+migration time; it never authenticates the legacy revision/set as original.
+
+On `409` the client loads and verifies the winning head; it does not overlay its
+own unsaved state. On an unknown outcome a read cannot prove non-acceptance
+(inflight/stale read): only the exact expected revision plus the prepared
+sealed-manifest digest, or a verified history receipt, counts as success. A head
+that still looks manifestless is not evidence either way; the client reports
+unknown and does not send another POST just because the head is legacy.
+
+The authenticated migration status is the sealed manifest at `N+1` verified under
+the Vault Key plus the client-pinned manifest digest. A server flag or coverage
+count is advisory, never cryptographic proof. The first-use manifest requirement
+is **not** activated by this path; coverage/exception gates remain open. F-25
+(nonce budget / persistent seal counter) is a separate open item and is not
+addressed by a client-local counter.
+
 ### 3.2 Offline: last verified snapshot
 
 After a snapshot is verified and the pin is written, the PWA stores the **wire**

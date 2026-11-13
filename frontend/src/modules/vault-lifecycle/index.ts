@@ -8,6 +8,7 @@ import {
   commitEntries,
   createVault,
   findRecoverableRevision,
+  migrateLegacySnapshot,
   restoreRecoveredRevision,
   hasDeviceUnlock,
   lock as lockVault,
@@ -15,6 +16,7 @@ import {
   unlockWithMasterPassword,
   unlockWithRecoveryKey,
   type HeadRecovery,
+  type LegacyMigrationOutcome,
   type UnlockedVault,
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
@@ -62,6 +64,7 @@ export interface VaultLifecycleActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  migrateLegacyVault(): Promise<LegacyMigrationOutcome>;
   restoreSingleEntry(
     vault: UnlockedVault,
     selection: HistoricSelection,
@@ -309,6 +312,22 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     }, "entries_saved");
   }, [adoptIfLive, captureLiveness, options]);
 
+  /**
+   * Explicit user action only. The banner calls this after the DE/EN notice;
+   * unlock/install never invokes it. The helper proves the local wire backup
+   * before any POST and never retries an unknown outcome.
+   */
+  const migrateLegacyVault = useCallback(async (): Promise<LegacyMigrationOutcome> => {
+    const current = vaultRef.current;
+    if (!current) throw feedbackError("vault_locked");
+    const liveness = captureLiveness(current);
+    const outcome = await migrateLegacySnapshot(current, { confirmed: true, liveness });
+    if ((outcome.status === "migrated" || outcome.status === "conflict") && outcome.vault) {
+      adoptIfLive(liveness, outcome.vault);
+    }
+    return outcome;
+  }, [adoptIfLive, captureLiveness]);
+
   const restoreSingleEntry = useCallback(async (
     vault: UnlockedVault,
     selection: HistoricSelection,
@@ -364,6 +383,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     lock,
     pullLocalIntoOpenVault,
     saveEntries,
+    migrateLegacyVault,
     restoreSingleEntry,
     restoreBackup,
     dismissRecoveryKey,

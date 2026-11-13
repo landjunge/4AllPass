@@ -1,3 +1,4 @@
+export { LegacyMigrationBanner } from "./LegacyMigrationBanner.tsx";
 export { PullLocalVaultBanner } from "./PullLocalVaultBanner.tsx";
 export { FieldLabel } from "./FieldLabel.tsx";
 export { VaultBackupPanel } from "./VaultBackupPanel.tsx";

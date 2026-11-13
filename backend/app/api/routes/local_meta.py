@@ -9,8 +9,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
+from app.db.locking import lock_vault_rows
 from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
 from app.core.config import get_settings
+from app.models.device import Device
 from app.models.entry import EncryptedEntry
 from app.models.user import User
 from app.models.vault import Vault
@@ -111,10 +113,18 @@ async def local_store_status(db: Annotated[AsyncSession, Depends(get_db)]) -> Lo
 
 @router.post("/adopt-local-vault", response_model=AdoptLocalVaultResult)
 async def adopt_local_vault(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> AdoptLocalVaultResult:
-    """Give this account the on-disk local vault. Decrypt still needs its master password."""
+    """Give this account the on-disk local vault. Decrypt still needs its master password.
+
+    This is an ownership transfer of existing vaults, so it must not bypass the
+    revoked-device write guard. The guard is vault-scoped; this route has no
+    vault id, therefore every local vault is locked in a stable order and the
+    session device is checked for a revoked row in any of them before any owner
+    change. A device without a row (first setup / legacy) remains allowed.
+    """
     _require_local()
     if user.email == LOCAL_ACCOUNT_EMAIL:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="already the local account")
@@ -123,7 +133,40 @@ async def adopt_local_vault(
     ).scalar_one_or_none()
     if local is None:
         return AdoptLocalVaultResult()
-    vaults = list((await db.execute(select(Vault).where(Vault.owner_user_id == local.id))).scalars())
+    vault_ids = list(
+        (
+            await db.execute(
+                select(Vault.id)
+                .where(Vault.owner_user_id == local.id)
+                .order_by(Vault.id)
+            )
+        ).scalars()
+    )
+    if not vault_ids:
+        return AdoptLocalVaultResult()
+    await lock_vault_rows(db, vault_ids)
+    session_device_id = getattr(request.state, "session_device_id", None)
+    if session_device_id is None:  # pragma: no cover - get_current_user guarantees it
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    revoked = await db.execute(
+        select(Device.id)
+        .where(
+            Device.vault_id.in_(vault_ids),
+            Device.device_id == session_device_id,
+            Device.revoked_at.is_not(None),
+        )
+        .limit(1)
+    )
+    if revoked.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="device is revoked for this vault",
+        )
+    vaults = list((await db.execute(select(Vault).where(Vault.id.in_(vault_ids)))).scalars())
     vault_id: str | None = None
     entries = 0
     for vault in vaults:

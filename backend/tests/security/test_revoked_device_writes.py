@@ -16,6 +16,10 @@ Contract under test (interim, ADR-015 §3 stays open):
 """
 from __future__ import annotations
 
+import asyncio
+import base64
+import uuid
+
 import pytest
 
 from tests.security.helpers import (
@@ -296,3 +300,222 @@ async def test_self_revoke_is_allowed_then_followup_is_denied(client):
         sealedManifest=_sealed_manifest(),
     )
     assert followup.status_code == 403, followup.text
+
+
+async def _vault_with_active_device(client):
+    """Owner + vault + active DEVICE_A row + a valid DEVICE_A session."""
+    email, owner = await _signup(client)
+    vault_id = await _vault(client, owner)
+    first = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        headers=_auth(owner),
+        json={
+            "revision": 1,
+            "vaultKeyVersion": 1,
+            "cryptoProtocolVersion": 1,
+            "envelopes": [_master_envelope(), _device_envelope(DEVICE_A)],
+            "entries": [],
+        },
+    )
+    assert first.status_code == 200, first.text
+    registered = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(owner),
+        json={"deviceId": DEVICE_A, "label": "Active phone"},
+    )
+    assert registered.status_code == 200, registered.text
+    token = await _login(client, email, DEVICE_A)
+    return email, owner, vault_id, token
+
+
+class _Gate:
+    """Barrier in front of the ASGI app for one device's snapshot request."""
+
+    def __init__(self, app, device_id, admitted, release):
+        self.app = app
+        self.device_id = device_id
+        self.admitted = admitted
+        self.release = release
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"].endswith("/snapshots"):
+            headers = {key.decode().lower(): value.decode() for key, value in scope["headers"]}
+            if headers.get("x-device-id") == self.device_id:
+                self.admitted.set()
+                await self.release.wait()
+        await self.app(scope, receive, send)
+
+
+async def test_revoke_committed_before_guard_denies_the_write(client):
+    """Barrier test: revoke commits first, then the admitted write checks the row."""
+    from httpx import ASGITransport, AsyncClient
+
+    from app.main import app
+
+    email, owner, vault_id, token = await _vault_with_active_device(client)
+    admitted = asyncio.Event()
+    release = asyncio.Event()
+    async with AsyncClient(
+        transport=ASGITransport(app=_Gate(app, DEVICE_A, admitted, release)),
+        base_url="http://test",
+    ) as gated:
+        write = asyncio.create_task(
+            gated.post(
+                f"/api/v1/vaults/{vault_id}/snapshots",
+                headers=_h(token, DEVICE_A),
+                json={
+                    "revision": 2,
+                    "vaultKeyVersion": 1,
+                    "cryptoProtocolVersion": 1,
+                    "envelopes": [_master_envelope()],
+                    "entries": [],
+                    "sealedManifest": _sealed_manifest(),
+                },
+            )
+        )
+        await asyncio.wait_for(admitted.wait(), 2)
+        # Self-revoke keeps this session token alive, so the DB row guard (not
+        # only the session store) is what must deny the admitted write.
+        revoked = await client.delete(
+            f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}", headers=_h(token, DEVICE_A)
+        )
+        assert revoked.status_code == 200, revoked.text
+        release.set()
+        response = await write
+        assert response.status_code == 403, response.text
+
+
+async def test_revoke_waits_for_an_admitted_write_lock(client):
+    """Barrier test: the guard holds the vault lock until commit; revoke waits."""
+    import app.api.routes.vaults as vault_routes
+
+    email, owner, vault_id, token = await _vault_with_active_device(client)
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    original = vault_routes.commit_snapshot
+
+    async def gated_commit(db, vault, payload):
+        entered.set()
+        await release.wait()
+        return await original(db, vault, payload)
+
+    vault_routes.commit_snapshot = gated_commit
+    try:
+        write = asyncio.create_task(
+            _commit_as(
+                client,
+                token,
+                DEVICE_A,
+                vault_id,
+                revision=2,
+                sealedManifest=_sealed_manifest(),
+            )
+        )
+        await asyncio.wait_for(entered.wait(), 2)
+        revoke = asyncio.create_task(
+            client.delete(
+                f"/api/v1/vaults/{vault_id}/devices/{DEVICE_A}", headers=_auth(owner)
+            )
+        )
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(revoke), 0.3)
+        release.set()
+        write_response, revoke_response = await asyncio.gather(write, revoke)
+        assert write_response.status_code == 200, write_response.text
+        assert revoke_response.status_code == 200, revoke_response.text
+    finally:
+        vault_routes.commit_snapshot = original
+
+
+async def test_revoked_device_cannot_consume_a_webauthn_challenge(client):
+    email, owner, vault_id, _ = await _vault_with_revoked_device(client)
+    relogged = await _login(client, email, DEVICE_A)
+    challenge_id = uuid.uuid4()
+    response = await client.post(
+        f"/api/v1/vaults/{vault_id}/webauthn/challenges/{challenge_id}/consume",
+        headers=_h(relogged, DEVICE_A),
+        json={
+            "purpose": "assert",
+            "challenge": base64.b64encode(b"\x00" * 32).decode("ascii"),
+            "deviceId": DEVICE_A,
+        },
+    )
+    assert response.status_code == 403, response.text
+
+
+async def test_active_device_can_reenrol_a_revoked_id_by_design(client):
+    """Documented residual: only the revoked device itself is blocked."""
+    email, owner, vault_id, _ = await _vault_with_revoked_device(client)
+    registered = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_auth(owner),
+        json={"deviceId": DEVICE_B, "label": "Active tablet"},
+    )
+    assert registered.status_code == 200, registered.text
+    active = await _login(client, email, DEVICE_B)
+    readded = await client.post(
+        f"/api/v1/vaults/{vault_id}/devices",
+        headers=_h(active, DEVICE_B),
+        json={"deviceId": DEVICE_A, "label": "Re-enrolled by active device"},
+    )
+    assert readded.status_code == 200, readded.text
+    assert readded.json()["revokedAt"] is None
+    # The re-enrolled id can write again; this is the documented residual.
+    relogged = await _login(client, email, DEVICE_A)
+    write = await _commit_as(
+        client,
+        relogged,
+        DEVICE_A,
+        vault_id,
+        revision=2,
+        sealedManifest=_sealed_manifest(),
+    )
+    assert write.status_code == 200, write.text
+
+
+async def test_revoke_globally_revokes_existing_sessions_but_login_stays_per_vault(client):
+    """Vault-scoped guard, user+device session revoke: document both effects."""
+    email, owner = await _signup(client)
+    vault_a = await _vault(client, owner)
+    vault_b = await _vault(client, owner)
+    assert (
+        await client.post(
+            f"/api/v1/vaults/{vault_a}/devices",
+            headers=_auth(owner),
+            json={"deviceId": DEVICE_A, "label": "Cross-vault"},
+        )
+    ).status_code == 200
+    token = await _login(client, email, DEVICE_A)
+    first_b = await _commit_as(client, token, DEVICE_A, vault_b)
+    assert first_b.status_code == 200, first_b.text
+
+    revoked = await client.delete(
+        f"/api/v1/vaults/{vault_a}/devices/{DEVICE_A}", headers=_auth(owner)
+    )
+    assert revoked.status_code == 200, revoked.text
+
+    # The existing session is user+device-global, not vault-scoped: vault B now 401.
+    stale_b = await _commit_as(
+        client, token, DEVICE_A, vault_b, revision=2, sealedManifest=_sealed_manifest()
+    )
+    assert stale_b.status_code == 401, stale_b.text
+
+    # Login is not globally locked; a fresh session can write vault B (no row there).
+    fresh = await _login(client, email, DEVICE_A)
+    write_b = await _commit_as(
+        client, fresh, DEVICE_A, vault_b, revision=2, sealedManifest=_sealed_manifest()
+    )
+    assert write_b.status_code == 200, write_b.text
+
+
+async def test_revoked_device_can_create_a_new_vault_account_operation(client):
+    """Create-vault is account-scoped, not a mutation of the revoked vault."""
+    email, owner, vault_id, _ = await _vault_with_revoked_device(client)
+    relogged = await _login(client, email, DEVICE_A)
+    created = await client.post("/api/v1/vaults", headers=_h(relogged, DEVICE_A))
+    assert created.status_code == 201, created.text
+    new_vault = created.json()["vaultId"]
+    written = await _commit_as(
+        client, relogged, DEVICE_A, new_vault, revision=1, sealedManifest=_sealed_manifest()
+    )
+    assert written.status_code == 200, written.text

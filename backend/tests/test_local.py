@@ -393,3 +393,56 @@ async def test_local_without_ui_build_is_503_not_a_token(tmp_path, monkeypatch):
         assert missing.status_code == 503
         assert "token" not in missing.text.lower()
         assert (await client.get("/health")).status_code == 200
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_adopt_local_vault_rejects_revoked_session_device(local_runtime):
+    """Ownership transfer must not bypass the revoked-device write guard."""
+    from datetime import datetime, timezone
+
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+    from app.db.session import get_session_factory
+    from app.models.device import Device
+    from app.models.user import User
+    from app.models.vault import Vault
+
+    await _create_schema()
+    async with get_session_factory()() as session:
+        local = User(email=LOCAL_ACCOUNT_EMAIL)
+        session.add(local)
+        await session.flush()
+        vault = Vault(owner_user_id=local.id, crypto_protocol_version=1)
+        session.add(vault)
+        await session.flush()
+        device_id = "dev_localappdevice000000002"
+        session.add(
+            Device(
+                vault_id=vault.id,
+                device_id=device_id,
+                revoked_at=datetime.now(timezone.utc),
+            )
+        )
+        await session.commit()
+        vault_id = str(vault.id)
+        local_id = local.id
+
+    app = create_app()
+    transport = ASGITransport(app=app)
+    device = {"X-Device-Id": device_id}
+    async with AsyncClient(transport=transport, base_url=local_runtime.origin) as client:
+        registered = await client.post(
+            "/api/v1/auth/register",
+            json={"email": "revoked-adopt@example.com", "password": "account-password-1234"},
+            headers=device,
+        )
+        assert registered.status_code == 200, registered.text
+        auth = {**device, "Authorization": f"Bearer {registered.json()['token']}"}
+        denied = await client.post("/api/v1/local/adopt-local-vault", headers=auth)
+        assert denied.status_code == 403, denied.text
+
+    async with get_session_factory()() as session:
+        import uuid as _uuid
+
+        row = await session.get(Vault, _uuid.UUID(vault_id))
+        assert row is not None
+        assert row.owner_user_id == local_id

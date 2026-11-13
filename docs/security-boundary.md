@@ -421,7 +421,17 @@ still follows successful opening and remains best-effort.
   vault B, and a device without a row (legacy or newly claimed id) still writes
   — the bearer-only gap and ADR-015 §3 (signed writes) remain open. An active
   device may still re-enrol a revoked id; only the revoked device itself is
-  blocked. Covered by `backend/tests/security/test_revoked_device_writes.py`.
+  blocked. The guard takes the vault row lock before the revoked check
+  (`backend/app/db/locking.py`; Postgres `SELECT … FOR UPDATE`, SQLite
+  `BEGIN IMMEDIATE`), so revoke and admitted mutations serialize instead of a
+  get-then-act window. `POST /local/adopt-local-vault` locks all local vaults in
+  sorted order and checks the session device for a revoked row in any of them
+  before transferring ownership. Session revocation itself remains
+  user+device-global: revoking in vault A invalidates the device's existing
+  sessions for vault B too; login and a fresh vault-B write still work because
+  the write guard is vault-scoped. Covered by
+  `backend/tests/security/test_revoked_device_writes.py` and
+  `backend/tests/test_local.py`.
 
   Deutsch: Ein `DELETE /devices/{id}` bleibt reine Metadaten-Revokation, kein
   kryptografisches Löschen. Als Zwischenschritt darf eine Session, deren

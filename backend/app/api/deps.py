@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.sessions import SessionStore, assert_device_id, get_session_store
+from app.db.locking import lock_vault_row
 from app.db.redis import get_redis
 from app.db.session import get_db
 from app.models.device import Device
@@ -117,6 +118,11 @@ async def get_writable_vault(
             detail="not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Serialize with revoke_device and every other mutation on this vault.
+    # Postgres: row lock; SQLite: BEGIN IMMEDIATE from the engine hook. The
+    # revoked check below is therefore evaluated under the same lock that the
+    # mutation holds until commit, not in a get-then-act window.
+    await lock_vault_row(db, vault.id)
     revoked = await db.execute(
         select(Device.id).where(
             Device.vault_id == vault.id,

@@ -83,7 +83,12 @@ Device-Key-Envelope PUT and both WebAuthn challenge routes return 403. Reads and
 recovery stay open, foreign vaults stay 404. This closes the same-session-id
 revoke/re-enrol bypass only; a stolen token with a new device id, Vault-Key proof,
 admin/org grants and the local-profile trust boundary are unchanged, and step 3
-below (signed writes) is still not built.
+below (signed writes) is still not built. The guard now takes the vault row
+lock before the revoked check (Postgres `SELECT … FOR UPDATE`, SQLite
+`BEGIN IMMEDIATE`), and the local-vault ownership transfer locks its vaults in
+sorted order and checks the same session device; revoke and admitted writes
+serialize instead of a get-then-act race. Session revocation remains
+user+device-global and is documented as such.
 
 **1. Rate-limit the unlimited destructive routes.** Device DELETE and the
 Device-Key-Envelope PUT get the same `enforce_write_rate_limit` treatment the

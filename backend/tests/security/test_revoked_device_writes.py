@@ -16,6 +16,8 @@ Contract under test (interim, ADR-015 §3 stays open):
 """
 from __future__ import annotations
 
+import pytest
+
 from tests.security.helpers import (
     DEVICE_A,
     DEVICE_B,
@@ -35,6 +37,10 @@ from tests.security.helpers import (
 
 DEVICE_C = "dev_cccccccccccccccccccccccc"
 DEVICE_NEW = "dev_nnnnnnnnnnnnnnnnnnnnnnnn"
+
+# Same session-scoped loop as the other security suites: the Postgres engine
+# pool is bound to the session loop (pytest.ini: default fixture loop scope).
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
 def _h(token: str, device_id: str) -> dict[str, str]:

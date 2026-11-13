@@ -233,7 +233,7 @@
         await unlock();
         await wait("legacy-banner", () => byId("legacy-migration-banner") && byId("legacy-migration-now"));
         check("legacy-banner");
-        logEvent({ phase: "legacy-banner", revision: wire?.revision ?? null });
+        logEvent({ phase: "legacy-banner" });
         await sleep(1200);
         if (!byId("legacy-migration-banner")) throw new Error("banner-vanished-without-action");
         check("no-automatic-banner-dismiss");

@@ -14,6 +14,11 @@ export async function replaceMasterAfterRecovery(
   commit: Commit,
 ): Promise<UnlockedVault> {
   if (vault.unlockedWith !== "recovery_key") throw new IntegrityError("recovery unlock required");
+  // Same floor as the Create form: the library boundary rejects empty/short
+  // master passwords even when a direct caller skips the UI.
+  if (typeof options.newMasterPassword !== "string" || options.newMasterPassword.length < 10) {
+    throw new IntegrityError("master password must be at least 10 characters");
+  }
   const recovery = vault.envelopes.find((env) => env.type === "recovery");
   const master = vault.envelopes.find((env) => env.type === "master");
   if (!recovery || !master?.kdf) throw new IntegrityError("recovery or master envelope missing");

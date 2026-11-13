@@ -96,6 +96,21 @@ test("actual kit unlock changes master without old password, preserves VK/device
   assert.ok(!JSON.stringify(head).includes(kit));
 });
 
+test("empty or too-short master passwords are rejected before any commit", async () => {
+  const vault = await unlockWithRecoveryKey(ID, kit);
+  const before = commits;
+  await assert.rejects(
+    () => setMasterPasswordAfterRecovery(vault, { newMasterPassword: "", recoveryKeyText: kit }),
+    /at least 10/,
+  );
+  await assert.rejects(
+    () => setMasterPasswordAfterRecovery(vault, { newMasterPassword: "short", recoveryKeyText: kit }),
+    /at least 10/,
+  );
+  assert.equal(commits, before);
+  lock(vault);
+});
+
 test("a recovery tag alone and another kit cannot authorize a write", async () => {
   const vault = await unlockWithRecoveryKey(ID, kit);
   const prior = new Uint8Array(vault.vaultKey);

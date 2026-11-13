@@ -73,21 +73,33 @@ test("kit recovery sets a new master and the vault reopens", async ({ page }) =>
   await clickAndType(page, page.getByTestId("recovery-new-password"), NEXT_PASSWORD);
   await clickAndType(page, page.getByTestId("recovery-new-password-repeat"), NEXT_PASSWORD);
   await clickAndType(page, page.getByTestId("recovery-master-kit"), kit);
+  let commitArrived!: () => void;
+  let releaseCommit!: () => void;
+  const arrived = new Promise<void>((resolve) => { commitArrived = resolve; });
+  const released = new Promise<void>((resolve) => { releaseCommit = resolve; });
   await page.route("**/api/v1/vaults/*/snapshots", async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    commitArrived();
+    await released;
     await route.continue();
   });
   const commit = page.waitForResponse(
     (response) => response.url().includes("/snapshots") && response.request().method() === "POST",
   );
   await page.getByTestId("confirm-recovery-master").click();
-  await page.waitForTimeout(200);
-  // The modal overlay covers the header; invoke the real lock handler directly
-  // to simulate a lock/sign-out that lands while the commit is in flight.
+  await arrived; // deterministic: the request is held, no timing guess
+  // Overlay simulates an external autolock/sign-out while the commit is in
+  // flight; this is not a claim that the covered header is user-clickable.
   await page.getByTestId("lock").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("lock-state")).toHaveText("LOCKED");
+  await expect(page.getByTestId("recovery-master-offer")).toHaveCount(0);
+  await expect(page.getByTestId("recovery-new-password")).toHaveCount(0);
+  releaseCommit();
   await commit;
   await page.unroute("**/api/v1/vaults/*/snapshots");
+  // The acknowledged commit stays unadopted: still locked, no offer, no inputs.
+  await expect(page.getByTestId("lock-state")).toHaveText("LOCKED");
+  await expect(page.getByTestId("recovery-master-offer")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(NEXT_PASSWORD);
   await expect(page.getByTestId("master-password")).toBeVisible();
   await clickAndType(page, page.getByTestId("master-password"), NEXT_PASSWORD);
   await page.getByTestId("unlock-submit").click();

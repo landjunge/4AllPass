@@ -103,6 +103,24 @@ pub fn run() {
     crate::run();
 }
 
+fn restart_own_sidecar(handle: &tauri::AppHandle) -> bool {
+    if crate::process::core_up()
+        || crate::process_inspect::loopback_listen_pid(crate::process::core_port()).is_some()
+    {
+        return false;
+    }
+    let Ok(child) = crate::process::spawn_core() else {
+        return false;
+    };
+    let pid = child.id();
+    if let Some(state) = handle.try_state::<crate::CoreProcess>() {
+        if let Ok(mut slot) = state.0.lock() {
+            *slot = Some(child);
+        }
+    }
+    crate::loopback::wait_our_core(pid, Duration::from_secs(20)).is_ok()
+}
+
 pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> {
     // Same configured main/capabilities/assets; explicit construction adds only
     // the private download destination and DOM driver. Core ownership already passed.
@@ -186,6 +204,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let mut outcome = json!({"done":false,"stage":"driver-timeout"});
         let mut listener_pid = None;
         let mut own_sidecar_stopped = false;
+        let mut own_sidecar_restarted = false;
         while Instant::now() < deadline {
             listener_pid = listener_pid
                 .or_else(|| crate::process_inspect::loopback_listen_pid(crate::process::core_port()));
@@ -226,6 +245,20 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                                 "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='sidecar-stopped'",
                             );
                         }
+                        if scenario == "legacy-known"
+                            && phase == "restart-sidecar"
+                            && own_sidecar_restarted == false
+                        {
+                            own_sidecar_restarted = restart_own_sidecar(&handle);
+                            let ack = if own_sidecar_restarted {
+                                "sidecar-restarted"
+                            } else {
+                                "sidecar-restart-failed"
+                            };
+                            let _ = window.eval(format!(
+                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='{ack}'"
+                            ));
+                        }
                         if value["done"] == true {
                             outcome = value;
                             break;
@@ -249,7 +282,9 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let normal_ok = DOWNLOADED.load(Ordering::SeqCst)
             && fixture_empty
             && commands.get("list_browser_profiles").copied().unwrap_or(0) > 0;
-        let migration_ok = own_sidecar_stopped && fixture_empty;
+        let migration_ok = own_sidecar_stopped
+            && (scenario != "legacy-known" || own_sidecar_restarted)
+            && fixture_empty;
         let scenario_ok = if migration { migration_ok } else { normal_ok };
         let passed = outcome["passed"] == true
             && allowed
@@ -260,6 +295,7 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             "childPid":child_pid,"listenerPid":listener_pid,
             "testPort":crate::process::core_port(),"portIsolation":"ephemeral-own",
             "ownSidecarStopped":own_sidecar_stopped,
+            "ownSidecarRestarted":own_sidecar_restarted,
             "seededData":std::env::var_os("FOURALLPASS_NATIVE_SEED_DATA").is_some(),
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,

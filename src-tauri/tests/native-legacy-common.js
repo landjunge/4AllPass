@@ -191,6 +191,10 @@
         result.receiptBaseRevision = receipt.baseRevision;
         result.receiptDigest = typeof receipt.preparedManifestDigest === "string";
         check("reservation-unknown");
+        result.phase = "restart-sidecar";
+        await wait("wait-own-sidecar-restart", () => result.ack === "sidecar-restarted", 300);
+        if (result.ack !== "sidecar-restarted") throw new Error("own-sidecar-restart-failed");
+        check("own-sidecar-restarted");
         sessionStorage.setItem("__nativeMigrationPhase", "after-unknown");
         location.reload();
         return;

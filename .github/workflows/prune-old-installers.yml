@@ -2,11 +2,16 @@ name: Keep newest installers
 # After each published release, delete older installer binaries so GitHub
 # only offers the current shipping line (desktop plus KiraBridge linux-*).
 # Tags, release notes, LICENSE, checksums and notices stay.
+# 4AllPass uploads installers in "Publish release assets" after the tag exists,
+# so also run when that workflow succeeds.
 on:
   release:
     types: [published, edited]
   schedule:
     - cron: "37 */6 * * *"
+  workflow_run:
+    workflows: ["Publish release assets"]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
@@ -15,6 +20,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   prune:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

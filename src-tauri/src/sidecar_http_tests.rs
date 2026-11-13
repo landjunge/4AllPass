@@ -372,3 +372,59 @@ fn http_error_statuses_remain_results_not_offline() {
     }
     assert_eq!(source.count(), 4);
 }
+
+#[test]
+fn malformed_http_response_is_protocol_not_offline() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            let _ = stream.write_all(b"HTTP/1.1 BAD\r\n\r\n");
+        }
+    });
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    handle.join().unwrap();
+}
+
+#[test]
+fn real_timeout_is_typed_offline() {
+    use std::io::Read;
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let _handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            std::thread::sleep(std::time::Duration::from_secs(20));
+        }
+    });
+    let started = std::time::Instant::now();
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            error.code,
+            SidecarErrorCode::OfflineTimeout | SidecarErrorCode::OfflineIo
+        ),
+        "{:?}",
+        error.code
+    );
+    assert!(started.elapsed() >= std::time::Duration::from_secs(14));
+}

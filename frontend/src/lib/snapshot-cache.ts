@@ -118,8 +118,11 @@ export function indexedDbSnapshotCache(): SnapshotCache {
     async remove(vaultId) {
       const db = await openDatabase();
       try {
-        await transact(db, "readwrite", (store) => store.delete(vaultId));
-        await transact(db, "readwrite", (store) => store.delete(legacyKey(vaultId)));
+        // One transaction removes the head and the separate legacy backup.
+        await transact(db, "readwrite", (store) => {
+          store.delete(vaultId);
+          return store.delete(legacyKey(vaultId));
+        });
       } finally {
         db.close();
       }

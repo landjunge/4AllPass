@@ -68,7 +68,7 @@ async function bounded<T>(pending: Promise<T>): Promise<T> {
 }
 
 const operations: Array<{
-  name: string; mode: string; request: string; result: unknown;
+  name: string; mode: string; request: string; requests?: string[]; result: unknown;
   run(cache: SnapshotCache): Promise<unknown>;
 }> = [
   {
@@ -80,8 +80,8 @@ const operations: Array<{
     run: (cache) => cache.load(snapshot.vaultId),
   },
   {
-    name: "remove", mode: "readwrite", request: "delete", result: undefined,
-    run: (cache) => cache.remove(snapshot.vaultId),
+    name: "remove", mode: "readwrite", request: "delete", requests: ["delete", "delete"],
+    result: undefined, run: (cache) => cache.remove(snapshot.vaultId),
   },
 ];
 
@@ -92,7 +92,7 @@ for (const operation of operations) {
     const pending = operation.run(indexedDbSnapshotCache());
     void pending.then(() => { settled = true; }, () => { settled = true; });
     await nextTurn();
-    assert.deepEqual(events.calls, [operation.mode, operation.request]);
+    assert.deepEqual(events.calls, [operation.mode, ...(operation.requests ?? [operation.request])]);
 
     events.request.onsuccess?.();
     await nextTurn();
@@ -101,7 +101,7 @@ for (const operation of operations) {
 
     events.tx.oncomplete?.();
     assert.deepEqual(await bounded(pending), operation.result);
-    assert.deepEqual(events.calls, [operation.mode, operation.request, "close"]);
+    assert.deepEqual(events.calls, [operation.mode, ...(operation.requests ?? [operation.request]), "close"]);
   });
 
   test(`${operation.name}: abort after request success rejects`, async () => {

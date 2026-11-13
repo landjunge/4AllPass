@@ -76,6 +76,15 @@ failure than the attack it prevents.
 Staged. Steps 1 and 2 land now; step 3 is designed here but deliberately not
 built yet.
 
+**Implementation note (2026-11-13):** an interim guard now refuses mutations from
+a session whose device row is revoked in the addressed vault: snapshot commit,
+device POST (including its own re-enrol), device DELETE, credentials POST,
+Device-Key-Envelope PUT and both WebAuthn challenge routes return 403. Reads and
+recovery stay open, foreign vaults stay 404. This closes the same-session-id
+revoke/re-enrol bypass only; a stolen token with a new device id, Vault-Key proof,
+admin/org grants and the local-profile trust boundary are unchanged, and step 3
+below (signed writes) is still not built.
+
 **1. Rate-limit the unlimited destructive routes.** Device DELETE and the
 Device-Key-Envelope PUT get the same `enforce_write_rate_limit` treatment the
 snapshot and device routes already have. This does not fix the gap; it removes

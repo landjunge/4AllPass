@@ -1,5 +1,5 @@
 import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex, equalBytes } from "./encoding/bytes.ts";
+import { bytesToHex, equalBytes, utf8 } from "./encoding/bytes.ts";
 import { writeRequestBytesV2, writePublicKeyDigestV2, type WriteRequestV2 } from "./requester.ts";
 
 // Runtime-neutral WebCrypto types: derived from the global so this package
@@ -304,23 +304,116 @@ export interface SignedWriteExpectation {
   parentId: string;
 }
 
-function validReceipt(payload: unknown, expected: SignedWriteExpectation): boolean {
-  if (typeof payload !== "object" || payload === null) return false;
+interface ReceiptRouteContract {
+  resourceType: "vault" | "device" | "credential";
+  resourceStates: readonly string[];
+}
+
+const RECEIPT_ROUTES: Readonly<Record<string, ReceiptRouteContract>> = {
+  "/api/v1/vaults/{vaultId}/snapshots": {
+    resourceType: "vault",
+    resourceStates: ["active"],
+  },
+  "/api/v1/vaults/{vaultId}/devices": {
+    resourceType: "device",
+    resourceStates: ["active", "revoked"],
+  },
+  "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials": {
+    resourceType: "credential",
+    resourceStates: ["active"],
+  },
+  "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope": {
+    resourceType: "credential",
+    resourceStates: ["active"],
+  },
+};
+
+const RECEIPT_KEYS = [
+  "schema", "operationId", "vaultId", "route", "resource", "outcome", "result",
+  "replayable", "bodyAvailable", "responseDigest", "createdAt",
+] as const;
+
+function plainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype;
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value);
+  return actual.length === keys.length && keys.every((key) => Object.hasOwn(value, key));
+}
+
+function receiptResult(value: unknown, contract: ReceiptRouteContract): value is {
+  manifestDigest: string | null;
+  resourceState: string;
+  revision: number;
+  vaultKeyVersion: number;
+} {
+  if (!plainRecord(value) || !hasExactKeys(value, [
+    "manifestDigest", "resourceState", "revision", "vaultKeyVersion",
+  ])) return false;
+  const digest = value.manifestDigest;
+  return (digest === null || (typeof digest === "string" && /^[0-9a-f]{64}$/.test(digest))) &&
+    typeof value.resourceState === "string" && contract.resourceStates.includes(value.resourceState) &&
+    Number.isSafeInteger(value.revision) && (value.revision as number) >= 0 &&
+    (value.revision as number) <= 0xffff_ffff &&
+    Number.isSafeInteger(value.vaultKeyVersion) && (value.vaultKeyVersion as number) >= 0 &&
+    (value.vaultKeyVersion as number) <= 0xffff_ffff;
+}
+
+/** JSON string quoting matching Python json.dumps(..., ensure_ascii=True). */
+export function canonicalReceiptJsonString(value: string): string {
+  return JSON.stringify(value).replace(/[\u007f-\uffff]/g, (character) =>
+    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`
+  );
+}
+
+function canonicalReceiptResultJson(result: {
+  manifestDigest: string | null;
+  resourceState: string;
+  revision: number;
+  vaultKeyVersion: number;
+}): string {
+  // These are the four fixed ASCII keys in Python sort_keys=True order. The
+  // route validator above limits the values to strings/null/uint32 integers.
+  const digest = result.manifestDigest === null
+    ? "null"
+    : canonicalReceiptJsonString(result.manifestDigest);
+  return `{"manifestDigest":${digest},"resourceState":${canonicalReceiptJsonString(result.resourceState)},"revision":${result.revision},"vaultKeyVersion":${result.vaultKeyVersion}}`;
+}
+
+function validReceipt(
+  payload: unknown,
+  expected: SignedWriteExpectation,
+  responseStatus: number,
+): boolean {
+  if (!plainRecord(payload) || !hasExactKeys(payload, RECEIPT_KEYS)) return false;
   const receipt = payload as Record<string, unknown>;
-  const resource = receipt.resource as Record<string, unknown> | undefined;
-  const outcome = receipt.outcome as Record<string, unknown> | undefined;
+  const contract = RECEIPT_ROUTES[expected.route];
+  if (!contract || expected.resourceType !== contract.resourceType) return false;
+  const resource = receipt.resource;
+  const outcome = receipt.outcome;
+  if (!plainRecord(resource) || !hasExactKeys(resource, ["type", "id", "parentId"])) return false;
+  if (!plainRecord(outcome) || !hasExactKeys(outcome, ["status", "code"])) return false;
+  if (!receiptResult(receipt.result, contract)) return false;
+  if (typeof receipt.responseDigest !== "string" || !/^[0-9a-f]{64}$/.test(receipt.responseDigest)) return false;
+  if (typeof receipt.createdAt !== "string") return false;
+  const digest = bytesToHex(sha256(utf8(canonicalReceiptResultJson(receipt.result))));
   return (
     receipt.schema === "4allpass-write-receipt-v1" &&
     receipt.bodyAvailable === false &&
+    receipt.replayable === true &&
     receipt.operationId === expected.operationId &&
     receipt.vaultId === expected.vaultId &&
     receipt.route === expected.route &&
-    resource?.type === expected.resourceType &&
-    resource?.id === expected.resourceId &&
-    resource?.parentId === expected.parentId &&
-    typeof outcome?.status === "number" &&
-    outcome.status >= 200 &&
-    outcome.status < 300
+    resource.type === expected.resourceType &&
+    resource.id === expected.resourceId &&
+    resource.parentId === expected.parentId &&
+    Number.isInteger(outcome.status) &&
+    outcome.status === responseStatus &&
+    responseStatus >= 200 && responseStatus < 300 &&
+    outcome.code === "ok" &&
+    receipt.responseDigest === digest
   );
 }
 
@@ -347,7 +440,7 @@ export function classifySignedWriteResponse(
     if (!expected) {
       return { kind: "unknown", reason: "missing_receipt_expectation" };
     }
-    if (!validReceipt(payload, expected)) {
+    if (!validReceipt(payload, expected, status)) {
       return { kind: "unknown", reason: "invalid_replay_receipt" };
     }
     return { kind: "replayed", status, receipt: payload };

@@ -63,7 +63,13 @@ describe("v2 client signer", () => {
       schema: "4allpass-write-receipt-v1",
       operationId: "0b9d2b7e-5a41-4c8f-8f0e-6d1c2a3b4c5d",
       bodyAvailable: false,
+      replayable: true,
       outcome: { status: 200, code: "ok" },
+      result: {
+        manifestDigest: "a".repeat(64), resourceState: "active", revision: 1, vaultKeyVersion: 1,
+      },
+      responseDigest: "b19024b75c64af8909d19f9b5195bbf3dc2533ba50c2d4201a80b44ef556f301",
+      createdAt: "2026-11-13T00:00:00+00:00",
     };
     const expected = {
       operationId: receipt.operationId,
@@ -180,7 +186,13 @@ describe("v2 client signer fail-closed checks", () => {
       schema: "4allpass-write-receipt-v1",
       operationId: "0b9d2b7e-5a41-4c8f-8f0e-6d1c2a3b4c5d",
       bodyAvailable: false,
+      replayable: true,
       outcome: { status: 200, code: "ok" },
+      result: {
+        manifestDigest: "a".repeat(64), resourceState: "active", revision: 1, vaultKeyVersion: 1,
+      },
+      responseDigest: "b19024b75c64af8909d19f9b5195bbf3dc2533ba50c2d4201a80b44ef556f301",
+      createdAt: "2026-11-13T00:00:00+00:00",
     };
     const expected2 = {
       operationId: receipt.operationId,

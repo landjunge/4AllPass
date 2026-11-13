@@ -120,7 +120,16 @@ function receipt(overrides: Record<string, unknown> = {}): string {
     route: ROUTE,
     resource: { type: "vault", id: "", parentId: "" },
     outcome: { status: 200, code: "ok" },
+    result: {
+      manifestDigest: "a".repeat(64),
+      resourceState: "active",
+      revision: 1,
+      vaultKeyVersion: 1,
+    },
+    replayable: true,
     bodyAvailable: false,
+    responseDigest: "b19024b75c64af8909d19f9b5195bbf3dc2533ba50c2d4201a80b44ef556f301",
+    createdAt: "2026-11-13T00:00:00+00:00",
     ...overrides,
   });
 }

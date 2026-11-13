@@ -9,11 +9,15 @@ use crate::core_bind::{
     classify_occupied, classify_spawned_listener, is_core_binary_name, is_dev_local_command,
     is_ui_binary_name, Occupant, OccupiedKind, SpawnedListener,
 };
-use crate::process::{bundled_core, core_up, CORE_PORT};
+use crate::process::{bundled_core, core_port, core_up};
 use crate::process_inspect::{cmd_name, loopback_listen_pid, parent_and_command, terminate};
 
-const FOREIGN_LISTENER: &str =
-    "127.0.0.1:8788 is already bound by another process; refusing to treat it as 4AllPass";
+fn foreign_listener() -> String {
+    format!(
+        "127.0.0.1:{} is already bound by another process; refusing to treat it as 4AllPass",
+        core_port()
+    )
+}
 
 fn show_foreign_listener_alert() {
     #[cfg(target_os = "macos")]
@@ -31,7 +35,7 @@ Your vault is the app in Applications, not the browser tab." buttons {"OK"} defa
             ])
             .status();
     }
-    eprintln!("{FOREIGN_LISTENER}");
+    eprintln!("{}", foreign_listener());
 }
 
 fn occupant_of(listen_pid: u32, our_core: Option<&PathBuf>) -> Occupant {
@@ -103,7 +107,7 @@ fn reap_our_core_chain(listen_pid: u32) {
 pub fn prepare_loopback_core() -> Result<(), String> {
     // Test-only safety restriction: never enter the normal orphan/dev reap path.
     // The ordinary post-spawn child/descendant ownership check is unchanged.
-    if core_up() || loopback_listen_pid(CORE_PORT).is_some() {
+    if core_up() || loopback_listen_pid(core_port()).is_some() {
         return Err("native normal probe refuses every occupied port before spawn".into());
     }
     Ok(())
@@ -114,11 +118,11 @@ pub fn prepare_loopback_core() -> Result<(), String> {
     if !core_up() {
         return Ok(());
     }
-    let occupant = loopback_listen_pid(CORE_PORT).map(|pid| occupant_of(pid, bundled_core().as_ref()));
+    let occupant = loopback_listen_pid(core_port()).map(|pid| occupant_of(pid, bundled_core().as_ref()));
     match classify_occupied(true, occupant) {
         OccupiedKind::Free => Ok(()),
         OccupiedKind::OurOrphan | OccupiedKind::DevLocal => {
-            if let Some(pid) = loopback_listen_pid(CORE_PORT) {
+            if let Some(pid) = loopback_listen_pid(core_port()) {
                 if matches!(
                     classify_occupied(true, Some(occupant_of(pid, bundled_core().as_ref()))),
                     OccupiedKind::DevLocal
@@ -134,7 +138,7 @@ pub fn prepare_loopback_core() -> Result<(), String> {
             }
             if core_up() {
                 show_foreign_listener_alert();
-                Err(FOREIGN_LISTENER.into())
+                Err(foreign_listener())
             } else {
                 Ok(())
             }
@@ -145,7 +149,7 @@ pub fn prepare_loopback_core() -> Result<(), String> {
         }
         OccupiedKind::Foreign => {
             show_foreign_listener_alert();
-            Err(FOREIGN_LISTENER.into())
+            Err(foreign_listener())
         }
     }
 }
@@ -158,7 +162,7 @@ pub fn wait_our_core(child_pid: u32, timeout: Duration) -> Result<(), String> {
     while started.elapsed() < timeout {
         let bound = core_up();
         let listen_pid = if bound {
-            loopback_listen_pid(CORE_PORT)
+            loopback_listen_pid(core_port())
         } else {
             None
         };
@@ -166,11 +170,11 @@ pub fn wait_our_core(child_pid: u32, timeout: Duration) -> Result<(), String> {
             parent_and_command(pid).map(|(ppid, _)| ppid)
         }) {
             SpawnedListener::Ours => return Ok(()),
-            SpawnedListener::Foreign => return Err(FOREIGN_LISTENER.into()),
+            SpawnedListener::Foreign => return Err(foreign_listener()),
             SpawnedListener::NotYet | SpawnedListener::Unknown => {
                 thread::sleep(Duration::from_millis(100));
             }
         }
     }
-    Err("4AllPass local core did not bind 127.0.0.1:8788".into())
+    Err(format!("4AllPass local core did not bind 127.0.0.1:{}", core_port()))
 }

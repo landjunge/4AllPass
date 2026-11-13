@@ -25,6 +25,20 @@ static DOWNLOAD_URL: OnceLock<String> = OnceLock::new();
 fn root() -> &'static PathBuf {
     ROOT.get().expect("initialize fixture before normal run")
 }
+
+fn copy_dir(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+    fs::create_dir_all(to)?;
+    for entry in fs::read_dir(from)? {
+        let entry = entry?;
+        let target = to.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_dir(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
 pub(crate) fn assert_initialized() {
     let _ = root();
 }
@@ -42,6 +56,8 @@ pub(crate) fn record_command(name: &str) -> bool {
 
 pub fn run() {
     assert!(cfg!(debug_assertions), "debug-only probe");
+    // Fail closed before parsing/creating the task dir or spawning a sidecar.
+    crate::process::configure_test_core_port().expect("private test core port required");
     assert_eq!(
         std::env::args().count(),
         2,
@@ -61,6 +77,12 @@ pub fn run() {
         std::env::var_os("FOURALLPASS_DATA_DIR"),
         Some(root().join("data").into_os_string())
     );
+    if let Ok(seed) = std::env::var("FOURALLPASS_NATIVE_SEED_DATA") {
+        let seed = PathBuf::from(seed);
+        assert!(seed.is_absolute(), "seed data dir must be absolute");
+        assert!(seed.is_dir(), "seed data dir must exist");
+        copy_dir(&seed, &root().join("data")).expect("copy synthetic seed data");
+    }
     assert!(
         crate::process::bundled_core().is_some(),
         "private sibling sidecar required; no npm fallback"
@@ -81,9 +103,77 @@ pub fn run() {
     crate::run();
 }
 
+fn listener_is_owned(listener_pid: u32, child_pid: u32) -> bool {
+    if listener_pid == child_pid {
+        return true;
+    }
+    let mut pid = listener_pid;
+    for _ in 0..8 {
+        let Some((ppid, _)) = crate::process_inspect::parent_and_command(pid) else {
+            return false;
+        };
+        if ppid == child_pid {
+            return true;
+        }
+        if ppid <= 1 {
+            return false;
+        }
+        pid = ppid;
+    }
+    false
+}
+
+fn restart_own_sidecar(handle: &tauri::AppHandle, original_child_pid: u32) -> Option<u32> {
+    if crate::process::core_up()
+        || crate::process_inspect::loopback_listen_pid(crate::process::core_port()).is_some()
+    {
+        return None;
+    }
+    let Ok(child) = crate::process::spawn_core() else {
+        return None;
+    };
+    let pid = child.id();
+    if pid == original_child_pid {
+        return None;
+    }
+    if let Some(state) = handle.try_state::<crate::CoreProcess>() {
+        if let Ok(mut slot) = state.0.lock() {
+            *slot = Some(child);
+        }
+    }
+    crate::loopback::wait_our_core(pid, Duration::from_secs(20))
+        .ok()
+        .map(|_| pid)
+}
+
 pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> {
     // Same configured main/capabilities/assets; explicit construction adds only
     // the private download destination and DOM driver. Core ownership already passed.
+    let scenario = std::env::var("FOURALLPASS_NATIVE_SCENARIO")
+        .unwrap_or_else(|_| "normal".to_owned());
+    let base_script: &'static str = match scenario.as_str() {
+        "normal" => include_str!("../tests/native-normal-journey.js"),
+        "legacy-known" => concat!(
+            "window.__NATIVE_SCENARIO_KIND__='known';\n",
+            include_str!("../tests/native-legacy-common.js")
+        ),
+        "legacy-unknown-fields" => concat!(
+            "window.__NATIVE_SCENARIO_KIND__='unknown-fields';\n",
+            include_str!("../tests/native-legacy-common.js")
+        ),
+        other => panic!("unknown native scenario: {other}"),
+    };
+    let fixture_prefix = if scenario == "normal" {
+        String::new()
+    } else {
+        let fixture = json!({
+            "email": std::env::var("FOURALLPASS_NATIVE_ACCOUNT_EMAIL").unwrap_or_default(),
+            "password": std::env::var("FOURALLPASS_NATIVE_ACCOUNT_PASSWORD").unwrap_or_default(),
+            "vaultPassword": std::env::var("FOURALLPASS_NATIVE_VAULT_PASSWORD").unwrap_or_default(),
+        });
+        format!("window.__NATIVE_FIXTURE__={fixture};\n")
+    };
+    let driver_script = format!("{fixture_prefix}{base_script}");
     let config = app.config().app.windows[0].clone();
     WebviewWindowBuilder::from_config(app, &config)?
         .on_navigation(|url| {
@@ -126,9 +216,9 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             }
             true
         })
-        .on_page_load(|window, payload| {
+        .on_page_load(move |window, payload| {
             if payload.event() == PageLoadEvent::Finished {
-                let _ = window.eval(include_str!("../tests/native-normal-journey.js"));
+                let _ = window.eval(&driver_script);
             }
         })
         .build()?;
@@ -138,21 +228,78 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
         let deadline = Instant::now() + Duration::from_secs(150);
         let mut outcome = json!({"done":false,"stage":"driver-timeout"});
         let mut listener_pid = None;
+        let mut own_sidecar_stopped = false;
+        let mut own_sidecar_restarted = false;
+        let mut restarted_child_pid: Option<u32> = None;
         while Instant::now() < deadline {
             listener_pid = listener_pid
-                .or_else(|| crate::process_inspect::loopback_listen_pid(crate::process::CORE_PORT));
+                .or_else(|| crate::process_inspect::loopback_listen_pid(crate::process::core_port()));
             let Some(window) = handle.get_webview_window("main") else {
                 break;
             };
             let downloaded = DOWNLOADED.load(Ordering::SeqCst);
             let (tx, rx) = mpsc::channel();
-            let script = format!("window.__NORMAL_KIT_DOWNLOADED__={downloaded};JSON.stringify(window.__NORMAL_JOURNEY__||null)");
+            let script = format!("window.__NORMAL_KIT_DOWNLOADED__={downloaded};JSON.stringify(window.__NORMAL_JOURNEY__||window.__NATIVE_MIGRATION__||null)");
             let _ = window.eval_with_callback(script, move |value| {
                 let _ = tx.send(value);
             });
             if let Ok(raw) = rx.recv_timeout(Duration::from_secs(1)) {
                 if let Ok(Value::String(encoded)) = serde_json::from_str::<Value>(&raw) {
                     if let Ok(value) = serde_json::from_str::<Value>(&encoded) {
+                        let migration = scenario != "normal";
+                        let phase = value["phase"].as_str().unwrap_or("");
+                        let needs_stop = (scenario == "legacy-known" && phase == "before-post")
+                            || (scenario == "legacy-unknown-fields" && phase == "before-offline");
+                        if migration && needs_stop && !own_sidecar_stopped {
+                            // Stop only the sidecar this probe spawned. The normal
+                            // lifecycle owns it; no foreign listener is touched.
+                            let owned = listener_pid
+                                .map(|pid| listener_is_owned(pid, child_pid))
+                                .unwrap_or(false);
+                            let ack = if !owned {
+                                "sidecar-stop-not-owned"
+                            } else {
+                                let _ = crate::process::kill_core(&handle);
+                                let mut stopped = false;
+                                let wait_started = Instant::now();
+                                while Instant::now() < wait_started + Duration::from_secs(5) {
+                                    if !crate::process::core_up()
+                                        && crate::process_inspect::loopback_listen_pid(
+                                            crate::process::core_port(),
+                                        )
+                                        .is_none()
+                                    {
+                                        stopped = true;
+                                        break;
+                                    }
+                                    std::thread::sleep(Duration::from_millis(50));
+                                }
+                                own_sidecar_stopped = stopped;
+                                if stopped {
+                                    "sidecar-stopped"
+                                } else {
+                                    "sidecar-stop-failed"
+                                }
+                            };
+                            let _ = window.eval(format!(
+                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='{ack}'"
+                            ));
+                        }
+                        if scenario == "legacy-known"
+                            && phase == "restart-sidecar"
+                            && own_sidecar_restarted == false
+                        {
+                            restarted_child_pid = restart_own_sidecar(&handle, child_pid);
+                            own_sidecar_restarted = restarted_child_pid.is_some();
+                            let ack = if own_sidecar_restarted {
+                                "sidecar-restarted"
+                            } else {
+                                "sidecar-restart-failed"
+                            };
+                            let _ = window.eval(format!(
+                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='{ack}'"
+                            ));
+                        }
                         if value["done"] == true {
                             outcome = value;
                             break;
@@ -172,14 +319,31 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                 "sidecar_http" | "list_browser_profiles" | "access_dismiss"
             )
         });
-        let passed = outcome["passed"] == true
-            && DOWNLOADED.load(Ordering::SeqCst)
+        let migration = scenario != "normal";
+        let normal_ok = DOWNLOADED.load(Ordering::SeqCst)
             && fixture_empty
+            && commands.get("list_browser_profiles").copied().unwrap_or(0) > 0;
+        let migration_ok = own_sidecar_stopped
+            && (scenario != "legacy-known" || own_sidecar_restarted)
+            && fixture_empty;
+        let scenario_ok = if migration { migration_ok } else { normal_ok };
+        let passed = outcome["passed"] == true
             && allowed
-            && commands.get("list_browser_profiles").copied().unwrap_or(0) > 0
-            && commands.get("sidecar_http").copied().unwrap_or(0) > 0;
-        let result = json!({"passed":passed,"native":"WKWebView","normalSetupCalled":true,
-            "normalChildOwnershipCheckPassed":true,"childPid":child_pid,"listenerPid":listener_pid,
+            && commands.get("sidecar_http").copied().unwrap_or(0) > 0
+            && scenario_ok;
+        let result = json!({"passed":passed,"native":"WKWebView","scenario":scenario,
+            "normalSetupCalled":true,"normalChildOwnershipCheckPassed":true,
+            "childPid":child_pid,"listenerPid":listener_pid,
+            "testPort":crate::process::core_port(),"portIsolation":"ephemeral-own",
+            "ownSidecarStopped":own_sidecar_stopped,
+            "ownSidecarRestarted":own_sidecar_restarted,
+            "originalChildPid":child_pid,
+            "restartedChildPid":restarted_child_pid,
+            "restartSamePort":crate::process::core_port(),
+            "restartSameData":root().join("data"),
+            "restartLifecycle":"spawn_core+wait_our_core+CoreProcess",
+            "snapshotPostAttempts":crate::sidecar_http::snapshot_post_attempts(),
+            "seededData":std::env::var_os("FOURALLPASS_NATIVE_SEED_DATA").is_some(),
             "privateDataDir":root().join("data"),"incognito":true,"browserFixtureEmpty":fixture_empty,
             "kitDownloadFinished":DOWNLOADED.load(Ordering::SeqCst),"commands":commands,"ui":outcome,
             "configuredCsp":configured_csp,

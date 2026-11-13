@@ -1,9 +1,19 @@
 use std::{collections::HashMap, error::Error as StdError, time::Duration};
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Serialize;
 
-use crate::process::CORE_PORT;
+use crate::process::core_port;
 use crate::sidecar_target::core_api_url;
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+static SNAPSHOT_POST_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+pub(crate) fn snapshot_post_attempts() -> usize {
+    SNAPSHOT_POST_ATTEMPTS.load(Ordering::SeqCst)
+}
 
 #[derive(Debug, serde::Serialize)]
 pub struct SidecarHttpResult {
@@ -92,6 +102,93 @@ fn classify_transport(error: &ureq::Transport) -> SidecarErrorCode {
     }
 }
 
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+fn auth_diagnostic(path: &str, body: &Option<String>, status: u16, response: &str) {
+    if path != "/api/v1/auth/login" && path != "/api/v1/auth/register" {
+        return;
+    }
+    let request = body
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok());
+    let keys = request
+        .as_ref()
+        .and_then(serde_json::Value::as_object)
+        .map(|object| {
+            let mut keys: Vec<String> = object.keys().cloned().collect();
+            keys.sort();
+            keys
+        });
+    let text = |key: &str| {
+        request
+            .as_ref()
+            .and_then(|value| value.get(key))
+            .and_then(serde_json::Value::as_str)
+            .map(str::len)
+    };
+    let detail = serde_json::from_str::<serde_json::Value>(response)
+        .ok()
+        .and_then(|value| value.get("detail").cloned());
+    let sanitized = match detail {
+        Some(serde_json::Value::Array(items)) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(|item| {
+                    serde_json::json!({
+                        "loc": item.get("loc").cloned().unwrap_or(serde_json::Value::Null),
+                        "type": item.get("type").cloned().unwrap_or(serde_json::Value::Null),
+                    })
+                })
+                .collect(),
+        ),
+        Some(other) => serde_json::json!({
+            "kind": match other {
+                serde_json::Value::String(_) => "string",
+                serde_json::Value::Object(_) => "object",
+                _ => "other",
+            }
+        }),
+        None => serde_json::Value::Null,
+    };
+    eprintln!(
+        "NATIVE_AUTH_DIAG {}",
+        serde_json::json!({
+            "path": path,
+            "status": status,
+            "request_keys": keys,
+            "email_len": text("email"),
+            "password_len": text("password"),
+            "detail": sanitized,
+        })
+    );
+}
+
+#[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+fn auth_error_diagnostic(path: &str, body: &Option<String>, code: SidecarErrorCode) {
+    if path != "/api/v1/auth/login" && path != "/api/v1/auth/register" {
+        return;
+    }
+    let request = body
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok());
+    let keys = request
+        .as_ref()
+        .and_then(serde_json::Value::as_object)
+        .map(|object| {
+            let mut keys: Vec<String> = object.keys().cloned().collect();
+            keys.sort();
+            keys
+        });
+    eprintln!(
+        "NATIVE_AUTH_DIAG {}",
+        serde_json::json!({
+            "path": path,
+            "status": 0,
+            "request_keys": keys,
+            "error_code": code,
+        })
+    );
+}
+
 /// Talk to the core we spawned. The webview must not fetch :8788 itself
 /// (WKWebView blocks or CORS-fails that). Never navigate the webview there.
 #[tauri::command]
@@ -101,7 +198,19 @@ pub fn sidecar_http(
     headers: HashMap<String, String>,
     body: Option<String>,
 ) -> Result<SidecarHttpResult, SidecarError> {
-    request_core(CORE_PORT, method, path, headers, body)
+    let diagnostic_path = path.clone();
+    let diagnostic_body = body.clone();
+    #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+    if method.eq_ignore_ascii_case("POST") && path.ends_with("/snapshots") {
+        SNAPSHOT_POST_ATTEMPTS.fetch_add(1, Ordering::SeqCst);
+    }
+    let result = request_core(core_port(), method, path, headers, body);
+    #[cfg(all(feature = "native-normal-journey-probe", debug_assertions))]
+    match &result {
+        Ok(ok) => auth_diagnostic(&diagnostic_path, &diagnostic_body, ok.status, &ok.body),
+        Err(error) => auth_error_diagnostic(&diagnostic_path, &diagnostic_body, error.code),
+    };
+    result
 }
 
 // A fixed loopback host; the normal command always supplies its fixed core port.

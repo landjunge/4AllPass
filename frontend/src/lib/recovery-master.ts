@@ -4,6 +4,7 @@ import {
   type KeyEnvelope,
 } from "@4allpass/crypto";
 import type { UnlockedVault } from "./vault-session.ts";
+import { assertMasterPassword } from "./master-password.ts";
 
 type Commit = (envelopes: KeyEnvelope[], vaultKey: Uint8Array, masterKey: Uint8Array) => Promise<UnlockedVault>;
 
@@ -16,9 +17,7 @@ export async function replaceMasterAfterRecovery(
   if (vault.unlockedWith !== "recovery_key") throw new IntegrityError("recovery unlock required");
   // Same floor as the Create form: the library boundary rejects empty/short
   // master passwords even when a direct caller skips the UI.
-  if (typeof options.newMasterPassword !== "string" || options.newMasterPassword.length < 10) {
-    throw new IntegrityError("master password must be at least 10 characters");
-  }
+  assertMasterPassword(options.newMasterPassword);
   const recovery = vault.envelopes.find((env) => env.type === "recovery");
   const master = vault.envelopes.find((env) => env.type === "master");
   if (!recovery || !master?.kdf) throw new IntegrityError("recovery or master envelope missing");

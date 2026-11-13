@@ -76,6 +76,7 @@ import type {
 import { api, ApiError } from "./api.ts";
 import type { CommittedHardRevoke } from "./hard-revoke-result.ts";
 import { replaceMasterAfterRecovery } from "./recovery-master.ts";
+import { assertMasterPassword } from "./master-password.ts";
 import { describeDevice, deviceId, rpId } from "./device-identity.ts";
 import {
   decodeEntryPlaintext,
@@ -630,6 +631,7 @@ export async function createVault(
   masterPassword: string,
   profileName: Argon2idProfileName = "standard",
 ): Promise<CreatedVault> {
+  assertMasterPassword(masterPassword);
   const profile = ARGON2ID_PROFILES[profileName];
   const summary = await api.createVault();
   const vaultId = summary.vaultId;

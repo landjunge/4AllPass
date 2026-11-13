@@ -99,6 +99,7 @@ test("actual kit unlock changes master without old password, preserves VK/device
 test("empty or too-short master passwords are rejected before any commit", async () => {
   const vault = await unlockWithRecoveryKey(ID, kit);
   const before = commits;
+  const pinBefore = loadPin(ID);
   await assert.rejects(
     () => setMasterPasswordAfterRecovery(vault, { newMasterPassword: "", recoveryKeyText: kit }),
     /at least 10/,
@@ -108,6 +109,7 @@ test("empty or too-short master passwords are rejected before any commit", async
     /at least 10/,
   );
   assert.equal(commits, before);
+  assert.deepEqual(loadPin(ID), pinBefore, "no pin movement for a rejected password");
   lock(vault);
 });
 

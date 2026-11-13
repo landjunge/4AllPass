@@ -235,6 +235,8 @@ Der Server sieht keinen Klartext, kein Tresor-Passwort und keinen Vault Key. Was
 
 Ein Gerätewiderruf blockiert Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen und Recovery bleiben möglich, und das Übernehmen eines lokalen Vaults ist durch dieselbe Prüfung geschützt. Ein revoziertes Gerät kann nach erneutem Login weiterhin einen anderen Vault beschreiben; eine neu behauptete oder Legacy-ID ohne Gerätezeile schreibt weiterhin, bis signierte Writes existieren.
 
+**Signierte Schreibvorgänge (v2, serverseitig, standardmäßig aus):** Der Server kann Schreibvorgänge für neue v2-Vaults mit Ed25519 prüfen, Receipts idempotent speichern und Rotationen atomar anwenden. Aktiviert wird das nur über `FOURALLPASS_SIGNED_WRITES_ENABLED`; bestehende v1-Vaults werden nicht umgestellt. Ein neuer v2-Vault verlangt eine Passwort-Bestätigung und einen einmaligen Creation Grant für die erste Geräteregistrierung. Destruktiver Revoke und Recovery-Lesen bleiben absichtlich ohne Vault-Key-Signatur erreichbar. Details: [backend/README.md](backend/README.md#signed-writes-v2-default-off).
+
 ### Wie dieses Projekt entsteht
 
 **System Designer & Product Architect: Daniel Filipek (landjunge)**
@@ -294,7 +296,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. Under Settings → Security, earlier states can be viewed and a missing entry restored individually (always as a new state), a read-only cleanup preview lists similar and long-unchanged entries, and an encrypted full backup can be created and restored (ciphertext only; another device needs the master password or recovery kit). There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. Ownership is re-read under the lock: an old-owner session gets 404 after a transfer, and a concurrent adopt ends without partial transfer (409). A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
+Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. Signed writes (v2) can be verified server-side for new vaults: Ed25519 over the canonical preimage, an idempotent receipt and atomic rotation. They stay behind `FOURALLPASS_SIGNED_WRITES_ENABLED` (default off), never upgrade an existing vault, and destructive revoke/recovery reads remain intentionally unsigned. Ownership is re-read under the lock: an old-owner session gets 404 after a transfer, and a concurrent adopt ends without partial transfer (409). A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
 
 The five-product appbar loads its existing module CSS (44×44 targets, helper text visually hidden but available to screen readers), and the DE/EN choice also sets the document language (`<html lang>`). Switching a product calls the native `family_switch` host with the catalog id only; in the browser it stays honestly disabled, and “App opened” is not “connected”.
 

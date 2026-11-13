@@ -226,11 +226,12 @@ async def _commit(
     manifest_obj: dict,
     next_priv=None,
     next_pub=None,
+    payload_vault_key: int | None = None,
 ):
     payload = {
         "expectedRevision": base,
         "revision": revision,
-        "vaultKeyVersion": result_key_version,
+        "vaultKeyVersion": payload_vault_key if payload_vault_key is not None else result_key_version,
         "cryptoProtocolVersion": 2,
         "envelopes": [envelope()],
         "entries": [],
@@ -484,3 +485,90 @@ async def test_v1_reads_and_unsigned_commit_still_work(client, account):
     read = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=account)
     assert read.status_code == 200, read.text
     assert read.json()["revision"] == 1
+
+
+async def test_signed_key_version_must_match_payload(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+
+    # header 1->1 with payload VK 2 would advance the head without a key row.
+    mismatch, _, _ = await _commit(
+        client,
+        account,
+        vault_id,
+        priv,
+        pub,
+        revision=1,
+        base=0,
+        key_version=1,
+        result_key_version=1,
+        manifest_obj=manifest(),
+        payload_vault_key=2,
+    )
+    assert mismatch.status_code == 422
+    assert mismatch.json()["detail"] == "write_vault_key_version_mismatch"
+
+    # rotation header 1->2 with payload VK 1 must be rejected.
+    rotated_wrong, _, _ = await _commit(
+        client,
+        account,
+        vault_id,
+        priv,
+        pub,
+        revision=1,
+        base=0,
+        key_version=1,
+        result_key_version=2,
+        manifest_obj=manifest(),
+        payload_vault_key=1,
+        next_priv=Ed25519PrivateKey.generate(),
+        next_pub=Ed25519PrivateKey.generate().public_key().public_bytes_raw(),
+    )
+    assert rotated_wrong.status_code == 422
+    assert rotated_wrong.json()["detail"] == "write_vault_key_version_mismatch"
+
+
+async def test_bootstrap_only_on_first_device_registration(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv = Ed25519PrivateKey.generate()
+    pub = priv.public_key().public_bytes_raw()
+    raw = body_bytes(
+        {
+            "expectedRevision": 0,
+            "revision": 1,
+            "vaultKeyVersion": 1,
+            "cryptoProtocolVersion": 2,
+            "envelopes": [envelope()],
+            "entries": [],
+            "sealedManifest": manifest(),
+        }
+    )
+    signed, _ = sign(
+        priv=priv,
+        pub=pub,
+        vault_id=vault_id,
+        device_id=DEVICE,
+        method="POST",
+        route="/api/v1/vaults/{vaultId}/snapshots",
+        resource_type="vault",
+        resource_id="",
+        parent_id="",
+        base=0,
+        result=1,
+        key_version=1,
+        result_key_version=1,
+        has_manifest=True,
+        manifest_digest=sealed_manifest_digest(manifest()),
+        payload_digest=write_payload_digest_v2(raw),
+        operation_id=uuid.uuid4(),
+        nonce=uuid.uuid4().bytes,
+        has_next=True,
+        next_pub=pub,
+        next_priv=priv,
+    )
+    signed["X-4AP-Creation-Grant"] = grant
+    response = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **signed}
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "write_bootstrap_route_invalid"

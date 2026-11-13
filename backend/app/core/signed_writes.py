@@ -281,6 +281,8 @@ async def prepare(
     result_revision: int,
     has_manifest: bool,
     manifest_digest: bytes,
+    payload_vault_key_version: int | None = None,
+    bootstrap_allowed: bool = False,
     creation_grant: str | None = None,
 ) -> PreparedWrite | None:
     """Verify one signed write and claim its operation id.
@@ -373,6 +375,10 @@ async def prepare(
 
     if headers.base_revision != base_revision or headers.result_revision != result_revision:
         _fail(409, "write_revision_conflict")
+    if payload_vault_key_version is not None:
+        expected = headers.result_key_version if rotate else headers.key_version
+        if payload_vault_key_version != expected:
+            _fail(422, "write_vault_key_version_mismatch")
 
     now = datetime.now(timezone.utc)
     if abs(int(now.timestamp()) - headers.timestamp) > settings.signed_write_window_seconds:
@@ -388,6 +394,10 @@ async def prepare(
 
     bootstrap = False
     if current is None:
+        if not bootstrap_allowed or resource_type != "device":
+            _fail(403, "write_bootstrap_route_invalid")
+        if headers.key_version != 1 or headers.result_key_version != 1:
+            _fail(422, "write_bootstrap_key_version_invalid")
         if not has_next_key or headers.next_public_key is None or headers.next_signature is None:
             _fail(403, "write_key_unknown")
         await bootstrap_check(db, vault.id, creation_grant, headers)
@@ -489,6 +499,8 @@ async def bootstrap_check(db: AsyncSession, vault_id: uuid.UUID, grant: str | No
     if expires_at is not None and expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if row is None or row.consumed_at is not None or expires_at <= now:
+        _fail(403, "creation_grant_invalid")
+    if row.purpose != "initial-key":
         _fail(403, "creation_grant_invalid")
     row.consumed_at = now
 

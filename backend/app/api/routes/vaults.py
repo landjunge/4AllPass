@@ -183,6 +183,7 @@ async def post_snapshot(
         result_revision=payload.revision,
         has_manifest=payload.sealed_manifest is not None,
         manifest_digest=manifest_digest,
+        payload_vault_key_version=payload.vault_key_version,
     )
     try:
         snapshot = await commit_snapshot(db, vault, payload)

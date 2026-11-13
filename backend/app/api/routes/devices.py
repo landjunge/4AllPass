@@ -171,6 +171,8 @@ async def register_device(
         result_revision=revision,
         has_manifest=active is not None,
         manifest_digest=active_manifest_digest(active),
+        payload_vault_key_version=active.vault_key_version if active is not None else None,
+        bootstrap_allowed=True,
         creation_grant=request.headers.get("X-4AP-Creation-Grant"),
     )
     result = await db.execute(
@@ -301,6 +303,7 @@ async def register_credential(
         result_revision=revision,
         has_manifest=active is not None,
         manifest_digest=active_manifest_digest(active),
+        payload_vault_key_version=active.vault_key_version if active is not None else None,
     )
     try:
         credential_id = b64decode(payload.credential_id, label="credentialId")
@@ -432,6 +435,7 @@ async def put_device_key_envelope(
         result_revision=expected_revision,
         has_manifest=snapshot is not None,
         manifest_digest=active_manifest_digest(snapshot),
+        payload_vault_key_version=snapshot.vault_key_version if snapshot is not None else None,
     )
     snapshot_envelope = _device_envelope_in_snapshot(snapshot, device.device_id)
     if snapshot_envelope is None:

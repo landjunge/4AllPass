@@ -103,6 +103,26 @@ pub fn run() {
     crate::run();
 }
 
+fn listener_is_owned(listener_pid: u32, child_pid: u32) -> bool {
+    if listener_pid == child_pid {
+        return true;
+    }
+    let mut pid = listener_pid;
+    for _ in 0..8 {
+        let Some((ppid, _)) = crate::process_inspect::parent_and_command(pid) else {
+            return false;
+        };
+        if ppid == child_pid {
+            return true;
+        }
+        if ppid <= 1 {
+            return false;
+        }
+        pid = ppid;
+    }
+    false
+}
+
 fn restart_own_sidecar(handle: &tauri::AppHandle) -> bool {
     if crate::process::core_up()
         || crate::process_inspect::loopback_listen_pid(crate::process::core_port()).is_some()
@@ -227,23 +247,37 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
                         if migration && needs_stop && !own_sidecar_stopped {
                             // Stop only the sidecar this probe spawned. The normal
                             // lifecycle owns it; no foreign listener is touched.
-                            let _ = crate::process::kill_core(&handle);
-                            let wait_started = Instant::now();
-                            while Instant::now() < wait_started + Duration::from_secs(5) {
-                                if !crate::process::core_up()
-                                    && crate::process_inspect::loopback_listen_pid(
-                                        crate::process::core_port(),
-                                    )
-                                    .is_none()
-                                {
-                                    break;
+                            let owned = listener_pid
+                                .map(|pid| listener_is_owned(pid, child_pid))
+                                .unwrap_or(false);
+                            let ack = if !owned {
+                                "sidecar-stop-not-owned"
+                            } else {
+                                let _ = crate::process::kill_core(&handle);
+                                let mut stopped = false;
+                                let wait_started = Instant::now();
+                                while Instant::now() < wait_started + Duration::from_secs(5) {
+                                    if !crate::process::core_up()
+                                        && crate::process_inspect::loopback_listen_pid(
+                                            crate::process::core_port(),
+                                        )
+                                        .is_none()
+                                    {
+                                        stopped = true;
+                                        break;
+                                    }
+                                    std::thread::sleep(Duration::from_millis(50));
                                 }
-                                std::thread::sleep(Duration::from_millis(50));
-                            }
-                            own_sidecar_stopped = true;
-                            let _ = window.eval(
-                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='sidecar-stopped'",
-                            );
+                                own_sidecar_stopped = stopped;
+                                if stopped {
+                                    "sidecar-stopped"
+                                } else {
+                                    "sidecar-stop-failed"
+                                }
+                            };
+                            let _ = window.eval(format!(
+                                "if (window.__NATIVE_MIGRATION__) window.__NATIVE_MIGRATION__.ack='{ack}'"
+                            ));
                         }
                         if scenario == "legacy-known"
                             && phase == "restart-sidecar"

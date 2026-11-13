@@ -75,6 +75,42 @@
   const readBackup = async () =>
     idbGet("4allpass-snapshot-cache", "wire", `legacy:${headCacheKey()}`);
 
+  const ipcTransportProbe = async () => {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("sidecar_http", {
+        method: "GET",
+        path: "/api/v1/health",
+        headers: {},
+        body: null,
+      });
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        typeof: typeof error,
+        constructor: error && error.constructor ? error.constructor.name : null,
+        isTypeError: error instanceof TypeError,
+        message: String(error && error.message ? error.message : error).slice(0, 240),
+      };
+    }
+  };
+
+  const tryUnlockSameContext = async () => {
+    if (unlocked()) return { ok: true };
+    await wait("offline-unlock-screen", () => byId("master-password"));
+    fill("master-password", vaultPassword);
+    await sleep(100);
+    await click("unlock-submit");
+    for (let i = 0; i < 250; i++) {
+      if (unlocked()) return { ok: true };
+      const error = (byId("error-banner")?.textContent || "").trim();
+      if (error) return { ok: false, error };
+      await sleep(100);
+    }
+    return { ok: false, error: "unlock-timeout" };
+  };
+
   const skipOnboarding = async () => {
     for (let i = 0; i < 40; i++) {
       if (byId("onboarding-skip") && !byId("onboarding-skip").disabled) {
@@ -169,16 +205,52 @@
           decorated.envelopes[0].futureEnvelope = { nested: [4, 5, 6] };
           await writeHead(decorated);
           check("unknown-fields-headcache-written");
+          // Keep the initialized account/vault context; only lock the vault.
+          // This isolates snapshot unreachability from a full offline bootstrap.
+          await click("lock");
+          await wait("locked-before-offline", () => !unlocked() && byId("master-password"));
+          check("locked-before-offline");
           result.phase = "before-offline";
-          await wait("wait-own-sidecar-stop", () => result.ack === "sidecar-stopped", 300);
+          await wait("wait-own-sidecar-stop", () => result.ack !== "", 300);
+          if (result.ack !== "sidecar-stopped") throw new Error(`own-sidecar-stop-failed:${result.ack}`);
           check("own-sidecar-stopped");
-          sessionStorage.setItem("__nativeMigrationPhase", "offline-unknown-fields");
-          location.reload();
+          result.transportError = await ipcTransportProbe();
+          const offline = await tryUnlockSameContext();
+          if (!offline.ok) {
+            result.offlineBoundary = "initialized-context-cache-fallback-unavailable";
+            result.error = `offline-unlock-failed:${offline.error}`;
+            result.done = true;
+            result.passed = false;
+            return;
+          }
+          check("offline-headcache-unlock");
+          await wait("offline-banner", () => byId("legacy-migration-banner") && byId("legacy-migration-now"));
+          await click("legacy-migration-now");
+          await wait("unsupported-message", () =>
+            text("legacy-migration-banner").includes("nicht verlustfrei") ||
+            text("legacy-migration-banner").includes("losslessly"));
+          check("unsupported-before-post");
+          const receipt = await readReservation();
+          if (!receipt || receipt.state !== "rejected") throw new Error("receipt-not-rejected");
+          result.receiptState = receipt.state;
+          const backup = await readBackup();
+          if (!backup) throw new Error("unknown-field-backup-missing");
+          if (backup.futureTop?.note !== "offline keep") throw new Error("unknown-top-not-preserved");
+          if (backup.entries?.[0]?.futureEntry !== "keep-entry") throw new Error("unknown-entry-not-preserved");
+          if (backup.envelopes?.[0]?.futureEnvelope?.nested?.[0] !== 4) throw new Error("unknown-envelope-not-preserved");
+          result.backupUnknownFields = true;
+          check("unknown-fields-backup-equal");
+          await click("lock");
+          await wait("locked", () => !unlocked() && !byId("legacy-migration-banner"));
+          check("lock-hides-banner");
+          result.passed = true;
+          result.done = true;
           return;
         }
 
         result.phase = "before-post";
-        await wait("wait-own-sidecar-stop", () => result.ack === "sidecar-stopped", 300);
+        await wait("wait-own-sidecar-stop", () => result.ack !== "", 300);
+        if (result.ack !== "sidecar-stopped") throw new Error(`own-sidecar-stop-failed:${result.ack}`);
         check("own-sidecar-stopped");
         await click("legacy-migration-now");
         await wait("unknown-message", () =>

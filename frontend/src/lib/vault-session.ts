@@ -736,32 +736,38 @@ export async function createVaultV2(
       vaultKey,
       INITIAL_VAULT_KEY_VERSION,
     );
-
-    const deviceBody = JSON.stringify({ deviceId: device, label: "4AllPass" });
-    const bootOp = newWriteOperation();
-    const bootOutcome = await performSignedWrite(
-      {
-        method: "POST",
-        route: "/api/v1/vaults/{vaultId}/devices",
-        path: `/vaults/${vaultId}/devices`,
-        resourceType: "device",
-        resourceId: device,
-        parentId: "",
-        baseRevision: 0,
-        resultRevision: 0,
-        keyVersion: INITIAL_VAULT_KEY_VERSION,
-        resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
-        hasManifest: false,
-        manifestDigest: new Uint8Array(0),
-        bodyString: deviceBody,
-        vaultId,
-        deviceId: device,
-        creationGrant,
-        operation: bootOp,
-      },
-      pair,
-    );
-    await resolveSignedWrite(bootOutcome, bootOp, () => api.listDevices(vaultId));
+    try {
+      const deviceBody = JSON.stringify({ deviceId: device, label: "4AllPass" });
+      const bootOp = newWriteOperation();
+      const bootOutcome = await performSignedWrite(
+        {
+          method: "POST",
+          route: "/api/v1/vaults/{vaultId}/devices",
+          path: `/vaults/${vaultId}/devices`,
+          resourceType: "device",
+          resourceId: device,
+          parentId: "",
+          baseRevision: 0,
+          resultRevision: 0,
+          keyVersion: INITIAL_VAULT_KEY_VERSION,
+          resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+          hasManifest: false,
+          manifestDigest: new Uint8Array(0),
+          bodyString: deviceBody,
+          vaultId,
+          deviceId: device,
+          creationGrant,
+          operation: bootOp,
+        },
+        pair,
+      );
+      await resolveSignedWrite(bootOutcome, bootOp, () => api.listDevices(vaultId));
+    } finally {
+      // performSignedWrite also disposes after signing. This outer guard covers
+      // every earlier exit too, including operation-id/nonce generation.
+      pair.signer.dispose?.();
+      pair.nextSigner?.dispose?.();
+    }
 
     const sealedManifest = sealSnapshotManifest(
       vaultId,
@@ -780,27 +786,39 @@ export async function createVaultV2(
       sealedManifest: encodeSealedManifest(sealedManifest),
     });
     const commitOp = newWriteOperation();
-    const commitOutcome = await performSignedWrite(
-      {
-        method: "POST",
-        route: "/api/v1/vaults/{vaultId}/snapshots",
-        path: `/vaults/${vaultId}/snapshots`,
-        resourceType: "vault",
-        resourceId: "",
-        parentId: "",
-        baseRevision: 0,
-        resultRevision: 1,
-        keyVersion: INITIAL_VAULT_KEY_VERSION,
-        resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
-        hasManifest: true,
-        manifestDigest: sealedManifestDigest(sealedManifest),
-        bodyString: snapshotBody,
-        vaultId,
-        deviceId: device,
-        operation: commitOp,
-      },
-      { signer: pair.signer },
+    // The bootstrap operation disposed its current and next signers. Derive a
+    // fresh current signer only after bootstrap is confirmed, for this commit.
+    const commitSignerPair = await deriveWriteSigners(
+      vaultKey,
+      vaultId,
+      INITIAL_VAULT_KEY_VERSION,
     );
+    let commitOutcome;
+    try {
+      commitOutcome = await performSignedWrite(
+        {
+          method: "POST",
+          route: "/api/v1/vaults/{vaultId}/snapshots",
+          path: `/vaults/${vaultId}/snapshots`,
+          resourceType: "vault",
+          resourceId: "",
+          parentId: "",
+          baseRevision: 0,
+          resultRevision: 1,
+          keyVersion: INITIAL_VAULT_KEY_VERSION,
+          resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+          hasManifest: true,
+          manifestDigest: sealedManifestDigest(sealedManifest),
+          bodyString: snapshotBody,
+          vaultId,
+          deviceId: device,
+          operation: commitOp,
+        },
+        commitSignerPair,
+      );
+    } finally {
+      commitSignerPair.signer.dispose?.();
+    }
     const committed = decodeVaultSnapshot(
       await resolveSignedWrite(commitOutcome, commitOp, () => api.getSnapshot(vaultId)),
     );
@@ -1031,6 +1049,7 @@ async function commitSnapshot(
         sealedManifest: wireManifest,
       });
       const operation = newWriteOperation();
+      const liveness = options?.liveness;
       const outcome = await performSignedWrite(
         {
           method: "POST",
@@ -1049,7 +1068,7 @@ async function commitSnapshot(
           vaultId: vault.vaultId,
           deviceId: deviceId(),
           operation,
-          assertLive: () => options?.liveness?.assertLive(),
+          ...(liveness ? { assertLive: () => liveness.assertLive() } : {}),
         },
         pair,
       );

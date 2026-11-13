@@ -20,12 +20,12 @@ interface Fixture {
   protocol_label: string;
   rfc8032: Array<{
     name: string;
-    secret_key_hex: string;
-    public_key_hex: string;
+    secret_key: number[];
+    public_key: number[];
     message_hex: string;
     signature_hex: string;
   }>;
-  next_public_key_digest: { label: string; next_public_key_hex: string; digest_hex: string };
+  next_public_key_digest: { label: string; next_public_key: number[]; digest_hex: string };
   valid: Array<{
     name: string;
     wire: Record<string, unknown>;
@@ -58,15 +58,20 @@ const fixture = JSON.parse(
 ) as Fixture;
 
 const PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
-const privateKeyFromSeed = (seedHex: string) =>
+const privateKeyFromSeed = (seed: number[]) =>
   createPrivateKey({
-    key: Buffer.concat([PKCS8_PREFIX, Buffer.from(seedHex, "hex")]),
+    key: Buffer.concat([PKCS8_PREFIX, Buffer.from(seed)]),
     format: "der",
     type: "pkcs8",
   });
 
 const sha256Hex = (bytes: Uint8Array) =>
   createHash("sha256").update(Buffer.from(bytes)).digest("hex");
+
+function publicKeyRaw(seed: number[]): Buffer {
+  const spki = createPublicKey(privateKeyFromSeed(seed)).export({ format: "der", type: "spki" });
+  return Buffer.from(spki).subarray(-32);
+}
 
 function codeOf(fn: () => unknown): string {
   try {
@@ -123,7 +128,7 @@ describe("canonical v2 signed WriteRequest", () => {
       assert.equal(bytesToHex(bytes), vector.preimage_hex, vector.name);
       assert.equal(writeRequestV2Hex(parseWriteRequestV2Wire(vector.wire)), vector.preimage_hex);
       assert.equal(sha256Hex(bytes), vector.sha256_hex, vector.name);
-      const key = privateKeyFromSeed(fixture.rfc8032[0]!.secret_key_hex);
+      const key = privateKeyFromSeed(fixture.rfc8032[0]!.secret_key);
       assert.equal(sign(null, Buffer.from(bytes), key).toString("hex"), vector.signature_hex, vector.name);
       assert.equal(
         verify(null, Buffer.from(bytes), createPublicKey(key), Buffer.from(vector.signature_hex, "hex")),
@@ -141,7 +146,7 @@ describe("canonical v2 signed WriteRequest", () => {
     const a = new TextEncoder().encode('{"entries":[]}');
     const b = new TextEncoder().encode('{"entries":[]}\n');
     assert.notEqual(bytesToHex(writePayloadDigestV2(a)), bytesToHex(writePayloadDigestV2(b)));
-    const nextKey = Buffer.from(fixture.next_public_key_digest.next_public_key_hex, "hex");
+    const nextKey = Buffer.from(fixture.next_public_key_digest.next_public_key);
     assert.equal(bytesToHex(writePublicKeyDigestV2(nextKey)), fixture.next_public_key_digest.digest_hex);
   });
 
@@ -193,10 +198,22 @@ describe("canonical v2 signed WriteRequest", () => {
     }
   });
 
+  it("rejects trailing line terminators on strict fields, keeps opaque ids exact", () => {
+    const names = fixture.invalid
+      .filter((vector) => /_(lf|cr|crlf|line_separator|paragraph_separator)$/.test(vector.name))
+      .map((vector) => vector.name);
+    assert.equal(names.length, 20);
+    const opaque = fixture.valid.find((vector) => vector.name === "device_id_trailing_lf");
+    assert.ok(opaque);
+    assert.equal((opaque.wire.deviceId as string).endsWith("\n"), true);
+    assert.ok(opaque.preimage_hex.includes(Buffer.from("dev-01\n", "utf8").toString("hex")));
+  });
+
   it("anchors Ed25519 to RFC 8032", () => {
     for (const vector of fixture.rfc8032) {
-      const key = privateKeyFromSeed(vector.secret_key_hex);
+      const key = privateKeyFromSeed(vector.secret_key);
       const message = Buffer.from(vector.message_hex, "hex");
+      assert.equal(Buffer.from(publicKeyRaw(vector.secret_key)).toString("hex"), Buffer.from(vector.public_key).toString("hex"));
       assert.equal(sign(null, message, key).toString("hex"), vector.signature_hex, vector.name);
       assert.equal(
         verify(null, message, createPublicKey(key), Buffer.from(vector.signature_hex, "hex")),

@@ -278,6 +278,19 @@ const validVectors = [
     "Q3: resourceType=credential, resourceId=credentialId, parentId=deviceId",
   ),
   valid(
+    "device_id_trailing_lf",
+    baseFields({
+      route: ROUTES.device,
+      resourceType: "device",
+      resourceId: "dev-01\n",
+      deviceId: "dev-01\n",
+      baseRevision: 7,
+      resultRevision: 7,
+    }),
+    "{}",
+    "opaque id: a trailing LF is part of the value, not whitespace to trim",
+  ),
+  valid(
     "challenge_issue_bytes",
     baseFields({
       route: ROUTES.challenge,
@@ -369,6 +382,23 @@ const invalidVectors = [
   invalid("parent_id_missing_number", { parentId: 5 }, "write_request_type_invalid", "number is not a string"),
   invalid("unknown_field", { body: "e30" }, "write_request_field_unknown", "body travels as payloadDigest"),
 ];
+
+// A trailing line terminator must never be ignored by the strict fields.
+const TERMINATORS = {
+  lf: "\n",
+  cr: "\r",
+  crlf: "\r\n",
+  line_separator: "\u2028",
+  paragraph_separator: "\u2029",
+};
+for (const [suffix, terminator] of Object.entries(TERMINATORS)) {
+  invalidVectors.push(
+    invalid(`vault_id_${suffix}`, { vaultId: VAULT + terminator }, "write_request_uuid_invalid", "absolute UUID end"),
+    invalid(`operation_id_${suffix}`, { operationId: OP + terminator }, "write_request_uuid_invalid", "absolute UUID end"),
+    invalid(`method_${suffix}`, { method: "POST" + terminator }, "write_request_method_invalid", "absolute method end"),
+    invalid(`route_${suffix}`, { route: ROUTES.device + terminator }, "write_request_route_invalid", "absolute route end"),
+  );
+}
 
 function missing(name, drop, code) {
   const w = wire();
@@ -477,11 +507,17 @@ const fixture = {
   routes: ROUTES,
   next_public_key_digest: {
     label: PUBLIC_KEY_LABEL,
-    next_public_key_hex: hex(NEXT_KEY),
+    next_public_key: [...NEXT_KEY],
     digest_hex: hex(nextKeyDigest),
   },
   server_requirements: serverRequirements,
-  rfc8032: RFC8032,
+  rfc8032: RFC8032.map((vector) => ({
+    name: vector.name,
+    secret_key: [...Buffer.from(vector.secret_key_hex, "hex")],
+    public_key: [...Buffer.from(vector.public_key_hex, "hex")],
+    message_hex: vector.message_hex,
+    signature_hex: vector.signature_hex,
+  })),
   valid: validVectors,
   invalid: invalidVectors,
   tamper_base: tamperBase,

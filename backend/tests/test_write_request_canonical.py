@@ -74,7 +74,7 @@ def test_reproduces_fixed_preimage_digest_and_signature(vector: dict, vectors: d
     assert data.hex() == vector["preimage_hex"]
     assert write_request_v2_hex(parse_write_request_wire(vector["wire"])) == vector["preimage_hex"]
     assert hashlib.sha256(data).hexdigest() == vector["sha256_hex"]
-    seed = bytes.fromhex(vectors["rfc8032"][0]["secret_key_hex"])
+    seed = bytes(vectors["rfc8032"][0]["secret_key"])
     private_key = Ed25519PrivateKey.from_private_bytes(seed)
     assert private_key.sign(data).hex() == vector["signature_hex"]
     public_key = private_key.public_key()
@@ -86,7 +86,7 @@ def test_hashes_exact_body_and_next_key(vectors: dict) -> None:
         body = base64.urlsafe_b64decode(vector["body_b64url"] + "=" * (-len(vector["body_b64url"]) % 4))
         assert write_payload_digest_v2(body).hex() == vector["payload_digest_hex"], vector["name"]
     assert write_payload_digest_v2(b'{"entries":[]}') != write_payload_digest_v2(b'{"entries":[]}\n')
-    next_key = bytes.fromhex(vectors["next_public_key_digest"]["next_public_key_hex"])
+    next_key = bytes(vectors["next_public_key_digest"]["next_public_key"])
     assert write_public_key_digest_v2(next_key).hex() == vectors["next_public_key_digest"]["digest_hex"]
 
 
@@ -165,13 +165,25 @@ def test_single_field_tamper_and_false_pairs_never_collapse(vectors: dict) -> No
     assert any("X-Device-Id" in entry for entry in requirements)
 
 
+def test_rejects_trailing_line_terminators_but_keeps_opaque_ids(vectors: dict) -> None:
+    names = [
+        vector["name"]
+        for vector in vectors["invalid"]
+        if vector["name"].endswith(("_lf", "_cr", "_crlf", "_line_separator", "_paragraph_separator"))
+    ]
+    assert len(names) == 20
+    opaque = next(vector for vector in vectors["valid"] if vector["name"] == "device_id_trailing_lf")
+    assert opaque["wire"]["deviceId"].endswith("\n")
+    assert "dev-01\n".encode().hex() in opaque["preimage_hex"]
+
+
 def test_rfc8032_anchor(vectors: dict) -> None:
     for vector in vectors["rfc8032"]:
-        seed = bytes.fromhex(vector["secret_key_hex"])
+        seed = bytes(vector["secret_key"])
         private_key = Ed25519PrivateKey.from_private_bytes(seed)
         message = bytes.fromhex(vector["message_hex"])
-        assert private_key.public_key().public_bytes_raw().hex() == vector["public_key_hex"]
+        assert private_key.public_key().public_bytes_raw() == bytes(vector["public_key"])
         assert private_key.sign(message).hex() == vector["signature_hex"]
-        Ed25519PublicKey.from_public_bytes(bytes.fromhex(vector["public_key_hex"])).verify(
+        Ed25519PublicKey.from_public_bytes(bytes(vector["public_key"])).verify(
             bytes.fromhex(vector["signature_hex"]), message
         )

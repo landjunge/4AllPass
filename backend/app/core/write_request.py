@@ -87,9 +87,9 @@ _WIRE_KEYS = (
 )
 
 _METHOD_RE = re.compile(r"^[A-Z]{1,16}$")
-_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 _ROUTE_RE = re.compile(r"^/api/v1/[\x21-\x7e]+$")
-_BASE64URL_RE = re.compile(r"^[A-Za-z0-9_-]*$")
+_BASE64URL_RE = re.compile(r"[A-Za-z0-9_-]*")
 
 
 class WriteRequestV2Error(ValueError):
@@ -166,7 +166,7 @@ def _read_uuid(name: str, value: Any) -> str:
     """
     if not isinstance(value, str):
         _fail(CODE_TYPE, f"{name} must be a string")
-    if not _UUID_RE.match(value):
+    if not _UUID_RE.fullmatch(value):
         _fail(CODE_UUID, f"{name} must be a canonical lowercase UUID")
     return value
 
@@ -211,7 +211,7 @@ def decode_base64url_canonical(name: str, value: Any) -> bytes:
         _fail(CODE_TYPE, f"{name} must be a base64url string")
     if len(value) % 4 == 1:
         _fail(CODE_BASE64, f"{name} has an impossible base64url length")
-    if not _BASE64URL_RE.match(value):
+    if not _BASE64URL_RE.fullmatch(value):
         _fail(CODE_BASE64, f"{name} is not unpadded base64url")
     try:
         data = base64.urlsafe_b64decode((value + "=" * (-len(value) % 4)).encode("ascii"))
@@ -243,12 +243,12 @@ def write_public_key_digest_v2(next_public_key_raw: bytes) -> bytes:
 def _validate(request: WriteRequestV2) -> WriteRequestV2:
     vault_id = _read_uuid("vaultId", request.vaultId)
     device_id = _read_id("deviceId", request.deviceId, 1)
-    if not isinstance(request.method, str) or not _METHOD_RE.match(request.method):
+    if not isinstance(request.method, str) or not _METHOD_RE.fullmatch(request.method):
         _fail(CODE_METHOD, "method must be an upper-case ASCII token")
     if (
         not isinstance(request.route, str)
         or not 1 <= len(request.route) <= 512
-        or not _ROUTE_RE.match(request.route)
+        or not _ROUTE_RE.fullmatch(request.route)
         or "?" in request.route
         or "#" in request.route
     ):

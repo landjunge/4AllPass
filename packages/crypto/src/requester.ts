@@ -230,8 +230,13 @@ const WIRE_V2_KEYS = [
   "timestamp",
 ] as const;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const BASE64URL_RE = /^[A-Za-z0-9_-]*$/;
+// No `$` anchor: JavaScript's `$` is absolute, but the check is written as an
+// explicit whole-input comparison so a trailing line terminator can never slip
+// through, and so the rule is the same shape as Python's `fullmatch`.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+const METHOD_RE = /^[A-Z]{1,16}/;
+const ROUTE_RE = /^\/api\/v1\/[\x21-\x7e]+/;
+const BASE64URL_RE = /^[A-Za-z0-9_-]*/;
 const BASE64URL_TABLE = (() => {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   const table = new Int16Array(128).fill(-1);
@@ -241,6 +246,12 @@ const BASE64URL_TABLE = (() => {
 
 function wfail(code: WriteRequestV2ErrorCode, message: string): never {
   throw new WriteRequestV2Error(code, message);
+}
+
+/** Absolute whole-input match: a trailing LF/CR/U+2028 can never be ignored. */
+function wholeMatch(pattern: RegExp, value: string): boolean {
+  const match = pattern.exec(value);
+  return match !== null && match[0].length === value.length;
 }
 
 /** Counts Unicode scalar values the way Python's `len(str)` does: one per code point. */
@@ -263,7 +274,7 @@ function readUuidV2(name: string, value: unknown): string {
   if (typeof value !== "string") {
     wfail(WRITE_V2_ERROR_CODES.type, `${name} must be a string`);
   }
-  if (!UUID_RE.test(value)) {
+  if (!wholeMatch(UUID_RE, value)) {
     wfail(WRITE_V2_ERROR_CODES.uuid, `${name} must be a canonical lowercase UUID`);
   }
   return value;
@@ -344,7 +355,7 @@ export function decodeBase64UrlCanonicalV2(name: string, value: unknown): Uint8A
   if (value.length % 4 === 1) {
     wfail(WRITE_V2_ERROR_CODES.base64, `${name} has an impossible base64url length`);
   }
-  if (!BASE64URL_RE.test(value)) {
+  if (!wholeMatch(BASE64URL_RE, value)) {
     wfail(WRITE_V2_ERROR_CODES.base64, `${name} is not unpadded base64url`);
   }
   const out = new Uint8Array(Math.floor((value.length * 6) / 8));
@@ -394,7 +405,7 @@ function validateWriteRequestV2(input: WriteRequestV2): WriteRequestV2 {
   }
   const vaultId = readUuidV2("vaultId", input.vaultId);
   const deviceId = readIdV2("deviceId", input.deviceId, 1);
-  if (typeof input.method !== "string" || !/^[A-Z]{1,16}$/.test(input.method)) {
+  if (typeof input.method !== "string" || !wholeMatch(METHOD_RE, input.method)) {
     wfail(WRITE_V2_ERROR_CODES.method, "method must be an upper-case ASCII token");
   }
   if (
@@ -402,7 +413,7 @@ function validateWriteRequestV2(input: WriteRequestV2): WriteRequestV2 {
     input.route.length < 1 ||
     input.route.length > 512 ||
     !input.route.startsWith("/api/v1/") ||
-    !/^[\x21-\x7e]+$/.test(input.route) ||
+    !wholeMatch(ROUTE_RE, input.route) ||
     input.route.includes("?") ||
     input.route.includes("#")
   ) {

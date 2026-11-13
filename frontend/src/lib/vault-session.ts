@@ -31,6 +31,8 @@ import {
   encodeSealedManifest,
   encodeVaultSnapshot,
   encryptEntry,
+  entryDigest,
+  envelopeDigest,
   formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
@@ -57,6 +59,7 @@ import type {
   KeyEnvelope,
   VaultSnapshot,
   VaultRevision,
+  WireVaultSnapshot,
 } from "@4allpass/crypto";
 import {
   browserWebAuthnClient,
@@ -81,6 +84,12 @@ import {
   type VaultEntry,
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
+import {
+  migrationAttemptBlocks,
+  migrationAttemptStore,
+  newOperationId,
+  type MigrationAttempt,
+} from "./migration-attempt.ts";
 import { isOfflineError, snapshotCache } from "./snapshot-cache.ts";
 import { VaultLockedError, type VaultLiveness } from "./vault-liveness.ts";
 import { assertHistoricSelection, openHistoricSnapshot, type HistoricSelection } from "./historic-snapshot.ts";
@@ -97,6 +106,40 @@ export interface UnlockedVault {
   envelopes: KeyEnvelope[];
   entries: VaultEntry[];
   unlockedWith: UnlockMethod;
+  /** Defensive accepted legacy wire copy; ciphertext only. */
+  wire?: VaultSnapshot;
+  /**
+   * Exact accepted legacy wire as received, including unknown fields the typed
+   * codec does not model. Backed up verbatim; never re-encoded for the backup.
+   */
+  wireRaw?: WireVaultSnapshot;
+  /** Canonical accepted-state fingerprints for the opt-in legacy migration. */
+  acceptedDigests?: {
+    entries: string;
+    envelopes: string;
+    plaintext: string;
+  };
+}
+
+export class LegacyMigrationError extends Error {
+  readonly code: string;
+  constructor(code: string, message = "legacy manifest migration failed") {
+    super(message);
+    this.name = "LegacyMigrationError";
+    this.code = code;
+  }
+}
+
+export type LegacyMigrationOutcome =
+  | { status: "migrated"; vault: UnlockedVault }
+  | { status: "conflict"; vault?: UnlockedVault }
+  | { status: "already"; vault: UnlockedVault }
+  | { status: "declined" }
+  | { status: "retry_blocked" }
+  | { status: "unknown" };
+
+export function isLegacyVault(vault: UnlockedVault | null | undefined): boolean {
+  return Boolean(vault?.wire && !vault.wire.sealedManifest);
 }
 
 export class DeviceUnlockNotPossible extends Error {
@@ -239,16 +282,28 @@ function deviceEnvelopeOf(snapshot: VaultSnapshot, id: string): KeyEnvelope | nu
   );
 }
 
-/** Fetch the active snapshot and refuse a rollback before touching any key. */
-async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
-  let raw;
+/** Defensive copy of the exact wire; unknown fields must survive verbatim. */
+function cloneWire(wire: WireVaultSnapshot): WireVaultSnapshot {
+  if (typeof structuredClone === "function") return structuredClone(wire);
+  return JSON.parse(JSON.stringify(wire)) as WireVaultSnapshot;
+}
+
+/**
+ * Fetch the active snapshot and refuse a rollback before touching any key.
+ * The raw wire is cloned before decoding so a getter/Proxy cannot show one
+ * state to the decoder and another to the durable legacy backup.
+ */
+async function fetchFreshSnapshotWithRaw(
+  vaultId: string,
+): Promise<{ snapshot: VaultSnapshot; raw: WireVaultSnapshot }> {
+  let raw: WireVaultSnapshot;
   try {
-    raw = await api.getSnapshot(vaultId);
+    raw = cloneWire(await api.getSnapshot(vaultId));
   } catch (error) {
     if (!isOfflineError(error)) throw error;
     const cached = await snapshotCache().load(vaultId);
     if (!cached) throw error;
-    raw = cached;
+    raw = cloneWire(cached);
   }
   const snapshot = decodeVaultSnapshot(raw);
   if (snapshot.vaultId !== vaultId) {
@@ -263,7 +318,11 @@ async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
       ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
       : {}),
   });
-  return snapshot;
+  return { snapshot, raw };
+}
+
+async function fetchFreshSnapshot(vaultId: string): Promise<VaultSnapshot> {
+  return (await fetchFreshSnapshotWithRaw(vaultId)).snapshot;
 }
 
 function sealSnapshotManifest(
@@ -291,7 +350,8 @@ function openSnapshot(
   vaultKey: Uint8Array,
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
-): UnlockedVault {
+  rawWire?: WireVaultSnapshot,
+): { vault: UnlockedVault; pin: VaultRevision } {
   // Decrypt the records verification returned, not the wire copies — a Proxy
   // or getter-backed snapshot can otherwise show honest bytes to the manifest
   // and stale bytes to decrypt (crypto-protocol.md §8.2 / F-19).
@@ -345,17 +405,31 @@ function openSnapshot(
   });
   const sortedEntries = entries.sort((a, b) => a.title.localeCompare(b.title));
   // A failed integrity pass, plaintext decode or sort must leave the old pin intact.
-  // Keep the digest from the exact verified manifest, never re-read its wire blob.
+  // The pin is saved by `acceptSnapshot` only after the cache await + liveness
+  // check, so a late lock cannot move it into unconfirmed state.
   assertFreshSnapshot(loadPin(snapshot.vaultId), acceptedPin);
-  savePin(acceptedPin);
+  const acceptedLegacy = snapshot.sealedManifest
+    ? null
+    : acceptedLegacyState(
+        rawWire,
+        revision,
+        vaultKeyVersion,
+        entriesToOpen,
+        envelopesToKeep,
+        sortedEntries,
+      );
   return {
-    vaultId: snapshot.vaultId,
-    revision,
-    vaultKeyVersion,
-    vaultKey,
-    envelopes: envelopesToKeep,
-    entries: sortedEntries,
-    unlockedWith,
+    vault: {
+      vaultId: snapshot.vaultId,
+      revision,
+      vaultKeyVersion,
+      vaultKey,
+      envelopes: envelopesToKeep,
+      entries: sortedEntries,
+      unlockedWith,
+      ...(acceptedLegacy ?? {}),
+    },
+    pin: acceptedPin,
   };
 }
 
@@ -364,12 +438,40 @@ async function acceptSnapshot(
   vaultKey: Uint8Array,
   unlockedWith: UnlockMethod,
   crossChecks: readonly CrossCheckEnvelope[] = [],
+  rawWire?: WireVaultSnapshot,
+  liveness?: VaultLiveness,
 ): Promise<UnlockedVault> {
-  const vault = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks);
+  const { vault, pin } = openSnapshot(snapshot, vaultKey, unlockedWith, crossChecks, rawWire);
+  // A legacy head cache must be the exact accepted raw wire. Re-encoding would
+  // drop unknown fields, and an offline reopen would then migrate a lossy state.
+  const cacheWire = snapshot.sealedManifest
+    ? encodeVaultSnapshot(snapshot)
+    : rawWire
+      ? cloneWire(rawWire)
+      : null;
+  if (!cacheWire) {
+    discardOpenedVault(vault);
+    throw new IntegrityError("legacy raw wire missing; refusing a lossy head cache");
+  }
   try {
-    await snapshotCache().save(snapshot.vaultId, encodeVaultSnapshot(snapshot));
+    await snapshotCache().save(snapshot.vaultId, cacheWire);
   } catch {
     // Cache is best-effort. Unlock already succeeded.
+  }
+  // A lock during the cache await must not save the new pin or hand back an
+  // opened key. The accepted state is discarded exactly like a late lock.
+  if (liveness && !liveness.isLive()) {
+    discardOpenedVault(vault);
+    throw new VaultLockedError();
+  }
+  try {
+    // Another tab may have advanced the pin while this adoption awaited the
+    // cache. Never return the opened vault on that error path.
+    assertFreshSnapshot(loadPin(pin.vaultId), pin);
+    savePin(pin);
+  } catch (error) {
+    discardOpenedVault(vault);
+    throw error;
   }
   return vault;
 }
@@ -566,7 +668,7 @@ export async function unlockWithMasterPassword(
   vaultId: string,
   masterPassword: string,
 ): Promise<UnlockedVault> {
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const { snapshot, raw } = await fetchFreshSnapshotWithRaw(vaultId);
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
   try {
@@ -576,9 +678,13 @@ export async function unlockWithMasterPassword(
       expectType: "master",
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
-    return acceptSnapshot(snapshot, vaultKey, "master_password", [
-      { envelope: masterEnvelope, wrappingKey: masterKey },
-    ]);
+    return acceptSnapshot(
+      snapshot,
+      vaultKey,
+      "master_password",
+      [{ envelope: masterEnvelope, wrappingKey: masterKey }],
+      raw,
+    );
   } finally {
     zeroize(masterKey);
   }
@@ -588,7 +694,7 @@ export async function unlockWithRecoveryKey(
   vaultId: string,
   recoveryKeyText: string,
 ): Promise<UnlockedVault> {
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const { snapshot, raw } = await fetchFreshSnapshotWithRaw(vaultId);
   const envelope = snapshot.envelopes.find((candidate) => candidate.type === "recovery");
   if (!envelope) throw new Error("this vault has no recovery envelope");
   const recoveryKey = parseRecoveryKey(recoveryKeyText);
@@ -600,7 +706,7 @@ export async function unlockWithRecoveryKey(
       expectType: "recovery",
       expectVaultKeyVersion: snapshot.vaultKeyVersion,
     });
-    return acceptSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey }]);
+    return acceptSnapshot(snapshot, vaultKey, "recovery_key", [{ envelope, wrappingKey }], raw);
   } finally {
     zeroize(recoveryKey, wrappingKey);
   }
@@ -625,7 +731,7 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
   if (!record) {
     throw new DeviceUnlockNotPossible("device unlock is not set up in this browser profile");
   }
-  const snapshot = await fetchFreshSnapshot(vaultId);
+  const { snapshot, raw } = await fetchFreshSnapshotWithRaw(vaultId);
   const deviceEnvelope = deviceEnvelopeOf(snapshot, id);
   if (!deviceEnvelope) {
     throw new DeviceUnlockNotPossible(
@@ -659,7 +765,7 @@ export async function unlockWithDevice(vaultId: string): Promise<UnlockedVault> 
         challenges: challenges.provider,
         ...(mirrored ? { mirroredDeviceKeyEnvelope: mirrored } : {}),
       });
-      return acceptSnapshot(snapshot, result.vaultKey, result.mechanism);
+      return acceptSnapshot(snapshot, result.vaultKey, result.mechanism, [], raw);
     } finally {
       await challenges.consumeAll();
     }
@@ -695,6 +801,11 @@ async function commitSnapshot(
     vaultKeyVersion?: number;
     vaultKey?: Uint8Array;
     liveness?: VaultLiveness;
+    /**
+     * Persist the exact sealed-manifest digest before the POST. Awaited: the
+     * request must not leave the client until the durable reservation exists.
+     */
+    onPrepared?: (manifestDigest: Uint8Array) => void | Promise<void>;
   },
 ): Promise<UnlockedVault> {
   // Check before any entry plaintext is encrypted. There is no await between
@@ -727,6 +838,10 @@ async function commitSnapshot(
     envelopes,
     encrypted,
   );
+  await options?.onPrepared?.(sealedManifestDigest(sealedManifest));
+  // A lock that landed while the reservation was persisted must abort before
+  // the request is sent.
+  options?.liveness?.assertLive();
 
   try {
     const committed = decodeVaultSnapshot(
@@ -749,12 +864,433 @@ async function commitSnapshot(
     ) {
       throw new IntegrityError(`server did not return the committed revision ${nextRevision}`);
     }
-    return acceptSnapshot(committed, vaultKey, vault.unlockedWith);
+    // A lock that landed while the response was in flight must not create new
+    // accepted state (pin/cache/open entries) in this call.
+    if (options?.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+    const accepted = await acceptSnapshot(
+      committed,
+      vaultKey,
+      vault.unlockedWith,
+      [],
+      undefined,
+      options?.liveness,
+    );
+    if (options?.liveness && !options.liveness.isLive()) {
+      discardOpenedVault(accepted);
+      throw new VaultLockedError();
+    }
+    return accepted;
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new CommitConflict(error.currentRevision);
     }
     throw error;
+  }
+}
+
+function envelopeIdentity(envelope: KeyEnvelope): string {
+  return `${envelope.type}:${envelope.deviceId ?? ""}`;
+}
+
+function entryFingerprint(entry: EncryptedEntry): string {
+  return `${entry.id}:${bytesToBase64(entryDigest(entry))}`;
+}
+
+function envelopeFingerprint(envelope: KeyEnvelope): string {
+  return `${envelopeIdentity(envelope)}:${bytesToBase64(envelopeDigest(envelope))}`;
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+/**
+ * Snapshot exactly what was accepted at open time. The wire is re-encoded and
+ * decoded once (a defensive copy); the fingerprints use the protocol's own
+ * entry/envelope digests plus a canonical plaintext string. This makes later
+ * getter/proxy replays, same-id field changes and metadata swaps visible.
+ */
+function discardOpenedVault(vault: UnlockedVault): void {
+  for (const entry of vault.entries) wipeVaultEntry(entry);
+  zeroize(vault.vaultKey);
+}
+
+function acceptedLegacyState(
+  rawWire: WireVaultSnapshot | undefined,
+  revision: number,
+  vaultKeyVersion: number,
+  entries: EncryptedEntry[],
+  envelopes: KeyEnvelope[],
+  plaintext: VaultEntry[],
+): Pick<UnlockedVault, "wire" | "wireRaw" | "acceptedDigests"> {
+  if (!rawWire) {
+    // Re-encoding would silently drop unknown fields. Refuse instead.
+    throw new IntegrityError("legacy raw wire missing; refusing to reconstruct metadata");
+  }
+  const raw = cloneWire(rawWire);
+  const wire = decodeVaultSnapshot(raw);
+  if (
+    wire.vaultId !== raw.vaultId ||
+    wire.revision !== revision ||
+    wire.vaultKeyVersion !== vaultKeyVersion
+  ) {
+    throw new IntegrityError("legacy raw wire metadata does not match the accepted snapshot");
+  }
+  return {
+    wire,
+    wireRaw: raw,
+    acceptedDigests: {
+      entries: JSON.stringify(entries.map(entryFingerprint).sort()),
+      envelopes: JSON.stringify(envelopes.map(envelopeFingerprint).sort()),
+      plaintext: JSON.stringify(plaintext),
+    },
+  };
+}
+
+/**
+ * Explicit opt-in migration of a legacy manifestless snapshot.
+ *
+ * The legacy head is only server-asserted. The re-commit attests the set that
+ * was opened under the Vault Key at this moment; the new manifest authenticates
+ * that state forward. It never proves the pre-migration revision/set was
+ * original. A durable ciphertext backup of the legacy wire snapshot is verified
+ * before any POST. An unknown outcome is never retried: only the exact expected
+ * revision plus the prepared manifest digest (or a verified head) counts as
+ * success. A legacy head after a lost response proves nothing.
+ */
+const SNAPSHOT_KEYS = new Set([
+  "vaultId", "revision", "vaultKeyVersion", "cryptoProtocolVersion",
+  "envelopes", "entries", "sealedManifest",
+]);
+const ENTRY_KEYS = new Set([
+  "id", "schemaVersion", "cryptoVersion", "vaultKeyVersion",
+  "nonce", "ciphertext", "tag",
+]);
+const ENVELOPE_KEYS = new Set([
+  "version", "type", "vaultKeyVersion", "encryption",
+  "nonce", "ciphertext", "tag", "deviceId", "deviceKeyVersion", "kdf",
+]);
+const KDF_KEYS = new Set([
+  "algorithm", "version", "memory", "iterations", "parallelism", "hashLen", "salt",
+]);
+const SEALED_KEYS = new Set(["version", "encryption", "nonce", "ciphertext", "tag"]);
+
+function unknownKeys(
+  value: unknown,
+  allowed: ReadonlySet<string>,
+  prefix: string,
+): string[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.keys(value as Record<string, unknown>)
+    .filter((key) => !allowed.has(key))
+    .map((key) => `${prefix}.${key}`);
+}
+
+/** Wire fields this client cannot carry into a sealed commit without dropping. */
+function unsupportedLegacyMetadata(wire: WireVaultSnapshot): string[] {
+  const paths = unknownKeys(wire, SNAPSHOT_KEYS, "snapshot");
+  wire.entries.forEach((entry, index) => {
+    paths.push(...unknownKeys(entry, ENTRY_KEYS, `entries[${index}]`));
+  });
+  wire.envelopes.forEach((envelope, index) => {
+    paths.push(...unknownKeys(envelope, ENVELOPE_KEYS, `envelopes[${index}]`));
+    if (envelope.kdf) {
+      paths.push(...unknownKeys(envelope.kdf, KDF_KEYS, `envelopes[${index}].kdf`));
+    }
+  });
+  if (wire.sealedManifest) {
+    paths.push(...unknownKeys(wire.sealedManifest, SEALED_KEYS, "sealedManifest"));
+  }
+  return paths;
+}
+
+/** Key-order-insensitive JSON identity, including unknown nested fields. */
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function cloneEnvelope(envelope: KeyEnvelope): KeyEnvelope {
+  return {
+    ...envelope,
+    nonce: envelope.nonce.slice(),
+    ciphertext: envelope.ciphertext.slice(),
+    tag: envelope.tag.slice(),
+    ...(envelope.kdf
+      ? { kdf: { ...envelope.kdf, salt: envelope.kdf.salt.slice() } }
+      : {}),
+  };
+}
+
+const legacyMigrationInFlight = new Set<string>();
+
+export async function migrateLegacySnapshot(
+  vault: UnlockedVault,
+  options: { confirmed?: boolean; liveness?: VaultLiveness } = {},
+): Promise<LegacyMigrationOutcome> {
+  if (options.confirmed !== true) return { status: "declined" };
+  const vaultId = vault.vaultId;
+  if (legacyMigrationInFlight.has(vaultId)) return { status: "retry_blocked" };
+  legacyMigrationInFlight.add(vaultId);
+  try {
+    return await migrateLegacySnapshotUnlocked(vault, options);
+  } finally {
+    legacyMigrationInFlight.delete(vaultId);
+  }
+}
+
+async function migrateLegacySnapshotUnlocked(
+  vault: UnlockedVault,
+  options: { confirmed?: boolean; liveness?: VaultLiveness },
+): Promise<LegacyMigrationOutcome> {
+  if (options.confirmed !== true) return { status: "declined" };
+  const wire = vault.wire;
+  const rawWire = vault.wireRaw;
+  const accepted = vault.acceptedDigests;
+  if (!wire) throw new LegacyMigrationError("legacy_wire_missing");
+  if (wire.sealedManifest) return { status: "already", vault };
+  if (!accepted) throw new LegacyMigrationError("legacy_accepted_state_missing");
+  if (!rawWire) throw new LegacyMigrationError("legacy_wire_raw_missing");
+  if (
+    wire.vaultId !== vault.vaultId ||
+    wire.revision !== vault.revision ||
+    wire.vaultKeyVersion !== vault.vaultKeyVersion
+  ) {
+    throw new LegacyMigrationError("legacy_wire_mismatch");
+  }
+
+  // Atomic cross-tab claim happens before the backup await: two independent
+  // pages cannot both pass an empty-state read and later POST.
+  const reservation = migrationAttemptStore();
+  if (migrationAttemptBlocks(await reservation.load(vault.vaultId), vault)) {
+    return { status: "retry_blocked" };
+  }
+
+  const assertAccepted = (
+    entries: readonly VaultEntry[],
+    envelopes: readonly KeyEnvelope[],
+    phase: string,
+  ) => {
+    const wireEntries = JSON.stringify(wire.entries.map(entryFingerprint).sort());
+    const wireEnvelopes = JSON.stringify(wire.envelopes.map(envelopeFingerprint).sort());
+    const commitEnvelopes = JSON.stringify(envelopes.map(envelopeFingerprint).sort());
+    if (
+      wireEntries !== accepted.entries ||
+      wireEnvelopes !== accepted.envelopes ||
+      commitEnvelopes !== accepted.envelopes ||
+      JSON.stringify(entries) !== accepted.plaintext
+    ) {
+      throw new LegacyMigrationError(
+        "legacy_accepted_state_changed",
+        `legacy accepted state changed (${phase})`,
+      );
+    }
+    if (
+      !sameStrings(
+        wire.entries.map((entry) => entry.id).sort(),
+        entries.map((entry) => entry.id).sort(),
+      )
+    ) {
+      throw new LegacyMigrationError("legacy_entry_set_mismatch");
+    }
+  };
+
+  assertAccepted(vault.entries, vault.envelopes, "before backup");
+
+  // Defensive immutable commit state: a mutation of the live vault during the
+  // backup await cannot change what is encrypted and posted.
+  const commitEntries = vault.entries.map((entry) => ({ ...entry }));
+  const commitEnvelopes = vault.envelopes.map(cloneEnvelope);
+  assertAccepted(commitEntries, commitEnvelopes, "copied state");
+
+  let attempt: MigrationAttempt = {
+    schema: 1,
+    vaultId: vault.vaultId,
+    vaultKeyVersion: vault.vaultKeyVersion,
+    baseRevision: vault.revision,
+    operationID: newOperationId(),
+    preparedManifestDigest: "",
+    state: "reserved",
+    createdAt: new Date().toISOString(),
+  };
+  const claimed = await reservation.claim(attempt);
+  if (!claimed.ok) return { status: "retry_blocked" };
+
+  const finish = async (state: "resolved" | "unknown" | "rejected") => {
+    try {
+      await reservation.transition({ ...attempt, state });
+    } catch {
+      // Local metadata failure must not hide the server outcome; the durable
+      // prepared record still blocks a blind retry.
+    }
+  };
+
+  try {
+    // Durable ciphertext backup: the exact accepted raw wire, unknown fields
+    // included. Verify data fidelity through the same cache slot.
+    const backup = cloneWire(rawWire);
+    try {
+      const cache = snapshotCache();
+      await cache.saveLegacyBackup(vault.vaultId, backup);
+      const readback = await cache.loadLegacyBackup(vault.vaultId);
+      if (!readback || canonicalJson(readback) !== canonicalJson(backup)) {
+        throw new LegacyMigrationError("legacy_backup_unverified");
+      }
+      const readbackDecoded = decodeVaultSnapshot(readback);
+      if (
+        JSON.stringify(readbackDecoded.entries.map(entryFingerprint).sort()) !== accepted.entries ||
+        JSON.stringify(readbackDecoded.envelopes.map(envelopeFingerprint).sort()) !== accepted.envelopes
+      ) {
+        throw new LegacyMigrationError("legacy_backup_digest_mismatch");
+      }
+    } catch (error) {
+      if (error instanceof LegacyMigrationError) throw error;
+      throw new LegacyMigrationError("legacy_backup_failed");
+    }
+
+    // Re-check after every await before anything is encrypted or sent. The
+    // copied state is what gets posted; a live mutation still aborts here.
+    if (vault.wire !== wire || vault.wireRaw !== rawWire) {
+      throw new LegacyMigrationError("legacy_accepted_state_changed", "legacy wire replaced");
+    }
+    if (
+      vault.revision !== attempt.baseRevision ||
+      vault.vaultKeyVersion !== attempt.vaultKeyVersion
+    ) {
+      throw new LegacyMigrationError("legacy_accepted_state_changed", "legacy revision changed");
+    }
+    // A real lock also wipes the entries, so check liveness before the state
+    // comparison: the correct outcome is VaultLockedError, not a content diff.
+    if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+    assertAccepted(vault.entries, vault.envelopes, "after backup");
+
+    // The current commit schema can carry the known fields only. Rather than
+    // silently dropping unknown metadata, preserve the backup and fail closed.
+    const unsupported = unsupportedLegacyMetadata(backup);
+    if (unsupported.length > 0) {
+      throw new LegacyMigrationError(
+        "legacy_wire_unsupported_metadata",
+        `legacy wire has metadata this version cannot preserve: ${unsupported.join(", ")}`,
+      );
+    }
+  } catch (error) {
+    await finish("rejected");
+    throw error;
+  }
+
+  let preparedDigest: Uint8Array | null = null;
+  try {
+    const committed = await commitSnapshot(vault, commitEntries, commitEnvelopes, {
+      ...(options.liveness ? { liveness: options.liveness } : {}),
+      onPrepared: async (digest) => {
+        attempt = {
+          ...attempt,
+          preparedManifestDigest: bytesToBase64(digest),
+          state: "prepared",
+        };
+        let stored: boolean;
+        try {
+          stored = await reservation.transition(attempt);
+        } catch {
+          throw new LegacyMigrationError("legacy_attempt_not_recorded");
+        }
+        if (!stored) throw new LegacyMigrationError("legacy_attempt_not_recorded");
+        preparedDigest = digest;
+      },
+    });
+    await finish("resolved");
+    return { status: "migrated", vault: committed };
+  } catch (error) {
+    if (error instanceof CommitConflict) {
+      let head: VaultSnapshot;
+      try {
+        head = await fetchFreshSnapshot(vault.vaultId);
+      } catch {
+        await finish("rejected");
+        return { status: "conflict" };
+      }
+      if (!head.sealedManifest) {
+        await finish("rejected");
+        return { status: "conflict" };
+      }
+      if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+      let acceptedWinner: UnlockedVault;
+      try {
+        acceptedWinner = await acceptSnapshot(
+          head,
+          vault.vaultKey,
+          vault.unlockedWith,
+          [],
+          undefined,
+          options.liveness,
+        );
+      } catch {
+        await finish("unknown");
+        return { status: "unknown" };
+      }
+      if (options.liveness && !options.liveness.isLive()) {
+        discardOpenedVault(acceptedWinner);
+        throw new VaultLockedError();
+      }
+      await finish("resolved");
+      return { status: "conflict", vault: acceptedWinner };
+    }
+    if (error instanceof VaultLockedError || error instanceof LegacyMigrationError) throw error;
+    if (error instanceof ApiError && error.status !== 409 && error.status < 500) {
+      await finish("rejected");
+      throw new LegacyMigrationError("legacy_migration_rejected");
+    }
+    const prepared = preparedDigest;
+    if (!prepared) throw error;
+    // UNKNOWN: a read cannot prove non-acceptance (inflight/stale read). Only
+    // the exact prepared revision + manifest digest is success; a legacy head
+    // is not evidence either way and must not trigger another POST.
+    try {
+      const head = await fetchFreshSnapshot(vault.vaultId);
+      if (
+        head.revision === vault.revision + 1 &&
+        head.sealedManifest &&
+        equalBytes(sealedManifestDigest(head.sealedManifest), prepared)
+      ) {
+        verifySnapshotManifest(
+          head.sealedManifest,
+          { entries: head.entries, envelopes: head.envelopes },
+          {
+            vaultKey: vault.vaultKey,
+            vaultId: head.vaultId,
+            revision: head.revision,
+            vaultKeyVersion: head.vaultKeyVersion,
+          },
+        );
+        if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+        const acceptedHead = await acceptSnapshot(
+          head,
+          vault.vaultKey,
+          vault.unlockedWith,
+          [],
+          undefined,
+          options.liveness,
+        );
+        if (options.liveness && !options.liveness.isLive()) {
+          discardOpenedVault(acceptedHead);
+          throw new VaultLockedError();
+        }
+        await finish("resolved");
+        return { status: "migrated", vault: acceptedHead };
+      }
+    } catch (headError) {
+      if (headError instanceof VaultLockedError) throw headError;
+    }
+    await finish("unknown");
+    return { status: "unknown" };
   }
 }
 

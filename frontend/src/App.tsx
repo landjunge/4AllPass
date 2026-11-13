@@ -9,6 +9,7 @@ import { VaultPage } from "./pages/VaultPage.tsx";
 import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
 import { FamilyProductHeader } from "./components/FamilyProductHeader.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { LegacyMigrationBanner } from "./components/vault/LegacyMigrationBanner.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 import { HardRevokeProgress } from "./components/HardRevokeProgress.tsx";
 
@@ -97,6 +98,7 @@ export function App(): ReactNode {
         </div>
       ) : null}
       {email && email !== "local@127.0.0.1" ? <PullLocalVaultBanner /> : null}
+      <LegacyMigrationBanner />
       {revokeProgress ? <HardRevokeProgress progress={revokeProgress} reconcile={reconcileHardRevoke} /> : null}
 
       <main>

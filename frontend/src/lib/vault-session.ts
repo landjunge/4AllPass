@@ -31,6 +31,8 @@ import {
   encodeSealedManifest,
   encodeVaultSnapshot,
   encryptEntry,
+  entryDigest,
+  envelopeDigest,
   formatRecoveryKey,
   generateRecoveryKey,
   generateSalt,
@@ -81,6 +83,13 @@ import {
   type VaultEntry,
 } from "./entries.ts";
 import { loadPin, savePin } from "./revision-pin.ts";
+import {
+  loadMigrationAttempt,
+  migrationAttemptBlocks,
+  newOperationId,
+  saveMigrationAttempt,
+  type MigrationAttempt,
+} from "./migration-attempt.ts";
 import { isOfflineError, snapshotCache } from "./snapshot-cache.ts";
 import { VaultLockedError, type VaultLiveness } from "./vault-liveness.ts";
 import { assertHistoricSelection, openHistoricSnapshot, type HistoricSelection } from "./historic-snapshot.ts";
@@ -97,8 +106,14 @@ export interface UnlockedVault {
   envelopes: KeyEnvelope[];
   entries: VaultEntry[];
   unlockedWith: UnlockMethod;
-  /** The exact wire snapshot this state was opened from. Ciphertext only. */
+  /** Defensive accepted legacy wire copy; ciphertext only. */
   wire?: VaultSnapshot;
+  /** Canonical accepted-state fingerprints for the opt-in legacy migration. */
+  acceptedDigests?: {
+    entries: string;
+    envelopes: string;
+    plaintext: string;
+  };
 }
 
 export class LegacyMigrationError extends Error {
@@ -115,6 +130,7 @@ export type LegacyMigrationOutcome =
   | { status: "conflict"; vault?: UnlockedVault }
   | { status: "already"; vault: UnlockedVault }
   | { status: "declined" }
+  | { status: "retry_blocked" }
   | { status: "unknown" };
 
 export function isLegacyVault(vault: UnlockedVault | null | undefined): boolean {
@@ -370,6 +386,16 @@ function openSnapshot(
   // Keep the digest from the exact verified manifest, never re-read its wire blob.
   assertFreshSnapshot(loadPin(snapshot.vaultId), acceptedPin);
   savePin(acceptedPin);
+  const acceptedLegacy = snapshot.sealedManifest
+    ? null
+    : acceptedLegacyState(
+        snapshot,
+        revision,
+        vaultKeyVersion,
+        entriesToOpen,
+        envelopesToKeep,
+        sortedEntries,
+      );
   return {
     vaultId: snapshot.vaultId,
     revision,
@@ -378,7 +404,7 @@ function openSnapshot(
     envelopes: envelopesToKeep,
     entries: sortedEntries,
     unlockedWith,
-    wire: snapshot,
+    ...(acceptedLegacy ?? {}),
   };
 }
 
@@ -775,7 +801,15 @@ async function commitSnapshot(
     ) {
       throw new IntegrityError(`server did not return the committed revision ${nextRevision}`);
     }
-    return acceptSnapshot(committed, vaultKey, vault.unlockedWith);
+    // A lock that landed while the response was in flight must not create new
+    // accepted state (pin/cache/open entries) in this call.
+    if (options?.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+    const accepted = await acceptSnapshot(committed, vaultKey, vault.unlockedWith);
+    if (options?.liveness && !options.liveness.isLive()) {
+      discardOpenedVault(accepted);
+      throw new VaultLockedError();
+    }
+    return accepted;
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new CommitConflict(error.currentRevision);
@@ -788,8 +822,55 @@ function envelopeIdentity(envelope: KeyEnvelope): string {
   return `${envelope.type}:${envelope.deviceId ?? ""}`;
 }
 
+function entryFingerprint(entry: EncryptedEntry): string {
+  return `${entry.id}:${bytesToBase64(entryDigest(entry))}`;
+}
+
+function envelopeFingerprint(envelope: KeyEnvelope): string {
+  return `${envelopeIdentity(envelope)}:${bytesToBase64(envelopeDigest(envelope))}`;
+}
+
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+/**
+ * Snapshot exactly what was accepted at open time. The wire is re-encoded and
+ * decoded once (a defensive copy); the fingerprints use the protocol's own
+ * entry/envelope digests plus a canonical plaintext string. This makes later
+ * getter/proxy replays, same-id field changes and metadata swaps visible.
+ */
+function discardOpenedVault(vault: UnlockedVault): void {
+  for (const entry of vault.entries) wipeVaultEntry(entry);
+  zeroize(vault.vaultKey);
+}
+
+function acceptedLegacyState(
+  snapshot: VaultSnapshot,
+  revision: number,
+  vaultKeyVersion: number,
+  entries: EncryptedEntry[],
+  envelopes: KeyEnvelope[],
+  plaintext: VaultEntry[],
+): Pick<UnlockedVault, "wire" | "acceptedDigests"> {
+  const wire = decodeVaultSnapshot(
+    encodeVaultSnapshot({
+      vaultId: snapshot.vaultId,
+      revision,
+      vaultKeyVersion,
+      cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
+      entries,
+      envelopes,
+    }),
+  );
+  return {
+    wire,
+    acceptedDigests: {
+      entries: JSON.stringify(wire.entries.map(entryFingerprint).sort()),
+      envelopes: JSON.stringify(wire.envelopes.map(envelopeFingerprint).sort()),
+      plaintext: JSON.stringify(plaintext),
+    },
+  };
 }
 
 /**
@@ -803,14 +884,33 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
  * revision plus the prepared manifest digest (or a verified head) counts as
  * success. A legacy head after a lost response proves nothing.
  */
+const legacyMigrationInFlight = new Set<string>();
+
 export async function migrateLegacySnapshot(
   vault: UnlockedVault,
   options: { confirmed?: boolean; liveness?: VaultLiveness } = {},
 ): Promise<LegacyMigrationOutcome> {
   if (options.confirmed !== true) return { status: "declined" };
+  const vaultId = vault.vaultId;
+  if (legacyMigrationInFlight.has(vaultId)) return { status: "retry_blocked" };
+  legacyMigrationInFlight.add(vaultId);
+  try {
+    return await migrateLegacySnapshotUnlocked(vault, options);
+  } finally {
+    legacyMigrationInFlight.delete(vaultId);
+  }
+}
+
+async function migrateLegacySnapshotUnlocked(
+  vault: UnlockedVault,
+  options: { confirmed?: boolean; liveness?: VaultLiveness },
+): Promise<LegacyMigrationOutcome> {
+  if (options.confirmed !== true) return { status: "declined" };
   const wire = vault.wire;
+  const accepted = vault.acceptedDigests;
   if (!wire) throw new LegacyMigrationError("legacy_wire_missing");
   if (wire.sealedManifest) return { status: "already", vault };
+  if (!accepted) throw new LegacyMigrationError("legacy_accepted_state_missing");
   if (
     wire.vaultId !== vault.vaultId ||
     wire.revision !== vault.revision ||
@@ -818,56 +918,130 @@ export async function migrateLegacySnapshot(
   ) {
     throw new LegacyMigrationError("legacy_wire_mismatch");
   }
-  const wireEntries = wire.entries.map((entry) => entry.id).sort();
-  const openedEntries = vault.entries.map((entry) => entry.id).sort();
-  if (!sameStrings(wireEntries, openedEntries)) {
-    throw new LegacyMigrationError("legacy_entry_set_mismatch");
-  }
-  const wireEnvelopes = wire.envelopes.map(envelopeIdentity).sort();
-  const openedEnvelopes = vault.envelopes.map(envelopeIdentity).sort();
-  if (!sameStrings(wireEnvelopes, openedEnvelopes)) {
-    throw new LegacyMigrationError("legacy_envelope_set_mismatch");
+  if (migrationAttemptBlocks(loadMigrationAttempt(vault.vaultId), vault)) {
+    return { status: "retry_blocked" };
   }
 
-  // Positive durable backup BEFORE the effect. No plaintext, no keys.
+  // Exact accepted state: protocol entry/envelope digests + canonical plaintext.
+  // Same ids with changed payload/envelope/metadata or a getter replay fail here.
+  const wireEntries = JSON.stringify(wire.entries.map(entryFingerprint).sort());
+  const wireEnvelopes = JSON.stringify(wire.envelopes.map(envelopeFingerprint).sort());
+  const commitEnvelopes = JSON.stringify(vault.envelopes.map(envelopeFingerprint).sort());
+  if (
+    wireEntries !== accepted.entries ||
+    wireEnvelopes !== accepted.envelopes ||
+    commitEnvelopes !== accepted.envelopes ||
+    JSON.stringify(vault.entries) !== accepted.plaintext
+  ) {
+    throw new LegacyMigrationError("legacy_accepted_state_changed");
+  }
+  if (
+    !sameStrings(
+      wire.entries.map((entry) => entry.id).sort(),
+      vault.entries.map((entry) => entry.id).sort(),
+    )
+  ) {
+    throw new LegacyMigrationError("legacy_entry_set_mismatch");
+  }
+
+  // Durable ciphertext backup in its own slot, verified before the effect.
   const backup = encodeVaultSnapshot(wire);
   try {
     const cache = snapshotCache();
-    await cache.save(vault.vaultId, backup);
-    const readback = await cache.load(vault.vaultId);
+    await cache.saveLegacyBackup(vault.vaultId, backup);
+    const readback = await cache.loadLegacyBackup(vault.vaultId);
     if (!readback || JSON.stringify(readback) !== JSON.stringify(backup)) {
       throw new LegacyMigrationError("legacy_backup_unverified");
+    }
+    const readbackDecoded = decodeVaultSnapshot(readback);
+    if (
+      JSON.stringify(readbackDecoded.entries.map(entryFingerprint).sort()) !== accepted.entries ||
+      JSON.stringify(readbackDecoded.envelopes.map(envelopeFingerprint).sort()) !== accepted.envelopes
+    ) {
+      throw new LegacyMigrationError("legacy_backup_digest_mismatch");
     }
   } catch (error) {
     if (error instanceof LegacyMigrationError) throw error;
     throw new LegacyMigrationError("legacy_backup_failed");
   }
+  if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
 
   let preparedDigest: Uint8Array | null = null;
+  let attempt: MigrationAttempt | null = null;
+  const finish = (state: "resolved" | "unknown" | "rejected") => {
+    if (!attempt) return;
+    try {
+      saveMigrationAttempt({ ...attempt, state });
+    } catch {
+      // Local metadata failure must not hide the server outcome; the prepared
+      // record still blocks a blind retry.
+    }
+  };
+
   try {
     const committed = await commitSnapshot(vault, vault.entries, vault.envelopes, {
       ...(options.liveness ? { liveness: options.liveness } : {}),
       onPrepared: (digest) => {
+        const nextAttempt: MigrationAttempt = {
+          schema: 1,
+          vaultId: vault.vaultId,
+          vaultKeyVersion: vault.vaultKeyVersion,
+          baseRevision: vault.revision,
+          operationID: newOperationId(),
+          preparedManifestDigest: bytesToBase64(digest),
+          state: "prepared",
+          createdAt: new Date().toISOString(),
+        };
+        try {
+          saveMigrationAttempt(nextAttempt);
+        } catch {
+          throw new LegacyMigrationError("legacy_attempt_not_recorded");
+        }
+        const saved = loadMigrationAttempt(vault.vaultId);
+        if (
+          !saved ||
+          saved.operationID !== nextAttempt.operationID ||
+          saved.preparedManifestDigest !== nextAttempt.preparedManifestDigest
+        ) {
+          throw new LegacyMigrationError("legacy_attempt_not_recorded");
+        }
+        attempt = nextAttempt;
         preparedDigest = digest;
       },
     });
-    if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+    finish("resolved");
     return { status: "migrated", vault: committed };
   } catch (error) {
     if (error instanceof CommitConflict) {
+      let head: VaultSnapshot;
       try {
-        const head = await fetchFreshSnapshot(vault.vaultId);
-        if (!head.sealedManifest) return { status: "conflict" };
-        const accepted = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
-        if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
-        return { status: "conflict", vault: accepted };
-      } catch (headError) {
-        if (headError instanceof VaultLockedError) throw headError;
+        head = await fetchFreshSnapshot(vault.vaultId);
+      } catch {
+        finish("rejected");
+        return { status: "conflict" };
+      }
+      if (!head.sealedManifest) {
+        finish("rejected");
+        return { status: "conflict" };
+      }
+      if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
+      let acceptedWinner: UnlockedVault;
+      try {
+        acceptedWinner = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
+      } catch {
+        finish("unknown");
         return { status: "unknown" };
       }
+      if (options.liveness && !options.liveness.isLive()) {
+        discardOpenedVault(acceptedWinner);
+        throw new VaultLockedError();
+      }
+      finish("resolved");
+      return { status: "conflict", vault: acceptedWinner };
     }
     if (error instanceof VaultLockedError || error instanceof LegacyMigrationError) throw error;
     if (error instanceof ApiError && error.status !== 409 && error.status < 500) {
+      finish("rejected");
       throw new LegacyMigrationError("legacy_migration_rejected");
     }
     const prepared = preparedDigest;
@@ -892,13 +1066,19 @@ export async function migrateLegacySnapshot(
             vaultKeyVersion: head.vaultKeyVersion,
           },
         );
-        const accepted = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
         if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();
-        return { status: "migrated", vault: accepted };
+        const acceptedHead = await acceptSnapshot(head, vault.vaultKey, vault.unlockedWith);
+        if (options.liveness && !options.liveness.isLive()) {
+          discardOpenedVault(acceptedHead);
+          throw new VaultLockedError();
+        }
+        finish("resolved");
+        return { status: "migrated", vault: acceptedHead };
       }
     } catch (headError) {
       if (headError instanceof VaultLockedError) throw headError;
     }
+    finish("unknown");
     return { status: "unknown" };
   }
 }

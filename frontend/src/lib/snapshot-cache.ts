@@ -10,6 +10,16 @@ export interface SnapshotCache {
   load(vaultId: string): Promise<WireVaultSnapshot | null>;
   save(vaultId: string, snapshot: WireVaultSnapshot): Promise<void>;
   remove(vaultId: string): Promise<void>;
+  /** Durable pre-migration legacy wire backup; separate from the live head slot. */
+  loadLegacyBackup(vaultId: string): Promise<WireVaultSnapshot | null>;
+  saveLegacyBackup(vaultId: string, snapshot: WireVaultSnapshot): Promise<void>;
+  removeLegacyBackup(vaultId: string): Promise<void>;
+}
+
+const LEGACY_PREFIX = "legacy:";
+
+function legacyKey(vaultId: string): string {
+  return LEGACY_PREFIX + vaultId;
 }
 
 export function memorySnapshotCache(
@@ -28,6 +38,20 @@ export function memorySnapshotCache(
     },
     async remove(vaultId) {
       records.delete(vaultId);
+      records.delete(legacyKey(vaultId));
+    },
+    async loadLegacyBackup(vaultId) {
+      const value = records.get(legacyKey(vaultId));
+      return value && value.vaultId === vaultId ? value : null;
+    },
+    async saveLegacyBackup(vaultId, snapshot) {
+      if (snapshot.vaultId !== vaultId) {
+        throw new Error("cached legacy snapshot vaultId does not match key");
+      }
+      records.set(legacyKey(vaultId), snapshot);
+    },
+    async removeLegacyBackup(vaultId) {
+      records.delete(legacyKey(vaultId));
     },
   };
 }
@@ -95,6 +119,38 @@ export function indexedDbSnapshotCache(): SnapshotCache {
       const db = await openDatabase();
       try {
         await transact(db, "readwrite", (store) => store.delete(vaultId));
+        await transact(db, "readwrite", (store) => store.delete(legacyKey(vaultId)));
+      } finally {
+        db.close();
+      }
+    },
+    async loadLegacyBackup(vaultId) {
+      const db = await openDatabase();
+      try {
+        const value = await transact<WireVaultSnapshot | undefined>(db, "readonly", (store) =>
+          store.get(legacyKey(vaultId)) as IDBRequest<WireVaultSnapshot | undefined>,
+        );
+        if (!value || value.vaultId !== vaultId) return null;
+        return value;
+      } finally {
+        db.close();
+      }
+    },
+    async saveLegacyBackup(vaultId, snapshot) {
+      if (snapshot.vaultId !== vaultId) {
+        throw new Error("cached legacy snapshot vaultId does not match key");
+      }
+      const db = await openDatabase();
+      try {
+        await transact(db, "readwrite", (store) => store.put(snapshot, legacyKey(vaultId)));
+      } finally {
+        db.close();
+      }
+    },
+    async removeLegacyBackup(vaultId) {
+      const db = await openDatabase();
+      try {
+        await transact(db, "readwrite", (store) => store.delete(legacyKey(vaultId)));
       } finally {
         db.close();
       }

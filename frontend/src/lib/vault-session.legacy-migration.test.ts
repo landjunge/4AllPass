@@ -21,6 +21,7 @@ import {
 
 import { api, ApiError } from "./api.ts";
 import { emptyDraft, encodeEntryPlaintext, type VaultEntry } from "./entries.ts";
+import { loadMigrationAttempt } from "./migration-attempt.ts";
 import { loadPin } from "./revision-pin.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests, type SnapshotCache } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
@@ -65,7 +66,14 @@ function fixture(vaultId: string) {
       vaultKey, vaultId, entryId: item.id, vaultKeyVersion: 1, schemaVersion: 1, plaintext,
     });
     zeroize(plaintext);
-    const entries = [entry];
+    const secondItem: VaultEntry = { ...item, id: "entry-2", title: "Second title" };
+    const secondPlaintext = encodeEntryPlaintext(secondItem);
+    const secondEntry = encryptEntry({
+      vaultKey, vaultId, entryId: secondItem.id, vaultKeyVersion: 1, schemaVersion: 1,
+      plaintext: secondPlaintext,
+    });
+    zeroize(secondPlaintext);
+    const entries = [entry, secondEntry];
     const envelopes = [recovery];
     const sealed = manifest
       ? sealManifest({
@@ -129,6 +137,15 @@ test("MIG-1 explicit confirm performs a forward manifest commit and pins it", as
     const pin = loadPin(vaultId);
     assert.equal(pin?.revision, 2);
     assert.ok(pin?.manifestDigest);
+    assert.equal((await cache.load(vaultId))?.revision, 2);
+    assert.equal((await cache.loadLegacyBackup(vaultId))?.revision, 1);
+    if (sent) {
+      api.getSnapshot = async () => ({ ...(sent as Record<string, unknown>), vaultId } as never);
+      const reopened = await unlockWithRecoveryKey(vaultId, f.shareKey);
+      assert.equal(reopened.revision, 2);
+      assert.equal(reopened.entries.length, 2);
+      zeroize(reopened.vaultKey);
+    }
     zeroize(outcome.vault.vaultKey);
   } finally {
     f.dispose();
@@ -171,6 +188,9 @@ test("MIG-3 backup failure stops before any POST", async () => {
       load: async () => null,
       save: async () => { throw new Error("local storage unavailable"); },
       remove: async () => undefined,
+      loadLegacyBackup: async () => null,
+      saveLegacyBackup: async () => { throw new Error("local storage unavailable"); },
+      removeLegacyBackup: async () => undefined,
     };
     setSnapshotCacheForTests(failing);
     await assert.rejects(
@@ -203,6 +223,10 @@ test("MIG-4 lost response with a legacy head is UNKNOWN and posts no second time
     assert.equal(outcome.status, "unknown");
     assert.equal(posts, 1);
     assert.equal(loadPin(vaultId)?.revision, 1);
+    assert.equal(loadMigrationAttempt(vaultId)?.state, "unknown");
+    const second = await migrateLegacySnapshot(vault, { confirmed: true });
+    assert.equal(second.status, "retry_blocked");
+    assert.equal(posts, 1);
     zeroize(vault.vaultKey);
   } finally {
     f.dispose();
@@ -255,7 +279,7 @@ test("MIG-5 409 adopts the verified winner without overlay or a second POST", as
     assert.equal(posts, 1);
     assert.ok(outcome.status === "conflict" && outcome.vault);
     if (outcome.status === "conflict" && outcome.vault) {
-      assert.equal(outcome.vault.entries[0]?.title, "Winner title");
+      assert.ok(outcome.vault.entries.some((entry) => entry.title === "Winner title"));
       assert.equal(loadPin(vaultId)?.revision, 2);
       zeroize(outcome.vault.vaultKey);
     }
@@ -282,7 +306,7 @@ test("MIG-6 a concurrent device wins; the loser reloads and does not overlay", a
     assert.equal(outcome.status, "conflict");
     assert.equal(posts, 1);
     if (outcome.status === "conflict" && outcome.vault) {
-      assert.equal(outcome.vault.entries[0]?.title, "Other device title");
+      assert.ok(outcome.vault.entries.some((entry) => entry.title === "Other device title"));
       zeroize(outcome.vault.vaultKey);
     }
     zeroize(vault.vaultKey);
@@ -337,6 +361,7 @@ test("MIG-15 migration keeps the complete opened entry/envelope set", async () =
   try {
     const vault = await openLegacy(vaultId, f);
     const beforeEntries = vault.entries.map((entry) => ({ id: entry.id, title: entry.title }));
+    assert.equal(beforeEntries.length, 2);
     const beforeEnvelopes = vault.envelopes.map((envelope) => `${envelope.type}:${envelope.deviceId ?? ""}`);
     api.commitSnapshot = async (id, payload) => ({ ...payload, vaultId: id });
     const outcome = await migrateLegacySnapshot(vault, { confirmed: true });
@@ -352,6 +377,172 @@ test("MIG-15 migration keeps the complete opened entry/envelope set", async () =
       );
       zeroize(outcome.vault.vaultKey);
     }
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-16a same entry id with a changed payload stops before any POST", async () => {
+  const vaultId = "legacy-mig-16a";
+  const f = fixture(vaultId);
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    vault.entries[0]!.title = "Tampered title";
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => { posts++; return { ...payload, vaultId: id }; };
+    await assert.rejects(
+      () => migrateLegacySnapshot(vault, { confirmed: true }),
+      (error: unknown) => error instanceof LegacyMigrationError && error.code === "legacy_accepted_state_changed",
+    );
+    assert.equal(posts, 0);
+    assert.equal(loadPin(vaultId)?.revision, 1);
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-16b same envelope identity with changed bytes stops before any POST", async () => {
+  const vaultId = "legacy-mig-16b";
+  const f = fixture(vaultId);
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    (vault.envelopes[0] as unknown as { nonce: Uint8Array }).nonce = new Uint8Array(12);
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => { posts++; return { ...payload, vaultId: id }; };
+    await assert.rejects(
+      () => migrateLegacySnapshot(vault, { confirmed: true }),
+      (error: unknown) => error instanceof LegacyMigrationError && error.code === "legacy_accepted_state_changed",
+    );
+    assert.equal(posts, 0);
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-16c changed wire metadata stops before any POST", async () => {
+  const vaultId = "legacy-mig-16c";
+  const f = fixture(vaultId);
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    (vault.wire as unknown as { vaultKeyVersion: number }).vaultKeyVersion = 2;
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => { posts++; return { ...payload, vaultId: id }; };
+    await assert.rejects(
+      () => migrateLegacySnapshot(vault, { confirmed: true }),
+      (error: unknown) => error instanceof LegacyMigrationError && error.code === "legacy_wire_mismatch",
+    );
+    assert.equal(posts, 0);
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-17 a lock during the legacy backup await aborts before any POST", async () => {
+  const vaultId = "legacy-mig-17";
+  const f = fixture(vaultId);
+  const base = memorySnapshotCache();
+  let live = true;
+  const cache: SnapshotCache = {
+    load: (id) => base.load(id),
+    save: (id, snapshot) => base.save(id, snapshot),
+    remove: (id) => base.remove(id),
+    loadLegacyBackup: (id) => base.loadLegacyBackup(id),
+    removeLegacyBackup: (id) => base.removeLegacyBackup(id),
+    saveLegacyBackup: async (id, snapshot) => {
+      await base.saveLegacyBackup(id, snapshot);
+      live = false;
+    },
+  };
+  setSnapshotCacheForTests(cache);
+  try {
+    const vault = await openLegacy(vaultId, f);
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => { posts++; return { ...payload, vaultId: id }; };
+    const liveness = {
+      epoch: 0,
+      isLive: () => live,
+      assertLive: () => { if (!live) throw new VaultLockedError(); },
+    };
+    await assert.rejects(
+      () => migrateLegacySnapshot(vault, { confirmed: true, liveness }),
+      VaultLockedError,
+    );
+    assert.equal(posts, 0);
+    assert.equal(loadPin(vaultId)?.revision, 1);
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-18 a lock during acceptSnapshot cache await discards the opened key", async () => {
+  const vaultId = "legacy-mig-18";
+  const f = fixture(vaultId);
+  const base = memorySnapshotCache();
+  let live = true;
+  const cache: SnapshotCache = {
+    load: (id) => base.load(id),
+    save: async (id, snapshot) => {
+      await base.save(id, snapshot);
+      live = false;
+    },
+    remove: (id) => base.remove(id),
+    loadLegacyBackup: (id) => base.loadLegacyBackup(id),
+    saveLegacyBackup: (id, snapshot) => base.saveLegacyBackup(id, snapshot),
+    removeLegacyBackup: (id) => base.removeLegacyBackup(id),
+  };
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    setSnapshotCacheForTests(cache);
+    let posts = 0;
+    api.commitSnapshot = async (id, payload) => { posts++; return { ...payload, vaultId: id }; };
+    const liveness = {
+      epoch: 0,
+      isLive: () => live,
+      assertLive: () => { if (!live) throw new VaultLockedError(); },
+    };
+    await assert.rejects(
+      () => migrateLegacySnapshot(vault, { confirmed: true, liveness }),
+      VaultLockedError,
+    );
+    assert.equal(posts, 1);
+    zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("MIG-19 simultaneous same-vault clicks start only one attempt", async () => {
+  const vaultId = "legacy-mig-19";
+  const f = fixture(vaultId);
+  setSnapshotCacheForTests(memorySnapshotCache());
+  try {
+    const vault = await openLegacy(vaultId, f);
+    let posts = 0;
+    let release: (() => void) | null = null;
+    api.commitSnapshot = async (id, payload) => {
+      posts++;
+      return new Promise((resolve) => {
+        release = () => resolve({ ...payload, vaultId: id });
+      });
+    };
+    const first = migrateLegacySnapshot(vault, { confirmed: true });
+    const second = await migrateLegacySnapshot(vault, { confirmed: true });
+    assert.equal(second.status, "retry_blocked");
+    while (!release) await new Promise((resolve) => setTimeout(resolve, 0));
+    release!();
+    const outcome = await first;
+    assert.equal(outcome.status, "migrated");
+    assert.equal(posts, 1);
+    if (outcome.status === "migrated") zeroize(outcome.vault.vaultKey);
     zeroize(vault.vaultKey);
   } finally {
     f.dispose();
@@ -431,6 +622,7 @@ test("MIG-11 lock during the response is not adopted", async () => {
       VaultLockedError,
     );
     assert.equal(posts, 1);
+    assert.equal(loadPin(vaultId)?.revision, 1);
     zeroize(vault.vaultKey);
   } finally {
     f.dispose();

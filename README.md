@@ -104,6 +104,22 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > synthetisch. / The [binding core](protected_executor/README.md) denies missing
 > production hosts before lookup; positive probes remain explicitly synthetic.
 
+## Ältere Tresore aktualisieren / Updating older vaults
+
+**Deutsch:** Ältere Tresore ohne Manifest bleiben lesbar. Ein Banner bietet
+„Jetzt aktualisieren“ oder „Später“; ohne deine Bestätigung wird nichts migriert.
+Vor dem Update legt 4AllPass eine verschlüsselte lokale Sicherung des alten
+Stands ab. Der bisherige Serverstand lässt sich nicht nachträglich beweisen; das
+Update versiegelt den aktuell geöffneten Inhalt für die Zukunft. Bleibt der
+Ausgang unklar, sendet die App ohne positiven Beleg nichts weiter.
+
+**English:** Older vaults without a manifest remain readable. A banner offers
+“Update now” or “Later”; nothing is migrated without your confirmation. Before
+updating, 4AllPass stores an encrypted local backup of the old state. The
+previous server state cannot be proven retroactively; the update seals the
+currently opened content for the future. If the outcome becomes unknown, the app
+sends nothing further without positive proof.
+
 ## Aktueller Funktionsstand / Current capabilities
 
 **Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.

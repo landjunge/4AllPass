@@ -190,6 +190,26 @@ is **not** activated by this path; coverage/exception gates remain open. F-25
 (nonce budget / persistent seal counter) is a separate open item and is not
 addressed by a client-local counter.
 
+The legacy backup lives in its own local slot, separate from the live-head cache.
+A successful migration replaces the head cache with `N+1` but leaves the legacy
+wire backup intact, so it remains available after the commit and after a restart.
+Before the first POST the client writes and reads back a local attempt receipt
+(`vaultId`, `vaultKeyVersion`, `baseRevision`, `operationID`, prepared sealed-manifest
+digest, state; no keys or plaintext). After an unknown outcome, a reload, unlock or
+component change remains retry-blocked; only a verified prepared manifest at the
+exact expected revision/digest (or a verified history receipt) resolves it. A head
+that still looks legacy is not evidence either way.
+
+The accepted legacy state is captured defensively at open time: a re-encoded wire
+copy, the protocol `entryDigest`/`envelopeDigest` fingerprints and a canonical
+plaintext string. Same entry ids with changed payloads, changed envelope bytes or
+changed metadata stop the migration before any POST. The existing commit contract
+re-encrypts entries with fresh nonces; the lossless guarantee covers the complete
+plaintext entry set and the byte-identical envelopes, and the new manifest
+authenticates the new ciphertext. No new algorithm or vault format is introduced.
+Async lock boundaries are checked before `acceptSnapshot` and after its cache await;
+a late lock discards the opened key and does not hand an accepted vault to the UI.
+
 ### 3.2 Offline: last verified snapshot
 
 After a snapshot is verified and the pin is written, the PWA stores the **wire**

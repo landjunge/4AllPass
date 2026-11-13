@@ -6,23 +6,30 @@ import {
   LegacyMigrationError,
   type LegacyMigrationOutcome,
 } from "../../lib/vault-session.ts";
+import {
+  loadMigrationAttempt,
+  migrationAttemptBlocks,
+} from "../../lib/migration-attempt.ts";
 import { VaultLockedError } from "../../lib/vault-liveness.ts";
+import { BLOCKED, LegacyMigrationBannerView } from "./LegacyMigrationBannerView.ts";
 
 /**
  * Explicit, per-vault opt-in for migrating a pre-manifest vault. Never runs
- * automatically at unlock/install. The technical contract and the "old server
- * state is not retroactively provable" warning are in docs/vault-revision.md.
+ * automatically at unlock/install. Technical contract and the warning are in
+ * docs/vault-revision.md; the durable attempt record blocks a reload retry.
  */
 export function LegacyMigrationBanner(): ReactNode {
   const { vault, lockState, migrateLegacyVault } = useApp();
   const { t } = useCopy();
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [blockedState, setBlockedState] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   if (lockState !== "UNLOCKED" || !vault || dismissed) return null;
   const legacy = isLegacyVault(vault);
+  const persistedBlocked = migrationAttemptBlocks(loadMigrationAttempt(vault.vaultId), vault);
+  const blocked = blockedState || persistedBlocked;
   if (!legacy && !message) return null;
 
   function outcomeText(outcome: LegacyMigrationOutcome): string | null {
@@ -40,6 +47,7 @@ export function LegacyMigrationBanner(): ReactNode {
         en: "The outcome is unknown. Nothing further was sent. Please check again later.",
       });
     }
+    if (outcome.status === "retry_blocked") return t(BLOCKED);
     if (outcome.status === "already") {
       return t({ de: "Der Tresor ist bereits aktuell.", en: "The vault is already up to date." });
     }
@@ -78,7 +86,7 @@ export function LegacyMigrationBanner(): ReactNode {
     try {
       const outcome = await migrateLegacyVault();
       setMessage(outcomeText(outcome));
-      if (outcome.status === "unknown") setBlocked(true);
+      if (outcome.status === "unknown" || outcome.status === "retry_blocked") setBlockedState(true);
     } catch (error) {
       setMessage(errorText(error));
     } finally {
@@ -87,37 +95,14 @@ export function LegacyMigrationBanner(): ReactNode {
   }
 
   return (
-    <div className="banner notice" data-testid="legacy-migration-banner" role="status">
-      <span>
-        {legacy
-          ? t({
-              de: "Dieser Tresor ist älter und noch nicht als Ganzes versiegelt. Beim Aktualisieren wird der aktuell geöffnete Inhalt für die Zukunft mit einer Integritätsprüfung versehen. Der bisherige Serverstand lässt sich nicht nachträglich beweisen. Eine verschlüsselte Sicherung wird vorher lokal abgelegt.",
-              en: "This vault is older and not yet sealed as a whole. Updating seals the currently opened content with an integrity check for the future. The previous server state cannot be proven retroactively. An encrypted backup is stored locally first.",
-            })
-          : null}
-        {message ? <span data-testid="legacy-migration-message"> {message}</span> : null}
-      </span>
-      {legacy ? (
-        <button
-          type="button"
-          className="secondary"
-          data-testid="legacy-migration-now"
-          disabled={busy || blocked}
-          onClick={() => void migrate()}
-        >
-          {busy
-            ? t({ de: "Einen Moment…", en: "One moment…" })
-            : t({ de: "Jetzt aktualisieren", en: "Update now" })}
-        </button>
-      ) : null}
-      <button
-        type="button"
-        className="link"
-        data-testid="legacy-migration-later"
-        onClick={() => setDismissed(true)}
-      >
-        {t({ de: "Später", en: "Later" })}
-      </button>
-    </div>
+    <LegacyMigrationBannerView
+      legacy={legacy}
+      blocked={blocked}
+      busy={busy}
+      message={message}
+      t={t}
+      onMigrate={() => void migrate()}
+      onLater={() => setDismissed(true)}
+    />
   );
 }

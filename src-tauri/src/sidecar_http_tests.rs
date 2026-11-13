@@ -1,5 +1,6 @@
 use super::*;
 use crate::test_http_fixture::{Reply, Server};
+use std::io::{Read, Write};
 
 fn get(port: u16, path: &str) -> SidecarHttpResult {
     request_core(port, "GET".into(), path.into(), HashMap::new(), None).unwrap()
@@ -419,7 +420,6 @@ fn http_error_statuses_remain_results_not_offline() {
 
 #[test]
 fn malformed_http_response_is_protocol_not_offline() {
-    use std::io::{Read, Write};
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let handle = std::thread::spawn(move || {
@@ -443,7 +443,6 @@ fn malformed_http_response_is_protocol_not_offline() {
 
 #[test]
 fn real_timeout_is_typed_offline() {
-    use std::io::Read;
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let _handle = std::thread::spawn(move || {
@@ -470,5 +469,100 @@ fn real_timeout_is_typed_offline() {
         "{:?}",
         error.code
     );
+    assert!(started.elapsed() >= std::time::Duration::from_secs(14));
+}
+
+fn raw_response(response: &'static [u8], stall: bool) -> (u16, std::thread::JoinHandle<()>) {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buffer = [0u8; 1024];
+            let _ = stream.read(&mut buffer);
+            let _ = stream.write_all(response);
+            if stall {
+                std::thread::sleep(std::time::Duration::from_secs(20));
+            }
+        }
+    });
+    (port, handle)
+}
+
+#[test]
+fn truncated_200_body_is_offline_io_not_empty_success() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::OfflineIo);
+    handle.join().unwrap();
+}
+
+#[test]
+fn truncated_401_body_is_protocol_not_offline() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    assert!(!matches!(
+        error.code,
+        SidecarErrorCode::OfflineNetwork
+            | SidecarErrorCode::OfflineTimeout
+            | SidecarErrorCode::OfflineIo
+    ));
+    handle.join().unwrap();
+}
+
+#[test]
+fn invalid_utf8_200_body_is_protocol_not_offline() {
+    let (port, handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n\xff\xfe",
+        false,
+    );
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::Protocol);
+    handle.join().unwrap();
+}
+
+#[test]
+fn timeout_200_body_is_offline_timeout_not_empty_success() {
+    let (port, _handle) = raw_response(
+        b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\nabc",
+        true,
+    );
+    let started = std::time::Instant::now();
+    let error = request_core(
+        port,
+        "GET".into(),
+        "/api/v1/health".into(),
+        HashMap::new(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, SidecarErrorCode::OfflineTimeout);
     assert!(started.elapsed() >= std::time::Duration::from_secs(14));
 }

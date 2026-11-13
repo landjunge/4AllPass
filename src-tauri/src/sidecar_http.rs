@@ -1,9 +1,11 @@
-use std::{collections::HashMap, error::Error as StdError, time::Duration};
+use std::{collections::HashMap, error::Error as StdError, io::Read, time::Duration};
 
 use serde::Serialize;
 
 use crate::process::CORE_PORT;
 use crate::sidecar_target::core_api_url;
+
+const BODY_LIMIT: u64 = 48 * 1024 * 1024;
 
 #[derive(Debug, serde::Serialize)]
 pub struct SidecarHttpResult {
@@ -117,6 +119,41 @@ fn classify_transport(error: &ureq::Transport) -> SidecarErrorCode {
     transport_code(error.kind()).unwrap_or(SidecarErrorCode::Protocol)
 }
 
+/// Read the body strictly and with a bound. A truncated Content-Length,
+/// invalid UTF-8 or read failure must not become an empty successful body.
+fn read_body(response: ureq::Response) -> Result<String, std::io::Error> {
+    let expected = match response.header("Content-Length") {
+        Some(raw) => Some(raw.parse::<u64>().map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "invalid sidecar Content-Length",
+            )
+        })?),
+        None => None,
+    };
+    let mut bytes = Vec::new();
+    response
+        .into_reader()
+        .take(BODY_LIMIT + 1)
+        .read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > BODY_LIMIT {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "sidecar response body too large",
+        ));
+    }
+    if let Some(expected) = expected {
+        if bytes.len() as u64 != expected {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "sidecar response body truncated",
+            ));
+        }
+    }
+    String::from_utf8(bytes)
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))
+}
+
 /// Talk to the core we spawned. The webview must not fetch :8788 itself
 /// (WKWebView blocks or CORS-fails that). Never navigate the webview there.
 #[tauri::command]
@@ -164,13 +201,15 @@ fn request_core(
     match resp {
         Ok(ok) => {
             let status = ok.status();
-            let text = ok.into_string().unwrap_or_default();
+            let text = read_body(ok).map_err(|error| SidecarError::new(io_code(&error)))?;
             Ok(SidecarHttpResult { status, body: text })
         }
-        Err(ureq::Error::Status(status, ok)) => {
-            let text = ok.into_string().unwrap_or_default();
-            Ok(SidecarHttpResult { status, body: text })
-        }
+        Err(ureq::Error::Status(status, ok)) => match read_body(ok) {
+            Ok(text) => Ok(SidecarHttpResult { status, body: text }),
+            // The HTTP status is already a failure; a body read failure must
+            // never become an offline/cache/auth-bypass signal.
+            Err(_) => Err(SidecarError::new(SidecarErrorCode::Protocol)),
+        },
         Err(ureq::Error::Transport(error)) => {
             Err(SidecarError::new(classify_transport(&error)))
         }

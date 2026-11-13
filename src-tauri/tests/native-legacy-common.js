@@ -134,6 +134,7 @@
         typeof: typeof error,
         constructor: error && error.constructor ? error.constructor.name : null,
         isTypeError: error instanceof TypeError,
+        code: error && typeof error === "object" && "code" in error ? error.code : null,
         message: String(error && error.message ? error.message : error).slice(0, 240),
       };
     }
@@ -343,6 +344,7 @@
         result.receiptStateAfterReload = receipt.state;
         result.receiptAfterReload = rememberReceipt(receipt);
         const before = result.receiptBeforeReload || recalledReceipt();
+        result.receiptBeforeReload = before;
         if (!before || !result.receiptAfterReload || before.operationID !== result.receiptAfterReload.operationID) {
           throw new Error("receipt-owner-changed-across-reload");
         }

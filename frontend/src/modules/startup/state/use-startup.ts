@@ -7,8 +7,23 @@ import {
   probeWebviewWebauthn,
 } from "../../../lib/webauthnCapabilities.ts";
 import { runStartup, type LocalStoreStatus } from "../service/run-startup.ts";
-import { saveOfflineBootstrap } from "../../../lib/offline-bootstrap.ts";
+import {
+  fingerprintSessionToken,
+  loadOfflineBootstrap,
+  saveOfflineBootstrap,
+  type OfflineBootstrapBinding,
+} from "../../../lib/offline-bootstrap.ts";
 import type { VaultSummary } from "../../../lib/api.ts";
+
+/** Binding of the metadata cache to the current bearer session and origin. */
+async function currentBinding(): Promise<OfflineBootstrapBinding | null> {
+  const token = getToken();
+  if (!token) return null;
+  return {
+    sessionFingerprint: await fingerprintSessionToken(token),
+    storageOrigin: readStorageOrigin(),
+  };
+}
 
 export interface UseStartupOptions {
   restoreSession(email: string | null): void;
@@ -38,7 +53,14 @@ export function useStartup(options: UseStartupOptions): StartupState {
       restoreSession,
       loadVaults,
       restoreOffline,
-      saveOfflineBootstrap,
+      async saveOfflineBootstrap(email, vaults) {
+        const binding = await currentBinding();
+        if (binding) await saveOfflineBootstrap(email, vaults, binding);
+      },
+      async loadOfflineBootstrap() {
+        const binding = await currentBinding();
+        return binding ? loadOfflineBootstrap(binding) : null;
+      },
       async reportWebviewCapabilities() {
         await api.reportWebviewCaps(await probeWebviewWebauthn());
       },

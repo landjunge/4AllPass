@@ -12,10 +12,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
+import { api, getToken, type DeviceSummary, type VaultSummary } from "../../lib/api.ts";
 import { deviceId } from "../../lib/device-identity.ts";
 import { readActiveVaultId } from "../../lib/active-vault.ts";
-import { clearOfflineBootstrap } from "../../lib/offline-bootstrap.ts";
+import { readStorageOrigin } from "../../lib/storage-origin.ts";
+import {
+  clearOfflineBootstrap,
+  fingerprintSessionToken,
+  saveOfflineBootstrap,
+} from "../../lib/offline-bootstrap.ts";
 import { listenDesktopLock } from "../desktop-adapter/index.ts";
 import { useAccount, type AccountState } from "../account/index.ts";
 import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
@@ -243,6 +248,16 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const loadVaultsCached = useCallback(async (): Promise<VaultSummary[]> => {
     const list = await loadVaultsOnline();
     setOfflineVaults(null);
+    // Refresh the bound metadata for the signed-in account (covers sign-in
+    // and account switch). Best effort; startup writes its own binding too.
+    const email = accountRef.current?.email;
+    const token = getToken();
+    if (email && token) {
+      await saveOfflineBootstrap(email, list, {
+        sessionFingerprint: await fingerprintSessionToken(token),
+        storageOrigin: readStorageOrigin(),
+      });
+    }
     return list;
   }, [loadVaultsOnline]);
   const restoreOffline = useCallback((_email: string, vaults: VaultSummary[]) => {
@@ -263,16 +278,27 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const actions: AppActions = useMemo(
     () => ({
       async signIn(userEmail, password) {
+        // An account switch must never leave the previous account's cache.
+        clearOfflineBootstrap();
         await account.signIn(userEmail, password);
       },
       async signUp(userEmail, password) {
+        clearOfflineBootstrap();
         await account.signUp(userEmail, password);
       },
       async openThisMac() {
+        clearOfflineBootstrap();
         await account.openThisMac();
       },
       async signOut() {
-        await account.signOut();
+        try {
+          await account.signOut();
+        } finally {
+          // logout() clears the token even when the server is unreachable;
+          // invalidate the cache regardless of the transport outcome.
+          clearOfflineBootstrap();
+          setOfflineVaults(null);
+        }
       },
       async selectVault(vaultId) {
         await vaultLifecycle.selectVault(vaultId);
@@ -365,6 +391,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       startup.localMode,
       startup.localStore,
       account.email,
+      offlineVaults,
       vaultLifecycle,
       deviceManagement.devices,
       deviceManagement.revokeProgress,

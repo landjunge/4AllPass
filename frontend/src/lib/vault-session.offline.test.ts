@@ -22,10 +22,20 @@ import {
   wrapVaultKey,
 } from "@4allpass/crypto";
 
-import { api } from "./api.ts";
+import {
+  ApiError,
+  SidecarRequestError,
+  api,
+  getToken,
+  setToken,
+} from "./api.ts";
 import { emptyDraft, type VaultEntry } from "./entries.ts";
 import { savePin } from "./revision-pin.ts";
-import { memorySnapshotCache, setSnapshotCacheForTests } from "./snapshot-cache.ts";
+import {
+  memorySnapshotCache,
+  setSnapshotCacheForTests,
+  type SnapshotCache,
+} from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { commitEntries, unlockWithMasterPassword } from "./vault-session.ts";
 
@@ -35,11 +45,59 @@ const originalGet = api.getSnapshot.bind(api);
 const originalCommit = api.commitSnapshot.bind(api);
 
 afterEach(() => {
+  if (typeof window !== "undefined") {
+    try {
+      setToken(null);
+    } catch {
+      // No token store in this test.
+    }
+  }
+  Reflect.deleteProperty(globalThis, "window");
   clearTestStorage();
   setSnapshotCacheForTests(null);
   api.getSnapshot = originalGet;
   api.commitSnapshot = originalCommit;
 });
+
+type Invoke = (
+  cmd: string,
+  args?: Record<string, unknown>,
+  options?: unknown,
+) => Promise<unknown>;
+
+function installTauri(invoke: Invoke): void {
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { __TAURI_INTERNALS__: { invoke } },
+  });
+}
+
+function spyCache(base: SnapshotCache): {
+  calls: { load: number; save: number; remove: number };
+  cache: SnapshotCache;
+} {
+  const calls = { load: 0, save: 0, remove: 0 };
+  return {
+    calls,
+    cache: {
+      load: async (vaultId) => {
+        calls.load += 1;
+        return base.load(vaultId);
+      },
+      save: async (vaultId, snapshot) => {
+        calls.save += 1;
+        return base.save(vaultId, snapshot);
+      },
+      remove: async (vaultId) => {
+        calls.remove += 1;
+        return base.remove(vaultId);
+      },
+      loadLegacyBackup: (vaultId) => base.loadLegacyBackup(vaultId),
+      saveLegacyBackup: (vaultId, snapshot) => base.saveLegacyBackup(vaultId, snapshot),
+      removeLegacyBackup: (vaultId) => base.removeLegacyBackup(vaultId),
+    },
+  };
+}
 
 function sealedSnapshot(vaultId: string, revision: number) {
   const vaultKey = generateVaultKey();
@@ -165,4 +223,77 @@ test("the cache holds ciphertext only and is not replaced by a failed open", asy
   // The revision is in the manifest AAD, so the lie fails the GCM tag.
   await assert.rejects(() => unlockWithMasterPassword(vaultId, PASSWORD), AuthFailureError);
   assert.equal((await cache.load(vaultId))?.revision, 2, "failed open must not replace the cache");
+});
+
+test("snapshot unlock keeps the sentinel cache/token on 401/403/409/422", async () => {
+  for (const status of [401, 403, 409, 422]) {
+    const vaultId = `vault-offline-status-${status}`;
+    const wire = sealedSnapshot(vaultId, 1);
+    const base = memorySnapshotCache();
+    await base.save(vaultId, wire);
+    const spy = spyCache(base);
+    setSnapshotCacheForTests(spy.cache);
+    api.getSnapshot = originalGet;
+    installTauri(async () => ({
+      status,
+      body: JSON.stringify({ detail: "synthetic status body" }),
+    }));
+    setToken("synthetic-token");
+    await assert.rejects(
+      () => unlockWithMasterPassword(vaultId, PASSWORD),
+      (error: unknown) => {
+        assert.ok(
+          error instanceof ApiError,
+          `expected ApiError, got ${error?.constructor?.name}: ${String(error)}`,
+        );
+        assert.equal(error.status, status);
+        return true;
+      },
+    );
+    assert.equal(spy.calls.load, 0, `status ${status} must not release the cache`);
+    assert.equal(getToken(), "synthetic-token");
+  }
+});
+
+test("snapshot unlock keeps the sentinel cache/token on non-offline capability", async () => {
+  const vaultId = "vault-offline-capability";
+  const wire = sealedSnapshot(vaultId, 1);
+  const base = memorySnapshotCache();
+  await base.save(vaultId, wire);
+  const spy = spyCache(base);
+  setSnapshotCacheForTests(spy.cache);
+  api.getSnapshot = originalGet;
+  installTauri(async () => {
+    throw { code: "capability", message: "desktop sidecar capability failure" };
+  });
+  setToken("synthetic-token");
+  await assert.rejects(
+    () => unlockWithMasterPassword(vaultId, PASSWORD),
+    (error: unknown) => {
+      assert.ok(error instanceof SidecarRequestError);
+      assert.equal(error.code, "capability");
+      return true;
+    },
+  );
+  assert.equal(spy.calls.load, 0);
+  assert.equal(getToken(), "synthetic-token");
+});
+
+test("typed offline_network snapshot unlock uses the existing sentinel cache", async () => {
+  const vaultId = "vault-offline-typed-cache";
+  const wire = sealedSnapshot(vaultId, 1);
+  const base = memorySnapshotCache();
+  await base.save(vaultId, wire);
+  const spy = spyCache(base);
+  setSnapshotCacheForTests(spy.cache);
+  api.getSnapshot = originalGet;
+  installTauri(async () => {
+    throw { code: "offline_network", message: "desktop sidecar network unavailable" };
+  });
+  setToken("synthetic-token");
+  const vault = await unlockWithMasterPassword(vaultId, PASSWORD);
+  assert.equal(vault.vaultId, vaultId);
+  assert.equal(vault.revision, 1);
+  assert.ok(spy.calls.load >= 1, "offline_network must use the existing cache");
+  assert.equal(getToken(), "synthetic-token");
 });

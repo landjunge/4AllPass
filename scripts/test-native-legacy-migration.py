@@ -421,6 +421,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--build-python", type=Path, required=True)
     parser.add_argument("--release-dist", type=Path)
+    parser.add_argument("--build-dir", type=Path)
     parser.add_argument(
         "--scenarios",
         default="legacy-known,legacy-unknown-fields",
@@ -460,8 +461,8 @@ def main() -> None:
         or identity["hooks"] != "2026.7"
     ):
         raise RuntimeError("private buildvenv/pinned packager required")
-    build = output / "build"
-    build.mkdir(exist_ok=True)
+    build = (args.build_dir or (output / "build")).resolve()
+    build.mkdir(parents=True, exist_ok=True)
     dist = build / "dist"
     run(
         ["npm", "run", "build", "-w", "@4allpass/frontend", "--", "--outDir", str(dist)],

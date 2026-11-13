@@ -256,6 +256,8 @@ pub(crate) fn attach(app: &mut tauri::App, child_pid: u32) -> tauri::Result<()> 
             if let Ok(raw) = rx.recv_timeout(Duration::from_secs(1)) {
                 if let Ok(Value::String(encoded)) = serde_json::from_str::<Value>(&raw) {
                     if let Ok(value) = serde_json::from_str::<Value>(&encoded) {
+                        // Keep the last observed JS state for timeout diagnosis.
+                        outcome = value.clone();
                         let migration = scenario != "normal";
                         let phase = value["phase"].as_str().unwrap_or("");
                         let needs_stop = (scenario == "legacy-known" && phase == "before-post")

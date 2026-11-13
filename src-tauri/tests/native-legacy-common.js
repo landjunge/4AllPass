@@ -281,11 +281,18 @@
           decorated.envelopes[0].futureEnvelope = { nested: [4, 5, 6] };
           await writeHead(decorated);
           check("unknown-fields-headcache-written");
-          result.snapshotTransportError = await ipcSnapshotProbe(vaultId);
+          result.stage = "snapshot-fault-probe";
+          result.snapshotTransportError = await Promise.race([
+            ipcSnapshotProbe(vaultId),
+            new Promise(resolve =>
+              setTimeout(() => resolve({ ok: false, error: "snapshot-ipc-timeout" }), 20000),
+            ),
+          ]);
           logEvent({ phase: "snapshot-fault-probe", transportError: result.snapshotTransportError });
           await click("lock");
           await wait("locked-before-snapshot-fault", () => !unlocked() && byId("master-password"));
           check("locked-before-snapshot-fault");
+          result.stage = "snapshot-fault-unlock";
           const offline = await tryUnlockSameContext();
           if (!offline.ok) {
             result.offlineBoundary = "snapshot-fault-cache-fallback-unavailable";
@@ -341,6 +348,7 @@
           logEvent({ phase: "own-sidecar-stopped", ack: result.ack, initializedContext: true });
           result.transportError = await ipcTransportProbe();
           logEvent({ phase: "transport-probe", transportError: result.transportError });
+          result.stage = "snapshot-fault-unlock";
           const offline = await tryUnlockSameContext();
           if (!offline.ok) {
             result.offlineBoundary = "initialized-context-cache-fallback-unavailable";

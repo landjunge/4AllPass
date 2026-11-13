@@ -11,6 +11,12 @@ import type {
   WireSealedManifest,
   WireVaultSnapshot,
 } from "@4allpass/crypto";
+import {
+  classifySignedWriteResponse,
+  type SignedWriteBundle,
+  type SignedWriteExpectation,
+  type SignedWriteOutcome,
+} from "@4allpass/crypto";
 
 import { deviceId } from "./device-identity.ts";
 import { OfflineTransportError, type SidecarOfflineCode } from "./snapshot-cache.ts";
@@ -245,6 +251,60 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return parsed as T;
 }
 
+/**
+ * Send one v2 signed write and classify the answer without inventing success.
+ * `bodyString` must be the exact bytes whose payloadDigest was signed. The
+ * replay flag comes from the core header (sidecar) or the response (fetch);
+ * a retry that cannot be proven stays UNKNOWN.
+ */
+export async function signedWriteRequest(
+  method: string,
+  path: string,
+  bundle: SignedWriteBundle,
+  bodyString: string,
+  expected: SignedWriteExpectation,
+): Promise<SignedWriteOutcome> {
+  const headers: Record<string, string> = { ...bundle.headers, "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  headers["X-Device-Id"] = deviceId();
+  let status: number;
+  let text: string;
+  let replayed: boolean;
+  if (sidecarHttpEnabled()) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    let result: { status: number; body: string; replayed?: boolean };
+    try {
+      result = await invoke<{ status: number; body: string; replayed?: boolean }>("sidecar_http", {
+        method,
+        path: `/api/v1${path}`,
+        headers,
+        body: bodyString,
+      });
+    } catch (error) {
+      const offline = classifySidecarTransportRejection(error);
+      if (offline) throw offline;
+      throw classifySidecarRequestError(error);
+    }
+    status = result.status;
+    text = result.body;
+    replayed = result.replayed === true;
+  } else {
+    const response = await fetch(`${apiBase()}${path}`, {
+      method,
+      headers,
+      credentials: "omit",
+      body: bodyString,
+    });
+    status = response.status;
+    text = await response.text();
+    replayed = response.headers.get("X-4AP-Write-Replayed") === "true";
+  }
+  const parsed: unknown = text ? JSON.parse(text) : {};
+  const receiptHeaders = new Headers();
+  if (replayed) receiptHeaders.set("X-4AP-Write-Replayed", "true");
+  return classifySignedWriteResponse(status, receiptHeaders, parsed, expected);
+}
+
 /** base64 → base64url without padding, for credential ids in URL paths. */
 export function toPathId(base64: string): string {
   return base64.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -281,6 +341,15 @@ export const api = {
 
   createVault(): Promise<VaultSummary> {
     return request("POST", "/vaults");
+  },
+
+  /**
+   * Create a v2 (signed-write) vault. Additive and opt-in: the server issues a
+   * one-time creation grant bound to vault/owner/purpose. Existing v1 vaults
+   * are never migrated by this call.
+   */
+  createVaultV2(accountPassword: string): Promise<{ vaultId: string; creationGrant: string }> {
+    return request("POST", "/vaults", { cryptoProtocolVersion: 2, accountPassword });
   },
 
   getVault(vaultId: string): Promise<VaultSummary> {

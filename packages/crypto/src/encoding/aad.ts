@@ -8,6 +8,8 @@ import {
   PRF_EVAL_LABEL,
   RWK_INFO_LABEL,
   RWK_SALT_LABEL,
+  WRITE_SEED_INFO_LABEL,
+  WRITE_SEED_SALT_LABEL,
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
 import type { AadField, EnvelopeType, KdfParams } from "../types.ts";
@@ -163,4 +165,12 @@ export function rwkHkdfSalt(vaultId: string): Uint8Array {
 
 export function rwkHkdfInfo(vaultId: string, cryptoVersion: number): Uint8Array {
   return encodeAad([RWK_INFO_LABEL, vaultId, versionField(cryptoVersion)]);
+}
+
+export function writeSeedHkdfSalt(vaultId: string): Uint8Array {
+  return encodeAad([WRITE_SEED_SALT_LABEL, vaultId]);
+}
+
+export function writeSeedHkdfInfo(vaultId: string, vaultKeyVersion: number): Uint8Array {
+  return encodeAad([WRITE_SEED_INFO_LABEL, vaultId, versionField(vaultKeyVersion)]);
 }

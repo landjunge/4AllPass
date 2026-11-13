@@ -1,7 +1,20 @@
 import { sha256 } from "@noble/hashes/sha2.js";
-import type { webcrypto } from "node:crypto";
 import { bytesToHex, equalBytes } from "./encoding/bytes.ts";
 import { writeRequestBytesV2, writePublicKeyDigestV2, type WriteRequestV2 } from "./requester.ts";
+
+// Runtime-neutral WebCrypto types: derived from the global so this package
+// typechecks under both Node (tests) and the browser/desktop DOM lib without
+// importing `node:crypto`, which the frontend project cannot resolve.
+type CryptoLike = typeof globalThis.crypto;
+type SubtleCryptoLike = NonNullable<CryptoLike["subtle"]>;
+type CryptoKeyLike = Awaited<ReturnType<SubtleCryptoLike["importKey"]>>;
+
+/** Copy into a plain ArrayBuffer so the value satisfies the DOM BufferSource. */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
 
 /**
  * Client half of the v2 signed-write path (ADR-015 step 3).
@@ -60,7 +73,7 @@ export interface SignerProbe {
   reason?: string;
 }
 
-function subtleCrypto(): webcrypto.SubtleCrypto | undefined {
+function subtleCrypto(): SubtleCryptoLike | undefined {
   return globalThis.crypto?.subtle;
 }
 
@@ -76,12 +89,12 @@ function pkcs8FromSeed(seed: Uint8Array): Uint8Array {
 
 async function importSeed(
   seed: Uint8Array,
-  subtle: webcrypto.SubtleCrypto | undefined = subtleCrypto(),
-): Promise<webcrypto.CryptoKey> {
+  subtle: SubtleCryptoLike | undefined = subtleCrypto(),
+): Promise<CryptoKeyLike> {
   if (!subtle) throw new SignerUnavailableError("no SubtleCrypto");
   const der = pkcs8FromSeed(seed);
   try {
-    return await subtle.importKey("pkcs8", der, "Ed25519", false, ["sign"]);
+    return await subtle.importKey("pkcs8", toArrayBuffer(der), "Ed25519", false, ["sign"]);
   } catch {
     throw new SignerUnavailableError("Ed25519 PKCS#8 import is unavailable");
   } finally {
@@ -95,7 +108,7 @@ async function importSeed(
  * produce a v2 write either.
  */
 export async function probeSigner(
-  options: { subtle?: webcrypto.SubtleCrypto | null } = {},
+  options: { subtle?: SubtleCryptoLike | null } = {},
 ): Promise<SignerProbe> {
   const subtle = options.subtle === undefined ? subtleCrypto() : options.subtle ?? undefined;
   if (!subtle) return { available: false, reason: "no SubtleCrypto" };
@@ -172,16 +185,41 @@ function utf8b64url(value: string): string {
 }
 
 /**
- * Build and sign one write. The canonical bytes are produced by the shared
- * encoder, so client and server cannot drift; nothing here falls back to
- * unsigned when signing fails.
+ * A signing backend. The canonical bytes are produced by the shared encoder;
+ * a backend only signs them and exposes the matching public key. The desktop
+ * app uses the native Tauri signer (the webview's PKCS#8 import is broken on
+ * the shipped WK runtime); Node/tests use WebCrypto. Neither falls back to
+ * unsigned.
  */
-export async function signWriteV2(
+export interface WriteSigner {
+  /** Raw 32-byte public key belonging to the signing seed. */
+  readonly publicKey: Uint8Array;
+  sign(canonical: Uint8Array): Promise<Uint8Array>;
+  /** Drop backend references and wipe any owned seed buffer after one operation. */
+  dispose?(): void;
+}
+
+/** WebCrypto backend: import the PKCS#8 seed once, sign with Ed25519. */
+export async function webCryptoWriteSigner(key: SignedWriteKey): Promise<WriteSigner> {
+  const privateKey = await importSeed(key.seed);
+  const subtle = subtleCrypto()!;
+  return {
+    publicKey: key.publicKey,
+    sign: async (canonical) => new Uint8Array(await subtle.sign("Ed25519", privateKey, toArrayBuffer(canonical))),
+  };
+}
+
+/**
+ * Build and sign one write with an explicit backend. The canonical bytes are
+ * produced by the shared encoder, so client and server cannot drift; nothing
+ * here falls back to unsigned when signing fails.
+ */
+export async function signWriteV2WithSigner(
   fields: SignedWriteFields,
-  key: SignedWriteKey,
-  next?: SignedWriteKey,
+  signer: WriteSigner,
+  next?: WriteSigner,
 ): Promise<SignedWriteBundle> {
-  if (key.publicKey.length !== WRITE_PUBLIC_KEY_BYTES) {
+  if (signer.publicKey.length !== WRITE_PUBLIC_KEY_BYTES) {
     throw new SignedWriteInputError("publicKey must be 32 bytes");
   }
   if (fields.nonce.length !== WRITE_NONCE_BYTES) {
@@ -220,9 +258,7 @@ export async function signWriteV2(
     timestamp: fields.timestamp,
   };
   const canonical = writeRequestBytesV2(request);
-  const privateKey = await importSeed(key.seed);
-  const subtle = subtleCrypto()!;
-  const signature = new Uint8Array(await subtle.sign("Ed25519", privateKey, canonical));
+  const signature = await signer.sign(canonical);
   const headers: Record<string, string> = {
     [SIGNED_WRITE_HEADERS.scheme]: SIGNED_WRITE_SCHEME,
     [SIGNED_WRITE_HEADERS.signature]: b64url(signature),
@@ -239,12 +275,24 @@ export async function signWriteV2(
   };
   if (fields.hasNextKey && next) {
     headers[SIGNED_WRITE_HEADERS.nextPublicKey] = b64url(next.publicKey);
-    const nextPrivate = await importSeed(next.seed);
-    headers[SIGNED_WRITE_HEADERS.nextSignature] = b64url(
-      new Uint8Array(await subtle.sign("Ed25519", nextPrivate, canonical)),
-    );
+    headers[SIGNED_WRITE_HEADERS.nextSignature] = b64url(await next.sign(canonical));
   }
   return { request, canonical, signature, headers };
+}
+
+/**
+ * Build and sign one write with the WebCrypto backend. The canonical bytes are
+ * produced by the shared encoder, so client and server cannot drift; nothing
+ * here falls back to unsigned when signing fails.
+ */
+export async function signWriteV2(
+  fields: SignedWriteFields,
+  key: SignedWriteKey,
+  next?: SignedWriteKey,
+): Promise<SignedWriteBundle> {
+  const signer = await webCryptoWriteSigner(key);
+  const nextSigner = next ? await webCryptoWriteSigner(next) : undefined;
+  return signWriteV2WithSigner(fields, signer, nextSigner);
 }
 
 export interface SignedWriteExpectation {
@@ -321,7 +369,7 @@ export function classifySignedWriteResponse(
 }
 
 /** Operation id + nonce for a destructive retry: reuse them verbatim. */
-export function newWriteOperation(random: webcrypto.Crypto = globalThis.crypto): {
+export function newWriteOperation(random: CryptoLike = globalThis.crypto): {
   operationId: string;
   nonce: Uint8Array;
 } {

@@ -17,6 +17,9 @@ export const RECOVERY_CHECKSUM_LABEL = "4allpass-recovery-checksum-v1";
 export const WRITE_V2_LABEL = "4allpass-vault-write-v2";
 /** Domain label for the next-public-key digest signed during rotation. */
 export const WRITE_V2_PUBLIC_KEY_LABEL = "4allpass-write-public-key-v1";
+/** HKDF domain separation for the write-signing seed derived from the Vault Key (ADR-015). */
+export const WRITE_SEED_SALT_LABEL = "4allpass-write-seed-salt-v1";
+export const WRITE_SEED_INFO_LABEL = "4allpass-write-seed-v1";
 /** Signature nonce, framed by uint32be. Distinct from the 12-byte AES-GCM nonce. */
 export const WRITE_V2_NONCE_BYTES = 16;
 export const WRITE_V2_DIGEST_BYTES = 32;

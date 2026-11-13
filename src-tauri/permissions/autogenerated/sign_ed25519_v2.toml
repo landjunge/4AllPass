@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-sign-ed25519-v2"
+description = "Enables the sign_ed25519_v2 command without any pre-configured scope."
+commands.allow = ["sign_ed25519_v2"]
+
+[[permission]]
+identifier = "deny-sign-ed25519-v2"
+description = "Denies the sign_ed25519_v2 command without any pre-configured scope."
+commands.deny = ["sign_ed25519_v2"]

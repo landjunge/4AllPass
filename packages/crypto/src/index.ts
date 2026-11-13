@@ -103,6 +103,8 @@ export {
   rwkHkdfInfo,
   rwkHkdfSalt,
   versionField,
+  writeSeedHkdfInfo,
+  writeSeedHkdfSalt,
 } from "./encoding/aad.ts";
 export type {
   DeviceKeyAadInput,
@@ -235,14 +237,19 @@ export {
   payloadDigestV2,
   probeSigner,
   signWriteV2,
+  signWriteV2WithSigner,
+  webCryptoWriteSigner,
 } from "./signed-write-client.ts";
 export type {
   SignedWriteBundle,
+  SignedWriteExpectation,
   SignedWriteFields,
   SignedWriteKey,
   SignedWriteOutcome,
   SignerProbe,
+  WriteSigner,
 } from "./signed-write-client.ts";
+export { deriveWritePublicKey, deriveWriteSeed } from "./write-seed.ts";
 
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

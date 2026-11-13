@@ -87,8 +87,11 @@ below (signed writes) is still not built. The guard now takes the vault row
 lock before the revoked check (Postgres `SELECT … FOR UPDATE`, SQLite
 `BEGIN IMMEDIATE`), and the local-vault ownership transfer locks its vaults in
 sorted order and checks the same session device; revoke and admitted writes
-serialize instead of a get-then-act race. Session revocation remains
-user+device-global and is documented as such.
+serialize instead of a get-then-act race. The write guard re-reads the owner
+under the lock (an old-owner session gets 404 after a transfer); local adopt
+re-reads `owner = LOCAL` under the lock and returns 409 `local_vault_changed`
+instead of transferring a row another adopter already owns. Session revocation
+remains user+device-global and is documented as such.
 
 **1. Rate-limit the unlimited destructive routes.** Device DELETE and the
 Device-Key-Envelope PUT get the same `enforce_write_rate_limit` treatment the

@@ -426,10 +426,13 @@ still follows successful opening and remains best-effort.
   `BEGIN IMMEDIATE`), so revoke and admitted mutations serialize instead of a
   get-then-act window. `POST /local/adopt-local-vault` locks all local vaults in
   sorted order and checks the session device for a revoked row in any of them
-  before transferring ownership. Session revocation itself remains
-  user+device-global: revoking in vault A invalidates the device's existing
-  sessions for vault B too; login and a fresh vault-B write still work because
-  the write guard is vault-scoped. Covered by
+  before transferring ownership; a row whose owner changed under the lock
+  produces 409 `local_vault_changed` and no partial transfer. The write guard
+  also re-reads the owner under the lock, so an old-owner session that waited
+  while a transfer committed gets 404 instead of writing a stale-owned row.
+  Session revocation itself remains user+device-global: revoking in vault A
+  invalidates the device's existing sessions for vault B too; login and a fresh
+  vault-B write still work because the write guard is vault-scoped. Covered by
   `backend/tests/security/test_revoked_device_writes.py` and
   `backend/tests/test_local.py`.
 

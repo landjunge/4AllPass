@@ -158,7 +158,7 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Autofill | Chromium, Firefox und Safari-Wrapper; kein automatisches Absenden |
 | KI-Zugriff | Im aktuellen Quellstand gesperrt; geschützter Produktionsweg fehlt |
 | Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
-| Gerätewiderruf | Ein Metadaten-Revoke sperrt Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen/Recovery bleiben. Der Guard läuft unter dem Vault-Lock, und das Übernehmen eines lokalen Vaults prüft dieselbe Sperre. Ein aktives Gerät kann eine ID bewusst wieder eintragen; neue/legacy IDs bleiben bis zu signierten Writes offen. |
+| Gerätewiderruf | Ein Metadaten-Revoke sperrt Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen/Recovery bleiben. Der Guard läuft unter dem Vault-Lock und liest den Owner danach erneut; das Übernehmen eines lokalen Vaults prüft dieselbe Sperre, und ein paralleler Adopt endet ohne Teilübertragung (409). Ein aktives Gerät kann eine ID bewusst wieder eintragen; neue/legacy IDs bleiben bis zu signierten Writes offen. |
 | Frühere Stände | Einstellungen → Sicherheit: ältere Stände ansehen und einen fehlenden Eintrag einzeln wiederherstellen; immer als neuer Stand, nie zurückgedreht |
 | Aufräumen | Vorschau unter Einstellungen → Sicherheit: zeigt nach ausdrücklichem Klick ähnliche Einträge und lange unveränderte Einträge mit ihrem Alter; reine Anzeige, keine Änderung |
 | Sicherung | Verschlüsselte Gesamtsicherung als Datei (nur Chiffretext) mit Integritätsprüfung und Wiederherstellung als neuer Stand; auf einem anderen Gerät braucht es Master-Passwort oder Recovery-Kit |
@@ -267,7 +267,7 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. Under Settings → Security, earlier states can be viewed and a missing entry restored individually (always as a new state), a read-only cleanup preview lists similar and long-unchanged entries, and an encrypted full backup can be created and restored (ciphertext only; another device needs the master password or recovery kit). There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
+Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. Ownership is re-read under the lock: an old-owner session gets 404 after a transfer, and a concurrent adopt ends without partial transfer (409). A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
 
 The five-product appbar loads its existing module CSS (44×44 targets, helper text visually hidden but available to screen readers), and the DE/EN choice also sets the document language (`<html lang>`). Switching a product calls the native `family_switch` host with the catalog id only; in the browser it stays honestly disabled, and “App opened” is not “connected”.
 

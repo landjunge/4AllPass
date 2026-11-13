@@ -519,3 +519,98 @@ async def test_revoked_device_can_create_a_new_vault_account_operation(client):
         client, relogged, DEVICE_A, new_vault, revision=1, sealedManifest=_sealed_manifest()
     )
     assert written.status_code == 200, written.text
+
+
+async def test_old_owner_write_is_rechecked_after_a_concurrent_owner_transfer(client, engine):
+    """Postgres: transfer commits during the lock wait -> old owner 404.
+    SQLite: BEGIN IMMEDIATE serializes, so the old-owner write completes before
+    the transfer and no write lands after it.
+    """
+    import uuid as _uuid
+
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.api import deps as deps_module
+    from app.models.user import User
+    from app.models.vault import Vault
+
+    email_a, owner_a = await _signup(client)
+    vault_id = await _vault(client, owner_a)
+    first = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots",
+        headers=_auth(owner_a),
+        json={
+            "revision": 1,
+            "vaultKeyVersion": 1,
+            "cryptoProtocolVersion": 1,
+            "envelopes": [_master_envelope(), _device_envelope(DEVICE_A)],
+            "entries": [],
+        },
+    )
+    assert first.status_code == 200, first.text
+    assert (
+        await client.post(
+            f"/api/v1/vaults/{vault_id}/devices",
+            headers=_auth(owner_a),
+            json={"deviceId": DEVICE_A, "label": "Old owner phone"},
+        )
+    ).status_code == 200
+    token_a = await _login(client, email_a, DEVICE_A)
+
+    email_b, _ = await _signup(client)
+    async with AsyncSession(bind=engine) as session:
+        user_b = (
+            await session.execute(select(User).where(User.email == email_b))
+        ).scalar_one()
+
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    original = deps_module.lock_vault_row
+    gated_once = False
+
+    async def gated(db, vault_row_id):
+        nonlocal gated_once
+        if not gated_once:
+            gated_once = True
+            entered.set()
+            await release.wait()
+        return await original(db, vault_row_id)
+
+    deps_module.lock_vault_row = gated
+    try:
+        write = asyncio.create_task(
+            _commit_as(
+                client,
+                token_a,
+                DEVICE_A,
+                vault_id,
+                revision=2,
+                sealedManifest=_sealed_manifest(),
+            )
+        )
+        await asyncio.wait_for(entered.wait(), 2)
+
+        async def transfer_owner():
+            async with AsyncSession(bind=engine) as session:
+                row = await session.get(Vault, _uuid.UUID(vault_id))
+                assert row is not None
+                row.owner_user_id = user_b.id
+                await session.commit()
+
+        transfer = asyncio.create_task(transfer_owner())
+        await asyncio.sleep(0.3)
+        sqlite = engine.dialect.name == "sqlite"
+        if sqlite:
+            assert not transfer.done(), "SQLite writer lock should serialize the transfer"
+        else:
+            await asyncio.wait_for(transfer, 2)
+        release.set()
+        response = await write
+        await asyncio.wait_for(transfer, 2)
+        assert response.status_code == (200 if sqlite else 404), response.text
+        async with AsyncSession(bind=engine) as session:
+            row = await session.get(Vault, _uuid.UUID(vault_id))
+            assert row is not None and row.owner_user_id == user_b.id
+    finally:
+        deps_module.lock_vault_row = original

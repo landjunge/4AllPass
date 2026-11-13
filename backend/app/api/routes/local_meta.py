@@ -145,6 +145,22 @@ async def adopt_local_vault(
     if not vault_ids:
         return AdoptLocalVaultResult()
     await lock_vault_rows(db, vault_ids)
+    # The pre-lock ID read is not ownership truth. Re-read under the lock and
+    # require every selected row to still belong to LOCAL; a concurrent adopter
+    # may have committed first. No partial transfer and no foreign data leak.
+    local_vaults = list(
+        (
+            await db.execute(
+                select(Vault)
+                .where(Vault.id.in_(vault_ids), Vault.owner_user_id == local.id)
+            )
+        ).scalars()
+    )
+    if len(local_vaults) != len(vault_ids):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="local_vault_changed",
+        )
     session_device_id = getattr(request.state, "session_device_id", None)
     if session_device_id is None:  # pragma: no cover - get_current_user guarantees it
         raise HTTPException(
@@ -166,7 +182,7 @@ async def adopt_local_vault(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="device is revoked for this vault",
         )
-    vaults = list((await db.execute(select(Vault).where(Vault.id.in_(vault_ids)))).scalars())
+    vaults = local_vaults
     vault_id: str | None = None
     entries = 0
     for vault in vaults:

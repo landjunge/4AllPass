@@ -98,6 +98,7 @@ async def get_writable_vault(
     request: Request,
     vault: Annotated[Vault, Depends(get_owned_vault)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ) -> Vault:
     """Ownership first (404), then refuse mutations from a revoked device row.
 
@@ -123,6 +124,12 @@ async def get_writable_vault(
     # revoked check below is therefore evaluated under the same lock that the
     # mutation holds until commit, not in a get-then-act window.
     await lock_vault_row(db, vault.id)
+    # Ownership was checked before the lock wait. Re-read the owner under the
+    # lock; a concurrent local-vault adoption may have transferred it, and the
+    # old owner's session must not write a stale-owned row.
+    owner = await db.scalar(select(Vault.owner_user_id).where(Vault.id == vault.id))
+    if owner is None or owner != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="vault not found")
     revoked = await db.execute(
         select(Device.id).where(
             Device.vault_id == vault.id,

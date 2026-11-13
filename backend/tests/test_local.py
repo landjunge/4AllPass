@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -446,3 +447,85 @@ async def test_adopt_local_vault_rejects_revoked_session_device(local_runtime):
         row = await session.get(Vault, _uuid.UUID(vault_id))
         assert row is not None
         assert row.owner_user_id == local_id
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_two_concurrent_adopters_never_take_a_vault_twice(local_runtime):
+    """Barrier: only the adopter that still sees LOCAL ownership under lock wins."""
+    from uuid import UUID
+
+    from app.api.routes import local_meta
+    from app.api.routes.auth import LOCAL_ACCOUNT_EMAIL
+    from app.db.session import get_session_factory
+    from app.models.user import User
+    from app.models.vault import Vault
+
+    await _create_schema()
+    async with get_session_factory()() as session:
+        local = User(email=LOCAL_ACCOUNT_EMAIL)
+        session.add(local)
+        await session.flush()
+        vault = Vault(owner_user_id=local.id, crypto_protocol_version=1)
+        session.add(vault)
+        await session.commit()
+        vault_id = str(vault.id)
+
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=local_runtime.origin) as client:
+        users = []
+        for index, email in enumerate(("adopt-a@example.com", "adopt-b@example.com")):
+            device = {"X-Device-Id": f"dev_adoptdevice000000{index:03d}"}
+            registered = await client.post(
+                "/api/v1/auth/register",
+                json={"email": email, "password": "account-password-1234"},
+                headers=device,
+            )
+            assert registered.status_code == 200, registered.text
+            users.append({**device, "Authorization": f"Bearer {registered.json()['token']}"})
+
+        original = local_meta.lock_vault_rows
+        entered = asyncio.Event()
+        release = asyncio.Event()
+        calls = 0
+
+        async def gated(db, vault_ids):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                entered.set()
+                await release.wait()
+            return await original(db, vault_ids)
+
+        local_meta.lock_vault_rows = gated
+        try:
+            first = asyncio.create_task(
+                client.post("/api/v1/local/adopt-local-vault", headers=users[1])
+            )
+            await asyncio.wait_for(entered.wait(), 2)
+            second = asyncio.create_task(
+                client.post("/api/v1/local/adopt-local-vault", headers=users[0])
+            )
+            await asyncio.sleep(0.3)
+            release.set()
+            responses = await asyncio.gather(first, second)
+        finally:
+            local_meta.lock_vault_rows = original
+
+        assert all(response.status_code in {200, 409} for response in responses)
+        winners = [
+            response
+            for response in responses
+            if response.status_code == 200 and response.json().get("vaultId")
+        ]
+        assert len(winners) == 1, [response.text for response in responses]
+        winner_vault = winners[0].json()["vaultId"]
+        assert winner_vault == vault_id
+
+    async with get_session_factory()() as session:
+        row = await session.get(Vault, UUID(vault_id))
+        assert row is not None
+        winner_index = responses.index(winners[0])
+        expected_email = ("adopt-b@example.com", "adopt-a@example.com")[winner_index]
+        owner = await session.get(User, row.owner_user_id)
+        assert owner is not None and owner.email == expected_email

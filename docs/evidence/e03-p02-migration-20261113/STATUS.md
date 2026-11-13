@@ -43,7 +43,7 @@ Contract: `docs/vault-revision.md` §3.1.1; private review draft `AP-E03-P02-MIG
 | `npm ci` in the isolated worktree (own lockfile/workspace) | completed; no root/foreign node_modules used |
 | `npm run typecheck -w @4allpass/frontend` | pass, no errors |
 | Node/test project `tsc` | pass |
-| New `vault-session.legacy-migration.test.ts` | 21/21 pass (MIG-1..13, 15, 16a-c, 17, 18, 19) |
+| New `vault-session.legacy-migration.test.ts` | 22/22 pass (MIG-1..13, 15, 16a-c, 17, 18, 19, 20) |
 | New `legacy-migration-banner.test.ts` (synthetic DE/EN render) | 5/5 pass |
 | Directly affected existing tests (commit-echo, pin-content, head-recovery, freshness, offline, hard-revoke, history, nonce-budget, lock-epoch, pull-local-lock) | 48/48 pass |
 | Targeted `oxlint` on changed files | no new errors; pre-existing app-shell hook/fast-refresh warnings remain |

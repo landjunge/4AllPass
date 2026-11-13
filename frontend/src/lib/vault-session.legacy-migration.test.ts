@@ -17,6 +17,7 @@ import {
   wrapVaultKey,
   zeroize,
   type VaultRevision,
+  type WireVaultSnapshot,
 } from "@4allpass/crypto";
 
 import { api, ApiError } from "./api.ts";
@@ -515,6 +516,41 @@ test("MIG-18 a lock during acceptSnapshot cache await discards the opened key", 
     );
     assert.equal(posts, 1);
     zeroize(vault.vaultKey);
+  } finally {
+    f.dispose();
+  }
+});
+
+function persistentCache(records: Map<string, WireVaultSnapshot>): SnapshotCache {
+  const head = (vaultId: string) => `head:${vaultId}`;
+  const legacy = (vaultId: string) => `legacy:${vaultId}`;
+  return {
+    async load(vaultId) { return records.get(head(vaultId)) ?? null; },
+    async save(vaultId, snapshot) { records.set(head(vaultId), snapshot); },
+    async remove(vaultId) { records.delete(head(vaultId)); records.delete(legacy(vaultId)); },
+    async loadLegacyBackup(vaultId) { return records.get(legacy(vaultId)) ?? null; },
+    async saveLegacyBackup(vaultId, snapshot) { records.set(legacy(vaultId), snapshot); },
+    async removeLegacyBackup(vaultId) { records.delete(legacy(vaultId)); },
+  };
+}
+
+test("MIG-20 legacy backup survives the head switch and a new cache instance", async () => {
+  const vaultId = "legacy-mig-20";
+  const f = fixture(vaultId);
+  const records = new Map<string, WireVaultSnapshot>();
+  setSnapshotCacheForTests(persistentCache(records));
+  try {
+    const vault = await openLegacy(vaultId, f);
+    api.commitSnapshot = async (id, payload) => ({ ...payload, vaultId: id });
+    const outcome = await migrateLegacySnapshot(vault, { confirmed: true });
+    assert.equal(outcome.status, "migrated");
+    if (outcome.status === "migrated") zeroize(outcome.vault.vaultKey);
+    zeroize(vault.vaultKey);
+    // A new app instance/cache view over the same persistent records.
+    const reloaded = persistentCache(records);
+    setSnapshotCacheForTests(reloaded);
+    assert.equal((await reloaded.loadLegacyBackup(vaultId))?.revision, 1);
+    assert.equal((await reloaded.load(vaultId))?.revision, 2);
   } finally {
     f.dispose();
   }

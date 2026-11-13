@@ -52,6 +52,7 @@ def upgrade() -> None:
         sa.Column("outcome_status", sa.Integer(), nullable=True),
         sa.Column("outcome_code", sa.String(64), nullable=True),
         sa.Column("result", OpaqueJSON, nullable=True),
+        sa.Column("signed_context", OpaqueJSON, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.UniqueConstraint("vault_id", "operation_id", name="uq_write_receipts_vault_operation"),
     )

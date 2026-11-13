@@ -417,3 +417,70 @@ async def test_v2_rejects_unsigned_and_v1_rejects_signed(client, account):
     )
     assert response.status_code == 422
     assert response.json()["detail"] == "signed_write_not_supported_for_v1"
+
+
+async def test_replay_after_head_advanced_returns_stored_receipt(client, account):
+    vault_id, grant = await _create_v2_vault(client, account)
+    priv, pub = await _bootstrap_device(client, account, vault_id, grant)
+
+    first, signed, raw = await _commit(
+        client,
+        account,
+        vault_id,
+        priv,
+        pub,
+        revision=1,
+        base=0,
+        key_version=1,
+        result_key_version=1,
+        manifest_obj=manifest(),
+    )
+    assert first.status_code == 200, first.text
+
+    new_priv = Ed25519PrivateKey.generate()
+    second, _, _ = await _commit(
+        client,
+        account,
+        vault_id,
+        priv,
+        pub,
+        revision=2,
+        base=1,
+        key_version=1,
+        result_key_version=2,
+        manifest_obj=manifest(b"m2"),
+        next_priv=new_priv,
+        next_pub=new_priv.public_key().public_bytes_raw(),
+    )
+    assert second.status_code == 200, second.text
+
+    # The signed base revision (0) is stale, but an authorized exact retry
+    # must still return the stored receipt, not a CAS error.
+    replay = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers=signed
+    )
+    assert replay.status_code == 200, replay.text
+    assert replay.headers.get("X-4AP-Write-Replayed") == "true"
+    assert replay.json()["result"]["revision"] == 1
+
+
+async def test_v1_reads_and_unsigned_commit_still_work(client, account):
+    created = await client.post("/api/v1/vaults", json={"cryptoProtocolVersion": 1}, headers=account)
+    assert created.status_code == 201
+    vault_id = created.json()["vaultId"]
+    payload = {
+        "expectedRevision": 0,
+        "revision": 1,
+        "vaultKeyVersion": 1,
+        "cryptoProtocolVersion": 1,
+        "envelopes": [envelope()],
+        "entries": [],
+        "sealedManifest": manifest(),
+    }
+    committed = await client.post(
+        f"/api/v1/vaults/{vault_id}/snapshots", json=payload, headers=account
+    )
+    assert committed.status_code == 200, committed.text
+    read = await client.get(f"/api/v1/vaults/{vault_id}/snapshot", headers=account)
+    assert read.status_code == 200, read.text
+    assert read.json()["revision"] == 1

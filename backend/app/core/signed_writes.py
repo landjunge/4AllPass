@@ -304,8 +304,6 @@ async def prepare(
         or headers.parent_id != parent_id
     ):
         _fail(422, "write_resource_mismatch")
-    if headers.base_revision != base_revision or headers.result_revision != result_revision:
-        _fail(422, "write_revision_mismatch")
     if headers.key_version > headers.result_key_version:
         _fail(422, "write_key_version_order")
     has_next_key = headers.next_public_key is not None
@@ -341,7 +339,26 @@ async def prepare(
             or existing.parent_id != parent_id
         ):
             _fail(404, "not_found")
-        if existing.request_digest != request_digest:
+        context = existing.signed_context or {}
+        incoming = {
+            "nonce": headers.nonce.hex(),
+            "timestamp": headers.timestamp,
+            "keyVersion": headers.key_version,
+            "resultKeyVersion": headers.result_key_version,
+            "baseRevision": headers.base_revision,
+            "resultRevision": headers.result_revision,
+            "resourceType": headers.resource_type,
+            "resourceId": headers.resource_id,
+            "parentId": headers.parent_id,
+            "payloadDigest": headers.payload_digest.hex(),
+            "hasNextKey": 1 if headers.next_public_key is not None else 0,
+            "nextPublicKeyDigest": (
+                write_public_key_digest_v2(headers.next_public_key).hex()
+                if headers.next_public_key is not None
+                else None
+            ),
+        }
+        if context != incoming:
             _fail(409, "write_operation_mismatch")
         if existing.status != "committed" or existing.outcome_status is None:
             _fail(409, "write_incomplete")
@@ -353,6 +370,9 @@ async def prepare(
                 result=existing.result or {},
             )
         )
+
+    if headers.base_revision != base_revision or headers.result_revision != result_revision:
+        _fail(409, "write_revision_conflict")
 
     now = datetime.now(timezone.utc)
     if abs(int(now.timestamp()) - headers.timestamp) > settings.signed_write_window_seconds:
@@ -408,6 +428,24 @@ async def prepare(
             parent_id=parent_id,
             request_digest=request_digest,
             status="pending",
+            signed_context={
+                "nonce": headers.nonce.hex(),
+                "timestamp": headers.timestamp,
+                "keyVersion": headers.key_version,
+                "resultKeyVersion": headers.result_key_version,
+                "baseRevision": headers.base_revision,
+                "resultRevision": headers.result_revision,
+                "resourceType": headers.resource_type,
+                "resourceId": headers.resource_id,
+                "parentId": headers.parent_id,
+                "payloadDigest": headers.payload_digest.hex(),
+                "hasNextKey": 1 if headers.next_public_key is not None else 0,
+                "nextPublicKeyDigest": (
+                    write_public_key_digest_v2(headers.next_public_key).hex()
+                    if headers.next_public_key is not None
+                    else None
+                ),
+            },
         )
     )
     db.add(WriteNonce(vault_id=vault.id, key_version=headers.key_version, nonce=headers.nonce))

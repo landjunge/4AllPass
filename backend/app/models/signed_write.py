@@ -59,6 +59,9 @@ class WriteReceipt(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     outcome_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
     outcome_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     result: Mapped[dict[str, Any] | None] = mapped_column(OpaqueJSON, nullable=True)
+    # Client-signed inputs of the original write, so an exact retry can be
+    # recognized after the head has advanced (manifest digest is not stable).
+    signed_context: Mapped[dict[str, Any] | None] = mapped_column(OpaqueJSON, nullable=True)
 
 
 class WriteNonce(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):

@@ -76,9 +76,14 @@
     idbGet("4allpass-snapshot-cache", "wire", `legacy:${headCacheKey()}`);
 
   const ipcTransportProbe = async () => {
+    const internals = window.__TAURI_INTERNALS__;
+    if (!internals || typeof internals.invoke !== "function") {
+      return { ok: false, error: "tauri-internals-unavailable" };
+    }
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("sidecar_http", {
+      // The raw Tauri IPC call used by @tauri-apps/api/core; no module import
+      // (eval-injected drivers cannot resolve bare package specifiers).
+      await internals.invoke("sidecar_http", {
         method: "GET",
         path: "/api/v1/health",
         headers: {},

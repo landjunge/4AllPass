@@ -17,6 +17,10 @@ Contract: `docs/vault-revision.md` §3.1.1; private review draft `AP-E03-P02-MIG
   after commit and restart. Unknown fields the current commit schema cannot carry
   forward stop the migration before POST with a clear DE/EN message; the backup is
   retained instead of dropping metadata.
+- **Legacy head cache keeps the raw wire:** `acceptSnapshot` stores the exact
+  accepted raw wire for legacy snapshots (not a typed re-encode), so an offline
+  reopen cannot drop unknown metadata before migration. A legacy snapshot without
+  its raw wire fails closed instead of writing a lossy cache.
 - **Atomic persistent reservation** (`vaultId`, `vaultKeyVersion`, `baseRevision`,
   `operationID`, prepared manifest digest, state; no secrets) in IndexedDB: one
   read-check-write transaction, owner `operationID` checked on every update, no
@@ -40,7 +44,8 @@ Contract: `docs/vault-revision.md` §3.1.1; private review draft `AP-E03-P02-MIG
   ciphertext.
 - Liveness is checked after async boundaries before `acceptSnapshot` and after its
   cache await; a late lock zeroizes the real key, leaves the pin unchanged and does
-  not return an accepted vault.
+  not return an accepted vault. A newer pin written by another tab during the cache
+  await also discards/zeroizes the opened key and never returns it.
 - No new crypto, manifest schema, cryptoProtocolVersion, backend endpoint or
   server-side migration. No client-local F-25 counter.
 - Own DE/EN README section for the migration banner; no `README: not needed`
@@ -53,10 +58,10 @@ Contract: `docs/vault-revision.md` §3.1.1; private review draft `AP-E03-P02-MIG
 | `npm ci` in the isolated worktree (own lockfile/workspace) | completed; no root/foreign node_modules used |
 | `npm run typecheck -w @4allpass/frontend` | pass, no errors |
 | Node/test project `tsc` | pass |
-| `vault-session.legacy-migration.test.ts` | 27/27 pass (MIG-1..13, 15, 16a-c, 17, 18, 19, 20, 21, 22, 23, 24, 25) |
+| `vault-session.legacy-migration.test.ts` | 29/29 pass (MIG-1..13, 15, 16a-c, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27) |
 | `legacy-migration-banner.test.ts` (synthetic DE/EN render) | 5/5 pass |
 | `snapshot-cache.indexeddb.test.ts` (commit/abort + atomic remove) | 36/36 pass |
-| Real Chromium (synthetic loopback) `vault-desk-legacy-migration.spec.ts` | 6 cases: DE/EN confirm, decline, UNKNOWN reload, lock, two-page reservation, real-IDB unknown-field backup |
+| Real Chromium (synthetic loopback) `vault-desk-legacy-migration.spec.ts` | 7 cases: DE/EN confirm, decline, UNKNOWN reload, lock, two-page reservation, real-IDB unknown-field backup, online unlock → offline reopen with backup equal |
 | Directly affected existing tests (commit-echo, pin-content, head-recovery, freshness, offline, hard-revoke, history, nonce-budget, lock-epoch, pull-local-lock) | 48/48 pass |
 | Targeted `oxlint` on changed files | no new errors; pre-existing app-shell hook/fast-refresh warnings remain |
 

@@ -213,12 +213,15 @@ either way.
 
 The accepted legacy state is captured defensively at open time, including the
 exact raw wire and the protocol `entryDigest`/`envelopeDigest` fingerprints plus a
-canonical plaintext string. The commit works on an immutable copy; after the
-backup await the live entries/envelopes/revision are re-checked immediately before
-encryption. Same entry ids with changed payloads, changed envelope bytes, changed
-metadata or a mutation during the backup await stop the migration before any POST.
-The pin is saved only after the cache await and the liveness check, so a late lock
-cannot move it into an unconfirmed revision. The existing commit contract
+canonical plaintext string. The **head cache also stores that exact raw wire** for
+a legacy snapshot; a legacy snapshot without its raw wire is not accepted, so an
+offline reopen cannot silently migrate a re-encoded (lossy) state. The commit
+works on an immutable copy; after the backup await the live
+entries/envelopes/revision are re-checked immediately before encryption. Same
+entry ids with changed payloads, changed envelope bytes, changed metadata or a
+mutation during the backup await stop the migration before any POST. The pin is
+saved only after the cache await and the liveness check; a newer pin (another tab)
+or a late lock discards and zeroizes the opened key and never returns it. The existing commit contract
 re-encrypts entries with fresh nonces; the lossless guarantee covers the complete
 plaintext entry set and the byte-identical envelopes, and the new manifest
 authenticates the new ciphertext. No new algorithm or vault format is introduced.

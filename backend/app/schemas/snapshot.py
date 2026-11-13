@@ -87,7 +87,7 @@ class SnapshotCommit(WriteModel):
     expected_revision: int | None = None
     revision: int = Field(ge=1)
     vault_key_version: int = Field(ge=1)
-    crypto_protocol_version: Literal[1]
+    crypto_protocol_version: Literal[1, 2]
     envelopes: list[WireKeyEnvelope] = Field(max_length=ENVELOPES_MAX)
     entries: list[WireEncryptedEntry] = Field(default_factory=list, max_length=ENTRIES_MAX)
     sealed_manifest: WireSealedManifest | None = None

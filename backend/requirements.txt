@@ -12,3 +12,5 @@ argon2-cffi==25.1.0
 redis==5.2.1
 python-dotenv==1.2.3
 webauthn==2.7.0
+# Ed25519 verification for v2 signed writes (ADR-015 §3, D12).
+cryptography==50.0.0

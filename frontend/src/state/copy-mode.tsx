@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  applyDocumentLang,
   loadCopyMode,
   loadLang,
   pick,
@@ -24,6 +25,12 @@ const CopyModeContext = createContext<CopyModeValue | null>(null);
 export function CopyModeProvider({ children }: { children: ReactNode }): ReactNode {
   const [mode, setMode] = useState<CopyMode>(() => loadCopyMode());
   const [lang, setLangState] = useState<Lang>(() => loadLang());
+  // Keep the document language in sync with the visible DE/EN choice so
+  // assistive tech and search engines see the actual language. The initial
+  // static <html lang="de"> stays as the pre-hydration default.
+  useEffect(() => {
+    applyDocumentLang(lang);
+  }, [lang]);
   const setPlain = useCallback((on: boolean) => {
     const next: CopyMode = on ? "plain" : "expert";
     saveCopyMode(next);

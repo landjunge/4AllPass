@@ -28,6 +28,8 @@ pub enum SidecarErrorCode {
     Validation,
     /// The transport failed for a non-offline protocol reason.
     Protocol,
+    /// A local permission/capability failure (e.g. PermissionDenied).
+    Capability,
 }
 
 #[derive(Debug, Serialize)]
@@ -45,6 +47,7 @@ impl SidecarError {
             SidecarErrorCode::OfflineIo => "desktop sidecar I/O unavailable",
             SidecarErrorCode::Validation => "desktop sidecar request validation failed",
             SidecarErrorCode::Protocol => "desktop sidecar protocol failure",
+            SidecarErrorCode::Capability => "desktop sidecar capability failure",
         };
         Self { code, message }
     }
@@ -58,18 +61,31 @@ impl std::fmt::Display for SidecarError {
 
 impl StdError for SidecarError {}
 
-/// Pure ureq kind classification. No message/string matching.
+/// ureq kind fallback when the transport carries no concrete io::Error source.
+/// `Io` without a source is conservatively non-offline.
 fn transport_code(kind: ureq::ErrorKind) -> Option<SidecarErrorCode> {
     match kind {
         ureq::ErrorKind::ConnectionFailed | ureq::ErrorKind::Dns => {
             Some(SidecarErrorCode::OfflineNetwork)
         }
-        ureq::ErrorKind::Io => Some(SidecarErrorCode::OfflineIo),
         // InvalidUrl, UnknownScheme, InsecureRequestHttpsOnly, TooManyRedirects,
         // BadStatus, BadHeader, InvalidProxyUrl, ProxyConnect, ProxyUnauthorized,
-        // HTTP and any future variant are not local offline transport failures.
+        // HTTP, Io without a concrete source and future variants are not proven
+        // local network failures.
         _ => None,
     }
+}
+
+/// Walk the typed error source chain; no message/string matching.
+fn io_source<'a>(error: &'a (dyn StdError + 'static)) -> Option<&'a std::io::Error> {
+    let mut current = StdError::source(error);
+    while let Some(source) = current {
+        if let Some(io) = source.downcast_ref::<std::io::Error>() {
+            return Some(io);
+        }
+        current = StdError::source(source);
+    }
+    None
 }
 
 fn io_code(error: &std::io::Error) -> SidecarErrorCode {
@@ -77,19 +93,28 @@ fn io_code(error: &std::io::Error) -> SidecarErrorCode {
         std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock => {
             SidecarErrorCode::OfflineTimeout
         }
-        _ => SidecarErrorCode::OfflineIo,
+        std::io::ErrorKind::ConnectionRefused
+        | std::io::ErrorKind::ConnectionReset
+        | std::io::ErrorKind::ConnectionAborted
+        | std::io::ErrorKind::NotConnected
+        | std::io::ErrorKind::BrokenPipe
+        | std::io::ErrorKind::UnexpectedEof => SidecarErrorCode::OfflineIo,
+        std::io::ErrorKind::PermissionDenied => SidecarErrorCode::Capability,
+        std::io::ErrorKind::InvalidData
+        | std::io::ErrorKind::InvalidInput
+        | std::io::ErrorKind::Unsupported => SidecarErrorCode::Protocol,
+        // Unknown/local IO outcomes are not evidence of a network outage.
+        _ => SidecarErrorCode::Protocol,
     }
 }
 
 fn classify_transport(error: &ureq::Transport) -> SidecarErrorCode {
-    match transport_code(error.kind()) {
-        Some(SidecarErrorCode::OfflineIo) => StdError::source(error)
-            .and_then(|source| source.downcast_ref::<std::io::Error>())
-            .map(io_code)
-            .unwrap_or(SidecarErrorCode::OfflineIo),
-        Some(code) => code,
-        None => SidecarErrorCode::Protocol,
+    // The concrete io::Error is more specific than the ureq kind. A
+    // PermissionDenied source can be wrapped in ureq ConnectionFailed.
+    if let Some(io) = io_source(error) {
+        return io_code(io);
     }
+    transport_code(error.kind()).unwrap_or(SidecarErrorCode::Protocol)
 }
 
 /// Talk to the core we spawned. The webview must not fetch :8788 itself

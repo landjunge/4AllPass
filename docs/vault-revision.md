@@ -394,3 +394,28 @@ explicit v2 expectation, preserving protocol and digest. Defaults remain v1; a
 pinned vault cannot change protocol, and malformed stored pins are errors rather
 than first use. Session call-site integration is still open. These primitives do
 not establish migrating a v1 vault or completing bootstrap/signed commit/readback.
+
+
+### Recovery after a confirmed reset and local pin-save failure
+
+The recovery coordinator distinguishes a failed reset from a confirmed reset
+whose local adoption is pending. It retains the verified result privately and
+refuses another reset from the consumed source object. `retryAdoption()` accepts
+no password or recovery text; it retries only local pin persistence and adoption.
+The existing DE/EN recovery dialog hides password/kit inputs and device actions
+while this local step remains pending.
+
+The original account, exact vault object, generation and lock epoch remain bound
+through reset and adoption. Validity is checked again after storage callbacks;
+clear, context changes and unmount discard unadopted key material. Explicit close
+and pending unmount use the existing lifecycle lock for the unchanged source
+context, preserving lock-epoch and clipboard cleanup. A newer foreign context
+is never locked by a stale completion.
+
+Captured liveness reaches recovery preparation and the existing commit gates
+before mutation, before send and after response. Locking after an actual send
+does not cancel or roll back the possible server commit. It prevents local
+adoption and automatic retry; transport outcomes remain distinct from a
+confirmed commit followed by a local storage error. No protocol migration or
+V2 activation is introduced. These development checks do not change historical
+releases or establish installed-app acceptance.

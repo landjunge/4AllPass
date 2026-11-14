@@ -66,9 +66,14 @@ feature-gate activation is introduced.
 
 Deferred-pin persistence now retains the pending pin if local saving fails and
 removes it only after success, provided the same pending object is still present.
-A direct local retry does not repeat the server commit. The recovery UI
-coordinator still needs a separate post-commit persistence-failure continuation
-and opened-key cleanup; this helper change is not complete UI recovery.
+A direct local retry does not repeat the server commit. The recovery coordinator now holds the verified result until local adoption,
+exposes a separate password-free retry, and discards unadopted key material when
+the bound account, vault, generation or lock epoch changes. Its DE/EN dialog
+shows only local retry or vault close while adoption is pending. The captured
+liveness is required by the coordinator and reaches the existing write gates.
+A request already sent cannot be undone by a later lock; no late result is
+adopted or automatically resent. These fixture/component checks do not prove
+packaged or installed-app recovery acceptance.
 
 The broader proposal and its missing evidence remain in
 [the ADR-015 amendment draft](../architecture/adr/ADR-015-P04-snapshot-versioning-draft.md).

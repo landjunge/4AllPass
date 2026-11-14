@@ -882,10 +882,13 @@ export async function unlockWithRecoveryKey(
 /** Set a new master after actual recovery unlock and a fresh kit confirmation. */
 export async function setMasterPasswordAfterRecovery(
   vault: UnlockedVault,
-  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean },
+  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean; liveness?: VaultLiveness },
 ): Promise<UnlockedVault> {
   return replaceMasterAfterRecovery(vault, options, (envelopes, vaultKey, masterWrappingKey) =>
-    commitSnapshot(vault, vault.entries, envelopes, { vaultKey, masterWrappingKey, deferPin: options.deferPin }));
+    commitSnapshot(vault, vault.entries, envelopes, {
+      vaultKey, masterWrappingKey, deferPin: options.deferPin,
+      ...(options.liveness ? { liveness: options.liveness } : {}),
+    }));
 }
 
 export async function hasDeviceUnlock(vaultId: string): Promise<boolean> {

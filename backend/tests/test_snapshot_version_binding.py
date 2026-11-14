@@ -13,7 +13,7 @@ from app.models.key_envelope import KeyEnvelope
 from app.models.signed_write import VaultWriteKey, WriteGrant, WriteNonce, WriteReceipt
 from app.models.snapshot import VaultSnapshot
 from app.models.vault import Vault
-from test_signed_writes import (
+from tests.test_signed_writes import (
     DEVICE,
     _bootstrap_device,
     _commit,

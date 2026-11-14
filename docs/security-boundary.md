@@ -721,5 +721,6 @@ gain this behavior from a source change. See the [current short check](two-minut
 The default-off signed-write work now includes a separate explicit
 [v2 snapshot/manifest library candidate](crypto/snapshot-manifest-v2-candidate.md).
 The default reader/sealer remains v1; entry/envelope encryption formats remain
-v1. This is not a product activation, server/host proof, freshness-pin migration
-or packaged acceptance. Existing machine credential handoffs remain blocked.
+v1. The candidate also includes backend syntactic version binding and explicit
+v2 revision/pin primitives. These do not activate the product, migrate existing
+pins/vaults or prove complete session integration, host safety or packaged acceptance. Existing machine credential handoffs remain blocked.

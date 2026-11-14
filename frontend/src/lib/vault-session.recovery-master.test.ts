@@ -4,7 +4,7 @@ import { after, before, beforeEach, test } from "node:test";
 import {
   AuthFailureError, buildManifest, decodeVaultSnapshot,
   encodeVaultSnapshot, formatRecoveryKey, generateDeviceKey, generateRecoveryKey,
-  IntegrityError, sealManifest, wrapVaultKey,
+  IntegrityError, sealManifest, sealedManifestDigest, wrapVaultKey,
 } from "@4allpass/crypto";
 import { api, ApiError, type WireVaultSnapshot } from "./api.ts";
 import { loadPin } from "./revision-pin.ts";
@@ -12,7 +12,7 @@ import { clearTestStorage } from "./test-storage-shim.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import {
   CommitConflict, commitEntries, createVault, hardRevokeDevice, lock,
-  rotateCompromisedRecovery, setMasterPasswordAfterRecovery,
+  persistDeferredPin, rotateCompromisedRecovery, setMasterPasswordAfterRecovery,
   unlockWithMasterPassword, unlockWithRecoveryKey,
 } from "./vault-session.ts";
 import { replaceMasterAfterRecovery } from "./recovery-master.ts";
@@ -217,6 +217,61 @@ test("productive coordinator adopts the actual verified reset before offering de
   assert.equal((offer as RecoveryMasterOffer | null)?.stage, "devices");
   assert.equal(loadPin(ID)?.revision, 3);
   assert.equal(commits, 1);
+});
+
+test("deferred recovery pin retries a storage failure without another server commit", async () => {
+  const vault = await unlockWithRecoveryKey(ID, kit);
+  const updated = await setMasterPasswordAfterRecovery(vault, {
+    newMasterPassword: NEXT, recoveryKeyText: kit, deferPin: true,
+  });
+  const storage = localStorage;
+  const key = `4allpass.pin.${ID}`;
+  const before = storage.getItem(key);
+  const original = Object.getOwnPropertyDescriptor(storage, "setItem");
+  const originalSetItem = storage.setItem;
+  const failure = new Error("synthetic pin storage refusal");
+  const attempts: string[] = [];
+  let failWrite = true;
+  try {
+    assert.equal(commits, 1);
+    assert.equal(loadPin(ID)?.revision, 2, "the completed commit has not adopted its pin");
+    Object.defineProperty(storage, "setItem", {
+      configurable: true,
+      writable: true,
+      value(writeKey: string, value: string) {
+        if (writeKey === key) {
+          attempts.push(value);
+          if (failWrite) throw failure;
+        }
+        originalSetItem.call(storage, writeKey, value);
+      },
+    });
+    assert.throws(() => persistDeferredPin(ID, updated.revision), (error) => error === failure);
+    assert.equal(storage.getItem(key), before);
+    assert.equal(attempts.length, 1);
+    assert.equal(commits, 1);
+    // Absent neighbouring keys do not consume this pending pin.
+    persistDeferredPin(`${ID}-other`, updated.revision);
+    persistDeferredPin(ID, updated.revision + 1);
+    assert.equal(attempts.length, 1);
+    failWrite = false;
+    persistDeferredPin(ID, updated.revision);
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[1], attempts[0], "retry stores exactly the refused pin bytes");
+    const decoded = decodeVaultSnapshot(head);
+    assert.ok(decoded.sealedManifest);
+    assert.deepEqual(loadPin(ID), {
+      vaultId: ID, revision: updated.revision, vaultKeyVersion: updated.vaultKeyVersion,
+      cryptoProtocolVersion: 1, manifestDigest: sealedManifestDigest(decoded.sealedManifest),
+    });
+    persistDeferredPin(ID, updated.revision);
+    assert.equal(attempts.length, 2, "a successful save removes the deferred pin");
+    assert.equal(commits, 1, "persistence retry never replays the server commit");
+  } finally {
+    if (original) Object.defineProperty(storage, "setItem", original);
+    else Reflect.deleteProperty(storage, "setItem");
+    lock(updated);
+  }
 });
 
 test("actual reset completed after manual lock/account clear cannot reopen or retain plaintext", async () => {

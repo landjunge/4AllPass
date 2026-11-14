@@ -106,6 +106,7 @@ a new master-password recovery flow, native/package approval or full P05 complet
 ## P04 explicit-v2 library candidate
 
 Explicit snapshot/manifest v2 library operations in the default-off development
-branch do not establish frontend/server integration, v2 pin persistence, a vault
+branch include backend syntactic guards and explicit v2 revision/pin APIs.
+They do not establish complete session integration, a vault
 migration, or packaged/installed signed-write acceptance. Omitted caller options
 retain v1 and child encryption formats remain v1.

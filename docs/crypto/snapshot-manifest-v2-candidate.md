@@ -64,6 +64,12 @@ integration or old-client/packaged WKWebView/Tauri acceptance. Backend syntactic
 binding is not end-to-end acceptance. No v1-to-v2 migration or product
 feature-gate activation is introduced.
 
+Deferred-pin persistence now retains the pending pin if local saving fails and
+removes it only after success, provided the same pending object is still present.
+A direct local retry does not repeat the server commit. The recovery UI
+coordinator still needs a separate post-commit persistence-failure continuation
+and opened-key cleanup; this helper change is not complete UI recovery.
+
 The broader proposal and its missing evidence remain in
 [the ADR-015 amendment draft](../architecture/adr/ADR-015-P04-snapshot-versioning-draft.md).
 The v1 specification and its fixed vectors remain authoritative for existing

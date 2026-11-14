@@ -114,8 +114,8 @@ export function persistDeferredPin(vaultId: string, revision: number): void {
   const key = `${vaultId}#${revision}`;
   const pin = deferredPins.get(key);
   if (pin) {
-    deferredPins.delete(key);
     savePin(pin);
+    if (deferredPins.get(key) === pin) deferredPins.delete(key);
   }
 }
 

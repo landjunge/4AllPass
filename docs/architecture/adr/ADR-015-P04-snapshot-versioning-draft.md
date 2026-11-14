@@ -1,6 +1,7 @@
 # ADR-015 amendment draft — P04 snapshot and manifest version binding
 
-Status: technical proposal, not accepted or implemented.
+Status: technical proposal; explicit shared-library candidate implemented in development.
+Overall contract acceptance and feature activation remain open.
 Date: 2026-11-13.
 Related: ADR-005, ADR-015, `crypto-protocol.md`, `vault-revision.md`.
 The product decision and execution status remain in ThreadDesk 4AllPass entries
@@ -128,6 +129,9 @@ this proposal does not implement it.
 
 ## Current status
 
-Only this technical proposal is added. No protocol validator, cryptographic
-operation, feature gate, installed app or stored vault is changed. Acceptance
-of the proposal and implementation/package evidence remain open.
+An [explicit shared-library candidate](../../crypto/snapshot-manifest-v2-candidate.md)
+now implements the snapshot/manifest domain and version boundary. Existing v1
+callers retain their defaults; entry/envelope formats stay v1. Frontend, backend,
+revision evaluation/pin persistence and feature gates are not upgraded in this
+slice. No installed app or stored vault is changed. Acceptance of the complete
+proposal and end-to-end/package evidence remain open.

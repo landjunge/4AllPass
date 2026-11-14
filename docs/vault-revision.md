@@ -384,3 +384,11 @@ See `threat-model.md` §3. Freshness, an authenticated manifest and atomic snaps
 stop *silent* rollback, *partial* rotation and *silent forks*. They do not stop
 availability attacks (withholding the latest snapshot, refusing writes), and they do
 not help a brand-new client choose which history to trust on first use.
+
+## P04 library candidate and freshness boundary
+
+The [explicit snapshot/manifest v2 library candidate](crypto/snapshot-manifest-v2-candidate.md)
+authenticates a version-bound manifest and its complete child set when a caller
+explicitly opts in. Existing revision evaluation and persisted pin handling
+remain v1 and are not upgraded here. This slice does not establish adopting a v2
+pin, migrating a v1 vault, or completing bootstrap/signed commit/readback.

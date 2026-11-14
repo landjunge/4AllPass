@@ -102,3 +102,10 @@ copies before a forward commit. Missing/changed manifest or tampered records
 fail before writing or changing a freshness pin. Legacy manifestless history
 still lacks a complete authenticated record set. This is not signed writes,
 a new master-password recovery flow, native/package approval or full P05 completion.
+
+## P04 explicit-v2 library candidate
+
+Explicit snapshot/manifest v2 library operations in the default-off development
+branch do not establish frontend/server integration, v2 pin persistence, a vault
+migration, or packaged/installed signed-write acceptance. Omitted caller options
+retain v1 and child encryption formats remain v1.

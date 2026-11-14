@@ -317,3 +317,9 @@ See the [full German license and English translation](LICENSE); the German text 
 
 **4AllPass beantwortet eine Frage: Darf ich zugreifen?**
 Teil von [Netzwerkpunkt](https://netzwerkpunkt.de/) – eigenständig, local-first und unter deiner Kontrolle.
+
+### P04-Entwicklungsstand / P04 development candidate
+
+Der bestehende, standardmäßig deaktivierte Signed-Write-Entwicklungszweig enthält einen ausdrücklich anzufordernden V2-Snapshot-/Manifest-Bibliothekskandidaten. V1 bleibt Standard; Einträge und Envelopes behalten Format 1. Frontend-/Serverkopplung, dauerhafte Freshness-Pins und paketierte Abnahme sind damit nicht freigegeben. [Technischer Umfang](docs/crypto/snapshot-manifest-v2-candidate.md).
+
+The existing default-off signed-write development branch contains an explicit opt-in v2 snapshot/manifest library candidate. V1 remains the default; entries and envelopes retain format 1. This does not establish frontend/server integration, persisted freshness pins or packaged acceptance. [Technical scope](docs/crypto/snapshot-manifest-v2-candidate.md).

@@ -1,4 +1,9 @@
-export { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION } from "./constants.ts";
+export {
+  CRYPTO_PROTOCOL_VERSION,
+  DEFAULT_SCHEMA_VERSION,
+  SIGNED_SNAPSHOT_PROTOCOL_VERSION,
+} from "./constants.ts";
+export type { SnapshotProtocolOptions } from "./snapshot-protocol.ts";
 export {
   ARGON2_VERSION,
   CREDENTIAL_ID_BYTES_MAX,

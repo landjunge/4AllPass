@@ -131,6 +131,18 @@ unreachable, the app uses the locally verified state in an already initialized o
 locked context when the freshness/pin check passes. A full offline restart is not
 claimed.
 
+**Offline im Browser / Browser offline:** Nach einer Online-Anmeldung kann ein
+erneutes Laden desselben Browser-Tabs ohne erreichbaren Speicherserver die zuletzt
+geladene Identität und Tresorliste aus gebundenen lokalen Metadaten anzeigen. Der
+Tresor bleibt gesperrt, bis ein vorhandener verschlüsselter lokaler Stand mit dem
+Tresor-Passwort geöffnet wird; offline sind keine Schreibvorgänge möglich. Das ist
+weder eine Server-Anmeldung noch ein Offline-Neustart in einem neuen Browser-Tab. /
+After signing in online, reloading the same browser tab while the storage server
+is unreachable can restore the last loaded identity and vault list from bound
+local metadata. The vault stays locked until an existing encrypted local snapshot
+is opened with the vault password; writes are unavailable offline. This is neither
+server authentication nor a fresh offline start in a new browser tab.
+
 ## Aktueller Funktionsstand / Current capabilities
 
 **Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen. Signierte Schreibvorgänge (v2) sind derzeit nur als kanonische Kodierung vorbereitet und **nicht aktiv**; die bisherigen Schreib- und Revoke-Grenzen gelten unverändert.

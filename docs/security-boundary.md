@@ -480,6 +480,23 @@ still follows successful opening and remains best-effort.
   Device records keep their existing PRF/largeBlob/UV-local security rank.
   See `scripts/verify-indexeddb-transactions.mjs` for the isolated real-browser
   commit/abort probe; it does not perform an authenticator ceremony.
+- The PWA also keeps a **metadata-only offline bootstrap** in localStorage
+  (`frontend/src/lib/offline-bootstrap.ts`): the account email, the vault list
+  last loaded online, a one-way SHA-256 fingerprint of the bearer token (never
+  the token), and the storage origin. It is bound to that session and origin:
+  a different token, a different origin, a proven online account that does not
+  match the cached email, or a legacy schema version refuses the cache and
+  removes it. The writer projects every summary onto the exact allowlist
+  (server extras such as `creationGrant` are never persisted); a persisted
+  record with fields outside that allowlist is treated as tampering and
+  removed. Sign-out and every account switch invalidate it. Only a typed transport failure (no HTTP answer) may
+  restore it; 4xx/5xx and protocol/validation errors never do. Restoring it
+  shows identity and the vault list only — it is not server authentication and
+  grants no write rights; unlock still needs the master password against the
+  verified IndexedDB snapshot and the revision pin. Like the snapshot cache,
+  this metadata is readable by XSS on the origin and is not a second security
+  boundary. See `frontend/e2e/local/offline-bootstrap.spec.ts` for the
+  real-browser cold-reload/lock/reopen and fail-closed evidence.
 - The Chromium, Firefox, and **macOS Safari** extension decrypts on-device via
   `@4allpass/crypto`. Unlock uses the same open order as the PWA: freshness pin
   (`chrome.storage.local`) → unwrap → sealed manifest → decrypt the records

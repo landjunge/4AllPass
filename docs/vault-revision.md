@@ -246,6 +246,16 @@ cache from the snapshot that just verified.
 XSS on this origin can read the cache the same way it can read a live GET. The
 cache is not a second security boundary.
 
+For a full offline app start (cold reload with no reachable server), the PWA
+additionally restores a metadata-only bootstrap: the account email and the
+vault list last loaded online, bound to a one-way fingerprint of the current
+bearer token and the storage origin (`frontend/src/lib/offline-bootstrap.ts`).
+A cache bound to another session, origin or proven account is refused and
+removed; sign-out and account switches invalidate it. This restores identity
+and the list only — the snapshot itself still comes from the encrypted
+IndexedDB cache above, and the pin still gates it. An offline restore never
+implies server authentication or write permission.
+
 ---
 
 ## 4. Commit protocol (every write)

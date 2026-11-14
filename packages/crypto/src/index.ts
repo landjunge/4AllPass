@@ -1,4 +1,9 @@
-export { CRYPTO_PROTOCOL_VERSION, DEFAULT_SCHEMA_VERSION } from "./constants.ts";
+export {
+  CRYPTO_PROTOCOL_VERSION,
+  DEFAULT_SCHEMA_VERSION,
+  SIGNED_SNAPSHOT_PROTOCOL_VERSION,
+} from "./constants.ts";
+export type { SnapshotProtocolOptions } from "./snapshot-protocol.ts";
 export {
   ARGON2_VERSION,
   CREDENTIAL_ID_BYTES_MAX,
@@ -103,6 +108,8 @@ export {
   rwkHkdfInfo,
   rwkHkdfSalt,
   versionField,
+  writeSeedHkdfInfo,
+  writeSeedHkdfSalt,
 } from "./encoding/aad.ts";
 export type {
   DeviceKeyAadInput,
@@ -235,14 +242,19 @@ export {
   payloadDigestV2,
   probeSigner,
   signWriteV2,
+  signWriteV2WithSigner,
+  webCryptoWriteSigner,
 } from "./signed-write-client.ts";
 export type {
   SignedWriteBundle,
+  SignedWriteExpectation,
   SignedWriteFields,
   SignedWriteKey,
   SignedWriteOutcome,
   SignerProbe,
+  WriteSigner,
 } from "./signed-write-client.ts";
+export { deriveWritePublicKey, deriveWriteSeed } from "./write-seed.ts";
 
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";

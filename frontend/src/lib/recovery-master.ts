@@ -3,6 +3,7 @@ import {
   IntegrityError, kdfParamsFrom, parseRecoveryKey, unwrapVaultKey, wrapVaultKey, zeroize,
   type KeyEnvelope,
 } from "@4allpass/crypto";
+import type { VaultLiveness } from "./vault-liveness.ts";
 import type { UnlockedVault } from "./vault-session.ts";
 import { assertMasterPassword } from "./master-password.ts";
 
@@ -11,9 +12,10 @@ type Commit = (envelopes: KeyEnvelope[], vaultKey: Uint8Array, masterKey: Uint8A
 /** Recovery proof, not the account session or a caller's unlockedWith tag, authorizes this write. */
 export async function replaceMasterAfterRecovery(
   vault: UnlockedVault,
-  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean },
+  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean; liveness?: VaultLiveness },
   commit: Commit,
 ): Promise<UnlockedVault> {
+  options.liveness?.assertLive();
   if (vault.unlockedWith !== "recovery_key") throw new IntegrityError("recovery unlock required");
   // Same floor as the Create form: the library boundary rejects empty/short
   // master passwords even when a direct caller skips the UI.
@@ -46,6 +48,7 @@ export async function replaceMasterAfterRecovery(
       kdf: kdfParamsFrom(params, salt),
     });
     const envelopes = vault.envelopes.map((env) => env.type === "master" ? envelope : env);
+    options.liveness?.assertLive();
     const updated = await commit(envelopes, nextKey, masterKey);
     transferred = true;
     zeroize(vault.vaultKey);

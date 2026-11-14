@@ -1,0 +1,58 @@
+{
+  "provenance": "Python 3 json.dumps(result, sort_keys=True, separators=(\",\", \":\")); UTF-8 SHA-256; ensure_ascii default true",
+  "routes": [
+    {
+      "route": "/api/v1/vaults/{vaultId}/snapshots",
+      "resourceType": "vault",
+      "resourceId": "",
+      "parentId": "",
+      "result": {"manifestDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "resourceState": "active", "revision": 1, "vaultKeyVersion": 1},
+      "canonical_json": "{\"manifestDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"resourceState\":\"active\",\"revision\":1,\"vaultKeyVersion\":1}",
+      "response_digest": "b19024b75c64af8909d19f9b5195bbf3dc2533ba50c2d4201a80b44ef556f301"
+    },
+    {
+      "route": "/api/v1/vaults/{vaultId}/devices",
+      "resourceType": "device",
+      "resourceId": "dev_test_0001",
+      "parentId": "",
+      "result": {"manifestDigest": null, "resourceState": "active", "revision": 0, "vaultKeyVersion": 0},
+      "canonical_json": "{\"manifestDigest\":null,\"resourceState\":\"active\",\"revision\":0,\"vaultKeyVersion\":0}",
+      "response_digest": "14d50d9d1ab2b2b5e21f490b639247dd148d89b14f0246f32626a63beb101f72"
+    },
+    {
+      "route": "/api/v1/vaults/{vaultId}/devices",
+      "resourceType": "device",
+      "resourceId": "dev_test_0001",
+      "parentId": "",
+      "result": {"manifestDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "resourceState": "revoked", "revision": 5, "vaultKeyVersion": 2},
+      "canonical_json": "{\"manifestDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"resourceState\":\"revoked\",\"revision\":5,\"vaultKeyVersion\":2}",
+      "response_digest": "6cc1dde6eb443dfb6356331992933550b44f1784cf67e2e939a8b80379d65904"
+    },
+    {
+      "route": "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
+      "resourceType": "credential",
+      "resourceId": "credential_test_0001",
+      "parentId": "dev_test_0001",
+      "result": {"manifestDigest": "0123012301230123012301230123012301230123012301230123012301230123", "resourceState": "active", "revision": 42, "vaultKeyVersion": 7},
+      "canonical_json": "{\"manifestDigest\":\"0123012301230123012301230123012301230123012301230123012301230123\",\"resourceState\":\"active\",\"revision\":42,\"vaultKeyVersion\":7}",
+      "response_digest": "7dcefb178b80572501e5351951acdd87df6add3da6d51faa31c0686842cab3a4"
+    },
+    {
+      "route": "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope",
+      "resourceType": "credential",
+      "resourceId": "credential_test_0001",
+      "parentId": "dev_test_0001",
+      "result": {"manifestDigest": null, "resourceState": "active", "revision": 4294967295, "vaultKeyVersion": 4294967295},
+      "canonical_json": "{\"manifestDigest\":null,\"resourceState\":\"active\",\"revision\":4294967295,\"vaultKeyVersion\":4294967295}",
+      "response_digest": "10d9627524f451f7df3172c656d561d3322db2adaae567c5f8a6db3134b79842"
+    }
+  ],
+  "string_vectors": [
+    {
+      "value": "café 😀 ",
+      "canonical_json": "\"caf\\u00e9 \\ud83d\\ude00\\u2028\"",
+      "utf8_hex": "226361665c7530306539205c75643833645c75646530305c753230323822"
+    }
+  ],
+  "unsupported_values": ["undefined", "NaN", "float", "boolean", "array", "map", "nested-object", "unicode-state", "extra"]
+}

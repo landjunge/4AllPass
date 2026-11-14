@@ -11,3 +11,13 @@
 - KDF parameters live inside the Master Envelope so that the client can always re-derive the correct Master Key even after a profile upgrade.
 
 ---
+
+### Explicit P04 snapshot/manifest candidate
+
+Snapshot/manifest v2 is an opt-in library candidate, distinct from entry and
+envelope encryption format 1. Omitted caller expectations retain v1; no header
+can negotiate an upgrade and an expected-v2 read never falls back to v1.
+See [the exact API/domain boundary](snapshot-manifest-v2-candidate.md). Existing
+v1 vectors remain unchanged. Revision/pin APIs have an explicit v2 candidate,
+with v1 defaults and no protocol migration. Session integration and full
+signed-write/client/server acceptance remain open.

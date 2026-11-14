@@ -356,3 +356,77 @@ describe("attack: key-generation downgrade", () => {
     );
   });
 });
+
+describe("explicit v2 revision pins without protocol migration", () => {
+  const v2 = { cryptoProtocolVersion: 2 };
+
+  function verifiedV2(revision = 42) {
+    const { entries, envelopes } = fixtureSnapshot();
+    const manifest = buildManifest({
+      vaultId: C.vault_id, revision, vaultKeyVersion: VKV,
+      entries, envelopes, allowTestProfile: true, ...v2,
+    });
+    return verifySnapshotManifest(sealManifest({ vaultKey, manifest, ...v2 }), { entries, envelopes }, {
+      vaultKey, vaultId: C.vault_id, revision, vaultKeyVersion: VKV,
+      allowTestProfile: true, ...v2,
+    });
+  }
+
+  it("pins the authenticated v2 version and exact sealed digest only with explicit opt-in", () => {
+    const verified = verifiedV2();
+    assert.throws(() => revisionFromManifest(verified), ProtocolError);
+    const accepted = revisionFromManifest(verified, v2);
+    assert.equal(accepted.cryptoProtocolVersion, 2);
+    assert.deepEqual(accepted.manifestDigest, verified.sealedDigest);
+    assert.throws(() => assertFreshSnapshot(null, accepted), ProtocolError);
+    assert.equal(assertFreshSnapshot(null, accepted, v2), "first_seen");
+    assert.equal(assertFreshSnapshot(accepted, { ...accepted }, v2), "same");
+    const next = revisionFromManifest(verifiedV2(43), v2);
+    assert.equal(assertFreshSnapshot(accepted, next, v2), "advance");
+    assert.equal(assertFreshSnapshot(next, { ...next, revision: 44, vaultKeyVersion: VKV + 1 }, v2), "rotation");
+    assert.throws(() => assertFreshSnapshot(next, accepted, v2), RollbackError);
+    assert.throws(() => assertFreshSnapshot(accepted, {
+      ...accepted, manifestDigest: new Uint8Array(32).fill(99),
+    }, v2), IntegrityError);
+  });
+
+  it("never changes an existing pin's protocol, even with higher revision/generation", () => {
+    const two = revisionFromManifest(verifiedV2(), v2);
+    const one = { ...two, cryptoProtocolVersion: 1 };
+    assert.throws(() => assertFreshSnapshot(one, {
+      ...two, revision: 100, vaultKeyVersion: VKV + 1,
+    }, v2), IntegrityError);
+    assert.throws(() => assertFreshSnapshot(two, {
+      ...one, revision: 100, vaultKeyVersion: VKV + 1,
+    }), ProtocolError);
+    assert.throws(() => assertFreshSnapshot(two, {
+      ...one, revision: 100, vaultKeyVersion: VKV + 1,
+    }, v2), ProtocolError);
+  });
+
+  it("requires a 32-byte v2 digest, retaining digestless v1 compatibility", () => {
+    const two = revisionFromManifest(verifiedV2(), v2);
+    const { manifestDigest: _digest, ...withoutDigest } = two;
+    for (const malformed of [withoutDigest, { ...two, manifestDigest: new Uint8Array(0) }, { ...two, manifestDigest: new Uint8Array(31) }]) {
+      assert.throws(() => assertFreshSnapshot(null, malformed, v2), ProtocolError);
+    }
+    assert.equal(assertFreshSnapshot(null, pin), "first_seen");
+    assert.throws(() => assertFreshSnapshot(null, { ...pin, manifestDigest: new Uint8Array(31) }), ProtocolError);
+    assert.throws(() => revisionFromManifest({ ...verifiedV2(), sealedDigest: new Uint8Array(31) }, v2), ProtocolError);
+  });
+
+  it("rejects unsupported expectations and versions rather than guessing from metadata", () => {
+    const verified = verifiedV2();
+    const two = { ...pin, ...v2, manifestDigest: verified.sealedDigest };
+    for (const unsupported of [0, 3, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const options = { cryptoProtocolVersion: unsupported };
+      assert.throws(() => evaluateRevision(null, two, options), ProtocolError);
+      assert.throws(() => revisionFromManifest(verified, options), ProtocolError);
+      assert.throws(() => assertFreshSnapshot(null, { ...two, cryptoProtocolVersion: unsupported }, v2), ProtocolError);
+      assert.throws(() => revisionFromManifest({
+        ...verified, manifest: { ...verified.manifest, cryptoProtocolVersion: unsupported },
+      }, v2), ProtocolError);
+    }
+    assert.throws(() => revisionFromManifest(snapshotAt(42).verified, v2), ProtocolError);
+  });
+});

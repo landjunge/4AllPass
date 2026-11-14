@@ -1,9 +1,14 @@
-import { CRYPTO_PROTOCOL_VERSION, DIGEST_BYTES } from "./constants.ts";
+import { DIGEST_BYTES } from "./constants.ts";
 import { bytesToHex } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError, RollbackError } from "./errors.ts";
 import { assertBytes, assertId, assertRevision, assertVersion } from "./validate.ts";
 import type { VerifiedManifest } from "./manifest.ts";
 import type { VaultRevision } from "./types.ts";
+import {
+  assertSnapshotProtocolVersion,
+  expectedSnapshotProtocolVersion,
+  type SnapshotProtocolOptions,
+} from "./snapshot-protocol.ts";
 
 export type RevisionAction = "first_seen" | "same" | "advance" | "rotation";
 
@@ -20,20 +25,20 @@ export interface RevisionReject {
 
 export type RevisionDecision = RevisionAccept | RevisionReject;
 
-function assertRevisionFields(state: VaultRevision, label: string): void {
+function assertRevisionFields(state: VaultRevision, label: string, expected: 1 | 2): void {
   if (state === null || typeof state !== "object") {
     throw new ProtocolError(`${label} must be an object`);
   }
   assertId(`${label} vaultId`, state.vaultId);
   assertRevision(`${label} revision`, state.revision);
   assertVersion(`${label} vaultKeyVersion`, state.vaultKeyVersion);
-  const protocolVersion = assertVersion(`${label} cryptoProtocolVersion`, state.cryptoProtocolVersion);
-  if (protocolVersion > CRYPTO_PROTOCOL_VERSION) {
+  const protocolVersion = assertSnapshotProtocolVersion(state.cryptoProtocolVersion);
+  if (protocolVersion > expected) {
     throw new ProtocolError(
-      `${label} cryptoProtocolVersion ${protocolVersion} is newer than this client supports (${CRYPTO_PROTOCOL_VERSION})`,
+      `${label} cryptoProtocolVersion ${protocolVersion} exceeds the caller expectation (${expected})`,
     );
   }
-  if (state.manifestDigest !== undefined) {
+  if (protocolVersion === 2 || state.manifestDigest !== undefined) {
     assertBytes(`${label} manifestDigest`, state.manifestDigest, { exact: DIGEST_BYTES });
   }
 }
@@ -50,7 +55,7 @@ function reject(
  *
  * AES-GCM authenticity does not imply freshness. A malicious server can
  * replay an older *valid* snapshot. The client must refuse any incoming
- * revision, vaultKeyVersion or protocol version that goes backwards.
+ * revision or vaultKeyVersion that goes backwards, and any protocol change.
  *
  * `revision` is only trustworthy once it has been verified cryptographically —
  * see `openManifest` and `revisionFromManifest`. Pinning a number the server
@@ -62,12 +67,17 @@ function reject(
 export function evaluateRevision(
   lastSeen: VaultRevision | null,
   incoming: VaultRevision,
+  options: SnapshotProtocolOptions = {},
 ): RevisionDecision {
-  assertRevisionFields(incoming, "incoming");
+  const expected = expectedSnapshotProtocolVersion(options);
+  assertRevisionFields(incoming, "incoming", expected);
+  if (incoming.cryptoProtocolVersion !== expected) {
+    throw new ProtocolError("incoming cryptoProtocolVersion does not match caller expectation");
+  }
   if (lastSeen === null) {
     return { ok: true, action: "first_seen" };
   }
-  assertRevisionFields(lastSeen, "lastSeen");
+  assertRevisionFields(lastSeen, "lastSeen", expected);
   if (incoming.vaultId !== lastSeen.vaultId) {
     return reject("mismatch", new IntegrityError("incoming vaultId does not match pinned vault"));
   }
@@ -78,6 +88,9 @@ export function evaluateRevision(
         `cryptoProtocolVersion downgrade: ${incoming.cryptoProtocolVersion} < ${lastSeen.cryptoProtocolVersion}`,
       ),
     );
+  }
+  if (incoming.cryptoProtocolVersion !== lastSeen.cryptoProtocolVersion) {
+    return reject("mismatch", new IntegrityError("vault protocol cannot change without a migration"));
   }
   if (incoming.revision < lastSeen.revision) {
     return reject("rollback", new RollbackError(lastSeen.revision, incoming.revision));
@@ -127,8 +140,9 @@ export function evaluateRevision(
 export function assertFreshSnapshot(
   lastSeen: VaultRevision | null,
   incoming: VaultRevision,
+  options: SnapshotProtocolOptions = {},
 ): RevisionAction {
-  const decision = evaluateRevision(lastSeen, incoming);
+  const decision = evaluateRevision(lastSeen, incoming, options);
   if (!decision.ok) throw decision.error;
   return decision.action;
 }
@@ -144,16 +158,19 @@ export function assertFreshSnapshot(
  * snapshot is then rejected as a fork, and a digest of the attacker's choosing is
  * blessed instead.
  */
-export function revisionFromManifest(verified: VerifiedManifest): VaultRevision {
+export function revisionFromManifest(
+  verified: VerifiedManifest,
+  options: SnapshotProtocolOptions = {},
+): VaultRevision {
+  const expectation = { cryptoProtocolVersion: expectedSnapshotProtocolVersion(options) };
   const { manifest } = verified;
-  return {
+  const pin: VaultRevision = {
     vaultId: assertId("manifest.vaultId", manifest.vaultId),
     revision: assertRevision("manifest.revision", manifest.revision),
     vaultKeyVersion: assertVersion("manifest.vaultKeyVersion", manifest.vaultKeyVersion),
-    cryptoProtocolVersion: assertVersion(
-      "manifest.cryptoProtocolVersion",
-      manifest.cryptoProtocolVersion,
-    ),
+    cryptoProtocolVersion: assertSnapshotProtocolVersion(manifest.cryptoProtocolVersion),
     manifestDigest: assertBytes("manifest digest", verified.sealedDigest, { exact: DIGEST_BYTES }),
   };
+  assertFreshSnapshot(null, pin, expectation);
+  return pin;
 }

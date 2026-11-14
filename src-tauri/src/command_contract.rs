@@ -12,7 +12,8 @@ macro_rules! app_commands {
             browsers::extension_install,
             browsers::open_browser_for_extension,
             browsers::open_autofill_demo,
-            browser_passwords::import_browser_logins
+            browser_passwords::import_browser_logins,
+            write_signer::sign_ed25519_v2
         ]
     };
 }
@@ -52,7 +53,7 @@ mod tests {
             .map(|name| format!("allow-{}", name.replace('_', "-")))
             .collect();
         assert_eq!(own_main, expected);
-        assert_eq!(APP_COMMAND_NAMES.len(), 10);
+        assert_eq!(APP_COMMAND_NAMES.len(), 11);
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
         assert_eq!(

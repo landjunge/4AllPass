@@ -39,6 +39,7 @@ import {
   generateVaultKey,
   IntegrityError,
   kdfParamsFrom,
+  newWriteOperation,
   parseRecoveryKey,
   ProtocolError,
   revisionFromManifest,
@@ -74,6 +75,12 @@ import type {
   DeviceUnlockStore,
 } from "@4allpass/webauthn";
 import { api, ApiError } from "./api.ts";
+import {
+  deriveWriteSigners,
+  performSignedWrite,
+  resolveSignedWrite,
+  SignedWriteRejectedError,
+} from "./signed-write.ts";
 import type { CommittedHardRevoke } from "./hard-revoke-result.ts";
 import { replaceMasterAfterRecovery } from "./recovery-master.ts";
 import { assertMasterPassword } from "./master-password.ts";
@@ -107,8 +114,8 @@ export function persistDeferredPin(vaultId: string, revision: number): void {
   const key = `${vaultId}#${revision}`;
   const pin = deferredPins.get(key);
   if (pin) {
-    deferredPins.delete(key);
     savePin(pin);
+    if (deferredPins.get(key) === pin) deferredPins.delete(key);
   }
 }
 
@@ -116,6 +123,8 @@ export interface UnlockedVault {
   vaultId: string;
   revision: number;
   vaultKeyVersion: number;
+  /** 1/undefined = unsigned legacy; 2 = signed writes. Never downgraded on commit. */
+  cryptoProtocolVersion?: number;
   /** Zeroized by `lock`. Never leaves the client. */
   vaultKey: Uint8Array;
   envelopes: KeyEnvelope[];
@@ -440,6 +449,7 @@ function openSnapshot(
       vaultId: snapshot.vaultId,
       revision,
       vaultKeyVersion,
+      cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
       vaultKey,
       envelopes: envelopesToKeep,
       entries: sortedEntries,
@@ -684,6 +694,143 @@ export async function createVault(
   }
 }
 
+/**
+ * Create a v2 signed-write vault: creation grant → signed device bootstrap
+ * (first key registration) → signed first snapshot. Opt-in; never migrates an
+ * existing vault. Fails closed when no signer is available.
+ */
+export async function createVaultV2(
+  masterPassword: string,
+  profileName: Argon2idProfileName = "standard",
+): Promise<CreatedVault> {
+  assertMasterPassword(masterPassword);
+  const profile = ARGON2ID_PROFILES[profileName];
+  const { vaultId, creationGrant } = await api.createVaultV2(masterPassword);
+  const device = deviceId();
+
+  const vaultKey = generateVaultKey();
+  const salt = generateSalt(16);
+  const masterKey = deriveMasterKey(masterPassword, salt, profile);
+  const recoveryKey = generateRecoveryKey();
+  try {
+    const masterEnvelope = wrapVaultKey({
+      vaultKey,
+      wrappingKey: masterKey,
+      vaultId,
+      type: "master",
+      vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+      kdf: kdfParamsFrom(profile, salt),
+    });
+    const recoveryEnvelope = wrapRecoveryEnvelope({
+      reason: "create",
+      vaultKey,
+      recoveryKey,
+      vaultId,
+      vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+    });
+    const envelopes = [masterEnvelope, recoveryEnvelope];
+    const pair = await deriveWriteSigners(
+      vaultKey,
+      vaultId,
+      INITIAL_VAULT_KEY_VERSION,
+      vaultKey,
+      INITIAL_VAULT_KEY_VERSION,
+    );
+    try {
+      const deviceBody = JSON.stringify({ deviceId: device, label: "4AllPass" });
+      const bootOp = newWriteOperation();
+      const bootOutcome = await performSignedWrite(
+        {
+          method: "POST",
+          route: "/api/v1/vaults/{vaultId}/devices",
+          path: `/vaults/${vaultId}/devices`,
+          resourceType: "device",
+          resourceId: device,
+          parentId: "",
+          baseRevision: 0,
+          resultRevision: 0,
+          keyVersion: INITIAL_VAULT_KEY_VERSION,
+          resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+          hasManifest: false,
+          manifestDigest: new Uint8Array(0),
+          bodyString: deviceBody,
+          vaultId,
+          deviceId: device,
+          creationGrant,
+          operation: bootOp,
+        },
+        pair,
+      );
+      await resolveSignedWrite(bootOutcome, bootOp, () => api.listDevices(vaultId));
+    } finally {
+      // performSignedWrite also disposes after signing. This outer guard covers
+      // every earlier exit too, including operation-id/nonce generation.
+      pair.signer.dispose?.();
+      pair.nextSigner?.dispose?.();
+    }
+
+    const sealedManifest = sealSnapshotManifest(
+      vaultId,
+      1,
+      INITIAL_VAULT_KEY_VERSION,
+      vaultKey,
+      envelopes,
+      [],
+    );
+    const snapshotBody = JSON.stringify({
+      revision: 1,
+      vaultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+      cryptoProtocolVersion: 2,
+      envelopes: envelopes.map(encodeKeyEnvelope),
+      entries: [],
+      sealedManifest: encodeSealedManifest(sealedManifest),
+    });
+    const commitOp = newWriteOperation();
+    // The bootstrap operation disposed its current and next signers. Derive a
+    // fresh current signer only after bootstrap is confirmed, for this commit.
+    const commitSignerPair = await deriveWriteSigners(
+      vaultKey,
+      vaultId,
+      INITIAL_VAULT_KEY_VERSION,
+    );
+    let commitOutcome;
+    try {
+      commitOutcome = await performSignedWrite(
+        {
+          method: "POST",
+          route: "/api/v1/vaults/{vaultId}/snapshots",
+          path: `/vaults/${vaultId}/snapshots`,
+          resourceType: "vault",
+          resourceId: "",
+          parentId: "",
+          baseRevision: 0,
+          resultRevision: 1,
+          keyVersion: INITIAL_VAULT_KEY_VERSION,
+          resultKeyVersion: INITIAL_VAULT_KEY_VERSION,
+          hasManifest: true,
+          manifestDigest: sealedManifestDigest(sealedManifest),
+          bodyString: snapshotBody,
+          vaultId,
+          deviceId: device,
+          operation: commitOp,
+        },
+        commitSignerPair,
+      );
+    } finally {
+      commitSignerPair.signer.dispose?.();
+    }
+    const committed = decodeVaultSnapshot(
+      await resolveSignedWrite(commitOutcome, commitOp, () => api.getSnapshot(vaultId)),
+    );
+    const vault = await acceptSnapshot(committed, vaultKey, "master_password", [
+      { envelope: masterEnvelopeOf(committed), wrappingKey: masterKey },
+    ]);
+    return { vault, recoveryKey: formatRecoveryKey(recoveryKey) };
+  } finally {
+    zeroize(masterKey, recoveryKey);
+  }
+}
+
 export async function unlockWithMasterPassword(
   vaultId: string,
   masterPassword: string,
@@ -735,10 +882,13 @@ export async function unlockWithRecoveryKey(
 /** Set a new master after actual recovery unlock and a fresh kit confirmation. */
 export async function setMasterPasswordAfterRecovery(
   vault: UnlockedVault,
-  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean },
+  options: { newMasterPassword: string; recoveryKeyText: string; deferPin?: boolean; liveness?: VaultLiveness },
 ): Promise<UnlockedVault> {
   return replaceMasterAfterRecovery(vault, options, (envelopes, vaultKey, masterWrappingKey) =>
-    commitSnapshot(vault, vault.entries, envelopes, { vaultKey, masterWrappingKey, deferPin: options.deferPin }));
+    commitSnapshot(vault, vault.entries, envelopes, {
+      vaultKey, masterWrappingKey, deferPin: options.deferPin,
+      ...(options.liveness ? { liveness: options.liveness } : {}),
+    }));
 }
 
 export async function hasDeviceUnlock(vaultId: string): Promise<boolean> {
@@ -877,17 +1027,67 @@ async function commitSnapshot(
   options?.liveness?.assertLive();
 
   try {
-    const committed = decodeVaultSnapshot(
-      await api.commitSnapshot(vault.vaultId, {
+    const wireEnvelopes = envelopes.map(encodeKeyEnvelope);
+    const wireEntries = encrypted.map(encodeEncryptedEntry);
+    const wireManifest = encodeSealedManifest(sealedManifest);
+    let committedWire: WireVaultSnapshot;
+    if (vault.cryptoProtocolVersion === 2) {
+      // A rotation signs with the current key and proves the next key. The
+      // signer is derived from the Vault Key; no signer means fail closed.
+      const rotating = vaultKeyVersion !== vault.vaultKeyVersion;
+      const pair = await deriveWriteSigners(
+        vault.vaultKey,
+        vault.vaultId,
+        vault.vaultKeyVersion,
+        rotating ? vaultKey : undefined,
+        rotating ? vaultKeyVersion : undefined,
+      );
+      const bodyString = JSON.stringify({
+        expectedRevision: vault.revision,
+        revision: nextRevision,
+        vaultKeyVersion,
+        cryptoProtocolVersion: 2,
+        envelopes: wireEnvelopes,
+        entries: wireEntries,
+        sealedManifest: wireManifest,
+      });
+      const operation = newWriteOperation();
+      const liveness = options?.liveness;
+      const outcome = await performSignedWrite(
+        {
+          method: "POST",
+          route: "/api/v1/vaults/{vaultId}/snapshots",
+          path: `/vaults/${vault.vaultId}/snapshots`,
+          resourceType: "vault",
+          resourceId: "",
+          parentId: "",
+          baseRevision: vault.revision,
+          resultRevision: nextRevision,
+          keyVersion: vault.vaultKeyVersion,
+          resultKeyVersion: vaultKeyVersion,
+          hasManifest: true,
+          manifestDigest: sealedManifestDigest(sealedManifest),
+          bodyString,
+          vaultId: vault.vaultId,
+          deviceId: deviceId(),
+          operation,
+          ...(liveness ? { assertLive: () => liveness.assertLive() } : {}),
+        },
+        pair,
+      );
+      committedWire = await resolveSignedWrite(outcome, operation, () => api.getSnapshot(vault.vaultId));
+    } else {
+      committedWire = await api.commitSnapshot(vault.vaultId, {
         expectedRevision: vault.revision,
         revision: nextRevision,
         vaultKeyVersion,
         cryptoProtocolVersion: 1,
-        envelopes: envelopes.map(encodeKeyEnvelope),
-        entries: encrypted.map(encodeEncryptedEntry),
-        sealedManifest: encodeSealedManifest(sealedManifest),
-      }),
-    );
+        envelopes: wireEnvelopes,
+        entries: wireEntries,
+        sealedManifest: wireManifest,
+      });
+    }
+    const committed = decodeVaultSnapshot(committedWire);
     // A 200 must carry exactly what was written. An older head here would
     // otherwise open cleanly and report a dropped write as saved.
     if (
@@ -924,6 +1124,9 @@ async function commitSnapshot(
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new CommitConflict(error.currentRevision);
+    }
+    if (error instanceof SignedWriteRejectedError && error.status === 409) {
+      throw new CommitConflict(null);
     }
     throw error;
   }

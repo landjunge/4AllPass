@@ -4,7 +4,7 @@ import { after, before, beforeEach, test } from "node:test";
 import {
   AuthFailureError, buildManifest, decodeVaultSnapshot,
   encodeVaultSnapshot, formatRecoveryKey, generateDeviceKey, generateRecoveryKey,
-  IntegrityError, sealManifest, wrapVaultKey,
+  IntegrityError, sealManifest, sealedManifestDigest, wrapVaultKey,
 } from "@4allpass/crypto";
 import { api, ApiError, type WireVaultSnapshot } from "./api.ts";
 import { loadPin } from "./revision-pin.ts";
@@ -12,9 +12,10 @@ import { clearTestStorage } from "./test-storage-shim.ts";
 import { memorySnapshotCache, setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import {
   CommitConflict, commitEntries, createVault, hardRevokeDevice, lock,
-  rotateCompromisedRecovery, setMasterPasswordAfterRecovery,
+  persistDeferredPin, rotateCompromisedRecovery, setMasterPasswordAfterRecovery,
   unlockWithMasterPassword, unlockWithRecoveryKey,
 } from "./vault-session.ts";
+import { captureVaultLiveness, VaultLockedError } from "./vault-liveness.ts";
 import { replaceMasterAfterRecovery } from "./recovery-master.ts";
 import { createRecoveryMasterCoordinator, type RecoveryMasterOffer } from "../modules/recovery-management/master-coordinator.ts";
 
@@ -207,6 +208,7 @@ test("productive coordinator adopts the actual verified reset before offering de
   let current = await unlockWithRecoveryKey(ID, kit);
   let offer: RecoveryMasterOffer | null = null;
   const flow = createRecoveryMasterCoordinator(() => ({
+    captureVaultLiveness: (value) => captureVaultLiveness(value, () => 0, () => current),
     currentVault: () => current, getActiveVaultId: () => ID, getAccountEmail: () => "synthetic@example.invalid",
     passwordsCollide: () => false, replaceUnlockedVault: (value) => { current = value; }, publish: (value) => { offer = value; },
   }));
@@ -219,15 +221,71 @@ test("productive coordinator adopts the actual verified reset before offering de
   assert.equal(commits, 1);
 });
 
-test("actual reset completed after manual lock/account clear cannot reopen or retain plaintext", async () => {
+test("deferred recovery pin retries a storage failure without another server commit", async () => {
+  const vault = await unlockWithRecoveryKey(ID, kit);
+  const updated = await setMasterPasswordAfterRecovery(vault, {
+    newMasterPassword: NEXT, recoveryKeyText: kit, deferPin: true,
+  });
+  const storage = localStorage;
+  const key = `4allpass.pin.${ID}`;
+  const before = storage.getItem(key);
+  const original = Object.getOwnPropertyDescriptor(storage, "setItem");
+  const originalSetItem = storage.setItem;
+  const failure = new Error("synthetic pin storage refusal");
+  const attempts: string[] = [];
+  let failWrite = true;
+  try {
+    assert.equal(commits, 1);
+    assert.equal(loadPin(ID)?.revision, 2, "the completed commit has not adopted its pin");
+    Object.defineProperty(storage, "setItem", {
+      configurable: true,
+      writable: true,
+      value(writeKey: string, value: string) {
+        if (writeKey === key) {
+          attempts.push(value);
+          if (failWrite) throw failure;
+        }
+        originalSetItem.call(storage, writeKey, value);
+      },
+    });
+    assert.throws(() => persistDeferredPin(ID, updated.revision), (error) => error === failure);
+    assert.equal(storage.getItem(key), before);
+    assert.equal(attempts.length, 1);
+    assert.equal(commits, 1);
+    // Absent neighbouring keys do not consume this pending pin.
+    persistDeferredPin(`${ID}-other`, updated.revision);
+    persistDeferredPin(ID, updated.revision + 1);
+    assert.equal(attempts.length, 1);
+    failWrite = false;
+    persistDeferredPin(ID, updated.revision);
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[1], attempts[0], "retry stores exactly the refused pin bytes");
+    const decoded = decodeVaultSnapshot(head);
+    assert.ok(decoded.sealedManifest);
+    assert.deepEqual(loadPin(ID), {
+      vaultId: ID, revision: updated.revision, vaultKeyVersion: updated.vaultKeyVersion,
+      cryptoProtocolVersion: 1, manifestDigest: sealedManifestDigest(decoded.sealedManifest),
+    });
+    persistDeferredPin(ID, updated.revision);
+    assert.equal(attempts.length, 2, "a successful save removes the deferred pin");
+    assert.equal(commits, 1, "persistence retry never replays the server commit");
+  } finally {
+    if (original) Object.defineProperty(storage, "setItem", original);
+    else Reflect.deleteProperty(storage, "setItem");
+    lock(updated);
+  }
+});
+
+test("manual lock/account clear before deferred send cannot commit or retain a result", async () => {
   const vault = await unlockWithRecoveryKey(ID, kit);
   let current: typeof vault | null = vault;
   let result: typeof vault | null = null;
   let offer: RecoveryMasterOffer | null = null;
   let release!: () => void;
   const gate = new Promise<void>((yes) => { release = yes; });
-  api.commitSnapshot = async (id, payload) => { await gate; return echo(id, payload); };
+  api.commitSnapshot = async (id, payload) => { commits++; await gate; return echo(id, payload); };
   const flow = createRecoveryMasterCoordinator(() => ({
+    captureVaultLiveness: (value) => captureVaultLiveness(value, () => 0, () => current),
     currentVault: () => current, getActiveVaultId: () => ID, getAccountEmail: () => "synthetic@example.invalid",
     passwordsCollide: () => false, replaceUnlockedVault: (value) => { current = value; }, publish: (value) => { offer = value; },
   }), async (value, options) => { result = await setMasterPasswordAfterRecovery(value, { ...options, deferPin: true }); return result; });
@@ -237,9 +295,9 @@ test("actual reset completed after manual lock/account clear cannot reopen or re
   release(); await operation;
   assert.equal(current, null);
   assert.equal(offer, null);
-  assert.ok(result && (result as typeof vault).vaultKey.every((b) => b === 0));
-  assert.ok(!(result as typeof vault | null)?.entries[0]?.password);
-  assert.equal(loadPin(ID)?.revision, 2, "a stale commit must not move the pin; the server head advances, the UI stays locked");
+  assert.equal(result, null, "the pre-send liveness gate refuses before a result exists");
+  assert.equal(commits, 0);
+  assert.equal(loadPin(ID)?.revision, 2, "the pre-send abort must not move the pin");
 });
 
 test("trusted kit still opens the head after a hard revoke (user flow)", async () => {
@@ -285,3 +343,131 @@ test("rotated kit: old print opens a historic copy, not the new head; new print 
   assert.equal(historicVault.entries[0]?.password, "synthetic-entry-only");
   lock(historicVault);
 });
+
+test("coordinator retains a committed recovery result across storage failures and retries adoption only", async () => {
+  const old = await unlockWithRecoveryKey(ID, kit);
+  let current: typeof old | null = old;
+  let next: typeof old | null = null;
+  let offer: RecoveryMasterOffer | null = null;
+  let resets = 0;
+  const flow = createRecoveryMasterCoordinator(() => ({
+    captureVaultLiveness: (value) => captureVaultLiveness(value, () => 0, () => current),
+    currentVault: () => current, getActiveVaultId: () => ID,
+    getAccountEmail: () => "synthetic@example.invalid", passwordsCollide: () => false,
+    replaceUnlockedVault: (value) => { current = value; }, publish: (value) => { offer = value; },
+  }), async (value, options) => {
+    resets++;
+    next = await setMasterPasswordAfterRecovery(value, { ...options, deferPin: true });
+    return next;
+  });
+  flow.begin(old);
+  const storage = localStorage;
+  const original = Object.getOwnPropertyDescriptor(storage, "setItem");
+  const setItem = storage.setItem;
+  const failure = new Error("synthetic coordinator storage refusal");
+  let failing = true;
+  let pinWrites = 0;
+  try {
+    Object.defineProperty(storage, "setItem", { configurable: true, writable: true,
+      value(key: string, value: string) {
+        if (key === `4allpass.pin.${ID}`) {
+          pinWrites++;
+          if (failing) throw failure;
+        }
+        setItem.call(storage, key, value);
+      },
+    });
+    await assert.rejects(flow.complete(NEXT, kit), (e) => e === failure);
+    assert.equal(commits, 1);
+    assert.equal(resets, 1);
+    assert.equal(current, old);
+    assert.ok(old.vaultKey.every((b) => b === 0));
+    assert.ok(next && (next as typeof old).vaultKey.some((b) => b !== 0));
+    assert.equal((offer as RecoveryMasterOffer | null)?.pendingAdoption, true);
+    assert.equal(loadPin(ID)?.revision, 2);
+    flow.begin(old);
+    await assert.rejects(flow.complete(NEXT, kit), /recovery_context_required/);
+    await assert.rejects(flow.retryAdoption(), (e) => e === failure);
+    failing = false;
+    await flow.retryAdoption();
+    assert.equal(current, next);
+    assert.equal(loadPin(ID)?.revision, 3);
+    assert.equal((offer as RecoveryMasterOffer | null)?.stage, "devices");
+    assert.equal(pinWrites, 3);
+    assert.equal(commits, 1);
+    assert.equal(resets, 1);
+    await assert.rejects(flow.retryAdoption(), /recovery_context_required/);
+    assert.equal(pinWrites, 3);
+    flow.clear();
+    assert.ok(next && (next as typeof old).vaultKey.some((b) => b !== 0));
+  } finally {
+    if (original) Object.defineProperty(storage, "setItem", original);
+    else Reflect.deleteProperty(storage, "setItem");
+    flow.clear();
+    lock(next);
+    lock(old);
+  }
+});
+
+
+for (const when of ["before-mutation", "before-send-await"]) {
+  test(`master recovery liveness aborts ${when} without sending a reset`, async () => {
+    const vault = await unlockWithRecoveryKey(ID, kit);
+    let current: typeof vault | null = vault;
+    let epoch = 0;
+    const liveness = captureVaultLiveness(vault, () => epoch, () => current);
+    const before = localStorage.getItem(`4allpass.pin.${ID}`);
+    if (when === "before-mutation") epoch++;
+    const work = setMasterPasswordAfterRecovery(vault, {
+      newMasterPassword: NEXT, recoveryKeyText: kit, deferPin: true, liveness,
+    });
+    // commitSnapshot's existing preparation await yields before transport.
+    if (when === "before-send-await") { epoch++; lock(vault); current = null; }
+    try {
+      await assert.rejects(work, VaultLockedError);
+      assert.equal(commits, 0);
+      assert.equal(localStorage.getItem(`4allpass.pin.${ID}`), before);
+      persistDeferredPin(ID, 3);
+      assert.equal(localStorage.getItem(`4allpass.pin.${ID}`), before);
+    } finally { lock(vault); }
+  });
+}
+
+for (const outcome of ["response", "lost-response"]) {
+  test(`coordinator lock after send cannot adopt ${outcome} or retry the already sent reset`, async () => {
+  const vault = await unlockWithRecoveryKey(ID, kit);
+  let current: typeof vault | null = vault;
+  let epoch = 0;
+  let release!: () => void;
+  let sent!: () => void;
+  const sentGate = new Promise<void>((yes) => { sent = yes; });
+  const responseGate = new Promise<void>((yes) => { release = yes; });
+  const before = localStorage.getItem(`4allpass.pin.${ID}`);
+  api.commitSnapshot = async (id, payload) => {
+    commits++; sent(); await responseGate;
+    head = echo(id, payload);
+    if (outcome === "lost-response") throw new Error("synthetic response lost after server commit");
+    return structuredClone(head);
+  };
+  let offer: RecoveryMasterOffer | null = null;
+  const flow = createRecoveryMasterCoordinator(() => ({
+    captureVaultLiveness: (value) => captureVaultLiveness(value, () => epoch, () => current),
+    currentVault: () => current, getActiveVaultId: () => ID,
+    getAccountEmail: () => "synthetic@example.invalid", passwordsCollide: () => false,
+    replaceUnlockedVault: (value) => { current = value; }, publish: (value) => { offer = value; },
+  }));
+  flow.begin(vault);
+  const work = flow.complete(NEXT, kit);
+  await sentGate;
+  epoch++; lock(vault); current = null; flow.clear();
+  release(); await work;
+  assert.equal(commits, 1, "the sent commit is not undone or sent again");
+  assert.equal(head.revision, 3, "the synthetic server may already have committed");
+  assert.equal(current, null);
+  assert.equal(offer, null);
+  assert.equal(localStorage.getItem(`4allpass.pin.${ID}`), before);
+  await assert.rejects(flow.retryAdoption(), /recovery_context_required/);
+  await assert.rejects(flow.complete(NEXT, kit), /recovery_context_required/);
+  assert.equal(commits, 1);
+});
+}

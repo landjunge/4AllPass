@@ -94,6 +94,7 @@ interface AppActions {
   dismissRecoveryKey(): void;
   dismissRecoveryMasterOffer(): void;
   completeRecoveryMasterOffer(newMasterPassword: string, recoveryKeyText: string): Promise<void>;
+  retryRecoveryMasterAdoption(): Promise<void>;
   clearMessages(): void;
 }
 
@@ -190,6 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       currentVault: vaultLifecycle.currentVault,
       captureVaultLiveness: vaultLifecycle.captureVaultLiveness,
       replaceUnlockedVault: vaultLifecycle.replaceUnlockedVault,
+      lock: vaultLifecycle.lock,
       setRecoveryKey: vaultLifecycle.setRecoveryKey,
       setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
     }),
@@ -201,6 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       vaultLifecycle.currentVault,
       vaultLifecycle.captureVaultLiveness,
       vaultLifecycle.replaceUnlockedVault,
+      vaultLifecycle.lock,
       vaultLifecycle.setDeviceUnlockAvailable,
       vaultLifecycle.setRecoveryKey,
       withStatus,
@@ -309,6 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
       dismissRecoveryMasterOffer: recoveryManagement.clearMasterOffer,
       completeRecoveryMasterOffer: recoveryManagement.completeMasterOffer,
+      retryRecoveryMasterAdoption: recoveryManagement.retryMasterAdoption,
       clearMessages() {
         dispatchFeedback({ type: "clear" });
       },

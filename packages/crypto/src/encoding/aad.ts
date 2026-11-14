@@ -5,11 +5,15 @@ import {
   ENTRY_AAD_LABEL,
   ENVELOPE_AAD_LABEL,
   MANIFEST_AAD_LABEL,
+  MANIFEST_V2_AAD_LABEL,
   PRF_EVAL_LABEL,
   RWK_INFO_LABEL,
   RWK_SALT_LABEL,
+  WRITE_SEED_INFO_LABEL,
+  WRITE_SEED_SALT_LABEL,
 } from "../constants.ts";
 import { ProtocolError } from "../errors.ts";
+import { assertSnapshotProtocolVersion } from "../snapshot-protocol.ts";
 import type { AadField, EnvelopeType, KdfParams } from "../types.ts";
 import { concat, u16be, u32be, utf8 } from "./bytes.ts";
 import { kdfParamsDigest } from "./digest.ts";
@@ -123,10 +127,11 @@ export interface ManifestAadInput {
  * cryptographic statement instead of server-supplied metadata.
  */
 export function manifestAad(input: ManifestAadInput): Uint8Array {
+  const protocol = assertSnapshotProtocolVersion(input.cryptoVersion);
   return encodeAad([
-    MANIFEST_AAD_LABEL,
+    protocol === 2 ? MANIFEST_V2_AAD_LABEL : MANIFEST_AAD_LABEL,
     input.vaultId,
-    versionField(input.cryptoVersion),
+    versionField(protocol),
     versionField(input.revision),
     versionField(input.vaultKeyVersion),
   ]);
@@ -163,4 +168,12 @@ export function rwkHkdfSalt(vaultId: string): Uint8Array {
 
 export function rwkHkdfInfo(vaultId: string, cryptoVersion: number): Uint8Array {
   return encodeAad([RWK_INFO_LABEL, vaultId, versionField(cryptoVersion)]);
+}
+
+export function writeSeedHkdfSalt(vaultId: string): Uint8Array {
+  return encodeAad([WRITE_SEED_SALT_LABEL, vaultId]);
+}
+
+export function writeSeedHkdfInfo(vaultId: string, vaultKeyVersion: number): Uint8Array {
+  return encodeAad([WRITE_SEED_INFO_LABEL, vaultId, versionField(vaultKeyVersion)]);
 }

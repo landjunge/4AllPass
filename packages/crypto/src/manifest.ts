@@ -3,6 +3,7 @@ import {
   DIGEST_BYTES,
   KEY_BYTES,
   MANIFEST_CONTENT_LABEL,
+  MANIFEST_V2_CONTENT_LABEL,
   MANIFEST_ENTRIES_MAX,
   MANIFEST_ENVELOPES_MAX,
   NONCE_BYTES,
@@ -15,6 +16,11 @@ import { entryDigest, envelopeDigest, sealedManifestDigest } from "./encoding/di
 import { frame } from "./encoding/framing.ts";
 import { bytesToHex, compareUtf8, concat } from "./encoding/bytes.ts";
 import { IntegrityError, ProtocolError } from "./errors.ts";
+import {
+  assertSnapshotProtocolVersion,
+  expectedSnapshotProtocolVersion,
+  type SnapshotProtocolOptions,
+} from "./snapshot-protocol.ts";
 import {
   assertBytes,
   assertEnvelopeType,
@@ -48,7 +54,7 @@ export interface BuildManifestOptions {
   allowTestProfile?: boolean;
 }
 
-export interface SealManifestOptions {
+export interface SealManifestOptions extends SnapshotProtocolOptions {
   vaultKey: Uint8Array;
   manifest: SnapshotManifest;
 }
@@ -183,10 +189,7 @@ function assertSnapshotHeader(header: {
   vaultKeyVersion: unknown;
   cryptoProtocolVersion: unknown;
 }): Pick<SnapshotManifest, "vaultId" | "revision" | "vaultKeyVersion" | "cryptoProtocolVersion"> {
-  const cryptoProtocolVersion = assertVersion("cryptoProtocolVersion", header.cryptoProtocolVersion);
-  if (cryptoProtocolVersion !== CRYPTO_PROTOCOL_VERSION) {
-    throw new ProtocolError(`unsupported manifest cryptoProtocolVersion: ${cryptoProtocolVersion}`);
-  }
+  const cryptoProtocolVersion = assertSnapshotProtocolVersion(header.cryptoProtocolVersion);
   return {
     vaultId: assertId("vaultId", header.vaultId),
     revision: assertRevision("revision", header.revision),
@@ -207,7 +210,7 @@ export function buildManifest(opts: BuildManifestOptions): SnapshotManifest {
     vaultId: opts.vaultId,
     revision: opts.revision,
     vaultKeyVersion: opts.vaultKeyVersion,
-    cryptoProtocolVersion: opts.cryptoProtocolVersion ?? CRYPTO_PROTOCOL_VERSION,
+    cryptoProtocolVersion: expectedSnapshotProtocolVersion(opts),
   });
   return describeSnapshot(header, normalizeSnapshotContents(opts, opts.allowTestProfile === true));
 }
@@ -254,6 +257,9 @@ function describeSnapshot(
   });
 
   const envelopes: ManifestEnvelopeRef[] = normalized.envelopes.map((record) => {
+    if (header.cryptoProtocolVersion === 2 && record.version !== CRYPTO_PROTOCOL_VERSION) {
+      throw new ProtocolError("snapshot protocol 2 requires envelope format 1");
+    }
     requireSameNumber(
       `envelope ${record.type} vaultKeyVersion`,
       header.vaultKeyVersion,
@@ -292,6 +298,9 @@ export function validateManifest(manifest: SnapshotManifest): SnapshotManifest {
     seenEntries.add(entry.id);
     assertVersion("manifest entry schemaVersion", entry.schemaVersion);
     assertVersion("manifest entry cryptoVersion", entry.cryptoVersion);
+    if (header.cryptoProtocolVersion === 2 && entry.cryptoVersion !== CRYPTO_PROTOCOL_VERSION) {
+      throw new ProtocolError("snapshot protocol 2 requires entry crypto format 1");
+    }
     requireSameNumber(
       `manifest entry ${entry.id} vaultKeyVersion`,
       header.vaultKeyVersion,
@@ -338,7 +347,7 @@ export function encodeManifest(manifest: SnapshotManifest): Uint8Array {
   const canonical = validateManifest(manifest);
   const parts: Uint8Array[] = [
     frame([
-      MANIFEST_CONTENT_LABEL,
+      canonical.cryptoProtocolVersion === 2 ? MANIFEST_V2_CONTENT_LABEL : MANIFEST_CONTENT_LABEL,
       canonical.vaultId,
       canonical.cryptoProtocolVersion,
       canonical.revision,
@@ -426,10 +435,14 @@ class FrameReader {
   }
 }
 
-export function decodeManifest(bytes: Uint8Array): SnapshotManifest {
+export function decodeManifest(
+  bytes: Uint8Array,
+  options: SnapshotProtocolOptions = {},
+): SnapshotManifest {
+  const expected = expectedSnapshotProtocolVersion(options);
   const reader = new FrameReader(assertBytes("manifest", bytes));
   const label = reader.string("label");
-  if (label !== MANIFEST_CONTENT_LABEL) {
+  if (label !== (expected === 2 ? MANIFEST_V2_CONTENT_LABEL : MANIFEST_CONTENT_LABEL)) {
     throw new ProtocolError(`unexpected manifest label: ${label}`);
   }
   const header = assertSnapshotHeader({
@@ -438,6 +451,7 @@ export function decodeManifest(bytes: Uint8Array): SnapshotManifest {
     revision: reader.u32("revision"),
     vaultKeyVersion: reader.u32("vaultKeyVersion"),
   });
+  requireSameNumber("manifest.cryptoProtocolVersion", expected, header.cryptoProtocolVersion);
   const entryCount = assertUint32("manifest entryCount", reader.u32("entryCount"));
   const envelopeCount = assertUint32("manifest envelopeCount", reader.u32("envelopeCount"));
   if (entryCount > MANIFEST_ENTRIES_MAX) {
@@ -516,13 +530,20 @@ function buildSealed(cryptoVersion: number, box: GcmBox): SealedManifest {
 export function sealManifest(opts: SealManifestOptions): SealedManifest {
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
   const manifest = validateManifest(opts.manifest);
-  const body = encodeManifest(manifest);
-  const sealed = buildSealed(
+  requireSameNumber(
+    "manifest.cryptoProtocolVersion",
+    expectedSnapshotProtocolVersion(opts),
     manifest.cryptoProtocolVersion,
-    encrypt(opts.vaultKey, body, manifestAadOf(manifest)),
   );
-  body.fill(0);
-  return sealed;
+  const body = encodeManifest(manifest);
+  try {
+    return buildSealed(
+      manifest.cryptoProtocolVersion,
+      encrypt(opts.vaultKey, body, manifestAadOf(manifest)),
+    );
+  } finally {
+    body.fill(0);
+  }
 }
 
 /** Test-only seal with a fixed nonce. */
@@ -531,13 +552,20 @@ export function sealManifestWithNonce(
 ): SealedManifest {
   assertBytes("vaultKey", opts.vaultKey, { exact: KEY_BYTES });
   const manifest = validateManifest(opts.manifest);
-  const body = encodeManifest(manifest);
-  const sealed = buildSealed(
+  requireSameNumber(
+    "manifest.cryptoProtocolVersion",
+    expectedSnapshotProtocolVersion(opts),
     manifest.cryptoProtocolVersion,
-    encryptWithNonce(opts.vaultKey, opts.nonce, body, manifestAadOf(manifest)),
   );
-  body.fill(0);
-  return sealed;
+  const body = encodeManifest(manifest);
+  try {
+    return buildSealed(
+      manifest.cryptoProtocolVersion,
+      encryptWithNonce(opts.vaultKey, opts.nonce, body, manifestAadOf(manifest)),
+    );
+  } finally {
+    body.fill(0);
+  }
 }
 
 /**
@@ -558,20 +586,22 @@ export function openManifest(sealed: SealedManifest, opts: OpenManifestOptions):
   const ciphertext = assertBytes("sealed.ciphertext", sealed.ciphertext);
   const tag = assertBytes("sealed.tag", sealed.tag);
   assertAeadFraming(nonce, tag);
-  const version = assertVersion("sealed.version", sealed.version);
-  if (version !== CRYPTO_PROTOCOL_VERSION) {
-    throw new ProtocolError(`unsupported sealed manifest version: ${version}`);
-  }
+  const version = assertSnapshotProtocolVersion(sealed.version);
 
   const claimed = assertSnapshotHeader({
     vaultId: opts.vaultId,
     revision: opts.revision,
     vaultKeyVersion: opts.vaultKeyVersion,
-    cryptoProtocolVersion: opts.cryptoProtocolVersion ?? CRYPTO_PROTOCOL_VERSION,
+    cryptoProtocolVersion: expectedSnapshotProtocolVersion(opts),
   });
+  requireSameNumber("sealed.version", claimed.cryptoProtocolVersion, version);
   const plaintext = decrypt(opts.vaultKey, nonce, ciphertext, tag, manifestAadOf(claimed));
-  const manifest = decodeManifest(plaintext);
-  plaintext.fill(0);
+  let manifest: SnapshotManifest;
+  try {
+    manifest = decodeManifest(plaintext, { cryptoProtocolVersion: claimed.cryptoProtocolVersion });
+  } finally {
+    plaintext.fill(0);
+  }
 
   requireSameString("manifest.vaultId", claimed.vaultId, manifest.vaultId);
   requireSameNumber("manifest.revision", claimed.revision, manifest.revision);

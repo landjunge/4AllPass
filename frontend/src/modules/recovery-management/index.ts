@@ -19,6 +19,7 @@ export interface UseRecoveryManagementOptions {
   currentVault(): UnlockedVault | null;
   captureVaultLiveness(vault: UnlockedVault): VaultLiveness;
   replaceUnlockedVault(next: UnlockedVault | null): void;
+  lock(): void;
   setRecoveryKey(recoveryKey: string | null): void;
   setDeviceUnlockAvailable(available: boolean): void;
   observedVault: UnlockedVault | null;
@@ -32,6 +33,7 @@ export interface RecoveryManagement {
   beginMasterOffer(vault: UnlockedVault): void;
   clearMasterOffer(): void;
   completeMasterOffer(newMasterPassword: string, recoveryKeyText: string): Promise<void>;
+  retryMasterAdoption(): Promise<void>;
   replaceTrustedRecovery(oldRecoveryKeyText: string): Promise<void>;
   rotateCompromisedRecovery(
     masterPassword: string,
@@ -41,13 +43,17 @@ export interface RecoveryManagement {
 
 export function useRecoveryManagement(options: UseRecoveryManagementOptions): RecoveryManagement {
   const [masterOffer, setMasterOffer] = useState<RecoveryMasterOffer | null>(null);
+  const masterOfferRef = useRef<RecoveryMasterOffer | null>(null);
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const coordinatorRef = useRef<ReturnType<typeof createRecoveryMasterCoordinator> | null>(null);
   if (!coordinatorRef.current) {
     coordinatorRef.current = createRecoveryMasterCoordinator(() => ({
       ...optionsRef.current,
-      publish: setMasterOffer,
+      publish: (offer) => {
+        masterOfferRef.current = offer;
+        setMasterOffer(offer);
+      },
     }));
   }
   const coordinator = coordinatorRef.current;
@@ -58,6 +64,18 @@ export function useRecoveryManagement(options: UseRecoveryManagementOptions): Re
   const completeMasterOffer = useCallback(async (newMasterPassword: string, recoveryKeyText: string) => {
     await options.runWithStatus(() => coordinator.complete(newMasterPassword, recoveryKeyText));
   }, [options, coordinator]);
+  const retryMasterAdoption = useCallback(async () => {
+    await optionsRef.current.runWithStatus(() => coordinator.retryAdoption());
+  }, [coordinator]);
+  const clearMasterOffer = useCallback(() => {
+    const abandoned = masterOfferRef.current?.pendingAdoption
+      ? optionsRef.current.currentVault() : null;
+    coordinator.clear();
+    if (abandoned && optionsRef.current.currentVault() === abandoned) {
+      optionsRef.current.lock();
+    }
+  }, [coordinator]);
+  useEffect(() => () => clearMasterOffer(), [clearMasterOffer]);
 
   const replaceTrustedRecovery = useCallback(async (oldRecoveryKeyText: string) => {
     const current = options.currentVault();
@@ -102,8 +120,9 @@ export function useRecoveryManagement(options: UseRecoveryManagementOptions): Re
   return {
     masterOffer: coordinator.isCurrent() ? masterOffer : null,
     beginMasterOffer: coordinator.begin,
-    clearMasterOffer: coordinator.clear,
+    clearMasterOffer,
     completeMasterOffer,
+    retryMasterAdoption,
     replaceTrustedRecovery,
     rotateCompromisedRecovery: rotateRecovery,
   };

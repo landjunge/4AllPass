@@ -73,25 +73,25 @@ test("v2 persistence requires opt-in and retains the exact protocol/digest", () 
 
 test("stored explicit invalid versions are errors, never absence or implicit v1", () => {
   for (const version of [null, 0, 3, -1, 1.5, "2", true, {}]) {
-    const key = "4allpass.pin.vault-v2";
+    const slot = "4allpass.pin.vault-v2";
     const raw = JSON.stringify({ ...v2Pin(), cryptoProtocolVersion: version, manifestDigest: bytesToBase64(randomBytes(32)) });
-    memory.set(key, raw);
+    memory.set(slot, raw);
     assert.throws(() => loadPin("vault-v2"), ProtocolError);
     assert.throws(() => loadPin("vault-v2", v2), ProtocolError);
     assert.throws(() => savePin(v2Pin(), v2), ProtocolError);
-    assert.equal(memory.get(key), raw);
+    assert.equal(memory.get(slot), raw);
   }
 });
 
 test("v2 requires a digest on load/save; malformed explicit v1 digests also refuse", () => {
   for (const cryptoProtocolVersion of [1, 2]) {
     const options = { cryptoProtocolVersion };
-    const key = "4allpass.pin.vault-v2";
+    const slot = "4allpass.pin.vault-v2";
     for (const manifestDigest of ["", "not-base64", bytesToBase64(new Uint8Array(31)), null, 3]) {
       const raw = JSON.stringify({ ...v2Pin(), cryptoProtocolVersion, manifestDigest });
-      memory.set(key, raw);
+      memory.set(slot, raw);
       assert.throws(() => loadPin("vault-v2", options), ProtocolError);
-      assert.equal(memory.get(key), raw);
+      assert.equal(memory.get(slot), raw);
     }
     memory.clear();
     assert.throws(() => savePin({ ...v2Pin(), cryptoProtocolVersion, manifestDigest: new Uint8Array(31) }, options), ProtocolError);

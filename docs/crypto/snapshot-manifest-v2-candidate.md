@@ -34,13 +34,22 @@ still uses normalized copies of entries/envelopes and their exact digests.
 V2 manifests continue to reference v1 entry and envelope encryption formats.
 Plaintext manifest buffers are cleared on both successful and failed decoding.
 
+## Backend syntactic binding
+
+The development backend requires a sealed manifest from the first v2 snapshot
+and rejects a declared manifest version that differs from the snapshot protocol.
+The existing vault/snapshot protocol equality, signed-write authorization, replay
+and CAS checks remain in force. The server keeps the manifest opaque; these
+checks do not authenticate its plaintext or AAD. Synthetic signed-request tests
+cover rejection without persisted state changes and preserve v1 bootstrap.
+
 ## Remaining integration boundaries
 
-Revision evaluation, persisted freshness pins, frontend bootstrap/commit and
-backend enforcement remain separate work. In particular, the existing revision
+Revision evaluation, persisted freshness pins and frontend bootstrap/commit
+remain separate work. In particular, the existing revision
 evaluator still refuses protocols above 1. Constructing or opening a v2 manifest
-here does not establish pin adoption, immutable vault protocol enforcement,
-server authorization, or old-client/packaged WKWebView/Tauri acceptance.
+here does not establish pin adoption or old-client/packaged WKWebView/Tauri
+acceptance. Backend syntactic binding is not end-to-end acceptance.
 No v1-to-v2 migration or product feature-gate activation is introduced.
 
 The broader proposal and its missing evidence remain in

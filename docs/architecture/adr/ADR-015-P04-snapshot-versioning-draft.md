@@ -84,12 +84,10 @@ protection; they do not prove freshness before a trustworthy initial pin.
 
 ## Server and client boundaries
 
-Required implementation change: the server must reject a missing manifest for
-protocol 2 even at the initial snapshot/revision 1, reject mismatched declared
-snapshot and sealed-manifest versions, and reject a snapshot protocol that
-differs from the vault protocol. These checks are not all present today. The
-current bootstrap permits a missing manifest and does not enforce the complete
-version binding; this proposal must not be read as an implementation claim.
+The development backend now rejects a missing manifest for protocol 2 even
+at revision 1 and rejects mismatched declared snapshot/sealed-manifest versions.
+The pre-existing vault/snapshot protocol equality check remains in force. These
+syntactic guards are a default-off candidate, not complete contract acceptance.
 The server cannot authenticate the opaque manifest plaintext
 or AAD; that remains the client's job. Existing ownership, signature, replay,
 revocation and CAS checks remain independent requirements.
@@ -131,7 +129,8 @@ this proposal does not implement it.
 
 An [explicit shared-library candidate](../../crypto/snapshot-manifest-v2-candidate.md)
 now implements the snapshot/manifest domain and version boundary. Existing v1
-callers retain their defaults; entry/envelope formats stay v1. Frontend, backend,
-revision evaluation/pin persistence and feature gates are not upgraded in this
-slice. No installed app or stored vault is changed. Acceptance of the complete
-proposal and end-to-end/package evidence remain open.
+callers retain their defaults; entry/envelope formats stay v1. The backend
+syntactic guards above are implemented. Frontend, revision evaluation/pin
+persistence and feature gates are not upgraded in this slice. No installed app
+or stored vault is changed. Acceptance of the complete proposal and
+end-to-end/package evidence remain open.

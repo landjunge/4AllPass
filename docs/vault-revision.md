@@ -389,6 +389,8 @@ not help a brand-new client choose which history to trust on first use.
 
 The [explicit snapshot/manifest v2 library candidate](crypto/snapshot-manifest-v2-candidate.md)
 authenticates a version-bound manifest and its complete child set when a caller
-explicitly opts in. Existing revision evaluation and persisted pin handling
-remain v1 and are not upgraded here. This slice does not establish adopting a v2
-pin, migrating a v1 vault, or completing bootstrap/signed commit/readback.
+explicitly opts in. Revision evaluation and pin persistence now also accept an
+explicit v2 expectation, preserving protocol and digest. Defaults remain v1; a
+pinned vault cannot change protocol, and malformed stored pins are errors rather
+than first use. Session call-site integration is still open. These primitives do
+not establish migrating a v1 vault or completing bootstrap/signed commit/readback.

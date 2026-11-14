@@ -43,14 +43,26 @@ and CAS checks remain in force. The server keeps the manifest opaque; these
 checks do not authenticate its plaintext or AAD. Synthetic signed-request tests
 cover rejection without persisted state changes and preserve v1 bootstrap.
 
+## Explicit revision/pin candidate
+
+Revision evaluation and manifest-derived pins accept v2 only with an explicit
+`cryptoProtocolVersion: 2` expectation. V2 requires a 32-byte manifest digest.
+A previously pinned vault cannot change protocol in either direction; this is
+not a migration API. Default callers continue to expect v1.
+
+Pin persistence preserves the selected protocol and digest. Historical omission
+of the stored protocol field means v1; malformed or unsupported stored pins
+raise an error and remain intact rather than becoming a fresh first-use state.
+These API primitives do not activate the v2 session path.
+
 ## Remaining integration boundaries
 
-Revision evaluation, persisted freshness pins and frontend bootstrap/commit
-remain separate work. In particular, the existing revision
-evaluator still refuses protocols above 1. Constructing or opening a v2 manifest
-here does not establish pin adoption or old-client/packaged WKWebView/Tauri
-acceptance. Backend syntactic binding is not end-to-end acceptance.
-No v1-to-v2 migration or product feature-gate activation is introduced.
+Frontend bootstrap/commit, unlock and offline session call sites still need an
+explicit protocol expectation passed through decoding, authentication, revision
+evaluation and pin adoption. This slice does not establish complete client
+integration or old-client/packaged WKWebView/Tauri acceptance. Backend syntactic
+binding is not end-to-end acceptance. No v1-to-v2 migration or product
+feature-gate activation is introduced.
 
 The broader proposal and its missing evidence remain in
 [the ADR-015 amendment draft](../architecture/adr/ADR-015-P04-snapshot-versioning-draft.md).

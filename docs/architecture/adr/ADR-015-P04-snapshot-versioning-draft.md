@@ -130,7 +130,7 @@ this proposal does not implement it.
 An [explicit shared-library candidate](../../crypto/snapshot-manifest-v2-candidate.md)
 now implements the snapshot/manifest domain and version boundary. Existing v1
 callers retain their defaults; entry/envelope formats stay v1. The backend
-syntactic guards above are implemented. Frontend, revision evaluation/pin
-persistence and feature gates are not upgraded in this slice. No installed app
-or stored vault is changed. Acceptance of the complete proposal and
+syntactic guards above and explicit revision/pin primitives are implemented.
+Frontend session integration and feature gates are not upgraded in this slice.
+No installed app or stored vault is changed. Acceptance of the complete proposal and
 end-to-end/package evidence remain open.

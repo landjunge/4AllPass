@@ -33,6 +33,8 @@ src/
   wire.ts               JSON encode/decode for server transport (strict)
   requester.ts          requester identity (Ed25519 verify) + canonical v2
                         signed-write preimage, Draft Rev2 (bytes only, no signing)
+  signed-write-client.ts  runtime probe + WebCrypto Ed25519 signing of the v2
+                        preimage, header binding, replay/UNKNOWN classification
   random.ts             CSPRNG helpers
   memory.ts             best-effort zeroize
 ```
@@ -46,6 +48,7 @@ src/
 - Opening is done against an expectation. AAD built from an object's own fields proves self-consistency, not identity.
 - Untrusted records are read exactly once into a normalized copy, and that copy is what gets digested. `verifySnapshotManifest` returns those copies — **apply them**, not the objects you passed in.
 - Identifiers must be well-formed UTF-16. A lone surrogate has no UTF-8 encoding and would collapse two identities into one U+FFFD.
+- Client signing is fail-closed: `probeSigner()` must reproduce RFC 8032 TEST 1 on the actual runtime; without Ed25519 PKCS#8 import there is no v2 write and no unsigned fallback. A Node or Playwright pass is not a macOS WKWebView pass.
 - Signed writes are not canonical JSON. `writeRequestBytesV2` is the exact v2 preimage from the contract: framed fields, presence as framed uint32 `0|1` with an empty digest, and the 1..128-character id bound — a 128-emoji id is 512 bytes and still valid. Draft Rev2 binds `deviceId` directly after `vaultId`; the server must match it to `X-Device-Id`.
 - `revision` is only believed after the sealed manifest verifies; pins are built with `revisionFromManifest(verified)`.
 - Raw WebAuthn PRF output is never used as a key; HKDF is mandatory, and an all-zero PRF result is refused.

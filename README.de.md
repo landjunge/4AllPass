@@ -1,16 +1,6 @@
 <!-- README-LANGUAGES -->
 <p align="center"><a href="README.md">English</a> &nbsp;|&nbsp; <strong>Deutsch</strong></p>
 
-# 4AllPass – Deutsch
-
-[English README](README.md) · [Alle Releases](https://github.com/landjunge/4AllPass/releases)
-
-4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Die vollständige Projektdokumentation steht in der [Haupt-README](README.md).
-
-## Downloads
-
-Vier veröffentlichte Installationsdateien der Version 0.1.2-rc.3 sind direkt verlinkt. Die fünfte Variante bleibt sichtbar als „In Vorbereitung“. Nicht verfügbare Varianten sind nicht anklickbar.
-
 <p align="center">
   <img src="assets/readme/normalized/4AllPass-large.svg" alt="4AllPass" width="256" height="256">
 </p>
@@ -42,6 +32,10 @@ Vier veröffentlichte Installationsdateien der Version 0.1.2-rc.3 sind direkt ve
   <img src="assets/readme/download-debian-remote.svg" alt="Debian Server: In Vorbereitung / Coming soon" width="190" height="52">
 </p>
 <!-- AUTO-DOWNLOADS:END -->
+
+4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Die vollständige Projektdokumentation steht in der [Haupt-README](README.md).
+
+Vier veröffentlichte Installationsdateien der Version 0.1.2-rc.3 sind direkt verlinkt. Die fünfte Variante bleibt sichtbar als „In Vorbereitung“. Nicht verfügbare Varianten sind nicht anklickbar.
 
 ## Sicherheitshinweis
 

@@ -27,6 +27,8 @@
   <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64-setup.exe" title="4AllPass_0.1.2-rc.3_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
   <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_amd64.AppImage" title="4AllPass_0.1.2-rc.3_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.3" width="190" height="52"></a>
+  &nbsp;
+  <img src="assets/readme/download-debian-remote.svg" alt="Debian Server: In Vorbereitung / Coming soon" width="190" height="52">
 </p>
 <!-- AUTO-DOWNLOADS:END -->
 

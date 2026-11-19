@@ -357,7 +357,7 @@ def self_test() -> None:
         if not any("tauri.conf.json" in p for p in problems):
             failed.append(f"tauri-mit: {problems}")
         (tauri_dir / "tauri.conf.json").write_text(
-            json.dumps({"bundle": {"licenseFile": "../LICENSE"}}),
+            json.dumps({"bundle": {"licenseFile": "../LICENSE", "resources": ["../LICENSE"]}}),
             encoding="utf-8",
         )
         (tauri_dir / "Cargo.toml").write_text(

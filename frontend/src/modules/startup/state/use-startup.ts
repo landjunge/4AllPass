@@ -7,10 +7,28 @@ import {
   probeWebviewWebauthn,
 } from "../../../lib/webauthnCapabilities.ts";
 import { runStartup, type LocalStoreStatus } from "../service/run-startup.ts";
+import {
+  fingerprintSessionToken,
+  loadOfflineBootstrap,
+  saveOfflineBootstrap,
+  type OfflineBootstrapBinding,
+} from "../../../lib/offline-bootstrap.ts";
+import type { VaultSummary } from "../../../lib/api.ts";
+
+/** Binding of the metadata cache to the current bearer session and origin. */
+async function currentBinding(): Promise<OfflineBootstrapBinding | null> {
+  const token = getToken();
+  if (!token) return null;
+  return {
+    sessionFingerprint: await fingerprintSessionToken(token),
+    storageOrigin: readStorageOrigin(),
+  };
+}
 
 export interface UseStartupOptions {
   restoreSession(email: string | null): void;
-  loadVaults(): Promise<unknown>;
+  loadVaults(): Promise<VaultSummary[]>;
+  restoreOffline(email: string, vaults: VaultSummary[]): void;
 }
 
 export interface StartupState {
@@ -21,7 +39,7 @@ export interface StartupState {
 }
 
 export function useStartup(options: UseStartupOptions): StartupState {
-  const { restoreSession, loadVaults } = options;
+  const { restoreSession, loadVaults, restoreOffline } = options;
   const [ready, setReady] = useState(false);
   const [localMode, setLocalMode] = useState(false);
   const [localStore, setLocalStore] = useState<LocalStoreStatus | null>(null);
@@ -34,6 +52,15 @@ export function useStartup(options: UseStartupOptions): StartupState {
       hasStorageOrigin: () => Boolean(readStorageOrigin()),
       restoreSession,
       loadVaults,
+      restoreOffline,
+      async saveOfflineBootstrap(email, vaults) {
+        const binding = await currentBinding();
+        if (binding) await saveOfflineBootstrap(email, vaults, binding);
+      },
+      async loadOfflineBootstrap() {
+        const binding = await currentBinding();
+        return binding ? loadOfflineBootstrap(binding) : null;
+      },
       async reportWebviewCapabilities() {
         await api.reportWebviewCaps(await probeWebviewWebauthn());
       },
@@ -41,7 +68,7 @@ export function useStartup(options: UseStartupOptions): StartupState {
       setLocalStore,
       setReady: () => setReady(true),
     });
-  }, [loadVaults, restoreSession]);
+  }, [loadVaults, restoreOffline, restoreSession]);
 
   return useMemo(
     () => ({ ready, localMode, localStore, updateLocalStore: setLocalStore }),

@@ -10,8 +10,10 @@ export {
   createNotice,
   feedbackReducer,
   initialFeedbackState,
+  runWithStatus,
   type FeedbackAction,
   type FeedbackState,
   type NoticeCode,
   type NoticeFeedback,
+  type SuccessNotice,
 } from "./state/feedback-state.ts";

@@ -6,14 +6,50 @@
     "visibility": "public",
     "default_branch": "main"
   },
-  "observed_at": "2026-11-09T06:54:45Z",
+  "observed_at": "2026-11-11T21:30:23Z",
   "plan": "BIGPLAN-BAUPLAN-20261108",
   "main_pin": {
-    "commit": "0bf2eafe0933ab13d413330d8a92ebd10524b6ad",
-    "committed_at": "2026-11-08T22:33:22Z"
+    "commit": "743ca3872b44cce51cbe6d72924b433f5a0830c9",
+    "committed_at": "2026-11-11T22:29:40+01:00"
   },
   "source_version": "0.1.2-rc.3",
   "releases": [
+    {
+      "tag": "v0.1.2-rc.3",
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-11-11T21:25:26Z",
+      "assets": [
+        "4AllPass_0.1.2-rc.3_aarch64.dmg",
+        "4AllPass_0.1.2-rc.3_aarch64.dmg.sha256",
+        "4AllPass_0.1.2-rc.3_amd64.AppImage",
+        "4AllPass_0.1.2-rc.3_amd64.AppImage.sha256",
+        "4AllPass_0.1.2-rc.3_x64-setup.exe",
+        "4AllPass_0.1.2-rc.3_x64-setup.exe.sha256",
+        "4AllPass_0.1.2-rc.3_x64.dmg",
+        "4AllPass_0.1.2-rc.3_x64.dmg.sha256",
+        "LICENSE",
+        "SHA256SUMS",
+        "notes.md",
+        "package-check-aarch64-apple-darwin.json",
+        "package-check-x86_64-apple-darwin.json",
+        "package-check-x86_64-pc-windows-msvc.json",
+        "package-check-x86_64-unknown-linux-gnu.json",
+        "release-manifest.json",
+        "sidecar-preflight-aarch64-apple-darwin.json",
+        "sidecar-preflight-x86_64-apple-darwin.json",
+        "sidecar-preflight-x86_64-pc-windows-msvc.json",
+        "sidecar-preflight-x86_64-unknown-linux-gnu.json",
+        "source-Linux.json",
+        "source-Windows.json",
+        "source-macOS-Intel.json",
+        "source-macOS.json",
+        "third-party-notices-Linux.zip",
+        "third-party-notices-Windows.zip",
+        "third-party-notices-macOS-Intel.zip",
+        "third-party-notices-macOS.zip"
+      ]
+    },
     {
       "tag": "v0.1.2-rc.2",
       "draft": false,

@@ -79,6 +79,20 @@ export function saveLang(
   }
 }
 
+/** Minimal shape so the document-language binding is testable without a DOM. */
+export type LangRoot = { documentElement?: { lang: string } };
+
+/**
+ * Keep `<html lang>` in sync with the visible DE/EN choice so assistive tech and
+ * search engines see the actual language. No-op without a DOM (SSR/tests); the
+ * static `<html lang="de">` stays as the pre-hydration default.
+ */
+export function applyDocumentLang(lang: Lang, root?: LangRoot): void {
+  const target =
+    root ?? (typeof document === "undefined" ? undefined : (document as unknown as LangRoot));
+  if (target?.documentElement) target.documentElement.lang = lang;
+}
+
 /**
  * Beide Sprachen nebeneinander. Bleibt fuer Texte, die unabhaengig vom
  * Umschalter in beiden Sprachen stehen muessen — allen voran die

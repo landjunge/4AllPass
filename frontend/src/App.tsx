@@ -7,7 +7,9 @@ import { RestoreVaultPage } from "./pages/RestoreVaultPage.tsx";
 import { UnlockPage } from "./pages/UnlockPage.tsx";
 import { VaultPage } from "./pages/VaultPage.tsx";
 import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
+import { FamilyProductHeader } from "./components/FamilyProductHeader.tsx";
 import { RecoveryKitDialog } from "./components/RecoveryKitDialog.tsx";
+import { LegacyMigrationBanner } from "./components/vault/LegacyMigrationBanner.tsx";
 import { PullLocalVaultBanner } from "./components/vault/PullLocalVaultBanner.tsx";
 import { HardRevokeProgress } from "./components/HardRevokeProgress.tsx";
 
@@ -41,9 +43,11 @@ export function App(): ReactNode {
     <div className="app np-ui">
       <header>
         <span className="brand">
-          <img src="/logo.png" width="36" height="36" alt="" />
-          <strong>4AllPass</strong>
+          {/* The app chrome is always dark (docs/ui-map.md, tokens.css); use the
+              wordmark built for that surface, independent of the OS scheme. */}
+          <img src="/wordmark-dark.svg" alt="4AllPass" height="22" />
         </span>
+        <FamilyProductHeader />
         <LanguageSwitch />
         {email ? (
           <div className="header-actions">
@@ -93,6 +97,7 @@ export function App(): ReactNode {
         </div>
       ) : null}
       {email && email !== "local@127.0.0.1" ? <PullLocalVaultBanner /> : null}
+      <LegacyMigrationBanner />
       {revokeProgress ? <HardRevokeProgress progress={revokeProgress} reconcile={reconcileHardRevoke} /> : null}
 
       <main>

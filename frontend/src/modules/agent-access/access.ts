@@ -1,5 +1,6 @@
 /** Agent access adapter over @4allpass/core. */
 import {
+  DEFAULT_HANDOFF,
   auditContainsSecret,
   auditLine,
   decideAccess as decideAccessCore,
@@ -11,16 +12,17 @@ import {
   whyContainsSecret,
   type AccessApiResponse,
   type AccessAudit,
-  type AccessGrant as CoreGrant,
   type AccessRequest,
   type AccessVerdict,
   type AccessWhy,
   type Credential,
   type DenyReason,
+  type HandoffMode,
 } from "@4allpass/core";
 import type { VaultEntry } from "../entries/index.ts";
 
 export {
+  DEFAULT_HANDOFF,
   auditContainsSecret,
   auditLine,
   explainAccess,
@@ -34,6 +36,7 @@ export {
   type AccessVerdict,
   type AccessWhy,
   type DenyReason,
+  type HandoffMode,
 };
 
 export const ACCESS_CHANNEL = "4allpass-access-v1";
@@ -59,8 +62,13 @@ export interface AccessGrant {
   scope: string[];
   expiresAt: number;
   material: string;
-  handoff: "raw_secret";
+  handoff: HandoffMode;
 }
+
+/** issueGrant only emits a grant for a handoff mode the broker can serve. */
+export type GrantIssueResult =
+  | { status: "issued"; grant: AccessGrant }
+  | { status: "denied"; reason: "handoff_unavailable" };
 
 export function capabilitiesOf(entry: VaultEntry): string[] {
   const raw = entry.capabilities.trim();
@@ -84,17 +92,25 @@ export function decideAccess(request: AccessRequest, entries: VaultEntry[]): Acc
   return decideAccessCore(request, entries.map(credentialFromEntry));
 }
 
-export function issueGrant(request: AccessRequest, entry: VaultEntry, now = Date.now()): AccessGrant {
-  const meta: CoreGrant = issueGrantCore(request, entry.id, now);
+export function issueGrant(
+  request: AccessRequest,
+  entry: VaultEntry,
+  now = Date.now(),
+): GrantIssueResult {
+  const meta = issueGrantCore(request, entry.id, now);
+  if (meta.status === "denied") return { status: "denied", reason: meta.reason };
   return {
-    id: meta.id,
-    application: meta.applicationId,
-    provider: meta.provider,
-    entryId: meta.credentialId,
-    scope: meta.scope,
-    expiresAt: meta.expiresAt,
-    material: "", // Never copy vault material into a machine grant.
-    handoff: "raw_secret",
+    status: "issued",
+    grant: {
+      id: meta.grant.id,
+      application: meta.grant.applicationId,
+      provider: meta.grant.provider,
+      entryId: meta.grant.credentialId,
+      scope: meta.grant.scope,
+      expiresAt: meta.grant.expiresAt,
+      material: "", // Never copy vault material into a machine grant.
+      handoff: meta.grant.handoff,
+    },
   };
 }
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { decideAccess, issueGrant, readGrant } from "./access.ts";
+import { decideAccess, issueGrant } from "./access.ts";
 import {
   DEMO_DUMMY_TOKEN,
   DEMO_TTL_SECONDS,
@@ -46,9 +46,11 @@ test("legacy demo cannot hand a dummy credential to a machine", () => {
   const entry = seeded();
   const read = demoReadRequest();
   assert.equal(decideAccess(read, [entry]).status, "denied");
-  const grant = issueGrant(read, entry, 1_000);
-  assert.equal(grant.material, "");
-  assert.deepEqual(readGrant(grant, 1_000), { status: "denied", reason: "handoff_unavailable" });
+  assert.deepEqual(issueGrant(read, entry, 1_000), {
+    status: "denied",
+    reason: "handoff_unavailable",
+  });
+  assert.equal(entry.password, DEMO_DUMMY_TOKEN);
 });
 
 test("demo seed is read-only and is not a live GitHub PAT", () => {

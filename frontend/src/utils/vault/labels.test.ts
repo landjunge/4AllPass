@@ -8,6 +8,7 @@ import {
   entryIconName,
   entryMetaLine,
   entrySecondaryLine,
+  formatAgeDays,
   formatRelativeChanged,
   kindLabel,
   newEntryHeading,
@@ -70,4 +71,14 @@ test("formatRelativeChanged uses hours before falling back to a date", () => {
     formatRelativeChanged("2026-08-27T10:00:00.000Z", now, t),
     "vor 2 Stunden / 2 hours ago",
   );
+});
+
+test("formatAgeDays renders years, months and days in both languages", () => {
+  const t: Translate = (plain) => `${plain.de} / ${plain.en}`;
+  assert.equal(formatAgeDays(730, t), "vor 2 Jahren / 2 years ago");
+  assert.equal(formatAgeDays(400, t), "vor 1 Jahr / 1 year ago");
+  assert.equal(formatAgeDays(60, t), "vor 2 Monaten / 2 months ago");
+  assert.equal(formatAgeDays(30, t), "vor 1 Monat / 1 month ago");
+  assert.equal(formatAgeDays(2, t), "vor 2 Tagen / 2 days ago");
+  assert.equal(formatAgeDays(1, t), "vor 1 Tag / 1 day ago");
 });

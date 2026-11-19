@@ -18,7 +18,7 @@
 |----------------|-------------------------------|-----------------------------------|-----------|
 | 4AllPass       | landjunge/4AllPass            | Self-hosted ZK Password Manager   | Active    |
 | Gnom-Hub-V1    | landjunge/gnom-hub-v1         | Local multi-agent control hub     | Active    |
-| Tollgate       | landjunge/tollgate            | Agent Safety Layer                | Active    |
+| Tollgate       | landjunge/TollGate            | Agent Safety Layer                | Active    |
 | Others         | various                       | Experiments / future              | -         |
 
 All projects, apps and websites live under **netzwerkpunkt.de** as the central portfolio.

@@ -130,6 +130,28 @@ class LicenseRegressionTests(unittest.TestCase):
         self.assertIn("scripts/package-sidecar.py", CHECK.PACKAGERS)
         self.assertIn("scripts/package-sidecar.py", CHECK.PACKAGER_PROOFS)
 
+    def test_tauri_and_cargo_license_files_must_equal_the_root_license(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "LICENSE").write_text(CHECK.LICENSE_TITLE + "\n")
+            app = root / "app" / "src-tauri"
+            app.mkdir(parents=True)
+            (app / "OTHER_LICENSE").write_text("MIT License\n")
+            conf, cargo = app / "tauri.conf.json", app / "Cargo.toml"
+            conf.write_text(
+                json.dumps({"bundle": {"licenseFile": "OTHER_LICENSE", "resources": ["LICENSE"]}})
+            )
+            cargo.write_text('license-file = "OTHER_LICENSE"\n')
+            problems = CHECK.check_tauri(root)
+            self.assertTrue(any("bundle.licenseFile stimmt nicht" in p for p in problems))
+            self.assertTrue(any("Cargo.toml: license-file stimmt nicht" in p for p in problems))
+            (app / "LICENSE").write_text(CHECK.LICENSE_TITLE + "\n")
+            conf.write_text(
+                json.dumps({"bundle": {"licenseFile": "LICENSE", "resources": ["LICENSE"]}})
+            )
+            cargo.write_text('license-file = "LICENSE"\n')
+            self.assertFalse(CHECK.check_tauri(root))
+
 
 if __name__ == "__main__":
     unittest.main()

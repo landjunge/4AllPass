@@ -175,6 +175,15 @@ def check_package_json(repo: Path) -> list[str]:
     return problems
 
 
+def license_reference_matches_root(repo: Path, base: Path, reference: str) -> bool:
+    """A referenced license file must be the root LICENSE byte for byte (when one exists)."""
+    root = repo / "LICENSE"
+    if not root.is_file():
+        return True
+    target = (base / reference).resolve()
+    return target.is_file() and target.read_bytes() == root.read_bytes()
+
+
 def check_tauri(repo: Path) -> list[str]:
     problems = []
     for conf in repo.glob("**/tauri.conf.json"):
@@ -190,17 +199,27 @@ def check_tauri(repo: Path) -> list[str]:
             problems.append(
                 f"{rel}: bundle.licenseFile oder bundle.license muss Personal Use 1.0 sein"
             )
+        if license_id and not ok_id:
+            # A valid license file must not mask a conflicting explicit identifier.
+            problems.append(f"{rel}: bundle.license {license_id!r} ist nicht Personal Use 1.0")
+        if license_file and not ok_file:
+            problems.append(f"{rel}: bundle.licenseFile muss LICENSE nennen")
+        elif license_file and not license_reference_matches_root(repo, conf.parent, license_file):
+            problems.append(f"{rel}: bundle.licenseFile stimmt nicht mit der Stamm-LICENSE überein")
         resources = bundle.get("resources") or []
         listed = list(resources.keys()) if isinstance(resources, dict) else list(resources)
         if not any(str(item).endswith("LICENSE") for item in listed):
             problems.append(f"{rel}: bundle.resources muss die LICENSE-Datei enthalten")
         cargo = conf.parent / "Cargo.toml"
-        if cargo.is_file() and not re.search(
-            r'(?m)^license-file\s*=\s*".*LICENSE"', cargo.read_text(encoding="utf-8")
-        ):
-            problems.append(
-                f"{cargo.relative_to(repo).as_posix()}: license-file muss LICENSE nennen"
+        if cargo.is_file():
+            found = re.search(
+                r'(?m)^license-file\s*=\s*"([^"]*LICENSE)"', cargo.read_text(encoding="utf-8")
             )
+            cargo_rel = cargo.relative_to(repo).as_posix()
+            if not found:
+                problems.append(f"{cargo_rel}: license-file muss LICENSE nennen")
+            elif not license_reference_matches_root(repo, cargo.parent, found.group(1)):
+                problems.append(f"{cargo_rel}: license-file stimmt nicht mit der Stamm-LICENSE überein")
     return problems
 
 

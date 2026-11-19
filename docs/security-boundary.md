@@ -290,6 +290,26 @@ commits that re-attach a revoked device’s envelope (HTTP 422).
 
 ---
 
+### Recovery after a lost master password
+
+Actual recovery-key unlock immediately offers a new master password (two fields,
+Create’s existing mismatch/account-password separation rules) and explicit device
+re-enrolment. Writing requires a fresh kit confirmation that unwraps to the current
+verified VK; no old master password is needed and a mode flag is not sufficient.
+The existing KDF parameters are validated/reused with a fresh salt. The normalized
+returned master envelope is cross-checked with the new master key before pin/cache
+adoption. This is CAS revision N→N+1 with the same VK/VKversion and unchanged kit/
+device envelopes. A separate result buffer prevents stale callback cleanup from
+wiping another live key object. Vault/account changes or lock cannot reopen the UI.
+No new password/kit/VK is sent to the backend or persisted in offer state.
+
+The device offer only opens existing Devices UI; it issues no automatic ceremony
+or revocation. Password replacement does **not** revoke previous VK holders, even
+for future snapshots under the unchanged VK. Old snapshots/passwords can still
+recover that VK. Kit/key compromise needs the separate rotation path. Lost CAS
+responses, physical authenticator/PRF, native package acceptance and complete P05
+remain separate. See [recovery lifecycle](recovery.md#pwa-continuation-after-kit-unlock).
+
 ## 5. Snapshot atomicity
 
 `POST /vaults/{vault_id}/snapshots`:
@@ -412,6 +432,42 @@ still follows successful opening and remains best-effort.
   plaintext by itself).
 - Rate limits are per-IP counters, not a full abuse platform.
 - Soft `DELETE` remains `metadata_only` — it is not cryptographic erase.
+  **Interim write guard (AP-E03-P04):** a session whose device id has a revoked
+  `Device` row in the addressed vault may still read (snapshot, revisions,
+  recovery) but receives HTTP 403 for every mutation: snapshot commit, device
+  POST (including its own re-enrol), device DELETE, credentials POST,
+  Device-Key-Envelope PUT, and both WebAuthn challenge routes. Ownership stays
+  first: foreign vaults are 404. A device revoked in vault A can still write
+  vault B, and a device without a row (legacy or newly claimed id) still writes
+  — the bearer-only gap and ADR-015 §3 (signed writes) remain open. An active
+  device may still re-enrol a revoked id; only the revoked device itself is
+  blocked. The guard takes the vault row lock before the revoked check
+  (`backend/app/db/locking.py`; Postgres `SELECT … FOR UPDATE`, SQLite
+  `BEGIN IMMEDIATE`), so revoke and admitted mutations serialize instead of a
+  get-then-act window. `POST /local/adopt-local-vault` locks all local vaults in
+  sorted order and checks the session device for a revoked row in any of them
+  before transferring ownership; a row whose owner changed under the lock
+  produces 409 `local_vault_changed` and no partial transfer. The write guard
+  also re-reads the owner under the lock, so an old-owner session that waited
+  while a transfer committed gets 404 instead of writing a stale-owned row.
+  Session revocation itself remains user+device-global: revoking in vault A
+  invalidates the device's existing sessions for vault B too; login and a fresh
+  vault-B write still work because the write guard is vault-scoped. Covered by
+  `backend/tests/security/test_revoked_device_writes.py` and
+  `backend/tests/test_local.py`.
+
+  Deutsch: Ein `DELETE /devices/{id}` bleibt reine Metadaten-Revokation, kein
+  kryptografisches Löschen. Als Zwischenschritt darf eine Session, deren
+  Geräte-ID im betroffenen Vault eine revozierte `Device`-Zeile hat, weiterhin
+  **lesen** (Snapshot, Revisionen, Recovery), aber **keine Mutation** mehr
+  ausführen: Snapshot-Commit, Device-POST (auch das eigene Re-Enrol), Device-
+  DELETE, Credential-POST, Device-Key-Envelope-PUT und beide WebAuthn-Challenge-
+  Routen antworten mit 403. Fremde Vaults bleiben 404. Ein in Vault A
+  revoziertes Gerät darf Vault B weiter beschreiben; ein Gerät ohne Zeile
+  (Legacy oder neu behauptete ID) schreibt weiter — diese Bearer-Lücke und
+  ADR-015 §3 (signierte Writes) bleiben offen. Ein aktives Gerät darf eine
+  revozierte ID weiterhin neu einschreiben; nur das revozierte Gerät selbst ist
+  blockiert. Belegt durch `backend/tests/security/test_revoked_device_writes.py`.
 - The PWA caches the last **verified wire** snapshot in IndexedDB for offline
   unlock. The pin still applies. Plaintext and the Vault Key are not cached.
   Snapshot-cache and device-unlock-record loads, saves and removals succeed
@@ -440,9 +496,14 @@ still follows successful opening and remains best-effort.
   the password. The popup may show a provider/kind **suggestion** from URL +
   field *names* + title (`detectSetup` in `@4allpass/providers`). Field values
   are not inputs. A single env-style name (`OPENAI_API_KEY`) is not high
-  confidence. Filling still requires **Auswählen / Fill**. API-key fill uses
-  only vault rows with `kind: "api"` for that provider, into the named field,
-  still with `expectedOrigin`. Privileged extension messages (`unlock`,
+  confidence. Filling still requires **Auswählen / Fill**. API-key fill needs
+  the page host itself to resolve to the provider at `detectSetup` confidence
+  ≥ 0.95 (`domainHit`), not only a field name, and uses only vault rows with
+  `kind: "api"` for that provider, into the named field, still with
+  `expectedOrigin`. A suggestion is bound to the tab, exact URL and host where
+  it was shown; `accept-suggestion` refuses a tab switch or navigation. A
+  field-only `openai_api_key` on a foreign origin is never filled. Privileged
+  extension messages (`unlock`,
   `fill-tab`, `suggest-active`, `accept-suggestion`, …) from a content-script
   sender (`sender.tab`) are rejected. After a successful
   fill, the page JavaScript can read the input (`input.value`, listeners).
@@ -563,10 +624,13 @@ machine requests are denied before a credential request can enter the queue
 In this source, both the Python sidecar and Node development relay deny
 `POST /v1/access/request` with `handoff_unavailable` after existing token/origin
 checks. Omitted, `raw_secret` and `mediated` requests cannot queue a credential
-handoff. The core policy exposes no available handoff mode. The frontend grant
-adapter never reads `entry.password`; reading or approving even a stale grant
-returns a denial. A stale UI decision is projected to a fixed denial before relay
-output, and the access client rejects old `approved`/`access_token` responses.
+handoff. The core policy exposes no available handoff mode. `issueGrant`
+refuses to mint a grant for any mode outside that set. Parser and policy share
+one omitted default (`mediated`), so an omitted handoff cannot become
+`raw_secret` if a mode is reopened later. The frontend grant adapter never reads
+`entry.password`; reading or approving even a stale grant returns a denial. A
+stale UI decision is projected to a fixed denial before relay output, and the
+access client rejects old `approved`/`access_token` responses.
 The Access tab explains this blocked state in DE/EN. Human copying/autofill is
 not silently converted into an agent access channel.
 

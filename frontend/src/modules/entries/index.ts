@@ -96,6 +96,11 @@ export function wipeVaultEntry(entry: VaultEntry): void {
   entry.totpSecret = "";
 }
 
+/** True when an entry with this id is already present — single restore must reject it. */
+export function entryIdExists(entries: readonly VaultEntry[], id: string): boolean {
+  return entries.some((entry) => entry.id === id);
+}
+
 export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEntry {
   const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as Partial<VaultEntry> & { kind?: unknown };
   return {

@@ -1,4 +1,4 @@
-import { handoffIsAvailable } from "../access/handoff.ts";
+import { resolveHandoff } from "../access/handoff.ts";
 import type { AccessDecision, AccessRequest, AccessVerdict } from "../access/types.ts";
 import { scopeIsRisky } from "../capabilities/registry.ts";
 import { credentialRiskClass, type Credential } from "../credentials/types.ts";
@@ -48,7 +48,7 @@ export function evaluatePolicy(
     return { decision: "deny", requestId, reason: "scope_not_permitted" };
   }
   // Neither legacy raw-secret export nor an unconnected mediator is available.
-  if (!handoffIsAvailable(request.handoff ?? "mediated")) {
+  if (resolveHandoff(request.handoff) === null) {
     return { decision: "deny", requestId, reason: "handoff_unavailable" };
   }
   return {

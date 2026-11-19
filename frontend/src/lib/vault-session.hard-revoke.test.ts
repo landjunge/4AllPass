@@ -19,6 +19,7 @@ import {
   generateVaultKey,
   kdfParamsFrom,
   parseRecoveryKey,
+  ProtocolError,
   wrapDeviceKey,
   wrapVaultKey,
 } from "@4allpass/crypto";
@@ -29,6 +30,7 @@ import { setSnapshotCacheForTests } from "./snapshot-cache.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { loadPin } from "./revision-pin.ts";
 import {
+  commitEntries,
   CommitConflict,
   consumeFailureNote,
   hardRevokeDevice,
@@ -368,4 +370,13 @@ test("committed self-revoke zeroizes both keys and plaintext before any metadata
   assert.ok(!vault.entries[0]?.password);
   assert.ok(!committed.vault.entries[0]?.password);
   assert.deepEqual(calls, ["commit"]);
+});
+
+test("commitEntries refuses an all-zero vault key before encrypting or calling the API", async () => {
+  const { vault } = buildUnlocked();
+  const { calls } = mockApis();
+  vault.vaultKey.fill(0);
+
+  await assert.rejects(() => commitEntries(vault, vault.entries), ProtocolError);
+  assert.deepEqual(calls, []);
 });

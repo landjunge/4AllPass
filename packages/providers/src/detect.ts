@@ -35,6 +35,8 @@ export interface SetupSuggestion {
   matchedField: string | null;
   pageHost: string;
   confidence: number;
+  /** The page URL itself resolved to `providerId`, not only a field name. */
+  domainHit: boolean;
   requiresConfirmation: true;
   /** Machine-readable votes. Never raw field values or secrets. */
   reasons: string[];
@@ -70,6 +72,7 @@ function emptySuggestion(pageHost = ""): SetupSuggestion {
     matchedField: null,
     pageHost,
     confidence: 0,
+    domainHit: false,
     requiresConfirmation: true,
     reasons: [],
     promptDe: "",
@@ -174,7 +177,7 @@ function score(opts: {
   user: string | null;
   providerId: string | null;
   kind: CredentialKind | null;
-}): { confidence: number; reasons: string[] } {
+}): { confidence: number; reasons: string[]; domainHit: boolean } {
   const reasons: string[] = [];
   let domainHit = false;
   let fieldHit = false;
@@ -207,35 +210,35 @@ function score(opts: {
     Number(domainHit) + Number(fieldHit) + Number(userHit) + Number(protocolHit && opts.kind === "ftp");
 
   if (!opts.providerId && !opts.kind) {
-    return { confidence: 0, reasons };
+    return { confidence: 0, reasons, domainHit };
   }
 
   // A lone env-style field is easy to spoof. Never high.
   if (fieldHit && !domainHit && !userHit && !appHit) {
-    return { confidence: FIELD_ONLY_MAX, reasons };
+    return { confidence: FIELD_ONLY_MAX, reasons, domainHit };
   }
   if (fieldHit && appHit && !domainHit && !userHit) {
-    return { confidence: APP_FIELD_MAX, reasons };
+    return { confidence: APP_FIELD_MAX, reasons, domainHit };
   }
   if (userHit && (domainHit || fieldHit)) {
-    return { confidence: 1, reasons };
+    return { confidence: 1, reasons, domainHit };
   }
   if (domainHit && fieldHit) {
-    return { confidence: 0.98, reasons };
+    return { confidence: 0.98, reasons, domainHit };
   }
   if (domainHit) {
-    return { confidence: opts.domain?.confidence ?? 0, reasons };
+    return { confidence: opts.domain?.confidence ?? 0, reasons, domainHit };
   }
   if (protocolHit && !opts.providerId) {
-    return { confidence: 0.7, reasons };
+    return { confidence: 0.7, reasons, domainHit };
   }
   if (userHit) {
-    return { confidence: HIGH_MIN, reasons };
+    return { confidence: HIGH_MIN, reasons, domainHit };
   }
   if (agreeing >= 2) {
-    return { confidence: 0.9, reasons };
+    return { confidence: 0.9, reasons, domainHit };
   }
-  return { confidence: Math.min(FIELD_ONLY_MAX, 0.4), reasons };
+  return { confidence: Math.min(FIELD_ONLY_MAX, 0.4), reasons, domainHit };
 }
 
 export function detectSetup(signals: DetectionSignals = {}): SetupSuggestion {
@@ -282,7 +285,7 @@ export function detectSetup(signals: DetectionSignals = {}): SetupSuggestion {
     return blank;
   }
 
-  const { confidence, reasons } = score({
+  const { confidence, reasons, domainHit } = score({
     domain,
     field,
     application,
@@ -315,6 +318,7 @@ export function detectSetup(signals: DetectionSignals = {}): SetupSuggestion {
     matchedField: field?.field ?? null,
     pageHost,
     confidence: nextConfidence,
+    domainHit,
     requiresConfirmation: true,
     reasons,
     promptDe: copy.promptDe,

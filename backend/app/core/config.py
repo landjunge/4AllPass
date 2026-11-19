@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
 
     crypto_protocol_version: int = 1
+    # Signed writes (ADR-015 step 3). Default off; v2 vaults only, never a
+    # silent upgrade of an existing vault.
+    signed_writes_enabled: bool = False
+    signed_write_window_seconds: int = 600
+    creation_grant_ttl_seconds: int = 300
     webauthn_rp_id: str = "localhost"
     webauthn_challenge_ttl_seconds: int = 120
     webauthn_challenge_rate_limit: int = 20

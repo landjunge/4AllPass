@@ -113,6 +113,19 @@ class LicenseRegressionTests(unittest.TestCase):
                     recipe.write_text(commented)
                     self.assertTrue(CHECK.check_packagers(Path(t)))
 
+    def test_tauri_bundle_must_ship_the_license_file(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            conf = root / "src-tauri" / "tauri.conf.json"
+            conf.parent.mkdir()
+            good = {"bundle": {"licenseFile": "../LICENSE", "resources": ["../LICENSE"]}}
+            conf.write_text(json.dumps(good))
+            (conf.parent / "Cargo.toml").write_text('license-file = "../LICENSE"\n')
+            self.assertFalse(CHECK.check_tauri(root))
+            bad = {"bundle": {"licenseFile": "../LICENSE", "resources": []}}
+            conf.write_text(json.dumps(bad))
+            self.assertTrue(CHECK.check_tauri(root))
+
     def test_sidecar_recipe_is_guarded(self):
         self.assertIn("scripts/package-sidecar.py", CHECK.PACKAGERS)
         self.assertIn("scripts/package-sidecar.py", CHECK.PACKAGER_PROOFS)

@@ -190,6 +190,10 @@ def check_tauri(repo: Path) -> list[str]:
             problems.append(
                 f"{rel}: bundle.licenseFile oder bundle.license muss Personal Use 1.0 sein"
             )
+        resources = bundle.get("resources") or []
+        listed = list(resources.keys()) if isinstance(resources, dict) else list(resources)
+        if not any(str(item).endswith("LICENSE") for item in listed):
+            problems.append(f"{rel}: bundle.resources muss die LICENSE-Datei enthalten")
         cargo = conf.parent / "Cargo.toml"
         if cargo.is_file() and not re.search(
             r'(?m)^license-file\s*=\s*".*LICENSE"', cargo.read_text(encoding="utf-8")

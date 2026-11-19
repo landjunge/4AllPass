@@ -56,6 +56,7 @@ PACKAGE_JSON_FIXED = (
 PACKAGERS = (
     "scripts/build_release.py",
     "scripts/make-dmg.sh",
+    "scripts/package-sidecar.py",
     "scripts/check-release-license.py",
     "native/macos/scripts/build_app.py",
     "native/macos/build_candidate.py",
@@ -208,6 +209,7 @@ PACKAGER_PROOFS = {
         'license_bytes = Path("LICENSE").read_bytes()',
     ),
     "scripts/make-dmg.sh": ('cp "$ROOT/LICENSE" "$STAGE/LICENSE"',),
+    "scripts/package-sidecar.py": ("f\"{root / 'LICENSE'}{os.pathsep}.\",",),
     "scripts/check-release-license.py": (
         'license_bytes = (ROOT / "LICENSE").read_bytes()',
         'assert reader.extract("LICENSE") == license_bytes',
@@ -249,6 +251,11 @@ def native_product_license_copy(text: str) -> bool:
     return False
 
 
+def executable_lines(text: str) -> str:
+    """Drop full-line comments so a commented-out command is not accepted as proof."""
+    return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+
+
 def check_packagers(repo: Path) -> list[str]:
     problems = []
     for rel in PACKAGERS:
@@ -260,7 +267,8 @@ def check_packagers(repo: Path) -> list[str]:
             proven = native_product_license_copy(text)
         else:
             proofs = PACKAGER_PROOFS.get(rel, ())
-            proven = bool(proofs) and all(proof in text for proof in proofs)
+            code = executable_lines(text)
+            proven = bool(proofs) and all(proof in code for proof in proofs)
         if not proven:
             problems.append(f"{rel}: konkreter Produkt-LICENSE-Paketnachweis fehlt")
     return problems

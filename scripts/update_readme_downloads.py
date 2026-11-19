@@ -46,7 +46,8 @@ BRAND = {
     "threaddesk": "#b99cff",
     "4allpass": "#6be4f2",
     "tollgate": "#e77745",
-    "agent-authority-lab": "#3b78fc",
+    "agentauthority": "#3b78fc",
+    "agent-authority-lab": "#3b78fc",  # Legacy repository alias; same approved brand.
     "blockdesign": "#ebc33f",
 }
 
@@ -425,6 +426,16 @@ def self_test():
     picked = {label: tag for label, (tag, _) in choose(appimage).items()}
     if picked != {"macOS Intel": "v0.1.2-rc.2", "Linux": "v0.1.2-rc.2"}:
         failed.append(f"choose-appimage: {picked}")
+    authority_download = {
+        "macOS Intel": (
+            "v1.0.0",
+            {"name": "AgentAuthority.dmg", "browser_download_url": "https://example.test/app.dmg"},
+        )
+    }
+    canonical = render("landjunge/AgentAuthority", authority_download)
+    legacy = render("landjunge/agent-authority-lab", authority_download)
+    if canonical != legacy or "https://example.test/app.dmg" not in canonical[1]:
+        failed.append("AgentAuthority: canonical and legacy download rendering differ")
     if failed:
         raise SystemExit("Self-test failed:\n  " + "\n  ".join(failed))
     print(

@@ -46,3 +46,11 @@ Vier veröffentlichte Installationsdateien der Version 0.1.2-rc.3 sind direkt ve
 ## Dokumentation
 
 [Haupt-README mit deutscher und englischer Dokumentation](README.md)
+
+## Lizenz
+
+**Netzwerkpunkt Personal Use License 1.0 — individuelle Source-available-Lizenz.**
+
+Private, nicht geschäftliche Nutzung ist kostenlos erlaubt, einschließlich Installation, eigener privater Anpassungen und privatem Self-Hosting. Interner Firmeneinsatz, berufliche Nutzung, Weiterverkauf und kostenpflichtige Dienste benötigen eine vorherige schriftliche Erlaubnis beziehungsweise gesonderte Lizenz des Rechteinhabers. Es gibt keine allgemeine Weiterverteilungserlaubnis. Bereits erteilte Rechte historischer Fassungen bleiben erhalten.
+
+Maßgeblich ist die [vollständige Lizenz auf Deutsch mit englischer Übersetzung](LICENSE). Dies ist keine Open-Source-Standardlizenz. Eine anwaltliche Prüfung wurde nicht durchgeführt. Vorhandene Downloads und ältere Releases können noch unter ihren damaligen Bedingungen stehen; diese Änderung schreibt ihre Lizenz nicht rückwirkend um.

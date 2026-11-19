@@ -2,12 +2,14 @@ import type { Line } from "../../../lib/copy-mode.ts";
 import { describeError, type ErrorFeedback } from "../errors/describe-error.ts";
 
 export type NoticeCode =
+  | "backup_restored"
   | "device_soft_revoked"
   | "device_unlock_enabled"
   | "entries_imported"
   | "entries_saved"
   | "password_reuse_warning"
   | "recovery_compromised_rotated"
+  | "recovery_master_set"
   | "recovery_replaced"
   | "share_restored"
   | "vault_created"
@@ -30,7 +32,39 @@ export type FeedbackAction =
   | { type: "notice"; code: NoticeCode }
   | { type: "clear" };
 
+/**
+ * Success notice for a mutation. Either a fixed code, or a function of the
+ * action result so an aborted/cancelled action can report *no* success.
+ */
+export type SuccessNotice<T> = NoticeCode | ((result: T) => NoticeCode | null | undefined);
+
+/**
+ * Run a mutation through the feedback lifecycle: clear the error on start,
+ * show the success notice only when it resolves (and the predicate allows),
+ * and surface failures. Pure over the injected `dispatch`.
+ */
+export async function runWithStatus<T>(
+  dispatch: (action: FeedbackAction) => void,
+  action: () => Promise<T>,
+  success?: SuccessNotice<T>,
+): Promise<T> {
+  dispatch({ type: "action_started" });
+  try {
+    const result = await action();
+    const code = typeof success === "function" ? success(result) : success;
+    if (code) dispatch({ type: "notice", code });
+    return result;
+  } catch (failure) {
+    dispatch({ type: "action_failed", error: failure });
+    throw failure;
+  }
+}
+
 const NOTICE_TEXT: Record<NoticeCode, Line> = {
+  backup_restored: {
+    de: "Sicherung wiederhergestellt. Der vorherige Stand bleibt weiter aufgehoben.",
+    en: "Backup restored. The previous state stays kept.",
+  },
   device_soft_revoked: {
     de: "Aus dem nächsten Sync genommen. Ein Gerät, das diesen Tresor-Schlüssel schon kennt, kennt ihn weiter.",
     en: "Removed from the next sync. A device that already knows this vault key still knows it.",
@@ -54,6 +88,10 @@ const NOTICE_TEXT: Record<NoticeCode, Line> = {
   recovery_compromised_rotated: {
     de: "Tresor-Schlüssel gewechselt, weil das Recovery-Kit gestohlen sein kann. Neuen Schlüssel sichern.",
     en: "Vault key rotated because the recovery kit may be stolen. Save the new kit.",
+  },
+  recovery_master_set: {
+    de: "Neues Master-Passwort gesetzt. Alte Geräte müssen neu eingerichtet werden.",
+    en: "New master password set. Devices must be enrolled again.",
   },
   recovery_replaced: {
     de: "Neuer Recovery-Schlüssel gedruckt. Der alte öffnet diesen Stand nicht mehr.",

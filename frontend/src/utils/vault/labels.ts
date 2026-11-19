@@ -66,6 +66,28 @@ export function formatRelativeChanged(iso: string, nowMs: number, t: Translate):
   return formatUpdatedAt(iso);
 }
 
+/** Whole-day age as plain DE/EN text, for the cleanup “long unchanged” list. */
+export function formatAgeDays(days: number, t: Translate): string {
+  const years = Math.floor(days / 365);
+  if (years >= 1) {
+    return t({
+      de: years === 1 ? "vor 1 Jahr" : `vor ${years} Jahren`,
+      en: years === 1 ? "1 year ago" : `${years} years ago`,
+    });
+  }
+  const months = Math.floor(days / 30);
+  if (months >= 1) {
+    return t({
+      de: months === 1 ? "vor 1 Monat" : `vor ${months} Monaten`,
+      en: months === 1 ? "1 month ago" : `${months} months ago`,
+    });
+  }
+  return t({
+    de: days === 1 ? "vor 1 Tag" : `vor ${days} Tagen`,
+    en: days === 1 ? "1 day ago" : `${days} days ago`,
+  });
+}
+
 export function newEntryHeading(kind: EntryKind, t: Translate): string {
   if (kind === "api") return t({ de: "Neuer API-Key", en: "New API key" });
   if (kind === "sftp") return t({ de: "Neuer Server-Zugang", en: "New server login" });

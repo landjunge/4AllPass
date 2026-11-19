@@ -6,6 +6,7 @@ macro_rules! app_commands {
             prompts::access_prompt,
             prompts::access_decide,
             prompts::access_dismiss,
+            family_switch::family_switch,
             sidecar_http::sidecar_http,
             browsers::list_browser_profiles,
             browsers::extension_install,
@@ -51,7 +52,7 @@ mod tests {
             .map(|name| format!("allow-{}", name.replace('_', "-")))
             .collect();
         assert_eq!(own_main, expected);
-        assert_eq!(APP_COMMAND_NAMES.len(), 9);
+        assert_eq!(APP_COMMAND_NAMES.len(), 10);
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
         assert_eq!(

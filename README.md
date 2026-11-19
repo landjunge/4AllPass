@@ -1,5 +1,8 @@
 <!-- readme-header-v1: Kopf nach ThreadDesk docs/contracts/readme-header-v1.md. Nicht von Hand umgestalten; scripts/readme_header.py apply/check verwenden. -->
 
+<!-- README-LANGUAGES -->
+<p align="center"><strong>English</strong> &nbsp;|&nbsp; <a href="README.de.md">Deutsch</a></p>
+
 <p align="center">
   <img src="assets/readme/normalized/4AllPass-large.svg" alt="4AllPass" width="256" height="256">
 </p>
@@ -7,45 +10,59 @@
 <p align="center">
   <a href="https://github.com/landjunge/KiraBridge#readme" title="KiraBridge"><img src="assets/readme/normalized/KiraBridge-small.svg" alt="KiraBridge" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/threaddesk#readme" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/ThreadDesk#readme" title="ThreadDesk"><img src="assets/readme/normalized/ThreadDesk-small.svg" alt="ThreadDesk" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/tollgate#readme" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/TollGate#readme" title="TollGate"><img src="assets/readme/normalized/TollGate-small.svg" alt="TollGate" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/agent-authority-lab#readme" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/AgentAuthority#readme" title="Agent Authority"><img src="assets/readme/normalized/Agent-Authority-small.svg" alt="Agent Authority" width="48" height="48"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/blockdesign#readme" title="BlockDesign"><img src="assets/readme/normalized/BlockDesign-small.svg" alt="BlockDesign" width="48" height="48"></a>
+  <a href="https://github.com/landjunge/BlockDesign#readme" title="BlockDesign"><img src="assets/readme/normalized/BlockDesign-small.svg" alt="BlockDesign" width="48" height="48"></a>
 </p>
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/design/wordmarks/4AllPass-dark.svg"><img src="assets/design/wordmarks/4AllPass-light.svg" alt="4AllPass" width="280"></picture></p>
 
 <!-- AUTO-DOWNLOADS:START -->
 <p align="center">
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_aarch64.dmg" title="4AllPass_0.1.2-rc.2_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_aarch64.dmg" title="4AllPass_0.1.2-rc.3_aarch64.dmg herunterladen / download"><img src="assets/readme/download-macos-apple-silicon.svg" alt="Download macOS Apple Silicon 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64.dmg" title="4AllPass_0.1.2-rc.2_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64.dmg" title="4AllPass_0.1.2-rc.3_x64.dmg herunterladen / download"><img src="assets/readme/download-macos-intel.svg" alt="Download macOS Intel 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_x64-setup.exe" title="4AllPass_0.1.2-rc.2_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_x64-setup.exe" title="4AllPass_0.1.2-rc.3_x64-setup.exe herunterladen / download"><img src="assets/readme/download-windows.svg" alt="Download Windows 0.1.2-rc.3" width="190" height="52"></a>
   &nbsp;
-  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.2/4AllPass_0.1.2-rc.2_amd64.AppImage" title="4AllPass_0.1.2-rc.2_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.2" width="190" height="52"></a>
+  <a href="https://github.com/landjunge/4AllPass/releases/download/v0.1.2-rc.3/4AllPass_0.1.2-rc.3_amd64.AppImage" title="4AllPass_0.1.2-rc.3_amd64.AppImage herunterladen / download"><img src="assets/readme/download-linux.svg" alt="Download Linux 0.1.2-rc.3" width="190" height="52"></a>
+  &nbsp;
+  <img src="assets/readme/download-debian-remote.svg" alt="Debian Server: In Vorbereitung / Coming soon" width="190" height="52">
 </p>
 <!-- AUTO-DOWNLOADS:END -->
 
-> **Sicherheitshinweis zu 0.1.2-rc.2:** In diesem Download gibt der Maschinenzugriff
-> (ein verbundenes Programm fragt an, du klickst „Erlauben“) das echte gespeicherte
-> Geheimnis als `access_token` an dieses Programm weiter. Betroffen ist nur, wer in
-> 0.1.2-rc.2 einem Programm so einen Zugriff erlaubt hat. Empfehlung: dort keinem
-> Programm „Erlauben“ geben; bereits so freigegebene Zugänge beim jeweiligen Anbieter
-> ändern oder widerrufen. Der aktuelle Quellstand sperrt diesen Weg; ein korrigiertes
-> Paket ist noch nicht veröffentlicht. [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
+> **Sicherheitshinweis zu 0.1.2-rc.3 und älteren Vorabversionen:** 0.1.2-rc.3 ist
+> zum Download verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird
+> abgelehnt, auch nach „Erlauben“. Betroffen sind 0.1.2-rc.2 und ältere
+> Vorabversionen (v0.1.0, v0.1.1, desktop); dort gab der Maschinenzugriff nach
+> „Erlauben“ das echte gespeicherte Geheimnis als `access_token` an das verbundene
+> Programm weiter. Wer das dort erlaubt hat, sollte aktualisieren und den Zugang
+> beim jeweiligen Anbieter ändern oder widerrufen. Ein Update holt bereits
+> herausgegebene Kopien nicht zurück.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 >
-> **Security notice for 0.1.2-rc.2:** In this download, machine access (a connected
-> program asks, you click "Allow") passes the actual stored secret to that program
-> as `access_token`. Only users who allowed such a request in 0.1.2-rc.2 are affected.
-> Recommendation: do not click "Allow" for programs there; change or revoke any
-> credential already released this way at its provider. Current source blocks this
-> path; a corrected package is not published yet.
+> **Security notice for 0.1.2-rc.3 and older previews:** 0.1.2-rc.3 is available
+> for download and closes the machine-access path: every request is denied,
+> including after "Allow". 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop)
+> are affected; there, after "Allow", machine access passed the actual stored
+> secret to the connected program as `access_token`. If you allowed that, update
+> and change or revoke the credential at its provider. Updating does not recall
+> copies already handed out.
+> [Details](docs/release-notes/0.1.2-rc.2-security-notice.md)
 
 <p align="center"><strong>Ein digitaler Tresor, der wirklich dir gehört.</strong></p>
+
+## Auf einen Blick / At a glance
+
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-Oberfläche, Browser-Import und Autofill. Die Vorabversion 0.1.2-rc.3 ist für macOS Apple Silicon, macOS Intel, Windows x64 und Linux x64 AppImage verfügbar und schließt den Maschinenzugriff: Jede Anfrage wird abgelehnt, auch nach „Erlauben“.
+
+**English:** A local password vault with a desktop interface, browser import and autofill. Preview 0.1.2-rc.3 is available for macOS Apple Silicon, macOS Intel, Windows x64 and Linux x64 AppImage and closes the machine-access path: every request is denied, including after "Allow".
+
+**Sicherheit / Security:** Die vier Download-Schaltflächen oben führen zu 0.1.2-rc.3. 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben betroffen: Wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und die Zugangsdaten beim jeweiligen Anbieter ändern oder widerrufen. / The four download buttons above point to 0.1.2-rc.3. 0.1.2-rc.2 and older previews (v0.1.0, v0.1.1, desktop) remain affected: if you allowed access there, update and change or revoke the credential at its provider. [Release-Übersicht / Releases](https://github.com/landjunge/4AllPass/releases)
 
 ## Werkzeugfamilie: Zugang zur Computersteuerung sicher organisieren
 
@@ -59,7 +76,7 @@ Zur Familie gehören **KiraBridge** (Verbindung und Computersteuerung), **Thread
 
 **Barrierefreiheit wird als wichtiger zusätzlicher Nutzen mitgedacht, nicht als alleinige Zielgruppe oder primärer Produktzweck.** Wer Schwierigkeiten mit Maus oder Tastatur hat, kann besonders von verständlichen, sprachgestützten Abläufen profitieren; auch freihändige und alltägliche Bedienung wird leichter. Sensible Freigaben und Geheimnisse bleiben geschützt. Bestehende Möglichkeiten, Risiken und geplante Verbesserungen sind klar zu trennen.
 
-**Wichtig:** Der nachfolgende Sicherheitshinweis zur veröffentlichten Version 0.1.2-rc.2 gilt unverändert. Die Sprachvision ändert nichts daran, dass ein freigegebener Maschinenzugriff in diesem Paket das gespeicherte Geheimnis an das verbundene Programm weitergeben kann. Diese Grenze ist bei der Verwendung ausdrücklich zu berücksichtigen.
+**Wichtig:** 0.1.2-rc.2 und ältere Vorabversionen (v0.1.0, v0.1.1, desktop) bleiben vom Maschinenzugriff betroffen: Dort kann ein freigegebener Zugriff das gespeicherte Geheimnis an das verbundene Programm weitergeben. 0.1.2-rc.3 schließt diesen Weg; wer dort einem Programm Zugriff erlaubt hat, sollte aktualisieren und den Zugang beim jeweiligen Anbieter ändern oder widerrufen. Die Sprachvision ändert nichts an dieser Grenze.
 
 Lokaler Passwort-Manager. Autofill. Zero-Knowledge. KI-Zugriff ohne geschützten Nutzungsweg gesperrt.
 
@@ -92,11 +109,38 @@ Local-first password manager. Autofill. Zero-knowledge. AI access is blocked wit
 > synthetisch. / The [binding core](protected_executor/README.md) denies missing
 > production hosts before lookup; positive probes remain explicitly synthetic.
 
+## Ältere Tresore aktualisieren / Updating older vaults
+
+**Deutsch:** Ältere Tresore ohne Manifest bleiben lesbar. Ein Banner bietet
+„Jetzt aktualisieren“ oder „Später“; ohne deine Bestätigung wird nichts migriert.
+Vor dem Update legt 4AllPass eine verschlüsselte lokale Sicherung des alten
+Stands ab. Der bisherige Serverstand lässt sich nicht nachträglich beweisen; das
+Update versiegelt den aktuell geöffneten Inhalt für die Zukunft. Kann eine
+ältere Version Metadaten nicht verlustfrei übernehmen, bricht die App vor dem
+Senden ab und lässt den Tresor unverändert. Bleibt der Ausgang unklar, sendet die
+App ohne positiven Beleg nichts weiter.
+
+**English:** Older vaults without a manifest remain readable. A banner offers
+“Update now” or “Later”; nothing is migrated without your confirmation. Before
+updating, 4AllPass stores an encrypted local backup of the old state. The
+previous server state cannot be proven retroactively; the update seals the
+currently opened content for the future. If an older version cannot carry metadata
+over losslessly, the app stops before sending and leaves the vault unchanged. If
+the outcome becomes unknown, the app sends nothing further without positive proof.
+
+**Desktop-Verbindung / Desktop connection:** Ist der lokale Kern kurzzeitig nicht
+erreichbar, nutzt die App im bereits initialisierten oder gesperrten Kontext den
+lokal geprüften Stand, sofern die Frische-/PIN-Prüfung besteht. Ein vollständiger
+Offline-Neustart ist damit nicht zugesagt. / If the local core is briefly
+unreachable, the app uses the locally verified state in an already initialized or
+locked context when the freshness/pin check passes. A full offline restart is not
+claimed.
+
 ## Aktueller Funktionsstand / Current capabilities
 
-**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen.
+**Deutsch:** 4AllPass ist ein lokaler Passwort-Tresor mit Desktop-App, Browser-Import und Autofill. Im aktuellen Quellstand ist die frühere Übergabe echter Tresorgeheimnisse an KI-Clients gesperrt. Ein begrenzter geschützter API-Kern und seine TollGate-Anbindung wurden mit synthetischen Daten geprüft. Produktive Geheimnisnutzung und geschützte KI-Browser-Sitzungen sind noch nicht angeschlossen. Signierte Schreibvorgänge (v2) sind derzeit nur als kanonische Kodierung vorbereitet und **nicht aktiv**; die bisherigen Schreib- und Revoke-Grenzen gelten unverändert.
 
-**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet.
+**English:** 4AllPass is a local password vault with a desktop app, browser import and autofill. Current source blocks the former handoff of actual vault secrets to AI clients. A bounded protected API core and its TollGate adapter were tested with synthetic data. Production secret use and protected AI browser sessions are not connected yet. Signed vault writes (v2) are prepared only as a canonical encoding and are **not active**; the existing write and revoke boundaries still apply.
 
 Quellstand und veröffentlichte Downloads sind getrennt: Die bestehenden v0.1.2-rc.2-Pakete enthalten diese spätere Quellkorrektur nicht automatisch. / Source and distributed downloads are separate: existing v0.1.2-rc.2 packages do not automatically include the later source correction. [Nachweise und Grenzen / Evidence and limits](docs/PROTECTED-ACCESS-20261018.md).
 
@@ -126,9 +170,9 @@ Du installierst sie, legst deinen Tresor an und übernimmst deine Passwörter au
 2. **Übernehmen** – Passwörter aus Chrome oder Firefox prüfen und importieren.
 3. **Anmelden** – Autofill auf einer Webseite ausprobieren.
 
-[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
+[Desktop-Version herunterladen](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3) · [Produktseite ansehen](https://4allpass.netzwerkpunkt.de/)
 
-Vor dem Download von 0.1.2-rc.2: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
+Vor dem Download von 0.1.2-rc.3: [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md) lesen.
 
 ### Was wir bewusst nicht machen
 
@@ -145,10 +189,17 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Import | Chrome und Firefox; Prüfung ohne sichtbare Passwörter in der Liste |
 | Autofill | Chromium, Firefox und Safari-Wrapper; kein automatisches Absenden |
 | KI-Zugriff | Im aktuellen Quellstand gesperrt; geschützter Produktionsweg fehlt |
-| Recovery | Notfall-Kit; kein Zurücksetzen über den Server |
+| Recovery | Notfall-Kit; nach dem Öffnen mit dem Kit wird ein **neues Master-Passwort** gesetzt (frische Kit-Bestätigung, altes Passwort unbekannt), danach ein **separater** optionaler Geräte-Schritt; kein Zurücksetzen über den Server |
+| Gerätewiderruf | Ein Metadaten-Revoke sperrt Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen/Recovery bleiben. Der Guard läuft unter dem Vault-Lock und liest den Owner danach erneut; das Übernehmen eines lokalen Vaults prüft dieselbe Sperre, und ein paralleler Adopt endet ohne Teilübertragung (409). Ein aktives Gerät kann eine ID bewusst wieder eintragen; neue/legacy IDs bleiben bis zu signierten Writes offen. |
+| Frühere Stände | Einstellungen → Sicherheit: ältere Stände ansehen und einen fehlenden Eintrag einzeln wiederherstellen; immer als neuer Stand, nie zurückgedreht |
+| Aufräumen | Vorschau unter Einstellungen → Sicherheit: zeigt nach ausdrücklichem Klick ähnliche Einträge und lange unveränderte Einträge mit ihrem Alter; reine Anzeige, keine Änderung |
+| Sicherung | Verschlüsselte Gesamtsicherung als Datei (nur Chiffretext) mit Integritätsprüfung und Wiederherstellung als neuer Stand; auf einem anderen Gerät braucht es Master-Passwort oder Recovery-Kit |
+| Produktleiste | Fünf-Produkt-Appbar im Kopf (eigene Wortmarke, mittige Original-Icons, DE/EN); Wechsel ruft den nativen `family_switch`-Host nur mit Katalog-ID auf — im Browser ehrlich deaktiviert, „App geöffnet“ ist nicht „verbunden“. Die Appbar lädt ihr vorhandenes Modul-CSS: 44×44-Bedienziele, Hilfstexte visuell verborgen, aber für Screenreader verfügbar; die Wahl DE/EN setzt auch das Dokument-Sprachmerkmal `<html lang>`. |
 | WebAuthn PRF | Im Protokoll beschrieben; in der Desktop-Webview noch nicht bewiesen |
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |
 | Sicherheitsprüfung | Noch kein unabhängiges Drittaudit |
+
+**Darstellung:** Die Desktop-App hat eine feste dunkle Oberfläche. Deshalb zeigt ihr Kopfbereich immer die für dunklen Grund gezeichnete Wortmarke – unabhängig davon, ob das Betriebssystem hell oder dunkel eingestellt ist. README, Produktseite und Browser-Symbole wählen weiterhin passend zum System; die App selbst wechselt ihr Erscheinungsbild nicht.
 
 Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten braucht es weiterhin Vorsicht und ein sicheres Backup.
 
@@ -177,7 +228,7 @@ curl -fsSL https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/ins
 irm https://raw.githubusercontent.com/landjunge/4AllPass/main/scripts/install.ps1 | iex
 ~~~
 
-Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.2** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
+Dafür brauchst du kein Node, Python, Docker oder Postgres. Der Installer verwendet den GitHub-Tag **v0.1.2-rc.3** und prüft SHA-256. Der Tresor-Ordner wird nicht gelöscht. Für diese Version gilt der [Sicherheitshinweis zum Maschinenzugriff](docs/release-notes/0.1.2-rc.2-security-notice.md).
 
 Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsklick → Öffnen** nötig sein.
 
@@ -188,6 +239,10 @@ Die macOS-App ist noch nicht notariert. Deshalb kann beim ersten Start **Rechtsk
 4AllPass ist ein local-first Passwort-Manager mit Desktop-App, Browser-Erweiterungen und optionalem verschlüsseltem Speicher.
 
 Der Server sieht keinen Klartext, kein Tresor-Passwort und keinen Vault Key. Was die Software tatsächlich erzwingt, steht in [Security Boundary](docs/security-boundary.md).
+
+Ein Gerätewiderruf blockiert Schreibmutationen der betroffenen Session in genau diesem Vault; Lesen und Recovery bleiben möglich, und das Übernehmen eines lokalen Vaults ist durch dieselbe Prüfung geschützt. Ein revoziertes Gerät kann nach erneutem Login weiterhin einen anderen Vault beschreiben; eine neu behauptete oder Legacy-ID ohne Gerätezeile schreibt weiterhin, bis signierte Writes existieren.
+
+**Signierte Schreibvorgänge (v2, serverseitig, standardmäßig aus):** Der Server kann Schreibvorgänge für neue v2-Vaults mit Ed25519 prüfen, Receipts idempotent speichern und Rotationen atomar anwenden. Aktiviert wird das nur über `FOURALLPASS_SIGNED_WRITES_ENABLED`; bestehende v1-Vaults werden nicht umgestellt. Ein neuer v2-Vault verlangt eine Passwort-Bestätigung und einen einmaligen Creation Grant für die erste Geräteregistrierung. Destruktiver Revoke und Recovery-Lesen bleiben absichtlich ohne Vault-Key-Signatur erreichbar. Details: [backend/README.md](backend/README.md#signed-writes-v2-default-off).
 
 ### Wie dieses Projekt entsteht
 
@@ -246,9 +301,15 @@ Der Vault Key ist zufällig und wird niemals direkt aus dem Tresor-Passwort abge
 
 4AllPass is a local-first desktop password manager. Autofill. Zero-knowledge. AI access is blocked without a protected execution path.
 
-Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
+Import passwords from Chrome or Firefox, keep the vault on your device, and optionally self-host sync. Under Settings → Security, earlier states can be viewed and a missing entry restored individually (always as a new state), a read-only cleanup preview lists similar and long-unchanged entries, and an encrypted full backup can be created and restored (ciphertext only; another device needs the master password or recovery kit). There is no hosted cloud service. This is still alpha — there is no independent third-party audit yet.
 
-Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.2); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
+Revoking a device blocks mutations from that device's session in that vault; reads and recovery remain, and adopting a local vault is guarded by the same check. Signed writes (v2) can be verified server-side for new vaults: Ed25519 over the canonical preimage, an idempotent receipt and atomic rotation. They stay behind `FOURALLPASS_SIGNED_WRITES_ENABLED` (default off), never upgrade an existing vault, and destructive revoke/recovery reads remain intentionally unsigned. Ownership is re-read under the lock: an old-owner session gets 404 after a transfer, and a concurrent adopt ends without partial transfer (409). A revoked device can still write another vault after logging in again; a newly claimed or legacy device id without a row still writes until signed writes exist. Those boundaries stay explicit.
+
+The five-product appbar loads its existing module CSS (44×44 targets, helper text visually hidden but available to screen readers), and the DE/EN choice also sets the document language (`<html lang>`). Switching a product calls the native `family_switch` host with the catalog id only; in the browser it stays honestly disabled, and “App opened” is not “connected”.
+
+The desktop app keeps a fixed dark surface, so its header always shows the wordmark drawn for that background — independent of the operating system's light or dark setting. README, product page and browser favicons still adapt to the system; the app itself does not switch themes.
+
+Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
 

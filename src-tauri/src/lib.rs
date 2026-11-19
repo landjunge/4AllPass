@@ -5,6 +5,7 @@ use tauri::{Manager, RunEvent, WindowEvent};
 mod browser_passwords;
 mod browsers;
 mod core_bind;
+mod family_switch;
 mod firefox_logins;
 mod loopback;
 mod process;

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.core.signed_writes import SignedWriteReplay
 from app.api.routes import auth, devices, health, local_meta, vaults, webauthn
 from app.broker import BrokerHub, router as broker_router
 from app.core.config import get_settings
@@ -186,6 +187,14 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    @app.exception_handler(SignedWriteReplay)
+    async def signed_write_replay(request, replay: SignedWriteReplay):
+        return JSONResponse(
+            replay.receipt,
+            status_code=200,
+            headers={"X-4AP-Write-Replayed": "true"},
+        )
 
     @app.exception_handler(RequestValidationError)
     async def registration_validation_error(request, error):

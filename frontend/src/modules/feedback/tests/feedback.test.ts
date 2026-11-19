@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { VaultLockedError } from "../../../lib/vault-liveness.ts";
 import {
   createNotice,
   describeError,
   feedbackError,
   feedbackReducer,
   initialFeedbackState,
+  runWithStatus,
+  type FeedbackAction,
 } from "../index.ts";
 
 test("unknown failures never expose their message, stack, or response body", () => {
@@ -56,6 +59,14 @@ test("intentional app errors use catalog text instead of caller text", () => {
   assert.match(feedback.userText.en, /vault is locked/);
 });
 
+test("a lock-aborted mutation reports the locked catalog text, not a generic failure", () => {
+  const feedback = describeError(new VaultLockedError("synthetic late unlock"));
+  assert.equal(feedback.code, "vault_locked");
+  assert.deepEqual(feedback.technical, { name: "VaultLockedError" });
+  assert.match(feedback.userText.de, /Tresor ist gesperrt/);
+  assert.match(feedback.userText.en, /vault is locked/);
+});
+
 test("feedback state keeps existing notice semantics and clears both banners", () => {
   const withNotice = feedbackReducer(initialFeedbackState, {
     type: "notice",
@@ -72,6 +83,49 @@ test("feedback state keeps existing notice semantics and clears both banners", (
   assert.equal(nextAction.error, null);
   assert.equal(nextAction.notice?.code, "entries_saved");
   assert.deepEqual(feedbackReducer(nextAction, { type: "clear" }), initialFeedbackState);
+});
+
+test("runWithStatus reports no success when the predicate returns null", async () => {
+  const dispatched: FeedbackAction[] = [];
+  const result = await runWithStatus(
+    (action) => dispatched.push(action),
+    async () => false,
+    (committed) => (committed ? "entries_saved" : null),
+  );
+
+  assert.equal(result, false);
+  assert.equal(dispatched[0]?.type, "action_started");
+  assert.equal(dispatched.filter((action) => action.type === "notice").length, 0);
+});
+
+test("runWithStatus reports exactly one success when the predicate allows it", async () => {
+  const dispatched: FeedbackAction[] = [];
+  const result = await runWithStatus(
+    (action) => dispatched.push(action),
+    async () => true,
+    (committed) => (committed ? "entries_saved" : null),
+  );
+
+  assert.equal(result, true);
+  const notices = dispatched.filter((action) => action.type === "notice" && action.code === "entries_saved");
+  assert.equal(notices.length, 1);
+});
+
+test("runWithStatus surfaces a failure without a success notice", async () => {
+  const dispatched: FeedbackAction[] = [];
+  const boom = new Error("synthetic-failure");
+  await assert.rejects(
+    () =>
+      runWithStatus(
+        (action) => dispatched.push(action),
+        async () => { throw boom; },
+        (committed) => (committed ? "entries_saved" : null),
+      ),
+    boom,
+  );
+
+  assert.equal(dispatched.filter((action) => action.type === "notice").length, 0);
+  assert.equal(dispatched.some((action) => action.type === "action_failed"), true);
 });
 
 test("registration policy errors select safe DE/EN text without reflecting API input", () => {

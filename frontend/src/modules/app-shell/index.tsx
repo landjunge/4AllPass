@@ -19,15 +19,18 @@ import { useStartup, type LocalStoreStatus } from "../startup/index.ts";
 import {
   feedbackReducer,
   initialFeedbackState,
+  runWithStatus,
   type ErrorFeedback,
   type NoticeCode,
   type NoticeFeedback,
+  type SuccessNotice,
 } from "../feedback/index.ts";
 import { useVaultLifecycle, type LockState } from "../vault-lifecycle/index.ts";
 import { useDeviceManagement, type RevokeProgress } from "../device-management/index.ts";
-import { useRecoveryManagement } from "../recovery-management/index.ts";
+import { useRecoveryManagement, type RecoveryMasterOffer } from "../recovery-management/index.ts";
 import type { VaultEntry } from "../../lib/entries.ts";
-import type { HeadRecovery, UnlockedVault } from "../../lib/vault-session.ts";
+import type { HeadRecovery, LegacyMigrationOutcome, UnlockedVault } from "../../lib/vault-session.ts";
+import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -49,6 +52,7 @@ interface AppState {
   error: ErrorFeedback | null;
   notice: NoticeFeedback | null;
   recoveryKey: string | null;
+  recoveryMasterOffer: RecoveryMasterOffer | null;
 }
 
 interface AppActions {
@@ -68,6 +72,14 @@ interface AppActions {
   lock(): void;
   pullLocalIntoOpenVault(masterPassword: string): Promise<void>;
   saveEntries(entries: VaultEntry[]): Promise<void>;
+  migrateLegacyVault(): Promise<LegacyMigrationOutcome>;
+  restoreSingleEntry(
+    vault: UnlockedVault,
+    selection: HistoricSelection,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
+  restoreBackup(vault: UnlockedVault, text: string, isCancelled: () => boolean): Promise<boolean>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
   hardRevoke(
@@ -80,6 +92,8 @@ interface AppActions {
   refreshDevices(): Promise<void>;
   reconcileHardRevoke(): Promise<void>;
   dismissRecoveryKey(): void;
+  dismissRecoveryMasterOffer(): void;
+  completeRecoveryMasterOffer(newMasterPassword: string, recoveryKeyText: string): Promise<void>;
   clearMessages(): void;
 }
 
@@ -94,20 +108,13 @@ export function useApp(): AppState & AppActions {
 export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const [feedback, dispatchFeedback] = useReducer(feedbackReducer, initialFeedbackState);
   const accountRef = useRef<AccountState | null>(null);
+  const recoveryUnlockedRef = useRef<(vault: UnlockedVault) => void>(() => undefined);
+  const onRecoveryUnlock = useCallback((vault: UnlockedVault) => recoveryUnlockedRef.current(vault), []);
   const updateLocalStoreRef = useRef<(status: LocalStoreStatus) => void>(() => undefined);
 
   const withStatus = useCallback(
-    async <T,>(action: () => Promise<T>, success?: NoticeCode): Promise<T> => {
-      dispatchFeedback({ type: "action_started" });
-      try {
-        const result = await action();
-        if (success) dispatchFeedback({ type: "notice", code: success });
-        return result;
-      } catch (failure) {
-        dispatchFeedback({ type: "action_failed", error: failure });
-        throw failure;
-      }
-    },
+    <T,>(action: () => Promise<T>, success?: SuccessNotice<T>): Promise<T> =>
+      runWithStatus(dispatchFeedback, action, success),
     [],
   );
 
@@ -123,8 +130,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   }, []);
 
   const vaultLifecycleOptions = useMemo(
-    () => ({ runWithStatus: withStatus, passwordsCollide, onPasswordReuseWarning, updateLocalStore }),
-    [onPasswordReuseWarning, passwordsCollide, updateLocalStore, withStatus],
+    () => ({ runWithStatus: withStatus, passwordsCollide, onPasswordReuseWarning, updateLocalStore, onRecoveryUnlock }),
+    [onPasswordReuseWarning, passwordsCollide, updateLocalStore, withStatus, onRecoveryUnlock],
   );
   const vaultLifecycle = useVaultLifecycle(vaultLifecycleOptions);
 
@@ -156,6 +163,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       getActiveVaultId,
       getAccountEmail,
       currentVault: vaultLifecycle.currentVault,
+      captureVaultLiveness: vaultLifecycle.captureVaultLiveness,
       replaceUnlockedVault: vaultLifecycle.replaceUnlockedVault,
       setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
     }),
@@ -164,6 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       getAccountEmail,
       getActiveVaultId,
       vaultLifecycle.currentVault,
+      vaultLifecycle.captureVaultLiveness,
       vaultLifecycle.replaceUnlockedVault,
       vaultLifecycle.setDeviceUnlockAvailable,
       withStatus,
@@ -174,13 +183,23 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
   const recoveryManagementOptions = useMemo(
     () => ({
       runWithStatus: withStatus,
+      observedVault: vaultLifecycle.vault,
+      getActiveVaultId,
+      getAccountEmail,
+      passwordsCollide,
       currentVault: vaultLifecycle.currentVault,
+      captureVaultLiveness: vaultLifecycle.captureVaultLiveness,
       replaceUnlockedVault: vaultLifecycle.replaceUnlockedVault,
       setRecoveryKey: vaultLifecycle.setRecoveryKey,
       setDeviceUnlockAvailable: vaultLifecycle.setDeviceUnlockAvailable,
     }),
     [
+      vaultLifecycle.vault,
+      getActiveVaultId,
+      getAccountEmail,
+      passwordsCollide,
       vaultLifecycle.currentVault,
+      vaultLifecycle.captureVaultLiveness,
       vaultLifecycle.replaceUnlockedVault,
       vaultLifecycle.setDeviceUnlockAvailable,
       vaultLifecycle.setRecoveryKey,
@@ -188,15 +207,20 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
     ],
   );
   const recoveryManagement = useRecoveryManagement(recoveryManagementOptions);
+  recoveryUnlockedRef.current = recoveryManagement.beginMasterOffer;
 
   const afterSignUp = useCallback(
     () => vaultLifecycle.clearVaultList(),
     [vaultLifecycle.clearVaultList],
   );
+  const clearSignedOutState = vaultLifecycle.clearSignedOutState;
+  const clearDevices = deviceManagement.clearDevices;
+  const clearMasterOffer = recoveryManagement.clearMasterOffer;
   const afterSignOut = useCallback(() => {
-    vaultLifecycle.clearSignedOutState();
-    deviceManagement.clearDevices();
-  }, [deviceManagement.clearDevices, vaultLifecycle.clearSignedOutState]);
+    clearSignedOutState();
+    clearDevices();
+    clearMasterOffer();
+  }, [clearSignedOutState, clearDevices, clearMasterOffer]);
 
   const account = useAccount({
     gateway: api,
@@ -260,6 +284,11 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       async saveEntries(entries) {
         await vaultLifecycle.saveEntries(entries);
       },
+      async migrateLegacyVault() {
+        return vaultLifecycle.migrateLegacyVault();
+      },
+      restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
+      restoreBackup: vaultLifecycle.restoreBackup,
       async enableBiometrics() {
         return deviceManagement.enableBiometrics();
       },
@@ -278,6 +307,8 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       refreshDevices: deviceManagement.refreshDevices,
       reconcileHardRevoke: deviceManagement.reconcileHardRevoke,
       dismissRecoveryKey: vaultLifecycle.dismissRecoveryKey,
+      dismissRecoveryMasterOffer: recoveryManagement.clearMasterOffer,
+      completeRecoveryMasterOffer: recoveryManagement.completeMasterOffer,
       clearMessages() {
         dispatchFeedback({ type: "clear" });
       },
@@ -302,6 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       error: feedback.error,
       notice: feedback.notice,
       recoveryKey: vaultLifecycle.recoveryKey,
+      recoveryMasterOffer: recoveryManagement.masterOffer,
       ...actions,
     }),
     [

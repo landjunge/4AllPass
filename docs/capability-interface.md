@@ -9,7 +9,7 @@ Tracker: [#70](https://github.com/landjunge/4AllPass/issues/70). Related: [#67](
 
 Sibling products (separate codebases, keep them that way):
 
-- [tollgate](https://github.com/landjunge/tollgate) — Protect · Route · Prove; budgets, scopes, tool-loop stops. Today it can hold provider keys on disk (`docs/KEYS_MODULE.md` there). That is **not** the long-term secret authority.
+- [tollgate](https://github.com/landjunge/TollGate) — Protect · Route · Prove; budgets, scopes, tool-loop stops. Today it can hold provider keys on disk (`docs/KEYS_MODULE.md` there). That is **not** the long-term secret authority.
 - [gnom-hub-v1](https://github.com/landjunge/gnom-hub-v1) — local multi-agent desk. First-class **client**, not a vault.
 
 If this sketch is quoted as an Ist-Zustand of 4AllPass, that is a **defect**.

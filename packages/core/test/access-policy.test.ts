@@ -2,15 +2,21 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  DEFAULT_HANDOFF,
   auditContainsSecret,
   auditLine,
   decideAccess,
+  effectiveHandoff,
   evaluatePolicy,
   explainAccess,
   grantIsValid,
+  handoffIsAvailable,
   issueGrant,
   parseAccessBody,
+  parseHandoff,
+  resolveHandoff,
   whyContainsSecret,
+  type AccessGrant,
   type AccessRequest,
   type Credential,
 } from "../src/index.ts";
@@ -32,6 +38,23 @@ function req(over: Partial<AccessRequest> = {}): AccessRequest {
     credential: "personal",
     scope: ["repository.read"],
     ttlSeconds: 600,
+    ...over,
+  };
+}
+
+/** Legacy metadata grant used only to exercise grant validity/expiry. */
+function metadataGrant(over: Partial<AccessGrant> = {}): AccessGrant {
+  return {
+    id: "grant_test",
+    requestId: "req_test",
+    applicationId: "n8n",
+    provider: "GitHub",
+    capability: "repository.read",
+    issuedAt: 1_000,
+    expiresAt: 11_000,
+    credentialId: "entry_github",
+    scope: ["repository.read"],
+    handoff: "raw_secret",
     ...over,
   };
 }
@@ -72,7 +95,7 @@ test("4 ttl <= 0 is malformed; expired grant is invalid", () => {
   });
   assert.ok("status" in bad);
   if ("status" in bad) assert.equal(bad.status, "denied");
-  const grant = issueGrant(req({ ttlSeconds: 10 }), "entry_github", 1_000);
+  const grant = metadataGrant({ expiresAt: 1_000 + 10_000 });
   assert.equal(grantIsValid(grant, 1_000), true);
   assert.equal(grantIsValid(grant, 1_000 + 10_000), false);
 });
@@ -84,7 +107,7 @@ test("5 wrong capability is denied", () => {
 });
 
 test("6 expired grant is invalid", () => {
-  const grant = issueGrant(req({ ttlSeconds: 1 }), "entry_github", 5_000);
+  const grant = metadataGrant({ expiresAt: 5_000 + 1_000 });
   assert.equal(grantIsValid(grant, 5_000 + 1_000), false);
   assert.ok(!("material" in grant));
   assert.ok(!("access_token" in grant));
@@ -116,7 +139,7 @@ test("omitted handoff requests mediated and remains blocked", () => {
   });
   assert.ok(!("status" in parsed));
   if ("status" in parsed) return;
-  assert.equal(parsed.handoff, "mediated");
+  assert.equal(parsed.handoff, DEFAULT_HANDOFF);
   assert.equal(decideAccess(parsed, [github()]).status, "denied");
 });
 
@@ -148,11 +171,46 @@ test("invalid handoff is malformed, not a secret path", () => {
   if ("status" in bad) assert.equal(bad.reason, "malformed_request");
 });
 
-test("core grant records raw_secret and still holds no secret bytes", () => {
-  const grant = issueGrant(req(), "entry_github", 1_000);
-  assert.equal(grant.handoff, "raw_secret");
-  assert.ok(!("material" in grant));
-  assert.ok(!("access_token" in grant));
+test("issueGrant refuses every unavailable handoff and emits no grant", () => {
+  const omitted = issueGrant(req(), "entry_github", 1_000);
+  assert.deepEqual(omitted, { status: "denied", reason: "handoff_unavailable" });
+  assert.equal("grant" in omitted, false);
+  assert.deepEqual(issueGrant(req({ handoff: "raw_secret" }), "entry_github", 1_000), {
+    status: "denied",
+    reason: "handoff_unavailable",
+  });
+  assert.deepEqual(issueGrant(req({ handoff: "mediated" }), "entry_github", 1_000), {
+    status: "denied",
+    reason: "handoff_unavailable",
+  });
+});
+
+test("omitted handoff uses the one shared default for parser and policy", () => {
+  assert.equal(DEFAULT_HANDOFF, "mediated");
+  assert.equal(effectiveHandoff(undefined), DEFAULT_HANDOFF);
+  assert.equal(parseHandoff(undefined), DEFAULT_HANDOFF);
+  assert.equal(parseHandoff(""), DEFAULT_HANDOFF);
+  const parsed = parseAccessBody({
+    application: "n8n",
+    provider: "GitHub",
+    scope: ["repository.read"],
+    ttl: 600,
+  });
+  assert.ok(!("status" in parsed));
+  if ("status" in parsed) return;
+  assert.equal(parsed.handoff, DEFAULT_HANDOFF);
+  assert.deepEqual(
+    evaluatePolicy(req(), [github()]),
+    evaluatePolicy(req({ handoff: DEFAULT_HANDOFF }), [github()]),
+  );
+});
+
+test("a future reopen still resolves omission to the shared default, never raw_secret", () => {
+  assert.equal(resolveHandoff(undefined, ["mediated"]), "mediated");
+  assert.equal(resolveHandoff(undefined, ["raw_secret"]), null);
+  assert.equal(resolveHandoff(undefined, []), null);
+  assert.equal(handoffIsAvailable("raw_secret"), false);
+  assert.equal(handoffIsAvailable("mediated"), false);
 });
 
 test("explainAccess mediated deny names the rule without secrets", () => {

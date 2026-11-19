@@ -155,6 +155,80 @@ proceed instead of silently downgrading.
 
 Pin-on-first-use is intentional: a brand-new client has no prior revision. After the first successful unlock, the pin is stored locally (outside the server’s control).
 
+### 3.1.1 Legacy manifest migration (explicit opt-in)
+
+A manifestless snapshot is only server-asserted. The PWA offers a per-vault
+migration in the unlock flow; it never commits automatically at unlock or install.
+The user sees (DE/EN):
+
+> Dieser Tresor ist älter und noch nicht als Ganzes versiegelt. Beim Aktualisieren
+> wird der aktuell geöffnete Inhalt für die Zukunft mit einer Integritätsprüfung
+> versehen. Der bisherige Serverstand lässt sich nicht nachträglich beweisen. Eine
+> verschlüsselte Sicherung wird vorher lokal abgelegt.
+
+> This vault is older and not yet sealed as a whole. Updating seals the currently
+> opened content with an integrity check for the future. The previous server state
+> cannot be proven retroactively. An encrypted backup is stored locally first.
+
+Before the first POST the client stores and verifies the ciphertext wire backup
+locally; if that fails, nothing is sent. The re-commit uses the existing
+`sealManifest` / `commitSnapshot` path at `N+1` under the same Vault Key with CAS,
+echo verification and the lock epoch. It attests the set that was opened at
+migration time; it never authenticates the legacy revision/set as original.
+
+On `409` the client loads and verifies the winning head; it does not overlay its
+own unsaved state. On an unknown outcome a read cannot prove non-acceptance
+(inflight/stale read): only the exact expected revision plus the prepared
+sealed-manifest digest, or a verified history receipt, counts as success. A head
+that still looks manifestless is not evidence either way; the client reports
+unknown and does not send another POST just because the head is legacy.
+
+The authenticated migration status is the sealed manifest at `N+1` verified under
+the Vault Key plus the client-pinned manifest digest. A server flag or coverage
+count is advisory, never cryptographic proof. The first-use manifest requirement
+is **not** activated by this path; coverage/exception gates remain open. F-25
+(nonce budget / persistent seal counter) is a separate open item and is not
+addressed by a client-local counter.
+
+The legacy backup lives in its own local slot, separate from the live-head cache.
+It stores the **exact accepted raw wire** (unknown snapshot/entry/envelope fields
+included), not a typed re-encoding. The client writes it, reads it back through
+the same IndexedDB slot, and compares a key-order-insensitive canonical JSON
+image before any POST. A successful migration replaces the head cache with `N+1`
+but leaves the legacy wire backup intact, so it remains available after the
+commit and after a restart. If the current commit schema cannot carry an unknown
+field forward, the client keeps the backup and fails closed before the POST with a
+clear DE/EN message instead of silently dropping it.
+
+The migration slot is reserved atomically per `vaultId`/`vaultKeyVersion`/
+`baseRevision` in IndexedDB (one read-check-write transaction; owner
+`operationID` checked on every update). This reservation is claimed **before** the
+backup await, so two independent tabs/modules cannot both pass an empty read,
+overwrite each other's prepared receipt or both POST. There is no localStorage
+fallback: if the reservation store cannot be used, nothing is sent. After an
+unknown outcome, a reload, unlock or component change remains retry-blocked; only
+a verified prepared manifest at the exact expected revision/digest (or a verified
+history receipt) resolves it. A head that still looks legacy is not evidence
+either way.
+
+The accepted legacy state is captured defensively at open time, including the
+exact raw wire and the protocol `entryDigest`/`envelopeDigest` fingerprints plus a
+canonical plaintext string. The **head cache also stores that exact raw wire** for
+a legacy snapshot; a legacy snapshot without its raw wire is not accepted, so an
+offline reopen cannot silently migrate a re-encoded (lossy) state. The commit
+works on an immutable copy; after the backup await the live
+entries/envelopes/revision are re-checked immediately before encryption. Same
+entry ids with changed payloads, changed envelope bytes, changed metadata or a
+mutation during the backup await stop the migration before any POST. The pin is
+saved only after the cache await and the liveness check; a newer pin (another tab)
+or a late lock discards and zeroizes the opened key and never returns it. The existing commit contract
+re-encrypts entries with fresh nonces; the lossless guarantee covers the complete
+plaintext entry set and the byte-identical envelopes, and the new manifest
+authenticates the new ciphertext. No new algorithm or vault format is introduced.
+Async lock boundaries are checked before `acceptSnapshot` and after its cache
+await; a late lock discards the opened key, leaves the pin unchanged and does not
+hand an accepted vault to the UI.
+
 ### 3.2 Offline: last verified snapshot
 
 After a snapshot is verified and the pin is written, the PWA stores the **wire**

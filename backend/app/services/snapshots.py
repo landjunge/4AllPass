@@ -219,8 +219,10 @@ async def _lock_vault_and_current(
 
 
 async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommit) -> VaultSnapshot:
-    if payload.crypto_protocol_version != 1:
+    if payload.crypto_protocol_version not in (1, 2):
         raise HTTPException(status_code=422, detail="unsupported cryptoProtocolVersion")
+    if payload.crypto_protocol_version != vault.crypto_protocol_version:
+        raise HTTPException(status_code=422, detail="cryptoProtocolVersion does not match vault")
     if not any(env.type == "master" for env in payload.envelopes):
         raise HTTPException(status_code=422, detail="snapshot must include a master envelope")
 

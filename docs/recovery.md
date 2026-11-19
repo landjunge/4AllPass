@@ -132,9 +132,37 @@ cannot restore access without it.
 1. User enters the key; the client normalizes and checksums it before doing any work.
 2. Derive RWK, unwrap the Recovery Envelope against `expectType: "recovery"` and the
    snapshot's `vaultKeyVersion`.
-3. The vault is unlocked, but the recovery secret is now "used": the client must
-   immediately offer to set a new Master Password (new Master Envelope) and to
-   re-enrol devices.
+3. The vault is unlocked; the client immediately offers a new Master Password.
+
+### PWA continuation after kit unlock
+
+The PWA immediately offers two new-password fields, a separate fresh kit
+confirmation, and an explicit link to the existing device-enrolment UI. “Later”
+performs no write. No old master password is required. The raw unlock kit is not
+retained for this offer: confirmation re-parses/derives/unwraps the current
+recovery envelope with the expected vault/type/VK generation and compares its VK
+to the currently verified vault. A caller's `unlockedWith` flag alone is not proof.
+
+The master replacement reuses the existing validated Argon2id parameters with a
+fresh salt and the generic master-envelope wrapper. The complete snapshot is
+committed with expected revision N and new revision N+1, unchanged VK/VKversion,
+and unchanged recovery/device envelopes. The normalized **returned** master
+envelope is cross-checked with the new master key before accepting entries or
+advancing the pin. A conflict or failed verification leaves the local old key/pin
+usable; lost/ambiguous CAS responses are not a known uncommitted remote outcome.
+
+The same account-password separation/mismatch UI contract as Create applies;
+existing master unlock still warns and works. Temporary derived buffers and
+form inputs are cleared. The offer/callback is bound to the current vault and
+account, invalidated by lock, replacement/switch or sign-out, and is not persisted.
+Commit adoption precedes the optional device step; that step only navigates to
+existing device UI and never automatically invokes a ceremony or revokes devices.
+
+This is password-envelope replacement, **not revocation**: holders of the old
+VK (including someone who can recover it from an old snapshot/password) can
+still read future snapshots under that same VK. Old backups remain readable and
+the original kit still opens the head. Suspected key/kit compromise requires the
+separate VK rotation path below, not just choosing a new password.
 
 ### Rotation (two operations — do not mix)
 
@@ -157,9 +185,8 @@ self-locks before metadata revocation/list refresh. A DE/EN partial-success
 notice offers only metadata reconciliation, never a second rotation as a retry.
 After DELETE is acknowledged, reconciliation repeats only GET. This pending
 intent is local memory, not persisted across sign-out/reload; old backups and
-previously copied keys remain usable for their old snapshots. A lost/unverified
-CAS response and recovery-key unlock followed by choosing a new master password
-remain separate open user flows.
+previously copied keys remain usable for their old snapshots. A lost/unverified CAS response remains a separate unresolved outcome; choosing a
+new master after actual kit unlock is the separate continuation described above.
 
 ---
 

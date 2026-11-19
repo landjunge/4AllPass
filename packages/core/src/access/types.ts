@@ -12,7 +12,7 @@ export interface AccessRequest {
   credential: string;
   scope: string[];
   ttlSeconds: number;
-  /** Omitted = mediated request. Both legacy modes are currently unavailable. */
+  /** Omitted = DEFAULT_HANDOFF (mediated). Both legacy modes are currently unavailable. */
   handoff?: HandoffMode;
   reason?: string;
   createdAt?: number;
@@ -71,9 +71,14 @@ export interface AccessGrant {
   expiresAt: number;
   credentialId: string;
   scope: string[];
-  /** v1 is always raw_secret. Core still does not hold the bytes. */
+  /** Only an available handoff mode can be issued. Core still does not hold the bytes. */
   handoff: HandoffMode;
 }
+
+/** issueGrant only emits a grant for a handoff mode the broker can serve. */
+export type IssueGrantResult =
+  | { status: "issued"; grant: AccessGrant }
+  | { status: "denied"; reason: "handoff_unavailable" };
 
 export type AccessApiResponse =
   | { status: "approved"; access_token: string; expires_in: number }

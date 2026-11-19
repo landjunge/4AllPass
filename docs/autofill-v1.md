@@ -160,6 +160,8 @@ Verboten:
 
 Mehrere Treffer: Popup/Menü zeigt Titel + Username-Maske (`j***@x.de` oder Länge), **nicht** das Passwort. Ein Treffer darf direkt gefüllt werden nach explizitem Trigger.
 
+**API-Key-Fill** ist strenger: `detectSetup` muss `credentialKind: "api"`, Confidence ≥ 0.95 **und** einen Domain-Hit für denselben Provider liefern. Ein Feldname allein (`openai_api_key`) reicht nie. Das Popup bindet den Vorschlag an Tab + exakte URL + Host; `accept-suggestion` verweigert Fill nach Tab-Wechsel oder Navigation.
+
 `match.ts` bleibt dünn. Provider-Resolver nicht neu erfinden.
 
 ---

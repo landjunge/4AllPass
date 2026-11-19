@@ -1,0 +1,14 @@
+{
+  "runtime": "macOS WKWebView via minimal owned AppKit app bundle (visible window)",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  "secureContext": true,
+  "generateKey_sign_verify": true,
+  "rfc8032_pkcs8_seed_vector": false,
+  "pkcs8_variants": {
+    "seed32": {"rfc": false, "verifies": false},
+    "seed_pub64": "DataError",
+    "v2_with_public_key": "DataError"
+  },
+  "pkcs8_export_reimport_same_key": false,
+  "note": "generateKey/sign/verify works; PKCS#8 import does not reproduce the RFC 8032 key. Fail closed for v2 writes on this runtime."
+}

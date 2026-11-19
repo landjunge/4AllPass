@@ -225,6 +225,25 @@ export type {
   WriteResourceTypeV2,
 } from "./requester.ts";
 
+export {
+  SIGNED_WRITE_HEADERS,
+  SIGNED_WRITE_SCHEME,
+  SignerUnavailableError,
+  SignedWriteInputError,
+  classifySignedWriteResponse,
+  newWriteOperation,
+  payloadDigestV2,
+  probeSigner,
+  signWriteV2,
+} from "./signed-write-client.ts";
+export type {
+  SignedWriteBundle,
+  SignedWriteFields,
+  SignedWriteKey,
+  SignedWriteOutcome,
+  SignerProbe,
+} from "./signed-write-client.ts";
+
 export { assertFreshSnapshot, evaluateRevision, revisionFromManifest } from "./revision.ts";
 export type { RevisionAction, RevisionAccept, RevisionDecision, RevisionReject } from "./revision.ts";
 

@@ -3,7 +3,7 @@
 import json
 from dataclasses import replace
 import pytest
-from protected_executor.core import ExecutorCore, ProviderReply
+from protected_executor.core import ExecutorCore, ProviderReply, Rejected
 from protected_executor.tollgate_adapter import TollGateDispatch
 from protected_executor.capability import SyntheticHostCapability
 from protected_executor.tests.test_core import request, grant, SECRET
@@ -94,6 +94,31 @@ def test_actual_gate_retains_unknown_without_transport_error_leak(tmp_path):
     assert SECRET not in json.dumps(result)
     assert core.execute(request())["status"] == "unverified"
     assert sent == [1]
+
+
+def test_cap1_replay_does_not_dispatch_or_modify_actual_gate_journal(tmp_path):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from protected_executor.tests.test_cap1 import TestNonceStore, evidence, execution, verifier
+
+    key = Ed25519PrivateKey.generate()
+    store = TestNonceStore(tmp_path / "cap1-nonces.sqlite3")
+    gate_root = tmp_path / "gate"
+    gate = TollGateDispatch(configured(gate_root))
+    use = request()
+    proof = evidence(key, use)
+    executor, effects = execution(verifier(key.public_key(), store.consume), gate=gate)
+    assert executor.execute(use, proof=proof)["result"]["remaining"] == 7
+    assert effects == ["dispatch", "send"]
+    journal = {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()}
+    assert journal
+
+    with pytest.raises(Rejected, match="^capability_nonce_used$"):
+        executor.execute(use, proof=proof)
+    assert {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()} == journal
+    assert effects == ["dispatch", "send"]
+    for value in (proof.claims.nonce, proof.signature.hex()):
+        assert all(value.encode() not in recorded for recorded in journal.values())
 
 
 def test_real_loopback_dummy_api_through_actual_gate(tmp_path, capsys):

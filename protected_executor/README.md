@@ -103,6 +103,25 @@ store, account or deployment is created here. FP-C02/FP-C03 production and brows
 session protection remain open. Matching synthetic metadata is not identity,
 secret isolation, final cost settlement or user/project acceptance.
 
+## Lokaler 4AP-CAP-1-Kandidat / Local 4AP-CAP-1 candidate
+
+Ein ausdrücklich konfigurierter `LocalCapabilityVerifier` verlangt am
+synthetischen Executor einen signierten Nachweis. Er prüft die exakte lokale
+Audience und bindet Principal und Grantreferenz an den vorhandenen Requesthash.
+Die Nonce wird vor der TollGate-Übergabe atomar einmalig beansprucht. Der
+Speicherschlüssel enthält nur einen Hash über Issuer, Audience und Nonce. Die
+Versuchskennung beeinflusst diesen Hash nicht. Ablauf und bestehender Grant
+werden beim Senden erneut geprüft. Bei einem unklaren Dispatch bleibt der
+ursprüngliche Versuch maßgeblich.
+
+The local verifier is opt-in at executor configuration. Once configured, a
+proof is required. Its test profile uses detached Ed25519 signatures and a
+temporary SQLite nonce store, with audience, verify key and issuer chosen by
+the synthetic host configuration. The runtime verifier accepts a signature
+callback and an atomic nonce-store callback. Production canonical wire format,
+key enrollment and rotation, nonce storage and host isolation remain open.
+No issuer, provider integration, or release is added by this candidate.
+
 ## Actual checks / Tatsächliche Teilprüfung
 
 [Evidence](../docs/evidence/protected-binding-20261018/STATUS.md) records targeted

@@ -1,6 +1,7 @@
 # 4AP-CAP-1 — Capability contract
 
-**Status:** Concept only. Far later. **Not a network protocol. Not implemented.**  
+**Status:** Proposed local contract. The protected executor has an opt-in verifier for synthetic tests.
+
 **Date:** 2026-08-20  
 **Not this document:** OAuth-as-vault, MCP-as-security, a 4AllPass/Tollgate/Gnom-Hub SDK, public-key wrapping of the Vault Key, or Ed25519 in `packages/crypto`.
 
@@ -168,4 +169,6 @@ Expiry of the capability still does not un-know bytes already given (same as `se
 - Secret Access Layer (`#67`) exists **and** Tollgate is a Trusted Application.
 - Explicit “implement 4AP-CAP-1” (not “weiter”, not “MCP”, not “merge”).
 
-Until then this file is a **contract sketch**. No code in this repository issues, verifies, inspects, or revokes capabilities.
+The [local verifier](../protected_executor/cap1.py) checks signed fixture proofs for the one synthetic `demo.quota.read` operation. It checks the audience, validity window and request binding, verifies the signature through a host-configured callback, and claims the nonce through an atomic store callback before TollGate dispatch.
+
+The production contract remains a sketch. Issue, Inspect, Revoke and production Verify remain unimplemented. The production wire format, key enrollment and rotation, durable nonce storage and isolated execution host remain open.

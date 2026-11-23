@@ -1,14 +1,21 @@
 """Run with the matching actual TollGate source on PYTHONPATH, never a fake Allow."""
 
 import json
+import multiprocessing
+import os
+import sqlite3
+from contextlib import closing
 from dataclasses import replace
 import pytest
-from protected_executor.core import ExecutorCore, ProviderReply
+from protected_executor.core import ExecutorCore, ProviderReply, Rejected
 from protected_executor.tollgate_adapter import TollGateDispatch
 from protected_executor.capability import SyntheticHostCapability
 from protected_executor.tests.test_core import request, grant, SECRET
 
 control_module = pytest.importorskip("tollgate.workflow_control")
+
+CRASH_AFTER_NONCE_CLAIM = 41
+CRASH_AFTER_DUMMY_EFFECT = 42
 
 
 def configured(root):
@@ -94,6 +101,147 @@ def test_actual_gate_retains_unknown_without_transport_error_leak(tmp_path):
     assert SECRET not in json.dumps(result)
     assert core.execute(request())["status"] == "unverified"
     assert sent == [1]
+
+
+def test_cap1_replay_does_not_dispatch_or_modify_actual_gate_journal(tmp_path):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from protected_executor.tests.test_cap1 import TestNonceStore, evidence, execution, verifier
+
+    key = Ed25519PrivateKey.generate()
+    store = TestNonceStore(tmp_path / "cap1-nonces.sqlite3")
+    gate_root = tmp_path / "gate"
+    gate = TollGateDispatch(configured(gate_root))
+    use = request()
+    proof = evidence(key, use)
+    executor, effects = execution(verifier(key.public_key(), store.consume), gate=gate)
+    assert executor.execute(use, proof=proof)["result"]["remaining"] == 7
+    assert effects == ["dispatch", "send"]
+    journal = {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()}
+    assert journal
+
+    with pytest.raises(Rejected, match="^capability_nonce_used$"):
+        executor.execute(use, proof=proof)
+    assert {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()} == journal
+    assert effects == ["dispatch", "send"]
+    for value in (proof.claims.nonce, proof.signature.hex()):
+        assert all(value.encode() not in recorded for recorded in journal.values())
+
+
+def _crash_cap1_dispatch(root, crash_point, public_key_bytes, proof):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    from protected_executor.tests.test_cap1 import TestNonceStore, verifier
+
+    store = TestNonceStore(root / "cap1-nonces.sqlite3")
+    public_key = Ed25519PublicKey.from_public_bytes(public_key_bytes)
+
+    def consume(digest, expiry):
+        claimed = store.consume(digest, expiry)
+        if claimed and crash_point == CRASH_AFTER_NONCE_CLAIM:
+            os._exit(CRASH_AFTER_NONCE_CLAIM)
+        return claimed
+
+    def transport(_):
+        with (root / "dummy-effects.txt").open("a") as effects:
+            effects.write("sent\n")
+            effects.flush()
+            os.fsync(effects.fileno())
+        os._exit(CRASH_AFTER_DUMMY_EFFECT)
+
+    executor = ExecutorCore(
+        transport=transport,
+        gate=TollGateDispatch(configured(root / "gate")),
+        host=SyntheticHostCapability.for_test(grant()),
+        capability_verifier=verifier(public_key, consume),
+    )
+    executor.execute(request(), proof=proof)
+
+
+@pytest.mark.parametrize(
+    "crash_point",
+    [
+        pytest.param(CRASH_AFTER_NONCE_CLAIM, id="after-nonce-claim"),
+        pytest.param(CRASH_AFTER_DUMMY_EFFECT, id="after-dummy-effect"),
+    ],
+)
+def test_cap1_abrupt_restart_preserves_nonce_and_actual_gate_state(tmp_path, crash_point):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from protected_executor.tests.test_cap1 import (
+        TestNonceStore,
+        evidence,
+        execution,
+        verifier,
+    )
+
+    key = Ed25519PrivateKey.generate()
+    use = request()
+    original_proof = evidence(key, use)
+    process = multiprocessing.get_context("spawn").Process(
+        target=_crash_cap1_dispatch,
+        args=(tmp_path, crash_point, key.public_key().public_bytes_raw(), original_proof),
+    )
+    process.start()
+    try:
+        process.join(timeout=10)
+        assert process.exitcode == crash_point
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join()
+        process.close()
+
+    nonce_path = tmp_path / "cap1-nonces.sqlite3"
+    with closing(sqlite3.connect(nonce_path)) as db:
+        assert db.execute("SELECT count(*) FROM consumed").fetchone() == (1,)
+    store = TestNonceStore(nonce_path)
+    gate_root = tmp_path / "gate"
+    control = configured(gate_root)
+    binding = use.binding
+    identity = control_module.AttemptIdentity(
+        control_module.WorkflowScope(binding.project_id, binding.workflow_id),
+        binding.task_id,
+        binding.actor_id,
+        binding.consumer_id,
+        binding.attempt_id,
+        binding.request_hash,
+    )
+    expected_effects = []
+    if crash_point == CRASH_AFTER_NONCE_CLAIM:
+        with pytest.raises(control_module.ControlError, match="^ATTEMPT_NOT_FOUND$"):
+            control.get_attempt(identity)
+    else:
+        record = control.get_attempt(identity)
+        assert record["state"] == "OUTCOME_UNKNOWN"
+        assert record["reason_code"] == "AWAITING_FINAL_EVIDENCE"
+        assert record["dispatch_started"] is True
+        expected_effects = ["sent"]
+
+    new_use = replace(use, binding=replace(binding, attempt_id="second-attempt"))
+    new_use = replace(
+        new_use, binding=replace(new_use.binding, request_hash=new_use.content_hash())
+    )
+    new_proof = evidence(key, new_use, nonce=original_proof.claims.nonce)
+    before = {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()}
+    for replay, proof in ((use, original_proof), (new_use, new_proof)):
+        metadata = replace(
+            grant(),
+            attempt_id=replay.binding.attempt_id,
+            request_hash=replay.binding.request_hash,
+        )
+        executor, effects = execution(
+            verifier(key.public_key(), store.consume),
+            metadata,
+            gate=TollGateDispatch(control),
+        )
+        with pytest.raises(Rejected, match="^capability_nonce_used$"):
+            executor.execute(replay, proof=proof)
+        assert effects == []
+    assert {path: path.read_bytes() for path in gate_root.rglob("*") if path.is_file()} == before
+    effects_file = tmp_path / "dummy-effects.txt"
+    observed_effects = effects_file.read_text().splitlines() if effects_file.exists() else []
+    assert observed_effects == expected_effects
 
 
 def test_real_loopback_dummy_api_through_actual_gate(tmp_path, capsys):

@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from .cap1 import LocalCapabilityVerifier, SignedCapability
 from .capability import require_synthetic_host
 from .contracts import (
     Binding,
@@ -60,13 +61,15 @@ class ExecutorCore:
         gate: Gate | None = None,
         *,
         host: object = None,
+        capability_verifier: LocalCapabilityVerifier | None = None,
     ):
         # Legacy material callbacks cannot become a trusted host. No production
         # capability is supported; only an explicit fixed-secret test fixture.
         self._legacy_lookup = grant_lookup is not None
         self._transport, self._gate, self._host = transport, gate, host
+        self._capability_verifier = capability_verifier
 
-    def execute(self, request: UseRequest) -> dict:
+    def execute(self, request: UseRequest, *, proof: SignedCapability | None = None) -> dict:
         host = require_synthetic_host(self._host)
         if self._legacy_lookup:
             raise Rejected("protected_host_unavailable")
@@ -76,7 +79,15 @@ class ExecutorCore:
             raise Rejected("transport_unavailable")
         validate_request(request)
         grant = host._lookup(request.grant_ref)
-        validate_grant(request, grant, time.time())
+        now = time.time()
+        validate_grant(request, grant, now)
+        capability_window = None
+        if self._capability_verifier is not None or proof is not None:
+            if type(self._capability_verifier) is not LocalCapabilityVerifier:
+                raise Rejected("capability_verifier_unavailable")
+            if proof is None:
+                raise Rejected("capability_required")
+            capability_window = self._capability_verifier.claim(request, proof, now)
         result: dict = {}
         callback_attempted = False
 
@@ -87,9 +98,14 @@ class ExecutorCore:
             callback_attempted = True
             # Recheck expiry/revocation at actual dispatch, after gate ordering.
             current = host._lookup(request.grant_ref)
-            validate_grant(request, current, time.time())
+            send_time = time.time()
+            validate_grant(request, current, send_time)
             if current != grant:
                 raise Rejected("grant_unavailable")
+            if capability_window is not None:
+                issued, expires = capability_window
+                if not issued <= send_time < expires:
+                    raise Rejected("capability_time_unavailable")
             try:
                 reply = self._transport(host._synthetic_material(current))
                 projected = project_reply(reply)

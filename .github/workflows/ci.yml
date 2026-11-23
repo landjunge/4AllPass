@@ -172,6 +172,8 @@ jobs:
       FOURALLPASS_SESSION_SECRET: ci-session-secret-not-for-production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
@@ -186,3 +188,17 @@ jobs:
         run: pytest
       - name: Protected executor contract (no real credentials)
         run: python -m pytest -q protected_executor/tests/test_core.py protected_executor/tests/test_binding.py protected_executor/tests/test_cap1.py
+      - name: Check out TollGate for synthetic integration tests
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: landjunge/TollGate
+          ref: fcbdd93700811266a6651fdd4006d115a0191719
+          path: .ci-deps/tollgate
+          persist-credentials: false
+      - name: Protected executor and TollGate integration (synthetic only)
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.ci-deps/tollgate/src
+        run: |
+          # TollGate is optional locally. In CI a missing import must fail the job.
+          python -c 'import tollgate.workflow_control'
+          python -m pytest -q protected_executor/tests/test_tollgate.py

@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
   # Lets the README download bot start the required checks for its own pull
   # request (pull requests opened with GITHUB_TOKEN start no workflows).
   workflow_dispatch:

@@ -70,4 +70,11 @@ jobs:
             pr=$(gh pr list --head "$branch" --base "$BASE_BRANCH" --state open --json number -q '.[0].number')
           fi
           retry gh workflow run ci.yml --ref "$branch"
+          # Workflow runs started by a PR that the bot opened wait for approval
+          # (status action_required) and keep the PR blocked. Approve them, like a
+          # maintainer clicking "Approve and run".
+          sleep 15
+          for run in $(gh run list --branch "$branch" --event pull_request --status action_required --json databaseId -q '.[].databaseId'); do
+            retry gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$run/approve" >/dev/null
+          done
           retry gh pr merge "$pr" --auto --squash

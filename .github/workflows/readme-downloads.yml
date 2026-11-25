@@ -51,15 +51,23 @@ jobs:
             echo "Download buttons already current."
             exit 0
           fi
+          # GitHub's API fails transiently ("Something went wrong", 502); retry each call.
+          retry() {
+            for attempt in 1 2 3 4 5; do
+              "$@" && return 0
+              sleep $((attempt * 15))
+            done
+            return 1
+          }
           branch=automation/readme-downloads
           git commit --quiet -m "docs: refresh download buttons"
           git push --quiet --force origin "HEAD:refs/heads/$branch"
           pr=$(gh pr list --head "$branch" --base "$BASE_BRANCH" --state open --json number -q '.[0].number // empty')
           if [ -z "$pr" ]; then
-            gh pr create --base "$BASE_BRANCH" --head "$branch" \
+            retry gh pr create --base "$BASE_BRANCH" --head "$branch" \
               --title "docs: refresh download buttons" \
               --body "Automatic refresh of the download buttons (generated files only)."
             pr=$(gh pr list --head "$branch" --base "$BASE_BRANCH" --state open --json number -q '.[0].number')
           fi
-          gh workflow run ci.yml --ref "$branch"
-          gh pr merge "$pr" --auto --squash
+          retry gh workflow run ci.yml --ref "$branch"
+          retry gh pr merge "$pr" --auto --squash

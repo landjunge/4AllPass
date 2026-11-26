@@ -64,7 +64,10 @@ export function openHistoricSnapshot(
     snapshot.sealedManifest,
     { entries: snapshot.entries, envelopes: snapshot.envelopes },
     { vaultKey: vault.vaultKey, vaultId: snapshot.vaultId,
-      revision: snapshot.revision, vaultKeyVersion: snapshot.vaultKeyVersion },
+      revision: snapshot.revision, vaultKeyVersion: snapshot.vaultKeyVersion,
+      // The snapshot was decoded under the caller's pinned expectation already,
+      // so this version is bound, not negotiated by the server.
+      cryptoProtocolVersion: snapshot.cryptoProtocolVersion },
   ) : null;
   // Legacy history has no authenticated record-set commitment. Keep its
   // existing per-entry checks, without describing it as manifest-authenticated.

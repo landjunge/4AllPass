@@ -7,6 +7,7 @@ import {
   openHistoricSnapshot,
   type HistoricSelection,
 } from "../../lib/historic-snapshot.ts";
+import { protocolExpectation } from "../../lib/revision-pin.ts";
 import {
   CommitConflict,
   HistoricRevisionUnreadable,
@@ -70,7 +71,10 @@ export function VaultHistoryPanel(): ReactNode {
     setRestoreNotice(null);
     try {
       const wire = await api.getRevision(vault.vaultId, revision);
-      const snapshot = decodeVaultSnapshot(wire);
+      const snapshot = decodeVaultSnapshot(
+        wire,
+        protocolExpectation(vault.cryptoProtocolVersion),
+      );
       const opened = openHistoricSnapshot(snapshot, vault);
       setSelection({
         vaultId: vault.vaultId,

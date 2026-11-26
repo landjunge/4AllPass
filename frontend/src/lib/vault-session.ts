@@ -92,7 +92,7 @@ import {
   wipeVaultEntry,
   type VaultEntry,
 } from "./entries.ts";
-import { loadPin, savePin } from "./revision-pin.ts";
+import { loadPin, pinnedExpectation, savePin } from "./revision-pin.ts";
 import {
   migrationAttemptBlocks,
   migrationAttemptStore,
@@ -114,7 +114,7 @@ export function persistDeferredPin(vaultId: string, revision: number): void {
   const key = `${vaultId}#${revision}`;
   const pin = deferredPins.get(key);
   if (pin) {
-    savePin(pin);
+    savePin(pin, { cryptoProtocolVersion: pin.cryptoProtocolVersion });
     if (deferredPins.get(key) === pin) deferredPins.delete(key);
   }
 }
@@ -331,11 +331,15 @@ async function fetchFreshSnapshotWithRaw(
     if (!cached) throw error;
     raw = cloneWire(cached);
   }
-  const snapshot = decodeVaultSnapshot(raw);
+  // The durable local pin says which protocol this client already accepted for
+  // this vault. Without a pin the reader stays on v1 instead of trusting the
+  // wire header — a server cannot negotiate the protocol it is asked to accept.
+  const expectation = pinnedExpectation(vaultId);
+  const snapshot = decodeVaultSnapshot(raw, expectation);
   if (snapshot.vaultId !== vaultId) {
     throw new Error("server returned a snapshot for a different vault");
   }
-  assertFreshSnapshot(loadPin(vaultId), {
+  assertFreshSnapshot(loadPin(vaultId, expectation), {
     vaultId: snapshot.vaultId,
     revision: snapshot.revision,
     vaultKeyVersion: snapshot.vaultKeyVersion,
@@ -343,7 +347,7 @@ async function fetchFreshSnapshotWithRaw(
     ...(snapshot.sealedManifest
       ? { manifestDigest: sealedManifestDigest(snapshot.sealedManifest) }
       : {}),
-  });
+  }, expectation);
   return { snapshot, raw };
 }
 
@@ -384,7 +388,11 @@ function openSnapshot(
   // Decrypt the records verification returned, not the wire copies — a Proxy
   // or getter-backed snapshot can otherwise show honest bytes to the manifest
   // and stale bytes to decrypt (crypto-protocol.md §8.2 / F-19).
-  const pin = loadPin(snapshot.vaultId);
+  // The decoder refused any wire whose version differs from the caller's
+  // pinned expectation, so reusing the decoded value here is not the server
+  // negotiating the protocol it is asked to accept.
+  const expectation = { cryptoProtocolVersion: snapshot.cryptoProtocolVersion };
+  const pin = loadPin(snapshot.vaultId, expectation);
   let revision = snapshot.revision;
   let vaultKeyVersion = snapshot.vaultKeyVersion;
   let entriesToOpen = snapshot.entries;
@@ -402,7 +410,7 @@ function openSnapshot(
         cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
       },
     );
-    acceptedPin = revisionFromManifest(verified);
+    acceptedPin = revisionFromManifest(verified, expectation);
     revision = verified.manifest.revision;
     vaultKeyVersion = verified.manifest.vaultKeyVersion;
     entriesToOpen = verified.entries;
@@ -437,7 +445,7 @@ function openSnapshot(
   // A failed integrity pass, plaintext decode or sort must leave the old pin intact.
   // The pin is saved by `acceptSnapshot` only after the cache await + liveness
   // check, so a late lock cannot move it into unconfirmed state.
-  assertFreshSnapshot(loadPin(snapshot.vaultId), acceptedPin);
+  assertFreshSnapshot(loadPin(snapshot.vaultId, expectation), acceptedPin, expectation);
   const acceptedLegacy = snapshot.sealedManifest
     ? null
     : acceptedLegacyState(
@@ -500,8 +508,12 @@ async function acceptSnapshot(
   try {
     // Another tab may have advanced the pin while this adoption awaited the
     // cache. Never return the opened vault on that error path.
-    assertFreshSnapshot(loadPin(pin.vaultId), pin);
-    if (persistPin) savePin(pin);
+    assertFreshSnapshot(
+      loadPin(pin.vaultId, { cryptoProtocolVersion: pin.cryptoProtocolVersion }),
+      pin,
+      { cryptoProtocolVersion: pin.cryptoProtocolVersion },
+    );
+    if (persistPin) savePin(pin, { cryptoProtocolVersion: pin.cryptoProtocolVersion });
   } catch (error) {
     discardOpenedVault(vault);
     throw error;
@@ -558,12 +570,15 @@ export async function findRecoverableRevision(
   if (brokenRevision === null) return null;
 
   const revisions = await api.listRevisions(vaultId);
+  // Historic revisions belong to this vault, so the pinned protocol governs
+  // which reader may be used for every one of them.
+  const expectation = pinnedExpectation(vaultId);
   for (const row of revisions) {
     if (row.revision > brokenRevision) continue;
     let masterKey: Uint8Array | null = null;
     let vaultKey: Uint8Array | null = null;
     try {
-      const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, row.revision));
+      const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, row.revision), expectation);
       if (snapshot.vaultId !== vaultId || snapshot.revision !== row.revision) continue;
       const masterEnvelope = masterEnvelopeOf(snapshot);
       masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
@@ -602,7 +617,10 @@ export async function restoreRecoveredRevision(
   masterPassword: string,
   recovery: HeadRecovery,
 ): Promise<UnlockedVault> {
-  const snapshot = decodeVaultSnapshot(await api.getRevision(vaultId, recovery.revision));
+  const snapshot = decodeVaultSnapshot(
+    await api.getRevision(vaultId, recovery.revision),
+    pinnedExpectation(vaultId),
+  );
   assertHistoricSelection(snapshot, recovery, vaultId);
   const masterEnvelope = masterEnvelopeOf(snapshot);
   const masterKey = deriveMasterKeyFromEnvelope(masterPassword, masterEnvelope);
@@ -827,6 +845,7 @@ export async function createVaultV2(
     }
     const committed = decodeVaultSnapshot(
       await resolveSignedWrite(commitOutcome, commitOp, () => api.getSnapshot(vaultId)),
+      { cryptoProtocolVersion: 2 },
     );
     const vault = await acceptSnapshot(committed, vaultKey, "master_password", [
       { envelope: masterEnvelopeOf(committed), wrappingKey: masterKey },
@@ -1097,7 +1116,7 @@ async function commitSnapshot(
         sealedManifest: wireManifest,
       });
     }
-    const committed = decodeVaultSnapshot(committedWire);
+    const committed = decodeVaultSnapshot(committedWire, { cryptoProtocolVersion });
     // A 200 must carry exactly what was written. An older head here would
     // otherwise open cleanly and report a dropped write as saved.
     if (
@@ -1522,6 +1541,7 @@ async function migrateLegacySnapshotUnlocked(
             vaultId: head.vaultId,
             revision: head.revision,
             vaultKeyVersion: head.vaultKeyVersion,
+            cryptoProtocolVersion: head.cryptoProtocolVersion,
           },
         );
         if (options.liveness && !options.liveness.isLive()) throw new VaultLockedError();

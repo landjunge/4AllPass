@@ -27,7 +27,7 @@ import {
 import { api } from "./api.ts";
 import { wipeVaultEntry, type VaultEntry } from "./entries.ts";
 import { openHistoricSnapshot } from "./historic-snapshot.ts";
-import { loadPin } from "./revision-pin.ts";
+import { loadPin, protocolExpectation } from "./revision-pin.ts";
 import { commitEntries, lock as lockVault, type UnlockedVault } from "./vault-session.ts";
 import { VaultLockedError, type VaultLiveness } from "./vault-liveness.ts";
 
@@ -72,7 +72,10 @@ function asRecord(value: unknown, label: string): Record<string, unknown> {
  */
 export async function buildBackupPackage(vault: UnlockedVault): Promise<BackupPackage> {
   const wire = await api.getSnapshot(vault.vaultId);
-  const snapshot = decodeVaultSnapshot(wire);
+  // The unlocked vault already carries the protocol this client accepted, so a
+  // v2 vault is read with the v2 reader instead of failing on the default.
+  const expectation = protocolExpectation(vault.cryptoProtocolVersion);
+  const snapshot = decodeVaultSnapshot(wire, expectation);
   if (snapshot.vaultId !== vault.vaultId) {
     throw new IntegrityError("backup snapshot belongs to a different vault");
   }
@@ -87,11 +90,16 @@ export async function buildBackupPackage(vault: UnlockedVault): Promise<BackupPa
       vaultId: snapshot.vaultId,
       revision: snapshot.revision,
       vaultKeyVersion: snapshot.vaultKeyVersion,
+      ...expectation,
     },
   );
   // Do not back up a rolled-back state: the fetched snapshot must not be older
   // than the freshness pin. Reading it must not move the pin.
-  assertFreshSnapshot(loadPin(vault.vaultId), revisionFromManifest(verified));
+  assertFreshSnapshot(
+    loadPin(vault.vaultId, expectation),
+    revisionFromManifest(verified, expectation),
+    expectation,
+  );
   return { kind: BACKUP_KIND, createdAt: new Date().toISOString(), snapshot: wire };
 }
 
@@ -156,7 +164,10 @@ export function parseBackupPackage(
  * decrypts the entries. Read-only — never moves the pin or cache.
  */
 export function openBackupEntries(vault: UnlockedVault, pack: BackupPackage): VaultEntry[] {
-  const snapshot = decodeVaultSnapshot(pack.snapshot);
+  const snapshot = decodeVaultSnapshot(
+    pack.snapshot,
+    protocolExpectation(vault.cryptoProtocolVersion),
+  );
   return openHistoricSnapshot(snapshot, vault).entries;
 }
 

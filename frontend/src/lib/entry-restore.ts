@@ -22,6 +22,7 @@ import {
   openHistoricSnapshot,
   type HistoricSelection,
 } from "./historic-snapshot.ts";
+import { protocolExpectation } from "./revision-pin.ts";
 import { commitEntries, lock as lockVault, type UnlockedVault } from "./vault-session.ts";
 import { VaultLockedError, type VaultLiveness } from "./vault-liveness.ts";
 
@@ -47,7 +48,10 @@ export async function resolveSingleEntryRestore(
   selection: HistoricSelection,
   entryId: string,
 ): Promise<VaultEntry[]> {
-  const snapshot = decodeVaultSnapshot(await api.getRevision(vault.vaultId, selection.revision));
+  const snapshot = decodeVaultSnapshot(
+    await api.getRevision(vault.vaultId, selection.revision),
+    protocolExpectation(vault.cryptoProtocolVersion),
+  );
   assertHistoricSelection(snapshot, selection, vault.vaultId);
   const opened = openHistoricSnapshot(snapshot, vault);
   const historic = opened.entries.find((entry) => entry.id === entryId);

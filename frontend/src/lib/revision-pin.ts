@@ -25,6 +25,41 @@ function captureExpectation(options: SnapshotProtocolOptions): SnapshotProtocolO
   return cryptoProtocolVersion === undefined ? {} : { cryptoProtocolVersion };
 }
 
+/**
+ * Protocol expectation options for a version that may be unknown. Storage uses
+ * `exactOptionalPropertyTypes`, so an unknown version must stay an absent
+ * option (which the crypto API reads as v1) rather than an explicit undefined.
+ */
+export function protocolExpectation(cryptoProtocolVersion?: number): SnapshotProtocolOptions {
+  return cryptoProtocolVersion === undefined ? {} : { cryptoProtocolVersion };
+}
+
+/** The protocol this client already accepted for the vault, as options. */
+export function pinnedExpectation(vaultId: string): SnapshotProtocolOptions {
+  return protocolExpectation(pinnedProtocolVersion(vaultId));
+}
+
+/**
+ * Which crypto protocol this client already accepted for the vault, or
+ * `undefined` when no pin exists yet.
+ *
+ * Reading the stored field raw is deliberate: `loadPin` validates the stored
+ * version against the caller's expectation, so the expectation cannot be derived
+ * from `loadPin` itself. Durable local state written after a verified manifest
+ * may anchor it — a server header may never do that (see `snapshot-protocol.ts`).
+ */
+export function pinnedProtocolVersion(vaultId: string): number | undefined {
+  const raw = localStorage.getItem(PIN_PREFIX + vaultId);
+  if (raw === null) return undefined;
+  let parsed: Partial<StoredPin> | null;
+  try {
+    parsed = JSON.parse(raw) as Partial<StoredPin> | null;
+  } catch {
+    return undefined;
+  }
+  return parsed && typeof parsed === "object" ? parsed.cryptoProtocolVersion : undefined;
+}
+
 export function loadPin(vaultId: string, options: SnapshotProtocolOptions = {}): VaultRevision | null {
   const expectation = captureExpectation(options);
   const raw = localStorage.getItem(PIN_PREFIX + vaultId);

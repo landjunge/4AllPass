@@ -52,12 +52,9 @@ test("the v2 bootstrap seals a manifest whose version equals the payload version
   const captured: Array<Record<string, unknown>> = [];
   installBodyCapture(captured);
 
-  // The shared decoder still refuses protocol v2, so the call is expected to
-  // fail later. The sealed manifest must already be correct when it is sent.
-  await assert.rejects(
-    () => createVaultV2("test-password-strong-enough", "mobile_safe"),
-    /cryptoProtocolVersion 2 is not supported/,
-  );
+  // The reader now follows the protocol this client accepts, so the call
+  // completes; what must already be right on the wire is the version pair.
+  await createVaultV2("test-password-strong-enough", "mobile_safe");
   assert.equal(captured.length, 1, "one snapshot commit body was sent");
   const body = captured[0];
   assert.equal(body.cryptoProtocolVersion, 2);

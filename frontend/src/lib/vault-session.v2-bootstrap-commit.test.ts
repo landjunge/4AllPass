@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 
 import { api } from "./api.ts";
+import { loadPin } from "./revision-pin.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 
 const VAULT_ID = "6f0c1c1a-3f4e-4c1d-9a7e-2b8d0f5a1c33";
@@ -94,13 +95,13 @@ test("v2 bootstrap disposes its signers before commit and on pre-send failure", 
   const { createVaultV2 } = await import("./vault-session.ts");
   installApiHarness();
 
-  // This integration check is scoped to signer lifetime. The current shared
-  // snapshot decoder rejects protocol v2 after the commit response is received;
-  // retain that separate result without claiming overall v2 acceptance.
-  await assert.rejects(
-    () => createVaultV2("test-password-strong-enough", "mobile_safe"),
-    /cryptoProtocolVersion 2 is not supported/,
-  );
+  // The reader follows the protocol this client just accepted, so the commit
+  // response decodes and the v2 vault opens instead of being refused as v1.
+  const { vault } = await createVaultV2("test-password-strong-enough", "mobile_safe");
+  assert.equal(vault.vaultId, VAULT_ID);
+  assert.equal(vault.revision, 1);
+  assert.equal(vault.cryptoProtocolVersion, 2);
+  assert.equal(loadPin(VAULT_ID, { cryptoProtocolVersion: 2 })?.cryptoProtocolVersion, 2);
   assert.deepEqual(httpPaths, [
     `/api/v1/vaults/${VAULT_ID}/devices`,
     `/api/v1/vaults/${VAULT_ID}/snapshots`,

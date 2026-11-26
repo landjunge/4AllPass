@@ -355,16 +355,19 @@ function sealSnapshotManifest(
   vaultId: string,
   revision: number,
   vaultKeyVersion: number,
+  cryptoProtocolVersion: number,
   vaultKey: Uint8Array,
   envelopes: readonly KeyEnvelope[],
   entries: readonly EncryptedEntry[],
 ) {
   return sealManifest({
     vaultKey,
+    cryptoProtocolVersion,
     manifest: buildManifest({
       vaultId,
       revision,
       vaultKeyVersion,
+      cryptoProtocolVersion,
       envelopes,
       entries,
     }),
@@ -396,6 +399,7 @@ function openSnapshot(
         vaultId: snapshot.vaultId,
         revision: snapshot.revision,
         vaultKeyVersion: snapshot.vaultKeyVersion,
+        cryptoProtocolVersion: snapshot.cryptoProtocolVersion,
       },
     );
     acceptedPin = revisionFromManifest(verified);
@@ -671,6 +675,7 @@ export async function createVault(
       vaultId,
       1,
       INITIAL_VAULT_KEY_VERSION,
+      1,
       vaultKey,
       envelopes,
       [],
@@ -773,6 +778,7 @@ export async function createVaultV2(
       vaultId,
       1,
       INITIAL_VAULT_KEY_VERSION,
+      2,
       vaultKey,
       envelopes,
       [],
@@ -1013,10 +1019,14 @@ async function commitSnapshot(
     }
   });
   const nextRevision = vault.revision + 1;
+  // The server rejects a commit whose sealed manifest version differs from the
+  // payload version, so both must be read from one value, never from literals.
+  const cryptoProtocolVersion = vault.cryptoProtocolVersion === 2 ? 2 : 1;
   const sealedManifest = sealSnapshotManifest(
     vault.vaultId,
     nextRevision,
     vaultKeyVersion,
+    cryptoProtocolVersion,
     vaultKey,
     envelopes,
     encrypted,
@@ -1031,7 +1041,7 @@ async function commitSnapshot(
     const wireEntries = encrypted.map(encodeEncryptedEntry);
     const wireManifest = encodeSealedManifest(sealedManifest);
     let committedWire: WireVaultSnapshot;
-    if (vault.cryptoProtocolVersion === 2) {
+    if (cryptoProtocolVersion === 2) {
       // A rotation signs with the current key and proves the next key. The
       // signer is derived from the Vault Key; no signer means fail closed.
       const rotating = vaultKeyVersion !== vault.vaultKeyVersion;
@@ -1046,7 +1056,7 @@ async function commitSnapshot(
         expectedRevision: vault.revision,
         revision: nextRevision,
         vaultKeyVersion,
-        cryptoProtocolVersion: 2,
+        cryptoProtocolVersion,
         envelopes: wireEnvelopes,
         entries: wireEntries,
         sealedManifest: wireManifest,
@@ -1081,7 +1091,7 @@ async function commitSnapshot(
         expectedRevision: vault.revision,
         revision: nextRevision,
         vaultKeyVersion,
-        cryptoProtocolVersion: 1,
+        cryptoProtocolVersion,
         envelopes: wireEnvelopes,
         entries: wireEntries,
         sealedManifest: wireManifest,

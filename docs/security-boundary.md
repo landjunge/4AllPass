@@ -564,18 +564,25 @@ still follows successful opening and remains best-effort.
   guarantee restoration. Closing the write-authorization gap needs cryptographic
   proof tied to the VK, not just a well-formed request from a valid session.
   **ADR-015 §3 (signed writes, update 2026-11-13):** that proof now exists in
-  code — an Ed25519 keypair derived from the VK (`HKDF-SHA256(VK, …)`), with
-  only the **public** key registered server-side. Each mutating request on a
-  v2 vault carries a detached signature over the canonical request bytes
-  (vaultId, route, revision, `vaultKeyVersion`, `sealedManifestDigest`); the
-  server verifies it before accepting the write and rejects a syntactically
-  valid but wrongly/un-signed commit with `write_signature_invalid` —
+  code for *some* routes on a v2 vault — an Ed25519 keypair derived from the
+  VK (`HKDF-SHA256(VK, …)`), with only the **public** key registered
+  server-side. Snapshot commit, device POST/bootstrap/rotation, credentials
+  POST and the Device-Key-Envelope PUT carry a detached signature over the
+  canonical request bytes (vaultId, route, revision, `vaultKeyVersion`,
+  `sealedManifestDigest`); the server verifies it before accepting the write
+  and rejects a syntactically valid but wrongly/un-signed commit with
+  `write_signature_invalid` —
   `backend/tests/test_signed_writes.py::test_negative_signature_nonce_and_grant`
-  is exactly the attack from this section. It is gated behind
+  is exactly the attack from this section, for those routes. Device DELETE
+  (revoke) and both WebAuthn challenge routes stay **unsigned by design**
+  (ADR-015, PR #291) — `test_self_revoke_keep_token_blocks_write_and_replay`
+  shows an unsigned v2 device DELETE still succeeds on a bearer token alone,
+  so a stolen session can still revoke a device/its sessions without VK
+  possession even with the flag on. It is gated behind
   `FOURALLPASS_SIGNED_WRITES_ENABLED` (default **off**) and only applies to
   newly created v2 vaults (PR #291); existing v1 vaults — the default for
   every vault today — are still exactly as described above: the server does
-  not verify `sealedManifest`. The client half (deriving and using that
+  not verify `sealedManifest` on any route. The client half (deriving and using that
   Ed25519 key in the PWA/desktop) is drafted but not merged (PR #293, #296):
   a real WKWebView PKCS#8-seed import does not round-trip
   (`tools/wk-ed25519-probe-evidence.json` in that draft), so v2 stays

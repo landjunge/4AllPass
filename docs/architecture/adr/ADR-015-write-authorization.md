@@ -99,11 +99,16 @@ remains user+device-global and is documented as such.
 **Implementation note (2026-11-13, step 3 server half — #201):** the signed-write
 design below is now implemented server-side for newly created v2 vaults,
 behind `FOURALLPASS_SIGNED_WRITES_ENABLED` (default off; PR #291). The server
-registers only the vault's **public** Ed25519 key, verifies the detached
-signature on every mutating v2 route, and rejects a syntactically valid but
+registers only the vault's **public** Ed25519 key and verifies a detached
+signature on snapshot commit, device POST/bootstrap/rotation, credentials
+POST and the Device-Key-Envelope PUT, rejecting a syntactically valid but
 wrongly-signed commit with `write_signature_invalid` before it touches the
-snapshot table (`backend/tests/test_signed_writes.py`). Existing v1 vaults —
-the default — are untouched and remain exactly as risky as this ADR describes.
+snapshot table (`backend/tests/test_signed_writes.py`). Device DELETE
+(revoke) and both WebAuthn challenge routes remain **unsigned by design** —
+a bearer token alone still revokes a device/its sessions even on a v2 vault
+with the flag on (`test_self_revoke_keep_token_blocks_write_and_replay`).
+Existing v1 vaults — the default — are untouched and remain exactly as risky
+as this ADR describes, on every route.
 The client half (deriving the Ed25519 seed from VK and signing requests in the
 PWA/desktop) is drafted, not merged: a real WKWebView PKCS#8-seed import does
 not round-trip correctly, so the client-side signer stays fail-closed on that

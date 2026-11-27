@@ -20,6 +20,7 @@
     "allow-extension-install",
     "allow-open-browser-for-extension",
     "allow-open-autofill-demo",
-    "allow-import-browser-logins"
+    "allow-import-browser-logins",
+    "allow-sign-ed25519-v2"
   ]
 }

@@ -715,3 +715,12 @@ do not qualify. This guard is not itself a freshly built/released artifact,
 protected login, OS isolation, human autofill/recovery test or third-party audit.
 Historical release records are retained. Public `v0.1.2-rc.2` / `60eef0a` does not
 gain this behavior from a source change. See the [current short check](two-minute-demo.md).
+
+### P04 explicit-v2 library candidate — development source only
+
+The default-off signed-write work now includes a separate explicit
+[v2 snapshot/manifest library candidate](crypto/snapshot-manifest-v2-candidate.md).
+The default reader/sealer remains v1; entry/envelope encryption formats remain
+v1. The candidate also includes backend syntactic version binding and explicit
+v2 revision/pin primitives. These do not activate the product, migrate existing
+pins/vaults or prove complete session integration, host safety or packaged acceptance. Existing machine credential handoffs remain blocked.

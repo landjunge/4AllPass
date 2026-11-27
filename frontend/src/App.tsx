@@ -43,10 +43,9 @@ export function App(): ReactNode {
     <div className="app np-ui">
       <header>
         <span className="brand">
-          <picture>
-            <source media="(prefers-color-scheme: light)" srcSet="/wordmark-light.svg" />
-            <img src="/wordmark-dark.svg" alt="4AllPass" height="22" />
-          </picture>
+          {/* The app chrome is always dark (docs/ui-map.md, tokens.css); use the
+              wordmark built for that surface, independent of the OS scheme. */}
+          <img src="/wordmark-dark.svg" alt="4AllPass" height="22" />
         </span>
         <FamilyProductHeader />
         <LanguageSwitch />

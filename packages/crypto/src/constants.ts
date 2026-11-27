@@ -1,10 +1,13 @@
 export const CRYPTO_PROTOCOL_VERSION = 1 as const;
+/** Explicit opt-in snapshot/manifest format; entry and envelope formats stay v1. */
+export const SIGNED_SNAPSHOT_PROTOCOL_VERSION = 2 as const;
 export const DEFAULT_SCHEMA_VERSION = 1 as const;
 
 export const ENVELOPE_AAD_LABEL = "4allpass-envelope-v1";
 export const ENTRY_AAD_LABEL = "4allpass-entry-v1";
 export const DEVICE_KEY_AAD_LABEL = "4allpass-device-key-v1";
 export const MANIFEST_AAD_LABEL = "4allpass-manifest-v1";
+export const MANIFEST_V2_AAD_LABEL = "4allpass-manifest-v2";
 export const PRF_EVAL_LABEL = "4allpass-webauthn-prf-v1";
 export const DWK_SALT_LABEL = "4allpass-dwk-salt-v1";
 export const DWK_INFO_LABEL = "4allpass-device-wrap-v1";
@@ -17,6 +20,9 @@ export const RECOVERY_CHECKSUM_LABEL = "4allpass-recovery-checksum-v1";
 export const WRITE_V2_LABEL = "4allpass-vault-write-v2";
 /** Domain label for the next-public-key digest signed during rotation. */
 export const WRITE_V2_PUBLIC_KEY_LABEL = "4allpass-write-public-key-v1";
+/** HKDF domain separation for the write-signing seed derived from the Vault Key (ADR-015). */
+export const WRITE_SEED_SALT_LABEL = "4allpass-write-seed-salt-v1";
+export const WRITE_SEED_INFO_LABEL = "4allpass-write-seed-v1";
 /** Signature nonce, framed by uint32be. Distinct from the 12-byte AES-GCM nonce. */
 export const WRITE_V2_NONCE_BYTES = 16;
 export const WRITE_V2_DIGEST_BYTES = 32;
@@ -28,6 +34,7 @@ export const RECOVERY_CHECKSUM_BYTES = 2;
 export const RECOVERY_GROUP_SIZE = 5;
 
 export const MANIFEST_CONTENT_LABEL = "4allpass-manifest-content-v1";
+export const MANIFEST_V2_CONTENT_LABEL = "4allpass-manifest-content-v2";
 export const ENTRY_DIGEST_LABEL = "4allpass-entry-digest-v1";
 export const ENVELOPE_DIGEST_LABEL = "4allpass-envelope-digest-v1";
 export const SEALED_MANIFEST_DIGEST_LABEL = "4allpass-sealed-manifest-digest-v1";

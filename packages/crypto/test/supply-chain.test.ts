@@ -9,7 +9,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const ALLOWED_RUNTIME = new Set(["@noble/ciphers", "@noble/hashes"]);
+const ALLOWED_RUNTIME = new Set(["@noble/ciphers", "@noble/ed25519", "@noble/hashes"]);
 const FORBIDDEN_SPECIFIERS = [
   "react",
   "react-dom",
@@ -37,7 +37,7 @@ function walkTs(dir: string): string[] {
 }
 
 describe("crypto core supply chain", () => {
-  it("runtime dependencies are only noble ciphers and hashes", () => {
+  it("runtime dependencies are only the approved noble crypto packages", () => {
     const pkg = JSON.parse(readFileSync(join(PKG_ROOT, "package.json"), "utf8")) as {
       dependencies?: Record<string, string>;
     };

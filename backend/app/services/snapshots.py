@@ -236,10 +236,15 @@ async def commit_snapshot(db: AsyncSession, vault: Vault, payload: SnapshotCommi
     if payload.vault_key_version < current_vault_key_version:
         raise HTTPException(status_code=422, detail="vaultKeyVersion must not decrease")
 
-    # After the first revision, every commit must carry a sealed manifest.
+    # V2 requires a manifest from revision 1; v1 keeps its legacy bootstrap.
     # The server stores it opaque — it does not open it under the Vault Key.
-    if current_revision >= 1 and payload.sealed_manifest is None:
+    if (payload.crypto_protocol_version == 2 or current_revision >= 1) and payload.sealed_manifest is None:
         raise HTTPException(status_code=422, detail="sealedManifest is required")
+    if (
+        payload.sealed_manifest is not None
+        and payload.sealed_manifest.version != payload.crypto_protocol_version
+    ):
+        raise HTTPException(status_code=422, detail="sealedManifest.version does not match snapshot")
 
     # Soft DELETE only sets revoked_at. Refuse to let a client put that device's
     # envelope back into a later snapshot (hard rotation omits it; soft omits it).

@@ -11,6 +11,12 @@ import type {
   WireSealedManifest,
   WireVaultSnapshot,
 } from "@4allpass/crypto";
+import {
+  classifySignedWriteResponse,
+  type SignedWriteBundle,
+  type SignedWriteExpectation,
+  type SignedWriteOutcome,
+} from "@4allpass/crypto";
 
 import { deviceId } from "./device-identity.ts";
 import { OfflineTransportError, type SidecarOfflineCode } from "./snapshot-cache.ts";
@@ -34,6 +40,29 @@ function sidecarHttpEnabled(): boolean {
     "__TAURI_INTERNALS__" in window &&
     !readStorageOrigin()
   );
+}
+
+export type SignedWriteTarget = Readonly<{
+  transport: "sidecar" | "fetch";
+  origin: string;
+}>;
+
+/** Capture the endpoint and transport together for one signed-write lifecycle. */
+export function captureSignedWriteTarget(): SignedWriteTarget {
+  const remote = typeof window !== "undefined" ? readStorageOrigin() : null;
+  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !remote) {
+    return Object.freeze({ transport: "sidecar", origin: SIDECAR_API });
+  }
+  const origin = remote
+    ? `${remote}/api/v1`
+    : typeof window !== "undefined" && window.location?.origin
+      ? `${window.location.origin}/api/v1`
+      : "/api/v1";
+  return Object.freeze({ transport: "fetch", origin });
+}
+
+function sameSignedWriteTarget(a: SignedWriteTarget, b: SignedWriteTarget): boolean {
+  return a.transport === b.transport && a.origin === b.origin;
 }
 const TOKEN_KEY = "4allpass.session";
 
@@ -245,6 +274,114 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return parsed as T;
 }
 
+/**
+ * Send one v2 signed write and classify the answer without inventing success.
+ * `bodyString` must be the exact bytes whose payloadDigest was signed. The
+ * replay flag comes from the core header (sidecar) or the response (fetch);
+ * a retry that cannot be proven stays UNKNOWN.
+ */
+export async function signedWriteRequest(
+  method: string,
+  path: string,
+  bundle: SignedWriteBundle,
+  bodyString: string,
+  expected: SignedWriteExpectation,
+  requestDeviceId = deviceId(),
+  target = captureSignedWriteTarget(),
+): Promise<SignedWriteOutcome> {
+  return sendSignedWriteRequest(method, path, bundle.headers, bodyString, expected, requestDeviceId, target);
+}
+
+export interface ExactSignedWriteRequest {
+  readonly method: string;
+  readonly path: string;
+  readonly bodyString: string;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly deviceId: string;
+  readonly expected: Readonly<SignedWriteExpectation>;
+  readonly target: SignedWriteTarget;
+}
+
+/** Resend a previously signed wire request; this never invokes a signer. */
+export async function resumeSignedWriteRequest(
+  request: ExactSignedWriteRequest,
+): Promise<SignedWriteOutcome> {
+  if (!sameSignedWriteTarget(request.target, captureSignedWriteTarget())) {
+    return { kind: "unknown", reason: "request_target_changed" };
+  }
+  return sendSignedWriteRequest(
+    request.method,
+    request.path,
+    request.headers,
+    request.bodyString,
+    request.expected,
+    request.deviceId,
+    request.target,
+  );
+}
+
+async function sendSignedWriteRequest(
+  method: string,
+  path: string,
+  signedHeaders: Readonly<Record<string, string>>,
+  bodyString: string,
+  expected: SignedWriteExpectation,
+  requestDeviceId: string,
+  target: SignedWriteTarget,
+): Promise<SignedWriteOutcome> {
+  const headers: Record<string, string> = { ...signedHeaders, "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  headers["X-Device-Id"] = requestDeviceId;
+  let status: number;
+  let text: string;
+  let replayed: boolean;
+  if (target.transport === "sidecar") {
+    const { invoke } = await import("@tauri-apps/api/core");
+    // Importing Tauri's invoke yields. Revalidate after that await and directly
+    // before the irreversible IPC call so a changed endpoint/transport sends
+    // nothing. Keep using the captured target; never follow the new target.
+    if (!sameSignedWriteTarget(target, captureSignedWriteTarget())) {
+      return { kind: "unknown", reason: "request_target_changed" };
+    }
+    let result: { status: number; body: string; replayed?: boolean };
+    try {
+      result = await invoke<{ status: number; body: string; replayed?: boolean }>("sidecar_http", {
+        method,
+        path: `/api/v1${path}`,
+        headers,
+        body: bodyString,
+      });
+    } catch (error) {
+      const offline = classifySidecarTransportRejection(error);
+      if (offline) throw offline;
+      throw classifySidecarRequestError(error);
+    }
+    status = result.status;
+    text = result.body;
+    replayed = result.replayed === true;
+  } else {
+    // This is deliberately adjacent to fetch(): the endpoint may have changed
+    // while the request was being signed, but the frozen target is never
+    // replaced with that new endpoint.
+    if (!sameSignedWriteTarget(target, captureSignedWriteTarget())) {
+      return { kind: "unknown", reason: "request_target_changed" };
+    }
+    const response = await fetch(`${target.origin}${path}`, {
+      method,
+      headers,
+      credentials: "omit",
+      body: bodyString,
+    });
+    status = response.status;
+    text = await response.text();
+    replayed = response.headers.get("X-4AP-Write-Replayed") === "true";
+  }
+  const parsed: unknown = text ? JSON.parse(text) : {};
+  const receiptHeaders = new Headers();
+  if (replayed) receiptHeaders.set("X-4AP-Write-Replayed", "true");
+  return classifySignedWriteResponse(status, receiptHeaders, parsed, expected);
+}
+
 /** base64 → base64url without padding, for credential ids in URL paths. */
 export function toPathId(base64: string): string {
   return base64.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -281,6 +418,15 @@ export const api = {
 
   createVault(): Promise<VaultSummary> {
     return request("POST", "/vaults");
+  },
+
+  /**
+   * Create a v2 (signed-write) vault. Additive and opt-in: the server issues a
+   * one-time creation grant bound to vault/owner/purpose. Existing v1 vaults
+   * are never migrated by this call.
+   */
+  createVaultV2(accountPassword: string): Promise<{ vaultId: string; creationGrant: string }> {
+    return request("POST", "/vaults", { cryptoProtocolVersion: 2, accountPassword });
   },
 
   getVault(vaultId: string): Promise<VaultSummary> {

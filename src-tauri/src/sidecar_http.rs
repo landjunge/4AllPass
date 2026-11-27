@@ -11,6 +11,9 @@ const BODY_LIMIT: u64 = 48 * 1024 * 1024;
 pub struct SidecarHttpResult {
     status: u16,
     body: String,
+    /// `X-4AP-Write-Replayed: true` from the core, so the client can bind a
+    /// replay receipt. Additive; existing consumers ignore it.
+    replayed: bool,
 }
 
 /// Wire-level classification for the Tauri command error.
@@ -201,15 +204,19 @@ fn request_core(
     match resp {
         Ok(ok) => {
             let status = ok.status();
+            let replayed = ok.header("X-4AP-Write-Replayed") == Some("true");
             let text = read_body(ok).map_err(|error| SidecarError::new(io_code(&error)))?;
-            Ok(SidecarHttpResult { status, body: text })
+            Ok(SidecarHttpResult { status, body: text, replayed })
         }
-        Err(ureq::Error::Status(status, ok)) => match read_body(ok) {
-            Ok(text) => Ok(SidecarHttpResult { status, body: text }),
-            // The HTTP status is already a failure; a body read failure must
-            // never become an offline/cache/auth-bypass signal.
-            Err(_) => Err(SidecarError::new(SidecarErrorCode::Protocol)),
-        },
+        Err(ureq::Error::Status(status, ok)) => {
+            let replayed = ok.header("X-4AP-Write-Replayed") == Some("true");
+            match read_body(ok) {
+                Ok(text) => Ok(SidecarHttpResult { status, body: text, replayed }),
+                // The HTTP status is already a failure; a body read failure must
+                // never become an offline/cache/auth-bypass signal.
+                Err(_) => Err(SidecarError::new(SidecarErrorCode::Protocol)),
+            }
+        }
         Err(ureq::Error::Transport(error)) => {
             Err(SidecarError::new(classify_transport(&error)))
         }

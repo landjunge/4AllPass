@@ -17,6 +17,11 @@ import {
 } from "./constants.ts";
 import { base64ToBytes, bytesToBase64 } from "./encoding/base64.ts";
 import { ProtocolError } from "./errors.ts";
+import {
+  assertSnapshotProtocolVersion,
+  expectedSnapshotProtocolVersion,
+  type SnapshotProtocolOptions,
+} from "./snapshot-protocol.ts";
 import type {
   Argon2idParams,
   DeviceKeyEnvelope,
@@ -343,12 +348,19 @@ export function encodeSealedManifest(sealed: SealedManifest): WireSealedManifest
   };
 }
 
-export function decodeSealedManifest(value: unknown): SealedManifest {
+export function decodeSealedManifest(
+  value: unknown,
+  options: SnapshotProtocolOptions = {},
+): SealedManifest {
   const source = asRecord(value, "sealedManifest");
-  requireVersion(source, "version", "sealedManifest");
+  const expected = expectedSnapshotProtocolVersion(options);
+  const version = assertSnapshotProtocolVersion(requireInt(source, "version", "sealedManifest"));
+  if (version !== expected) {
+    throw new ProtocolError(`sealedManifest.version ${version} is not supported (expected ${expected})`);
+  }
   requireGcm(source, "sealedManifest");
   return {
-    version: CRYPTO_PROTOCOL_VERSION,
+    version,
     encryption: "AES-256-GCM",
     nonce: requireBytes(source, "nonce", "sealedManifest", NONCE_BYTES),
     ciphertext: requireBytes(source, "ciphertext", "sealedManifest"),
@@ -371,8 +383,16 @@ export function encodeVaultSnapshot(snapshot: VaultSnapshot): WireVaultSnapshot 
   return wire;
 }
 
-export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
+export function decodeVaultSnapshot(
+  value: unknown,
+  options: SnapshotProtocolOptions = {},
+): VaultSnapshot {
   const source = asRecord(value, "snapshot");
+  const expected = expectedSnapshotProtocolVersion(options);
+  const protocol = assertSnapshotProtocolVersion(requireInt(source, "cryptoProtocolVersion", "snapshot"));
+  if (protocol !== expected) {
+    throw new ProtocolError(`snapshot.cryptoProtocolVersion ${protocol} is not supported (expected ${expected})`);
+  }
   const revision = requireInt(source, "revision", "snapshot");
   const vaultKeyVersion = requireInt(source, "vaultKeyVersion", "snapshot");
   if (revision < 1 || vaultKeyVersion < 1) {
@@ -387,13 +407,15 @@ export function decodeVaultSnapshot(value: unknown): VaultSnapshot {
     vaultId: requireString(source, "vaultId", "snapshot"),
     revision,
     vaultKeyVersion,
-    cryptoProtocolVersion: requireVersion(source, "cryptoProtocolVersion", "snapshot") as 1,
+    cryptoProtocolVersion: protocol,
     envelopes: envelopes.map(decodeKeyEnvelope),
     entries: entries.map(decodeEncryptedEntry),
   };
   const sealed = optional(source, "sealedManifest");
   if (sealed !== undefined) {
-    snapshot.sealedManifest = decodeSealedManifest(sealed);
+    snapshot.sealedManifest = decodeSealedManifest(sealed, { cryptoProtocolVersion: protocol });
+  } else if (protocol === 2) {
+    throw new ProtocolError("snapshot protocol 2 requires a sealed manifest");
   }
   return snapshot;
 }

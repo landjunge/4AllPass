@@ -114,6 +114,7 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 4 | Sterne gold. Stern-Tap toggelt `favorite`. Rest der Row öffnet Detail. |
 | 5 | Geleakt / doppelt / schwach, dann alle anderen nach `updatedAt`. Icon + Titel + User/Host + Badge. |
 | 6 | Formular in Fragen (Art → Name → Zugang). Kopieren am Feld. Oder Empty mit Login/API/Server. |
+| 7 | Bestehender Recovery-Dialog: Nach bestätigter Passwortänderung, aber fehlgeschlagenem lokalem Abschluss nur „Lokal erneut abschließen“ oder „Tresor schließen“. Keine erneuten Passwort-/Kitfelder und kein zweiter Serverauftrag. DE/EN gleichwertig; Geräte erst nach vollständiger Übernahme. |
 
 Handy: Spalten unter 820 px untereinander.
 

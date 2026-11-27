@@ -17,6 +17,8 @@ mod sidecar_target;
 mod sleep;
 mod tray;
 
+mod write_signer;
+
 use loopback::{prepare_loopback_core, wait_our_core};
 use process::{kill_core, spawn_core, CoreProcess};
 use prompts::{deny_closed_prompt, PromptState};

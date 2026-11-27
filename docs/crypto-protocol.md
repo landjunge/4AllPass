@@ -59,3 +59,10 @@ single-file content.
 This document is intentionally strict.  
 Any implementation that cannot satisfy the invariants above is not compliant with 4AllPass Crypto Protocol v1.
 
+
+## Experimental P04 library boundary
+
+The v1 specification and fixed vectors remain unchanged. A separate explicit
+[development candidate for snapshot/manifest v2](crypto/snapshot-manifest-v2-candidate.md)
+adds distinct manifest domains while retaining v1 child encryption formats and
+v1 caller defaults. It is not an activated or fully accepted vault protocol.

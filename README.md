@@ -194,6 +194,8 @@ Zuerst muss 4AllPass im Alltag einfach und zuverlässig funktionieren: installie
 | Apple | Notarisierung wegen jährlicher Kosten pausiert |
 | Sicherheitsprüfung | Noch kein unabhängiges Drittaudit |
 
+**Darstellung:** Die Desktop-App hat eine feste dunkle Oberfläche. Deshalb zeigt ihr Kopfbereich immer die für dunklen Grund gezeichnete Wortmarke – unabhängig davon, ob das Betriebssystem hell oder dunkel eingestellt ist. README, Produktseite und Browser-Symbole wählen weiterhin passend zum System; die App selbst wechselt ihr Erscheinungsbild nicht.
+
 Wichtig: 4AllPass ist noch eine Alpha-Version. Für wichtige Zugangsdaten braucht es weiterhin Vorsicht und ein sicheres Backup.
 
 ### Lizenz
@@ -300,6 +302,8 @@ Revoking a device blocks mutations from that device's session in that vault; rea
 
 The five-product appbar loads its existing module CSS (44×44 targets, helper text visually hidden but available to screen readers), and the DE/EN choice also sets the document language (`<html lang>`). Switching a product calls the native `family_switch` host with the catalog id only; in the browser it stays honestly disabled, and “App opened” is not “connected”.
 
+The desktop app keeps a fixed dark surface, so its header always shows the wordmark drawn for that background — independent of the operating system's light or dark setting. README, product page and browser favicons still adapt to the system; the app itself does not switch themes.
+
 Start with the [desktop release](https://github.com/landjunge/4AllPass/releases/tag/v0.1.2-rc.3); read its [machine-access security notice](docs/release-notes/0.1.2-rc.2-security-notice.md) first. Product page: [4allpass.netzwerkpunkt.de](https://4allpass.netzwerkpunkt.de/). Technical details are in the [documentation index](docs/README.md).
 
 **License: Netzwerkpunkt Personal Use License 1.0 — custom source-available terms.**
@@ -313,3 +317,9 @@ See the [full German license and English translation](LICENSE); the German text 
 
 **4AllPass beantwortet eine Frage: Darf ich zugreifen?**
 Teil von [Netzwerkpunkt](https://netzwerkpunkt.de/) – eigenständig, local-first und unter deiner Kontrolle.
+
+### P04-Entwicklungsstand / P04 development candidate
+
+Der bestehende, standardmäßig deaktivierte Signed-Write-Entwicklungszweig enthält einen ausdrücklich anzufordernden V2-Snapshot-/Manifest-Bibliothekskandidaten. V1 bleibt Standard; Einträge und Envelopes behalten Format 1. Hinzu kommen syntaktische Backend-Prüfungen und ausdrücklich gewählte V2-Revisions-/Pin-APIs. Die vollständige Sessionintegration und paketierte Abnahme bleiben offen; bestehende Tresore werden nicht migriert. [Technischer Umfang](docs/crypto/snapshot-manifest-v2-candidate.md).
+
+The existing default-off signed-write development branch contains an explicit opt-in v2 snapshot/manifest library candidate. V1 remains the default; entries and envelopes retain format 1. It also includes backend syntactic checks and explicit v2 revision/pin APIs. Complete session integration and packaged acceptance remain open; existing vaults are not migrated. [Technical scope](docs/crypto/snapshot-manifest-v2-candidate.md).

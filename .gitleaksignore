@@ -33,3 +33,9 @@
 7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/generate-write-request-vectors.mjs:generic-api-key:84
 7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:32
 7ade42b432c4d9b398786a9ecfee38ba15c479b7:packages/crypto/test/fixtures/write-request-vectors.json:generic-api-key:39
+
+# Synthetic in-memory LocalStorage address, not a credential or API key.
+# The historical test variable `key` held the literal 4allpass.pin.vault-v2.
+# Current test names it `slot`; scan the rest of the branch without widening rules.
+e0f608f65989799faf1849251bf263642c2bc008:frontend/src/lib/revision-pin.test.ts:generic-api-key:76
+e0f608f65989799faf1849251bf263642c2bc008:frontend/src/lib/revision-pin.test.ts:generic-api-key:89

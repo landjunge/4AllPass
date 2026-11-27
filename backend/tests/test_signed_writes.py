@@ -41,9 +41,9 @@ def body_bytes(payload: dict) -> bytes:
     return json.dumps(payload, separators=(",", ":")).encode()
 
 
-def manifest(seed: bytes = b"m1") -> dict:
+def manifest(seed: bytes = b"m1", *, version: int = 1) -> dict:
     return {
-        "version": 1,
+        "version": version,
         "encryption": "AES-256-GCM",
         "nonce": b64(bytes(range(12))),
         "ciphertext": b64(hashlib.sha256(seed).digest()),
@@ -314,7 +314,7 @@ async def test_bootstrap_snapshot_replay_and_rotation(client, account):
         base=0,
         key_version=1,
         result_key_version=1,
-        manifest_obj=manifest(),
+        manifest_obj=manifest(version=2),
     )
     assert snapshot.status_code == 200, snapshot.text
 
@@ -352,7 +352,7 @@ async def test_bootstrap_snapshot_replay_and_rotation(client, account):
         base=1,
         key_version=1,
         result_key_version=2,
-        manifest_obj=manifest(b"m2"),
+        manifest_obj=manifest(b"m2", version=2),
         next_priv=new_priv,
         next_pub=new_pub,
     )
@@ -378,7 +378,7 @@ async def test_bootstrap_snapshot_replay_and_rotation(client, account):
         base=2,
         key_version=1,
         result_key_version=1,
-        manifest_obj=manifest(b"m3"),
+        manifest_obj=manifest(b"m3", version=2),
     )
     assert stale.status_code == 409
     assert stale.json()["detail"] == "write_key_version_mismatch"
@@ -395,7 +395,7 @@ async def test_v2_rejects_unsigned_and_v1_rejects_signed(client, account):
         "cryptoProtocolVersion": 2,
         "envelopes": [envelope()],
         "entries": [],
-        "sealedManifest": manifest(),
+        "sealedManifest": manifest(version=2),
     }
     unsigned = await client.post(
         f"/api/v1/vaults/{vault_id}/snapshots", json=payload, headers=account
@@ -421,7 +421,7 @@ async def test_v2_rejects_unsigned_and_v1_rejects_signed(client, account):
         key_version=1,
         result_key_version=1,
         has_manifest=True,
-        manifest_digest=sealed_manifest_digest(manifest()),
+        manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=b"\x00" * 32,
         operation_id=uuid.uuid4(),
         nonce=uuid.uuid4().bytes,
@@ -447,7 +447,7 @@ async def test_replay_after_head_advanced_returns_stored_receipt(client, account
         base=0,
         key_version=1,
         result_key_version=1,
-        manifest_obj=manifest(),
+        manifest_obj=manifest(version=2),
     )
     assert first.status_code == 200, first.text
 
@@ -462,7 +462,7 @@ async def test_replay_after_head_advanced_returns_stored_receipt(client, account
         base=1,
         key_version=1,
         result_key_version=2,
-        manifest_obj=manifest(b"m2"),
+        manifest_obj=manifest(b"m2", version=2),
         next_priv=new_priv,
         next_pub=new_priv.public_key().public_bytes_raw(),
     )
@@ -515,7 +515,7 @@ async def test_signed_key_version_must_match_payload(client, account):
         base=0,
         key_version=1,
         result_key_version=1,
-        manifest_obj=manifest(),
+        manifest_obj=manifest(version=2),
         payload_vault_key=2,
     )
     assert mismatch.status_code == 422
@@ -532,7 +532,7 @@ async def test_signed_key_version_must_match_payload(client, account):
         base=0,
         key_version=1,
         result_key_version=2,
-        manifest_obj=manifest(),
+        manifest_obj=manifest(version=2),
         payload_vault_key=1,
         next_priv=Ed25519PrivateKey.generate(),
         next_pub=Ed25519PrivateKey.generate().public_key().public_bytes_raw(),
@@ -553,7 +553,7 @@ async def test_bootstrap_only_on_first_device_registration(client, account):
             "cryptoProtocolVersion": 2,
             "envelopes": [envelope()],
             "entries": [],
-            "sealedManifest": manifest(),
+            "sealedManifest": manifest(version=2),
         }
     )
     signed, _ = sign(
@@ -571,7 +571,7 @@ async def test_bootstrap_only_on_first_device_registration(client, account):
         key_version=1,
         result_key_version=1,
         has_manifest=True,
-        manifest_digest=sealed_manifest_digest(manifest()),
+        manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(raw),
         operation_id=uuid.uuid4(),
         nonce=uuid.uuid4().bytes,
@@ -612,7 +612,7 @@ async def test_pg_head_progress_during_lock_wait(client, account):
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
         client, account, vault_id, priv, pub,
-        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(version=2),
     )
     assert first.status_code == 200, first.text
 
@@ -632,7 +632,7 @@ async def test_pg_head_progress_during_lock_wait(client, account):
             _commit(
                 client, account, vault_id, priv, pub,
                 revision=2, base=1, key_version=1, result_key_version=1,
-                manifest_obj=manifest(b"m2"),
+                manifest_obj=manifest(b"m2", version=2),
             )
         )
         await entered.wait()
@@ -646,7 +646,7 @@ async def test_pg_head_progress_during_lock_wait(client, account):
                     revision=2,
                     vault_key_version=1,
                     crypto_protocol_version=2,
-                    sealed_manifest=manifest(b"m2"),
+                    sealed_manifest=manifest(b"m2", version=2),
                 )
                 other.add(snap)
                 await other.flush()
@@ -669,7 +669,7 @@ async def test_signed_credential_post_and_replay(client, account):
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     snapshot, _, _ = await _commit(
         client, account, vault_id, priv, pub,
-        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(version=2),
     )
     assert snapshot.status_code == 200, snapshot.text
 
@@ -689,7 +689,7 @@ async def test_signed_credential_post_and_replay(client, account):
         route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
         resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
         base=1, result=1, key_version=1, result_key_version=1,
-        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(raw),
         operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
     )
@@ -731,7 +731,7 @@ async def test_signed_device_key_envelope_put_and_replay(client, account):
         "cryptoProtocolVersion": 2,
         "envelopes": [envelope(), device_envelope(DEVICE)],
         "entries": [],
-        "sealedManifest": manifest(),
+        "sealedManifest": manifest(version=2),
     }
     raw = body_bytes(payload)
     signed, _ = sign(
@@ -739,7 +739,7 @@ async def test_signed_device_key_envelope_put_and_replay(client, account):
         method="POST", route="/api/v1/vaults/{vaultId}/snapshots",
         resource_type="vault", resource_id="", parent_id="",
         base=0, result=1, key_version=1, result_key_version=1,
-        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(raw),
         operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
     )
@@ -758,7 +758,7 @@ async def test_signed_device_key_envelope_put_and_replay(client, account):
         method="POST", route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
         resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
         base=1, result=1, key_version=1, result_key_version=1,
-        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(cred_raw),
         operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
     )
@@ -781,7 +781,7 @@ async def test_signed_device_key_envelope_put_and_replay(client, account):
         route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope",
         resource_type="credential", resource_id=credential_id, parent_id=DEVICE,
         base=1, result=1, key_version=1, result_key_version=1,
-        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(env_raw),
         operation_id=uuid.uuid4(), nonce=uuid.uuid4().bytes,
     )
@@ -851,7 +851,7 @@ async def test_duplicate_operation_two_engines_one_effect(client, account, engin
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
         client, account, vault_id, priv, pub,
-        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(version=2),
     )
     assert first.status_code == 200, first.text
 
@@ -860,7 +860,7 @@ async def test_duplicate_operation_two_engines_one_effect(client, account, engin
     payload = {
         "expectedRevision": 1, "revision": 2, "vaultKeyVersion": 1,
         "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
-        "sealedManifest": manifest(b"m2"),
+        "sealedManifest": manifest(b"m2", version=2),
     }
     raw = body_bytes(payload)
     signed, _ = sign(
@@ -908,7 +908,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account, engine):
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
         client, account, vault_id, priv, pub,
-        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(version=2),
     )
     assert first.status_code == 200, first.text
 
@@ -918,7 +918,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account, engine):
         old_payload = {
             "expectedRevision": 1, "revision": 2, "vaultKeyVersion": 1,
             "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
-            "sealedManifest": manifest(b"old"),
+            "sealedManifest": manifest(b"old", version=2),
         }
         old_raw = body_bytes(old_payload)
         old_signed, _ = sign(
@@ -944,7 +944,7 @@ async def test_pg_rotation_beats_waiting_old_key_write(client, account, engine):
             rotated, _, _ = await _commit(
                 client, account, vault_id, priv, pub,
                 revision=2, base=1, key_version=1, result_key_version=2,
-                manifest_obj=manifest(b"rotated"),
+                manifest_obj=manifest(b"rotated", version=2),
                 next_priv=new_priv,
                 next_pub=new_priv.public_key().public_bytes_raw(),
             )
@@ -974,7 +974,7 @@ def _snapshot_request(vault_id, priv, pub, *, base, revision, vk, op, nonce, man
     payload = {
         "expectedRevision": base, "revision": revision, "vaultKeyVersion": vk,
         "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
-        "sealedManifest": manifest_obj or manifest(),
+        "sealedManifest": manifest_obj or manifest(version=2),
     }
     raw = body_bytes(payload)
     headers, _ = sign(
@@ -1047,7 +1047,7 @@ async def test_same_owner_other_device_and_route_mismatch(client, account, engin
         method="POST", route="/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials",
         resource_type="credential", resource_id=cred, parent_id=DEVICE,
         base=1, result=1, key_version=1, result_key_version=1,
-        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest()),
+        has_manifest=True, manifest_digest=sealed_manifest_digest(manifest(version=2)),
         payload_digest=write_payload_digest_v2(body), operation_id=op, nonce=nonce,
     )
     mismatch = await client.post(
@@ -1072,7 +1072,7 @@ async def test_self_revoke_keep_token_blocks_write_and_replay(client, account):
     assert replay.status_code == 403
     assert replay.json()["detail"] == "device_revoked"
 
-    new_headers, new_raw = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"))
+    new_headers, new_raw = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2", version=2))
     blocked = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=new_raw, headers={**account, **new_headers})
     assert blocked.status_code == 403
 
@@ -1096,7 +1096,7 @@ async def test_negative_signature_nonce_and_grant(client, account, engine):
     ok = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=raw, headers={**account, **headers})
     assert ok.status_code == 200, ok.text
     reused_nonce = uuid.uuid4()
-    h2, r2 = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=reused_nonce, nonce=nonce, manifest_obj=manifest(b"m2"))
+    h2, r2 = _snapshot_request(vault_id, priv, pub, base=1, revision=2, vk=1, op=reused_nonce, nonce=nonce, manifest_obj=manifest(b"m2", version=2))
     nonce_reuse = await client.post(f"/api/v1/vaults/{vault_id}/snapshots", content=r2, headers={**account, **h2})
     assert nonce_reuse.status_code == 409
     assert nonce_reuse.json()["detail"] == "write_nonce_reused"
@@ -1225,7 +1225,7 @@ async def test_local_adopt_race_old_owner_signed_write_and_receipt(client, accou
         try:
             new_headers, new_raw = _snapshot_request(
                 vault_id, priv, pub, base=1, revision=2, vk=1,
-                op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"),
+                op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2", version=2),
             )
             new_headers["X-Test-Barrier"] = "old-writer"
             async with gated_client:
@@ -1320,7 +1320,7 @@ async def test_local_adopt_serialized_write_before_and_after(client, account, en
 
         new_headers, new_raw = _snapshot_request(
             vault_id, priv, pub, base=1, revision=2, vk=1,
-            op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2"),
+            op=uuid.uuid4(), nonce=uuid.uuid4().bytes, manifest_obj=manifest(b"m2", version=2),
         )
         old_write = await client.post(
             f"/api/v1/vaults/{vault_id}/snapshots", content=new_raw, headers={**local, **new_headers}
@@ -1351,7 +1351,7 @@ async def _rotation_request(vault_id, priv, pub, next_priv, next_pub, *, base, r
     payload = {
         "expectedRevision": base, "revision": revision, "vaultKeyVersion": payload_vk,
         "cryptoProtocolVersion": 2, "envelopes": [envelope()], "entries": [],
-        "sealedManifest": manifest(b"rot"),
+        "sealedManifest": manifest(b"rot", version=2),
     }
     raw = body_bytes(payload)
     headers, _ = sign(
@@ -1393,7 +1393,7 @@ async def test_conflict_rolls_back_prepare_side_effects(client, account, engine)
     priv, pub = await _bootstrap_device(client, account, vault_id, grant)
     first, _, _ = await _commit(
         client, account, vault_id, priv, pub,
-        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(),
+        revision=1, base=0, key_version=1, result_key_version=1, manifest_obj=manifest(version=2),
     )
     assert first.status_code == 200, first.text
     before = await _signed_state(engine, vault_id)

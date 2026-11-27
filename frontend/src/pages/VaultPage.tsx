@@ -32,6 +32,7 @@ export function VaultPage(): ReactNode {
       {app.recoveryMasterOffer?.vaultId === vault.vault.vaultId ? <RecoveryMasterDialog
         offer={app.recoveryMasterOffer} error={app.error} passwordsCollide={app.passwordsCollide}
         complete={app.completeRecoveryMasterOffer} dismiss={app.dismissRecoveryMasterOffer}
+        retryAdoption={app.retryRecoveryMasterAdoption}
         openDevices={() => {
           app.dismissRecoveryMasterOffer();
           vault.setTab("settings"); vault.setSettingsPane("devices");

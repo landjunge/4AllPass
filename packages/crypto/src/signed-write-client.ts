@@ -1,7 +1,20 @@
 import { sha256 } from "@noble/hashes/sha2.js";
-import type { webcrypto } from "node:crypto";
-import { bytesToHex, equalBytes } from "./encoding/bytes.ts";
+import { bytesToHex, equalBytes, utf8 } from "./encoding/bytes.ts";
 import { writeRequestBytesV2, writePublicKeyDigestV2, type WriteRequestV2 } from "./requester.ts";
+
+// Runtime-neutral WebCrypto types: derived from the global so this package
+// typechecks under both Node (tests) and the browser/desktop DOM lib without
+// importing `node:crypto`, which the frontend project cannot resolve.
+type CryptoLike = typeof globalThis.crypto;
+type SubtleCryptoLike = NonNullable<CryptoLike["subtle"]>;
+type CryptoKeyLike = Awaited<ReturnType<SubtleCryptoLike["importKey"]>>;
+
+/** Copy into a plain ArrayBuffer so the value satisfies the DOM BufferSource. */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
 
 /**
  * Client half of the v2 signed-write path (ADR-015 step 3).
@@ -60,7 +73,7 @@ export interface SignerProbe {
   reason?: string;
 }
 
-function subtleCrypto(): webcrypto.SubtleCrypto | undefined {
+function subtleCrypto(): SubtleCryptoLike | undefined {
   return globalThis.crypto?.subtle;
 }
 
@@ -76,12 +89,12 @@ function pkcs8FromSeed(seed: Uint8Array): Uint8Array {
 
 async function importSeed(
   seed: Uint8Array,
-  subtle: webcrypto.SubtleCrypto | undefined = subtleCrypto(),
-): Promise<webcrypto.CryptoKey> {
+  subtle: SubtleCryptoLike | undefined = subtleCrypto(),
+): Promise<CryptoKeyLike> {
   if (!subtle) throw new SignerUnavailableError("no SubtleCrypto");
   const der = pkcs8FromSeed(seed);
   try {
-    return await subtle.importKey("pkcs8", der, "Ed25519", false, ["sign"]);
+    return await subtle.importKey("pkcs8", toArrayBuffer(der), "Ed25519", false, ["sign"]);
   } catch {
     throw new SignerUnavailableError("Ed25519 PKCS#8 import is unavailable");
   } finally {
@@ -95,7 +108,7 @@ async function importSeed(
  * produce a v2 write either.
  */
 export async function probeSigner(
-  options: { subtle?: webcrypto.SubtleCrypto | null } = {},
+  options: { subtle?: SubtleCryptoLike | null } = {},
 ): Promise<SignerProbe> {
   const subtle = options.subtle === undefined ? subtleCrypto() : options.subtle ?? undefined;
   if (!subtle) return { available: false, reason: "no SubtleCrypto" };
@@ -172,16 +185,41 @@ function utf8b64url(value: string): string {
 }
 
 /**
- * Build and sign one write. The canonical bytes are produced by the shared
- * encoder, so client and server cannot drift; nothing here falls back to
- * unsigned when signing fails.
+ * A signing backend. The canonical bytes are produced by the shared encoder;
+ * a backend only signs them and exposes the matching public key. The desktop
+ * app uses the native Tauri signer (the webview's PKCS#8 import is broken on
+ * the shipped WK runtime); Node/tests use WebCrypto. Neither falls back to
+ * unsigned.
  */
-export async function signWriteV2(
+export interface WriteSigner {
+  /** Raw 32-byte public key belonging to the signing seed. */
+  readonly publicKey: Uint8Array;
+  sign(canonical: Uint8Array): Promise<Uint8Array>;
+  /** Drop backend references and wipe any owned seed buffer after one operation. */
+  dispose?(): void;
+}
+
+/** WebCrypto backend: import the PKCS#8 seed once, sign with Ed25519. */
+export async function webCryptoWriteSigner(key: SignedWriteKey): Promise<WriteSigner> {
+  const privateKey = await importSeed(key.seed);
+  const subtle = subtleCrypto()!;
+  return {
+    publicKey: key.publicKey,
+    sign: async (canonical) => new Uint8Array(await subtle.sign("Ed25519", privateKey, toArrayBuffer(canonical))),
+  };
+}
+
+/**
+ * Build and sign one write with an explicit backend. The canonical bytes are
+ * produced by the shared encoder, so client and server cannot drift; nothing
+ * here falls back to unsigned when signing fails.
+ */
+export async function signWriteV2WithSigner(
   fields: SignedWriteFields,
-  key: SignedWriteKey,
-  next?: SignedWriteKey,
+  signer: WriteSigner,
+  next?: WriteSigner,
 ): Promise<SignedWriteBundle> {
-  if (key.publicKey.length !== WRITE_PUBLIC_KEY_BYTES) {
+  if (signer.publicKey.length !== WRITE_PUBLIC_KEY_BYTES) {
     throw new SignedWriteInputError("publicKey must be 32 bytes");
   }
   if (fields.nonce.length !== WRITE_NONCE_BYTES) {
@@ -220,9 +258,7 @@ export async function signWriteV2(
     timestamp: fields.timestamp,
   };
   const canonical = writeRequestBytesV2(request);
-  const privateKey = await importSeed(key.seed);
-  const subtle = subtleCrypto()!;
-  const signature = new Uint8Array(await subtle.sign("Ed25519", privateKey, canonical));
+  const signature = await signer.sign(canonical);
   const headers: Record<string, string> = {
     [SIGNED_WRITE_HEADERS.scheme]: SIGNED_WRITE_SCHEME,
     [SIGNED_WRITE_HEADERS.signature]: b64url(signature),
@@ -239,12 +275,24 @@ export async function signWriteV2(
   };
   if (fields.hasNextKey && next) {
     headers[SIGNED_WRITE_HEADERS.nextPublicKey] = b64url(next.publicKey);
-    const nextPrivate = await importSeed(next.seed);
-    headers[SIGNED_WRITE_HEADERS.nextSignature] = b64url(
-      new Uint8Array(await subtle.sign("Ed25519", nextPrivate, canonical)),
-    );
+    headers[SIGNED_WRITE_HEADERS.nextSignature] = b64url(await next.sign(canonical));
   }
   return { request, canonical, signature, headers };
+}
+
+/**
+ * Build and sign one write with the WebCrypto backend. The canonical bytes are
+ * produced by the shared encoder, so client and server cannot drift; nothing
+ * here falls back to unsigned when signing fails.
+ */
+export async function signWriteV2(
+  fields: SignedWriteFields,
+  key: SignedWriteKey,
+  next?: SignedWriteKey,
+): Promise<SignedWriteBundle> {
+  const signer = await webCryptoWriteSigner(key);
+  const nextSigner = next ? await webCryptoWriteSigner(next) : undefined;
+  return signWriteV2WithSigner(fields, signer, nextSigner);
 }
 
 export interface SignedWriteExpectation {
@@ -256,23 +304,116 @@ export interface SignedWriteExpectation {
   parentId: string;
 }
 
-function validReceipt(payload: unknown, expected: SignedWriteExpectation): boolean {
-  if (typeof payload !== "object" || payload === null) return false;
+interface ReceiptRouteContract {
+  resourceType: "vault" | "device" | "credential";
+  resourceStates: readonly string[];
+}
+
+const RECEIPT_ROUTES: Readonly<Record<string, ReceiptRouteContract>> = {
+  "/api/v1/vaults/{vaultId}/snapshots": {
+    resourceType: "vault",
+    resourceStates: ["active"],
+  },
+  "/api/v1/vaults/{vaultId}/devices": {
+    resourceType: "device",
+    resourceStates: ["active", "revoked"],
+  },
+  "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials": {
+    resourceType: "credential",
+    resourceStates: ["active"],
+  },
+  "/api/v1/vaults/{vaultId}/devices/{deviceId}/credentials/{credentialId}/device-key-envelope": {
+    resourceType: "credential",
+    resourceStates: ["active"],
+  },
+};
+
+const RECEIPT_KEYS = [
+  "schema", "operationId", "vaultId", "route", "resource", "outcome", "result",
+  "replayable", "bodyAvailable", "responseDigest", "createdAt",
+] as const;
+
+function plainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype;
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value);
+  return actual.length === keys.length && keys.every((key) => Object.hasOwn(value, key));
+}
+
+function receiptResult(value: unknown, contract: ReceiptRouteContract): value is {
+  manifestDigest: string | null;
+  resourceState: string;
+  revision: number;
+  vaultKeyVersion: number;
+} {
+  if (!plainRecord(value) || !hasExactKeys(value, [
+    "manifestDigest", "resourceState", "revision", "vaultKeyVersion",
+  ])) return false;
+  const digest = value.manifestDigest;
+  return (digest === null || (typeof digest === "string" && /^[0-9a-f]{64}$/.test(digest))) &&
+    typeof value.resourceState === "string" && contract.resourceStates.includes(value.resourceState) &&
+    Number.isSafeInteger(value.revision) && (value.revision as number) >= 0 &&
+    (value.revision as number) <= 0xffff_ffff &&
+    Number.isSafeInteger(value.vaultKeyVersion) && (value.vaultKeyVersion as number) >= 0 &&
+    (value.vaultKeyVersion as number) <= 0xffff_ffff;
+}
+
+/** JSON string quoting matching Python json.dumps(..., ensure_ascii=True). */
+export function canonicalReceiptJsonString(value: string): string {
+  return JSON.stringify(value).replace(/[\u007f-\uffff]/g, (character) =>
+    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`
+  );
+}
+
+function canonicalReceiptResultJson(result: {
+  manifestDigest: string | null;
+  resourceState: string;
+  revision: number;
+  vaultKeyVersion: number;
+}): string {
+  // These are the four fixed ASCII keys in Python sort_keys=True order. The
+  // route validator above limits the values to strings/null/uint32 integers.
+  const digest = result.manifestDigest === null
+    ? "null"
+    : canonicalReceiptJsonString(result.manifestDigest);
+  return `{"manifestDigest":${digest},"resourceState":${canonicalReceiptJsonString(result.resourceState)},"revision":${result.revision},"vaultKeyVersion":${result.vaultKeyVersion}}`;
+}
+
+function validReceipt(
+  payload: unknown,
+  expected: SignedWriteExpectation,
+  responseStatus: number,
+): boolean {
+  if (!plainRecord(payload) || !hasExactKeys(payload, RECEIPT_KEYS)) return false;
   const receipt = payload as Record<string, unknown>;
-  const resource = receipt.resource as Record<string, unknown> | undefined;
-  const outcome = receipt.outcome as Record<string, unknown> | undefined;
+  const contract = RECEIPT_ROUTES[expected.route];
+  if (!contract || expected.resourceType !== contract.resourceType) return false;
+  const resource = receipt.resource;
+  const outcome = receipt.outcome;
+  if (!plainRecord(resource) || !hasExactKeys(resource, ["type", "id", "parentId"])) return false;
+  if (!plainRecord(outcome) || !hasExactKeys(outcome, ["status", "code"])) return false;
+  if (!receiptResult(receipt.result, contract)) return false;
+  if (typeof receipt.responseDigest !== "string" || !/^[0-9a-f]{64}$/.test(receipt.responseDigest)) return false;
+  if (typeof receipt.createdAt !== "string") return false;
+  const digest = bytesToHex(sha256(utf8(canonicalReceiptResultJson(receipt.result))));
   return (
     receipt.schema === "4allpass-write-receipt-v1" &&
     receipt.bodyAvailable === false &&
+    receipt.replayable === true &&
     receipt.operationId === expected.operationId &&
     receipt.vaultId === expected.vaultId &&
     receipt.route === expected.route &&
-    resource?.type === expected.resourceType &&
-    resource?.id === expected.resourceId &&
-    resource?.parentId === expected.parentId &&
-    typeof outcome?.status === "number" &&
-    outcome.status >= 200 &&
-    outcome.status < 300
+    resource.type === expected.resourceType &&
+    resource.id === expected.resourceId &&
+    resource.parentId === expected.parentId &&
+    Number.isInteger(outcome.status) &&
+    outcome.status === responseStatus &&
+    responseStatus >= 200 && responseStatus < 300 &&
+    outcome.code === "ok" &&
+    receipt.responseDigest === digest
   );
 }
 
@@ -299,7 +440,7 @@ export function classifySignedWriteResponse(
     if (!expected) {
       return { kind: "unknown", reason: "missing_receipt_expectation" };
     }
-    if (!validReceipt(payload, expected)) {
+    if (!validReceipt(payload, expected, status)) {
       return { kind: "unknown", reason: "invalid_replay_receipt" };
     }
     return { kind: "replayed", status, receipt: payload };
@@ -321,7 +462,7 @@ export function classifySignedWriteResponse(
 }
 
 /** Operation id + nonce for a destructive retry: reuse them verbatim. */
-export function newWriteOperation(random: webcrypto.Crypto = globalThis.crypto): {
+export function newWriteOperation(random: CryptoLike = globalThis.crypto): {
   operationId: string;
   nonce: Uint8Array;
 } {

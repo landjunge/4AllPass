@@ -59,10 +59,33 @@ export interface ProviderKeyCheckOutcome {
   scopeHint: string | null;
 }
 
-/** A displayed result: the outcome plus the moment it was taken. A snapshot,
- * never a standing guarantee — callers re-check explicitly to refresh it. */
+/** A displayed result: the outcome plus the moment it was taken and the
+ * provider id it was actually checked against. A snapshot, never a standing
+ * guarantee — callers re-check explicitly to refresh it. `providerId` is
+ * required so a caller can refuse to show a result next to a provider it
+ * was never run for (e.g. the dropdown changed after the request went out,
+ * or a late/async reply arrives after the pick moved on). */
 export interface ProviderKeyCheckRecord extends ProviderKeyCheckOutcome {
+  providerId: CheckableProviderId;
   checkedAt: string;
+}
+
+/**
+ * Guards the UI bug in issue #277 finding 2: a stored result was indexed
+ * only by vault-entry id, never by the provider it was actually checked
+ * against, so switching the provider dropdown after a check (or a reply
+ * arriving late, after the dropdown had already moved on) left an old
+ * result like "Valid" visibly attached to a provider that was never
+ * checked. This is the single place that decides whether a stored result
+ * may still be shown: only when its own `providerId` still matches the
+ * currently selected one.
+ */
+export function currentResultFor<Result extends { providerId: CheckableProviderId }>(
+  stored: Result | undefined,
+  selectedProviderId: CheckableProviderId | "",
+): Result | undefined {
+  if (!stored || selectedProviderId === "") return undefined;
+  return stored.providerId === selectedProviderId ? stored : undefined;
 }
 
 export function statusLabel(status: ProviderKeyCheckStatus, t: Translate): string {

@@ -22,6 +22,7 @@
 //! shape by its look, so it is intentionally left out — callers see
 //! `NotCheckable` for it. No other provider id is accepted.
 
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -158,12 +159,33 @@ fn classify_error_status(
     }
 }
 
+/// ureq 2.x never picks a TLS backend on its own — with `default-features =
+/// false, features = ["native-tls"]` the agent must be handed an explicit
+/// `native_tls::TlsConnector`, or every real `https://` provider check fails
+/// transport-side regardless of the key. Built once and shared: constructing
+/// it is the only part that can fail (missing system TLS backend), so a
+/// failure here is classified the same as any other transport failure
+/// instead of panicking the command.
+fn shared_tls_connector() -> Option<Arc<native_tls::TlsConnector>> {
+    static CONNECTOR: OnceLock<Option<Arc<native_tls::TlsConnector>>> = OnceLock::new();
+    CONNECTOR
+        .get_or_init(|| native_tls::TlsConnector::new().ok().map(Arc::new))
+        .clone()
+}
+
 /// Talk to `base` (the real provider host in production, a synthetic
 /// loopback fixture in tests) with a fixed path, fixed method, no redirects,
 /// and a bounded timeout. Never reads the response body.
 fn check_against(provider: CheckedProvider, key: &str, base: &str) -> (KeyCheckStatus, Option<String>) {
+    let Some(tls_connector) = shared_tls_connector() else {
+        return (KeyCheckStatus::Unreachable, None);
+    };
     let url = format!("{base}{}", provider_path(provider));
-    let agent = ureq::AgentBuilder::new().redirects(0).timeout(TIMEOUT).build();
+    let agent = ureq::AgentBuilder::new()
+        .redirects(0)
+        .timeout(TIMEOUT)
+        .tls_connector(tls_connector)
+        .build();
     let auth = format!("Bearer {key}");
     let mut request = agent
         .get(&url)
@@ -207,9 +229,28 @@ fn run_checks(items: Vec<KeyCheckRequest>, base_for: impl Fn(CheckedProvider) ->
 /// The vault stays decrypted only in this process — this command receives
 /// the already-decrypted key values the caller chose to check and returns
 /// status only, never an echo of the key.
+///
+/// Async so Tauri does not run the blocking batch (each item up to
+/// `TIMEOUT` sequentially) on the main thread — same `spawn_blocking`
+/// pattern as `family_switch::family_switch`. A panicked worker (never
+/// expected; `run_checks` itself does not panic) yields `NotCheckable` for
+/// every item rather than losing the response.
 #[tauri::command]
-pub fn check_provider_keys(items: Vec<KeyCheckRequest>) -> Vec<KeyCheckOutcome> {
-    run_checks(items, |provider| provider_default_base(provider).to_string())
+pub async fn check_provider_keys(items: Vec<KeyCheckRequest>) -> Vec<KeyCheckOutcome> {
+    let ids: Vec<String> = items.iter().map(|item| item.id.clone()).collect();
+    tauri::async_runtime::spawn_blocking(move || {
+        run_checks(items, |provider| provider_default_base(provider).to_string())
+    })
+    .await
+    .unwrap_or_else(|_| {
+        ids.into_iter()
+            .map(|id| KeyCheckOutcome {
+                id,
+                status: KeyCheckStatus::NotCheckable,
+                scope_hint: None,
+            })
+            .collect()
+    })
 }
 
 #[cfg(test)]

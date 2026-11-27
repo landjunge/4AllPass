@@ -1164,6 +1164,7 @@ dependencies = [
  "base64 0.22.1",
  "block2",
  "cbc",
+ "native-tls",
  "objc2-app-kit",
  "objc2-foundation",
  "pbkdf2",

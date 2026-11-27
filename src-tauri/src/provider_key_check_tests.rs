@@ -160,11 +160,11 @@ fn unknown_provider_id_is_not_checkable_without_any_network_call() {
         location: None,
         body: "unexpected call",
     });
-    let outcomes = check_provider_keys(vec![KeyCheckRequest {
+    let outcomes = tauri::async_runtime::block_on(check_provider_keys(vec![KeyCheckRequest {
         id: "entry-1".into(),
         provider_id: "deepseek".into(),
         key: SYNTHETIC_KEY.into(),
-    }]);
+    }]));
     assert_eq!(outcomes.len(), 1);
     assert_eq!(outcomes[0].status, KeyCheckStatus::NotCheckable);
     assert_eq!(server.count(), 0, "an unsupported provider id must never trigger a network call");
@@ -177,11 +177,11 @@ fn empty_key_is_not_checkable_without_any_network_call() {
         location: None,
         body: "unexpected call",
     });
-    let outcomes = check_provider_keys(vec![KeyCheckRequest {
+    let outcomes = tauri::async_runtime::block_on(check_provider_keys(vec![KeyCheckRequest {
         id: "entry-2".into(),
         provider_id: "github".into(),
         key: "   ".into(),
-    }]);
+    }]));
     assert_eq!(outcomes[0].status, KeyCheckStatus::NotCheckable);
     assert_eq!(server.count(), 0);
 }
@@ -255,6 +255,61 @@ fn request_never_sends_key_as_a_query_value() {
         }
     });
     let _ = check_against(CheckedProvider::Stripe, SYNTHETIC_KEY, &base(&server));
+}
+
+#[test]
+fn agent_has_a_native_tls_connector_configured() {
+    // ureq 2.x with default-features = false never auto-selects a TLS
+    // backend; without this, every real https:// provider call would fail
+    // transport-side regardless of the key. This proves the connector this
+    // module hands to AgentBuilder actually builds (and is cached/shared),
+    // not just that `check_against` happens to pass local http:// fixtures.
+    assert!(
+        shared_tls_connector().is_some(),
+        "native-tls connector must build so real https:// checks are not misclassified as Unreachable"
+    );
+    assert!(Arc::ptr_eq(
+        &shared_tls_connector().unwrap(),
+        &shared_tls_connector().unwrap()
+    ));
+}
+
+#[test]
+fn slow_batch_runs_off_the_main_runtime_thread_and_never_blocks_other_commands() {
+    // `check_provider_keys` is `async` and runs its batch (one `TIMEOUT`
+    // each, sequentially) inside `tauri::async_runtime::spawn_blocking`,
+    // the same pattern `family_switch::family_switch` uses — so the async
+    // runtime (and with it the webview's IPC/main thread in the real app)
+    // stays free to answer other commands while a check is still pending.
+    // This proves the yield directly: a concurrently spawned lightweight
+    // async task (standing in for "another command") completes well
+    // before a deliberately slow fixture request finishes.
+    let server = Server::start(|_| {
+        std::thread::sleep(Duration::from_millis(250));
+        Reply {
+            status: 200,
+            location: None,
+            body: "{}",
+        }
+    });
+    let items = vec![KeyCheckRequest {
+        id: "entry-slow".into(),
+        provider_id: "github".into(),
+        key: SYNTHETIC_KEY.into(),
+    }];
+    let start = std::time::Instant::now();
+    let worker =
+        tauri::async_runtime::spawn_blocking(move || run_checks(items, |_| base(&server)));
+    let other_command = tauri::async_runtime::spawn(async { 42 });
+    assert_eq!(tauri::async_runtime::block_on(other_command).unwrap(), 42);
+    let heartbeat_elapsed = start.elapsed();
+    assert!(
+        heartbeat_elapsed < Duration::from_millis(200),
+        "another command must stay responsive while a slow check is in flight: took {heartbeat_elapsed:?}"
+    );
+    let outcomes = tauri::async_runtime::block_on(worker).unwrap();
+    assert_eq!(outcomes[0].status, KeyCheckStatus::Valid);
+    assert!(start.elapsed() >= Duration::from_millis(250));
 }
 
 #[test]

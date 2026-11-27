@@ -1,6 +1,8 @@
 # ADR-015 — Write authorization: proving Vault Key possession to the server
 
-**Status:** accepted as a staged plan — steps 1–2 build now, step 3 does not  
+**Status:** accepted as a staged plan — steps 1–2 shipped; step 3's server half
+shipped behind a default-off flag (2026-11-13), client half still draft (see
+note below)  
 **Date:** 2026-09-09
 
 ## Context
@@ -82,8 +84,9 @@ device POST (including its own re-enrol), device DELETE, credentials POST,
 Device-Key-Envelope PUT and both WebAuthn challenge routes return 403. Reads and
 recovery stay open, foreign vaults stay 404. This closes the same-session-id
 revoke/re-enrol bypass only; a stolen token with a new device id, Vault-Key proof,
-admin/org grants and the local-profile trust boundary are unchanged, and step 3
-below (signed writes) is still not built. The guard now takes the vault row
+admin/org grants and the local-profile trust boundary are unchanged. Step 3
+below (signed writes) has since shipped on the server (next note) but stays
+default-off pending the client half. The guard now takes the vault row
 lock before the revoked check (Postgres `SELECT … FOR UPDATE`, SQLite
 `BEGIN IMMEDIATE`), and the local-vault ownership transfer locks its vaults in
 sorted order and checks the same session device; revoke and admitted writes
@@ -92,6 +95,28 @@ under the lock (an old-owner session gets 404 after a transfer); local adopt
 re-reads `owner = LOCAL` under the lock and returns 409 `local_vault_changed`
 instead of transferring a row another adopter already owns. Session revocation
 remains user+device-global and is documented as such.
+
+**Implementation note (2026-11-13, step 3 server half — #201):** the signed-write
+design below is now implemented server-side for newly created v2 vaults,
+behind `FOURALLPASS_SIGNED_WRITES_ENABLED` (default off; PR #291). The server
+registers only the vault's **public** Ed25519 key and verifies a detached
+signature on snapshot commit, device POST/bootstrap/rotation, credentials
+POST and the Device-Key-Envelope PUT, rejecting a syntactically valid but
+wrongly-signed commit with `write_signature_invalid` before it touches the
+snapshot table (`backend/tests/test_signed_writes.py`). Device DELETE
+(revoke) and both WebAuthn challenge routes remain **unsigned by design** —
+a bearer token alone still revokes a device/its sessions even on a v2 vault
+with the flag on (`test_self_revoke_keep_token_blocks_write_and_replay`).
+Existing v1 vaults — the default — are untouched and remain exactly as risky
+as this ADR describes, on every route.
+The client half (deriving the Ed25519 seed from VK and signing requests in the
+PWA/desktop) is drafted, not merged: a real WKWebView PKCS#8-seed import does
+not round-trip correctly, so the client-side signer stays fail-closed on that
+runtime rather than shipping silently-broken signing (PR #293 "v2 client
+signer with runtime probe", PR #296 "bind signed-write retries, receipts and
+opt-in v2 manifests" — both draft, with sanitized probe evidence attached).
+Do not flip the flag default-on, and do not describe v1 snapshot commits as
+VK-authenticated, until that client blocker is resolved.
 
 **1. Rate-limit the unlimited destructive routes.** Device DELETE and the
 Device-Key-Envelope PUT get the same `enforce_write_rate_limit` treatment the
@@ -161,10 +186,14 @@ change, with no protocol break and no browser dependency.
 
 ## Consequences
 
-Until step 3 ships, the honest claim stays: **a stolen account session cannot
+Until step 3's client half ships and the flag defaults on, the honest claim
+stays for every vault a real user has today: **a stolen account session cannot
 read a vault, and cannot permanently destroy one, but can still force a
 recovery step.** `security-boundary.md` §6 must keep saying so. Do not describe
-snapshot commits as authenticated by the Vault Key.
+v1 snapshot commits as authenticated by the Vault Key. (A default-off, v2-only
+server mechanism that does provide that authentication exists in code since
+2026-11-13 — see the implementation note above — but it is not yet reachable
+by any shipped client.)
 
 `threat-model.md` gains the missing actor-#7 consequences analysis, including
 the unauthorized soft revoke it already concedes elsewhere.

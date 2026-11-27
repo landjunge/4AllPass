@@ -122,3 +122,38 @@ export async function listenDesktopAccessDecision(
     return () => undefined;
   }
 }
+
+export interface ProviderKeyCheckItem {
+  id: string;
+  providerId: string;
+  /** The decrypted key value. Stays in-process; never logged, never echoed back. */
+  key: string;
+}
+
+export interface ProviderKeyCheckResult {
+  id: string;
+  status:
+    | "valid"
+    | "invalid"
+    | "insufficient_permission"
+    | "quota_exceeded"
+    | "unreachable"
+    | "not_checkable";
+  scopeHint: string | null;
+}
+
+/**
+ * Explicit, user-triggered check of one or more vault entries against the
+ * real provider domain — never 4AllPass's own server, never ChatGPT, never a
+ * log. Outside the desktop shell (no trusted native transport exists there)
+ * every item comes back `not_checkable` rather than attempting a fetch that
+ * would be blocked by CSP or would bypass the trusted-client boundary.
+ */
+export async function checkProviderKeys(items: ProviderKeyCheckItem[]): Promise<ProviderKeyCheckResult[]> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    return await invoke<ProviderKeyCheckResult[]>("check_provider_keys", { items });
+  } catch {
+    return items.map((item) => ({ id: item.id, status: "not_checkable", scopeHint: null }));
+  }
+}

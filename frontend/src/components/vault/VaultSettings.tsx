@@ -4,6 +4,7 @@ import { SettingsPanel } from "../SettingsPanel.tsx";
 import { VaultBackupPanel } from "./VaultBackupPanel.tsx";
 import { VaultCleanupPanel } from "./VaultCleanupPanel.tsx";
 import { VaultHistoryPanel } from "./VaultHistoryPanel.tsx";
+import { VaultKeyCheckPanel } from "./VaultKeyCheckPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { SettingsPane, VaultEntry } from "../../types/vault.ts";
 
@@ -77,6 +78,7 @@ export function VaultSettings({
         </section>
         <VaultHistoryPanel />
         <VaultCleanupPanel entries={entries} />
+        <VaultKeyCheckPanel entries={entries} />
         <VaultBackupPanel />
         </>
       ) : (

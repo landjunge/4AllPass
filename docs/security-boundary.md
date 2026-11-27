@@ -560,9 +560,28 @@ still follows successful opening and remains best-effort.
   an available intact revision decryptable with the entered master password,
   and an accepted forward commit. Missing history or keys, a higher head
   `vaultKeyVersion`, or a concurrent head change can prevent recovery. This
-  mitigates the impact; it does not prevent token-authorized writes or guarantee
-  restoration. Closing the write-authorization gap needs cryptographic proof
-  tied to the VK, not just a well-formed request from a valid session.
+  mitigates the impact; it does not by itself prevent token-authorized writes or
+  guarantee restoration. Closing the write-authorization gap needs cryptographic
+  proof tied to the VK, not just a well-formed request from a valid session.
+  **ADR-015 §3 (signed writes, update 2026-11-13):** that proof now exists in
+  code — an Ed25519 keypair derived from the VK (`HKDF-SHA256(VK, …)`), with
+  only the **public** key registered server-side. Each mutating request on a
+  v2 vault carries a detached signature over the canonical request bytes
+  (vaultId, route, revision, `vaultKeyVersion`, `sealedManifestDigest`); the
+  server verifies it before accepting the write and rejects a syntactically
+  valid but wrongly/un-signed commit with `write_signature_invalid` —
+  `backend/tests/test_signed_writes.py::test_negative_signature_nonce_and_grant`
+  is exactly the attack from this section. It is gated behind
+  `FOURALLPASS_SIGNED_WRITES_ENABLED` (default **off**) and only applies to
+  newly created v2 vaults (PR #291); existing v1 vaults — the default for
+  every vault today — are still exactly as described above: the server does
+  not verify `sealedManifest`. The client half (deriving and using that
+  Ed25519 key in the PWA/desktop) is drafted but not merged (PR #293, #296):
+  a real WKWebView PKCS#8-seed import does not round-trip
+  (`tools/wk-ed25519-probe-evidence.json` in that draft), so v2 stays
+  fail-closed on that runtime rather than shipping a silently-broken signer.
+  Until that is resolved and the flag defaults on, treat this section as
+  still accurate for the vaults real users have.
   The local recovery selection binds the requested vault/revision, key generation
   and the digest of its verified historic manifest. Confirmation checks the
   refetched revision against that selection, verifies the old manifest and all

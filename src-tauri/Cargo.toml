@@ -52,7 +52,8 @@ sha1 = "=0.10.7"
 sha2 = "=0.10.9"
 base64 = "=0.22.1"
 zeroize = "=1.8.2"
-ureq = { version = "=2.12.1", default-features = false }
+ureq = { version = "=2.12.1", default-features = false, features = ["native-tls"] }
+native-tls = "=0.2.14"
 
 [profile.release]
 codegen-units = 1

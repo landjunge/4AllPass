@@ -488,6 +488,30 @@ form.banner {
   margin-bottom: 4px;
 }
 
+.key-check-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+}
+
+.key-check-status-valid {
+  border-color: var(--accent);
+  color: var(--accent-hi);
+}
+
+.key-check-status-invalid {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.key-check-status-insufficient_permission,
+.key-check-status-quota_exceeded,
+.key-check-status-unreachable {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
 .notice {
   margin: 12px 0 0;
   font-weight: 500;

@@ -11,6 +11,7 @@ mod loopback;
 mod process;
 mod process_inspect;
 mod prompts;
+mod provider_key_check;
 mod secret_fs;
 mod sidecar_http;
 mod sidecar_target;

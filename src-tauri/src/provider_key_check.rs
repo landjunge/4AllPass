@@ -100,6 +100,26 @@ pub struct KeyCheckRequest {
     pub key: String,
 }
 
+/// Issue #279. Whether a *real* expiry was reported by the provider for this
+/// key — never a guess, never an estimate, never a "typical" lifetime.
+/// `Known` is only ever produced from a value the provider itself sent in
+/// this response; `Unknown` covers every provider/response that does not
+/// expose a real expiry, including GitHub responses without the expiration
+/// header (which means either no expiration is set on that token, or this
+/// module simply was not given one to read — both are honestly "unknown",
+/// never displayed as "no expiry").
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum KeyExpiry {
+    Unknown,
+    Known {
+        /// ISO-8601 UTC instant, reformatted from the provider's own value.
+        /// Never synthesized, never rounded, never defaulted.
+        #[serde(rename = "expiresAt")]
+        expires_at: String,
+    },
+}
+
 #[derive(Debug, Serialize, PartialEq)]
 pub struct KeyCheckOutcome {
     pub id: String,
@@ -108,6 +128,7 @@ pub struct KeyCheckOutcome {
     /// Never the key, never a prefix of it, truncated defensively.
     #[serde(rename = "scopeHint")]
     pub scope_hint: Option<String>,
+    pub expiry: KeyExpiry,
 }
 
 fn truncate_scope(raw: &str) -> String {
@@ -119,27 +140,86 @@ fn truncate_scope(raw: &str) -> String {
     }
 }
 
-fn classify_success(provider: CheckedProvider, response: &ureq::Response) -> (KeyCheckStatus, Option<String>) {
+/// GitHub sends this response header, on an authenticated, successful call,
+/// exactly when the token presented has a real expiration set (classic PAT
+/// with an expiration chosen, or any fine-grained PAT — those always expire).
+/// No other covered provider (OpenAI, Stripe) exposes a key/token expiry
+/// through its API at all, so this is the only header this module ever
+/// reads for issue #279; everything else stays `KeyExpiry::Unknown` rather
+/// than inventing a lifetime.
+const GITHUB_EXPIRATION_HEADER: &str = "github-authentication-token-expiration";
+
+/// Parses GitHub's own `"YYYY-MM-DD HH:MM:SS UTC"` value into an ISO-8601
+/// UTC instant (`"YYYY-MM-DDTHH:MM:SSZ"`). Pure reformatting of a value the
+/// provider sent — no guessing, no timezone conversion (GitHub's value is
+/// always UTC), and a strict shape check so a header this module does not
+/// recognize is reported as unknown rather than passed through as if it
+/// were a validated date.
+fn parse_github_expiration_header(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    let mut parts = trimmed.split_whitespace();
+    let date_part = parts.next()?;
+    let time_part = parts.next()?;
+    let tz_part = parts.next()?;
+    if parts.next().is_some() || !tz_part.eq_ignore_ascii_case("UTC") {
+        return None;
+    }
+    if !is_iso_date_shape(date_part) || !is_iso_time_shape(time_part) {
+        return None;
+    }
+    Some(format!("{date_part}T{time_part}Z"))
+}
+
+fn is_iso_date_shape(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    bytes.len() == 10
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && s.chars().enumerate().all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit())
+}
+
+fn is_iso_time_shape(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    bytes.len() == 8
+        && bytes[2] == b':'
+        && bytes[5] == b':'
+        && s.chars().enumerate().all(|(i, c)| i == 2 || i == 5 || c.is_ascii_digit())
+}
+
+fn classify_success(
+    provider: CheckedProvider,
+    response: &ureq::Response,
+) -> (KeyCheckStatus, Option<String>, KeyExpiry) {
     let status = response.status();
     if status != 200 {
         // Includes 3xx: ureq does not treat a redirect as an error when
         // `redirects(0)` is set, but this module never follows one and
         // never trusts an unexpected success-range status it cannot read.
-        return (KeyCheckStatus::NotCheckable, None);
+        return (KeyCheckStatus::NotCheckable, None, KeyExpiry::Unknown);
     }
     let scope_hint = match provider {
         CheckedProvider::GitHub => response.header("X-OAuth-Scopes").map(truncate_scope),
         CheckedProvider::OpenAi | CheckedProvider::Stripe => None,
     };
-    (KeyCheckStatus::Valid, scope_hint)
+    let expiry = match provider {
+        // OpenAI and Stripe do not report a real key/token expiry on any
+        // documented endpoint — left `Unknown` on purpose, never estimated.
+        CheckedProvider::GitHub => response
+            .header(GITHUB_EXPIRATION_HEADER)
+            .and_then(parse_github_expiration_header)
+            .map(|expires_at| KeyExpiry::Known { expires_at })
+            .unwrap_or(KeyExpiry::Unknown),
+        CheckedProvider::OpenAi | CheckedProvider::Stripe => KeyExpiry::Unknown,
+    };
+    (KeyCheckStatus::Valid, scope_hint, expiry)
 }
 
 fn classify_error_status(
     provider: CheckedProvider,
     status: u16,
     response: &ureq::Response,
-) -> (KeyCheckStatus, Option<String>) {
-    match status {
+) -> (KeyCheckStatus, Option<String>, KeyExpiry) {
+    let outcome = match status {
         401 => (KeyCheckStatus::Invalid, None),
         403 => {
             // GitHub's own signal for "this 403 is a rate limit, not a
@@ -156,7 +236,11 @@ fn classify_error_status(
         500..=599 => (KeyCheckStatus::Unreachable, None),
         // 404 and anything else unexpected: no confident reading.
         _ => (KeyCheckStatus::NotCheckable, None),
-    }
+    };
+    // A non-200 response never yields an expiry: this module only trusts
+    // the expiration header on the one path it fully classifies as a
+    // successful, authenticated call against the real provider.
+    (outcome.0, outcome.1, KeyExpiry::Unknown)
 }
 
 /// ureq 2.x never picks a TLS backend on its own — with `default-features =
@@ -176,9 +260,9 @@ fn shared_tls_connector() -> Option<Arc<native_tls::TlsConnector>> {
 /// Talk to `base` (the real provider host in production, a synthetic
 /// loopback fixture in tests) with a fixed path, fixed method, no redirects,
 /// and a bounded timeout. Never reads the response body.
-fn check_against(provider: CheckedProvider, key: &str, base: &str) -> (KeyCheckStatus, Option<String>) {
+fn check_against(provider: CheckedProvider, key: &str, base: &str) -> (KeyCheckStatus, Option<String>, KeyExpiry) {
     let Some(tls_connector) = shared_tls_connector() else {
-        return (KeyCheckStatus::Unreachable, None);
+        return (KeyCheckStatus::Unreachable, None, KeyExpiry::Unknown);
     };
     let url = format!("{base}{}", provider_path(provider));
     let agent = ureq::AgentBuilder::new()
@@ -197,7 +281,7 @@ fn check_against(provider: CheckedProvider, key: &str, base: &str) -> (KeyCheckS
     match request.call() {
         Ok(response) => classify_success(provider, &response),
         Err(ureq::Error::Status(status, response)) => classify_error_status(provider, status, &response),
-        Err(ureq::Error::Transport(_)) => (KeyCheckStatus::Unreachable, None),
+        Err(ureq::Error::Transport(_)) => (KeyCheckStatus::Unreachable, None, KeyExpiry::Unknown),
     }
 }
 
@@ -210,15 +294,16 @@ fn run_checks(items: Vec<KeyCheckRequest>, base_for: impl Fn(CheckedProvider) ->
         .into_iter()
         .map(|item| {
             let key = item.key.trim();
-            let (status, scope_hint) = match CheckedProvider::from_id(&item.provider_id) {
-                Some(_) if key.is_empty() => (KeyCheckStatus::NotCheckable, None),
+            let (status, scope_hint, expiry) = match CheckedProvider::from_id(&item.provider_id) {
+                Some(_) if key.is_empty() => (KeyCheckStatus::NotCheckable, None, KeyExpiry::Unknown),
                 Some(provider) => check_against(provider, key, &base_for(provider)),
-                None => (KeyCheckStatus::NotCheckable, None),
+                None => (KeyCheckStatus::NotCheckable, None, KeyExpiry::Unknown),
             };
             KeyCheckOutcome {
                 id: item.id,
                 status,
                 scope_hint,
+                expiry,
             }
         })
         .collect()
@@ -248,6 +333,7 @@ pub async fn check_provider_keys(items: Vec<KeyCheckRequest>) -> Vec<KeyCheckOut
                 id,
                 status: KeyCheckStatus::NotCheckable,
                 scope_hint: None,
+                expiry: KeyExpiry::Unknown,
             })
             .collect()
     })

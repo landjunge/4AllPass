@@ -66,6 +66,7 @@ function apiEntry(
     providerConfidence: 1,
     providerMatchType: "heuristic",
     favorite: false,
+    deletedAt: null,
   };
 }
 
@@ -109,6 +110,7 @@ export function classifyImportedEntry(fields: ImportFields): VaultEntry {
       providerConfidence: resolved.confidence,
       providerMatchType: resolved.matchType,
       favorite: false,
+      deletedAt: null,
     };
   }
 
@@ -154,6 +156,7 @@ export function classifyImportedEntry(fields: ImportFields): VaultEntry {
     providerConfidence: resolved.confidence,
     providerMatchType: resolved.matchType,
     favorite: false,
+    deletedAt: null,
   };
 }
 

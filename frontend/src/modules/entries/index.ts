@@ -28,9 +28,18 @@ export interface VaultEntry {
   providerConfidence: number;
   providerMatchType: string;
   favorite: boolean;
+  /**
+   * Soft-delete marker (P0 #279 "Papierkorb"). `null`/absent means the entry
+   * is live. A set ISO timestamp moves it to the trash view; the entry stays
+   * in the committed snapshot (sealed like every other entry) so sync and
+   * version history keep seeing exactly this array — only `lib/trash.ts`
+   * decides what counts as "active" vs. "trashed". Never set directly;
+   * go through `softDeleteEntry` / `restoreFromTrash`.
+   */
+  deletedAt: string | null;
 }
 
-export type EntryDraft = Omit<VaultEntry, "id" | "updatedAt">;
+export type EntryDraft = Omit<VaultEntry, "id" | "updatedAt" | "deletedAt">;
 
 export function newEntryId(): string {
   return `entry_${bytesToHex(randomBytes(12))}`;
@@ -86,6 +95,7 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     providerConfidence: entry.providerConfidence,
     providerMatchType: entry.providerMatchType,
     favorite: entry.favorite,
+    deletedAt: entry.deletedAt,
   };
   return new TextEncoder().encode(JSON.stringify(payload));
 }
@@ -125,6 +135,7 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     providerConfidence: parsed.providerConfidence ?? 0,
     providerMatchType: parsed.providerMatchType ?? "",
     favorite: parsed.favorite === true,
+    deletedAt: typeof parsed.deletedAt === "string" ? parsed.deletedAt : null,
   };
 }
 

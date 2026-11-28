@@ -185,13 +185,22 @@ vorhandene ID wird abgewiesen). Wiederherstellen legt einen **neuen** Stand an;
 nichts wird zurückgedreht und nichts gelöscht. Gehört hierher, nicht auf den
 Desk: Stände sind Kontrolle, kein Alltag.
 
-**V7.4 Aufräumen-Vorschau.** Eine Frage: *Was sieht ähnlich aus, was ist alt?*
-Nach explizitem Klick zeigt eine rein clientseitige Analyse
-Ähnlichkeitskandidaten (gleiche Dienstgrenze + gleicher Benutzer) und lange
-unveränderte Einträge mit ihrem Alter. Nur Anzeige — es gibt **keine**
-Behalten-/Entfernen-/Löschen-/Zusammenführen-Aktion; Passwörter werden nie
-gezeigt. Gehört wie V7.3 unter Einstellungen → Sicherheit: Kontrolle, kein
-Alltag.
+**V7.4 Aufräumen-Vorschau und kontrollierte Übernahme.** Eine Frage: *Was
+sieht ähnlich aus, was ist alt, und was mache ich damit?* Nach explizitem
+Klick zeigt eine rein clientseitige Analyse Ähnlichkeitskandidaten (gleiche
+Dienstgrenze + gleicher Benutzer) und lange unveränderte Einträge mit ihrem
+Alter; Passwörter werden nie gezeigt. Jeder Fund hat eine eigene, vorbelegte
+Checkbox — eine Teilauswahl ist möglich. Ein zweiter, expliziter
+Übernehmen-Knopf wendet nur die ausgewählten Funde an: Bei einer
+Ähnlichkeitsgruppe bleibt die vollständigere, bei Gleichstand die neuere
+Version aktiv (Vergleich nur über vorhandene Felder, nie über Geheimwerte);
+jede andere Seite — wie jeder ausgewählte alte Eintrag — wandert in den
+Papierkorb (V7.3-Mechanik), **nie** ein Hart-Löschen. Die Anzeige, welcher
+Eintrag „bleibt“, folgt derselben Regel wie die Übernahme selbst, nicht der
+reinen Anzeigereihenfolge. Hat sich der Tresorinhalt seit der Vorschau
+geändert, verweigert die Übernahme sich und verlangt eine neue Vorschau,
+statt gegen einen veralteten Stand zu schreiben. Gehört wie V7.3 unter
+Einstellungen → Sicherheit: Kontrolle, kein Alltag.
 
 **V7.5 Sicherung.** Eine Frage: *Wie behalte ich eine verschlüsselte Kopie?*
 Erstellt eine verschlüsselte Gesamtsicherung als Datei — nur Chiffretext,

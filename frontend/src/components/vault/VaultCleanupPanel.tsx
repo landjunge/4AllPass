@@ -5,6 +5,7 @@ import {
   cleanupFindingKey,
   previewCleanup,
   runMatchesEntries,
+  survivorIdForGroup,
   type CleanupApplyRejected,
   type CleanupApplyResult,
   type CleanupRun,
@@ -158,6 +159,7 @@ export function VaultCleanupPanel({
               <ul className="cleanup-list" data-testid="cleanup-similar">
                 {similar.map((group) => {
                   const key = cleanupFindingKey(group);
+                  const survivorId = survivorIdForGroup(group, entries);
                   return (
                     <li key={key}>
                       <label>
@@ -178,7 +180,7 @@ export function VaultCleanupPanel({
                       {group.titles.map((title, index) => (
                         <div key={group.entryIds[index] ?? index}>
                           <strong>{title || untitled}</strong>
-                          {index === 0 ? (
+                          {group.entryIds[index] === survivorId ? (
                             <span className="muted small"> {t({ de: "(bleibt)", en: "(kept)" })}</span>
                           ) : null}
                         </div>

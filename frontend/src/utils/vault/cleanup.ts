@@ -254,6 +254,19 @@ function pickSurvivor(group: VaultEntry[]): VaultEntry {
   })[0]!;
 }
 
+/**
+ * Which id `applyCleanup` would actually keep for a similarity group — the
+ * same completeness-then-recency rule `pickSurvivor` uses, not the preview's
+ * newest-first `entryIds` order. A caller displaying "(kept)" must use this,
+ * not `entryIds[0]`, or the label can name the wrong side (#279 review).
+ */
+export function survivorIdForGroup(group: SimilarGroup, entries: readonly VaultEntry[]): string | null {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const members = group.entryIds.map((id) => byId.get(id)).filter((entry): entry is VaultEntry => entry != null);
+  if (members.length === 0) return null;
+  return pickSurvivor(members).id;
+}
+
 export interface CleanupApplyResult {
   ok: true;
   /** The full entry array (active + trash) with the selected changes applied. */

@@ -8,6 +8,7 @@ import {
   cleanupFindingKey,
   previewCleanup,
   runMatchesEntries,
+  survivorIdForGroup,
   type CleanupApplyResult,
   type CleanupRun,
   type SimilarGroup,
@@ -333,6 +334,42 @@ test("merging a duplicate group keeps the more complete entry and moves the othe
   assert.equal(survivor.deletedAt, null, "the more complete entry stays active");
   assert.equal(loser.deletedAt, "2026-11-12T00:00:00.000Z", "the other side is soft-deleted, not removed");
   assert.deepEqual(result.trashedIds, ["sparse"]);
+});
+
+test("survivorIdForGroup names the same entry applyCleanup actually keeps, even when it is the older one", () => {
+  // #279 review finding: the preview's entryIds are newest-first for display,
+  // but applyCleanup picks the survivor by completeness first. A UI using
+  // entryIds[0] for a "(kept)" label would here point at the newer, sparser
+  // entry while applyCleanup actually keeps the older, richer one.
+  const older = entry({
+    id: "older",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    notes: "has notes",
+    totpSecret: "AAA",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+  const newer = entry({
+    id: "newer",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    updatedAt: "2026-06-01T00:00:00.000Z",
+  });
+  const entries = [older, newer];
+  const preview = previewCleanup(entries, { now: FIXED_NOW });
+  const group = preview.findings.find((finding) => finding.kind === "similar") as SimilarGroup;
+  assert.equal(group.entryIds[0], "newer", "the preview still lists the newest id first for display");
+  assert.equal(survivorIdForGroup(group, entries), "older", "but the actual survivor is the more complete entry");
+
+  const run: CleanupRun = { entries, preview };
+  const result = applyCleanup(entries, entries, run, allSelected(run)) as CleanupApplyResult;
+  assert.equal(
+    result.entries.find((row) => row.id === "older")!.deletedAt,
+    null,
+    "applyCleanup agrees: the older, more complete entry is the one actually kept",
+  );
 });
 
 test("a tie on completeness falls back to the newer entry as the survivor", () => {

@@ -36,14 +36,18 @@ export function describeExpiry(expiry: ProviderKeyExpiry, t: Translate, now: Dat
   if (Number.isNaN(expiresAt.getTime())) return unknown;
 
   const dateLabel = expiresAt.toLocaleDateString();
-  const daysRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / MS_PER_DAY);
+  const msRemaining = expiresAt.getTime() - now.getTime();
 
-  if (daysRemaining < 0) {
+  if (msRemaining < 0) {
     return { tone: "expired", label: t({ de: `Abgelaufen am ${dateLabel}`, en: `Expired on ${dateLabel}` }) };
   }
-  if (daysRemaining === 0) {
+  // Still in the future, but the same calendar day as `now`: say "today",
+  // never derived from the rounded day count (that rounds a few hours in
+  // the past up to "today" too, which is the bug this guards against).
+  if (expiresAt.toDateString() === now.toDateString()) {
     return { tone: "expired", label: t({ de: "Läuft heute ab", en: "Expires today" }) };
   }
+  const daysRemaining = Math.ceil(msRemaining / MS_PER_DAY);
   if (daysRemaining <= WARN_WITHIN_DAYS) {
     return {
       tone: "warn",

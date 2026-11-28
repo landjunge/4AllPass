@@ -1035,6 +1035,14 @@ form.banner {
   z-index: 10;
 }
 
+/* A dialog's own content (e.g. a backup/history preview list) can outgrow
+   the viewport — scroll the card itself rather than letting it grow past
+   the window and make its bottom buttons unreachable (#279 review). */
+.overlay > .card {
+  max-height: min(640px, 90vh);
+  overflow-y: auto;
+}
+
 .kit {
   width: min(560px, 94vw);
   display: grid;

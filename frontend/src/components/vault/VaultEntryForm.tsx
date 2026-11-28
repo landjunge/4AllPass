@@ -1,5 +1,5 @@
 import type { Line } from "../../lib/copy-mode.ts";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { TotpCode } from "../TotpCode.tsx";
 import { BUILTIN_TEMPLATES } from "../../lib/providers.ts";
 import { useCopy } from "../../state/copy-mode.tsx";
@@ -7,6 +7,7 @@ import type { EntryDraft, EntryKind, Translate, VaultEntry } from "../../types/v
 import { applyKindToDraft, applyTotpInput } from "../../utils/vault/drafts.ts";
 import { formatRelativeChanged, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
 import { passwordStrength } from "../../utils/vault/strength.ts";
+import { formatUsedByInput, hasUsageDependents, parseUsedByInput } from "../../utils/vault/usage.ts";
 import { FieldLabel } from "./FieldLabel.tsx";
 import { VaultKeyCreatePanel } from "./VaultKeyCreatePanel.tsx";
 import type { KeyCreateCaptureApi } from "../../hooks/vault/useKeyCreateCapture.ts";
@@ -126,6 +127,26 @@ export function VaultEntryForm({
 }): ReactNode {
   const { t } = useCopy();
   const strength = passwordStrength(draft.password);
+  // Raw "used by" text while the field is being edited (#279 review): the
+  // controlled textarea must not round-trip every keystroke through
+  // parse+format, or a trailing separator/space is stripped right after
+  // being typed, making it impossible to end a line or type a name with a
+  // space. Only resync from the draft when it changed from the outside
+  // (switching entries), and only commit the normalized form on blur.
+  const [usedByText, setUsedByText] = useState(() => formatUsedByInput(draft.usedBy));
+  const lastSyncedUsedBy = useRef(draft.usedBy);
+  useEffect(() => {
+    if (draft.usedBy !== lastSyncedUsedBy.current) {
+      lastSyncedUsedBy.current = draft.usedBy;
+      setUsedByText(formatUsedByInput(draft.usedBy));
+    }
+  }, [draft.usedBy]);
+  function commitUsedBy(): void {
+    const parsed = parseUsedByInput(usedByText);
+    lastSyncedUsedBy.current = parsed;
+    setUsedByText(formatUsedByInput(parsed));
+    onChange({ ...draft, usedBy: parsed });
+  }
   return (
     <>
       <h3>{selectedId ? kindLabel(draft.kind, t) : newEntryHeading(draft.kind, t)}</h3>
@@ -361,6 +382,26 @@ export function VaultEntryForm({
           })}
         />
       </label>
+      <label>
+        <FieldLabel
+          text={t({ de: "Verwendet von", en: "Used by" })}
+          tip={t({
+            de: "Manuell eingetragen: welche lokalen Werkzeuge/Projekte diesen Schlüssel verwenden. 4AllPass erkennt das nicht automatisch — nur was du hier einträgst, wird vor dem Löschen angezeigt.",
+            en: "Manually entered: which local tools/projects use this key. 4AllPass does not detect this automatically — only what you enter here is shown before deletion.",
+          })}
+        />
+        <textarea
+          rows={2}
+          value={usedByText}
+          onChange={(event) => setUsedByText(event.target.value)}
+          onBlur={commitUsedBy}
+          data-testid="entry-used-by"
+          placeholder={t({
+            de: "Ein Werkzeug pro Zeile, z. B.\nn8n\nKiraBridge",
+            en: "One tool per line, e.g.\nn8n\nKiraBridge",
+          })}
+        />
+      </label>
       <details
         className="more-options"
         open={showMore}
@@ -561,8 +602,8 @@ export function VaultEntryForm({
               onClick={() => void onRemove()}
               disabled={busy}
               title={t({
-                de: "Löscht diesen Eintrag aus dem Tresor.",
-                en: "Deletes this entry from the vault.",
+                de: "Verschiebt diesen Eintrag in den Papierkorb.",
+                en: "Moves this entry to trash.",
               })}
             >
               {t({ de: "Löschen", en: "Delete" })}
@@ -570,6 +611,14 @@ export function VaultEntryForm({
           </>
         ) : null}
       </div>
+      {selected && hasUsageDependents(selected) ? (
+        <p className="warning" data-testid="usage-warning">
+          {t({
+            de: `Wird laut deiner Angabe noch verwendet von: ${selected.usedBy.join(", ")}. Löschen verschiebt den Eintrag nur in den Papierkorb — er bleibt wiederherstellbar.`,
+            en: `Still in use (as you noted) by: ${selected.usedBy.join(", ")}. Delete only moves it to trash — it stays recoverable.`,
+          })}
+        </p>
+      ) : null}
     </>
   );
 }

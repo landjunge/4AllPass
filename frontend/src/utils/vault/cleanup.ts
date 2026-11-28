@@ -20,6 +20,7 @@
  * (scheme and explicit port included when present).
  */
 import type { EntryKind, VaultEntry } from "../../types/vault.ts";
+import { softDeleteEntryById } from "../../services/vault/entries.ts";
 
 /** Default stale threshold: one year without an update. */
 export const DEFAULT_STALE_AFTER_DAYS = 365;
@@ -207,4 +208,125 @@ export interface CleanupRun {
  */
 export function runMatchesEntries(run: CleanupRun | null, entries: readonly VaultEntry[]): boolean {
   return run !== null && run.entries === entries;
+}
+
+/**
+ * A stable, serializable identity for one finding, used by the UI to track
+ * which proposed changes are selected. Two preview runs over the same data
+ * produce the same keys, so a selection made against one run still makes
+ * sense if the panel recomputes after a rejected apply.
+ */
+export function cleanupFindingKey(finding: CleanupFinding): string {
+  return finding.kind === "similar" ? `similar:${finding.entryIds.join(",")}` : `stale:${finding.entryId}`;
+}
+
+/**
+ * How much payload a duplicate candidate carries, for picking a merge
+ * survivor. Never inspects secret *values* — only whether optional fields are
+ * present — so completeness can be computed without reading `password` or
+ * `totpSecret` content into any log or UI.
+ */
+function completenessScore(entry: VaultEntry): number {
+  const presence = [
+    entry.notes,
+    entry.totpSecret,
+    entry.port,
+    entry.protocol,
+    entry.capabilities,
+    entry.credentialType,
+    entry.domain,
+    entry.providerId,
+    entry.url,
+  ].filter((field) => field.trim() !== "").length;
+  return presence + (entry.favorite ? 1 : 0);
+}
+
+/**
+ * The survivor of a duplicate group: the most complete entry, newest first
+ * on a tie, id as the final deterministic tiebreak. The other group members
+ * are never dropped — the caller moves them to trash, never purges them.
+ */
+function pickSurvivor(group: VaultEntry[]): VaultEntry {
+  return [...group].sort((a, b) => {
+    const byCompleteness = completenessScore(b) - completenessScore(a);
+    if (byCompleteness !== 0) return byCompleteness;
+    return compareByRecency(a, b);
+  })[0]!;
+}
+
+export interface CleanupApplyResult {
+  ok: true;
+  /** The full entry array (active + trash) with the selected changes applied. */
+  entries: VaultEntry[];
+  /** Number of similarity groups merged (each moves all but the survivor to trash). */
+  mergedGroups: number;
+  /** Number of stale entries moved to trash. */
+  staleTrashed: number;
+  /** Every entry id that was moved to trash by this apply, for reporting — never a secret field. */
+  trashedIds: string[];
+}
+
+export interface CleanupApplyRejected {
+  ok: false;
+  /** The analyzed entry set no longer matches the vault's current entries; recompute before applying. */
+  reason: "stale-run";
+}
+
+/**
+ * Applies a (possibly partial) selection of a `CleanupPreview`'s findings:
+ * duplicates are merged by keeping the most complete/newest entry and moving
+ * every other entry in that group to trash (soft delete, never a hard
+ * delete); stale entries are moved to trash. Nothing is ever purged or
+ * silently discarded — both sides of a merge remain recoverable in the
+ * Papierkorb.
+ *
+ * Before touching anything, the current active entries are checked against
+ * `run` with `runMatchesEntries`. If the vault changed since the preview was
+ * computed, this rejects with `{ ok: false, reason: "stale-run" }` instead of
+ * applying a decision that was made against outdated data — the caller must
+ * recompute a fresh preview and let the user decide again.
+ */
+export function applyCleanup(
+  allEntries: VaultEntry[],
+  activeEntriesAtPreview: readonly VaultEntry[],
+  run: CleanupRun,
+  selectedKeys: ReadonlySet<string>,
+  now: string = new Date().toISOString(),
+): CleanupApplyResult | CleanupApplyRejected {
+  if (!runMatchesEntries(run, activeEntriesAtPreview)) {
+    return { ok: false, reason: "stale-run" };
+  }
+
+  let next = allEntries;
+  let mergedGroups = 0;
+  let staleTrashed = 0;
+  const trashedIds: string[] = [];
+
+  for (const finding of run.preview.findings) {
+    if (!selectedKeys.has(cleanupFindingKey(finding))) continue;
+
+    if (finding.kind === "similar") {
+      const group = finding.entryIds
+        .map((id) => next.find((entry) => entry.id === id))
+        .filter((entry): entry is VaultEntry => entry != null && entry.deletedAt == null);
+      // Defensive: if the group already collapsed (e.g. a prior selection in
+      // this same apply already trashed one side), skip rather than guess.
+      if (group.length < 2) continue;
+      const survivor = pickSurvivor(group);
+      for (const entry of group) {
+        if (entry.id === survivor.id) continue;
+        next = softDeleteEntryById(next, entry.id, now);
+        trashedIds.push(entry.id);
+      }
+      mergedGroups += 1;
+    } else {
+      const entry = next.find((candidate) => candidate.id === finding.entryId);
+      if (!entry || entry.deletedAt != null) continue;
+      next = softDeleteEntryById(next, finding.entryId, now);
+      trashedIds.push(finding.entryId);
+      staleTrashed += 1;
+    }
+  }
+
+  return { ok: true, entries: next, mergedGroups, staleTrashed, trashedIds };
 }

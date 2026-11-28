@@ -8,6 +8,7 @@ import { VaultKeyCheckPanel } from "./VaultKeyCheckPanel.tsx";
 import { VaultTrashPanel } from "./VaultTrashPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { SettingsPane, VaultEntry } from "../../types/vault.ts";
+import type { CleanupApplyRejected, CleanupApplyResult, CleanupRun } from "../../utils/vault/cleanup.ts";
 
 export function VaultSettings({
   pane,
@@ -21,6 +22,7 @@ export function VaultSettings({
   onRestoreTrashEntry,
   onPurgeTrashEntry,
   onTrashRetentionDaysChange,
+  onApplyCleanup,
 }: {
   pane: SettingsPane;
   onPaneChange: (pane: SettingsPane) => void;
@@ -33,6 +35,10 @@ export function VaultSettings({
   onRestoreTrashEntry: (entry: VaultEntry) => void;
   onPurgeTrashEntry: (entry: VaultEntry) => void;
   onTrashRetentionDaysChange: (days: number | null) => void;
+  onApplyCleanup: (
+    run: CleanupRun,
+    selectedKeys: ReadonlySet<string>,
+  ) => Promise<CleanupApplyResult | CleanupApplyRejected>;
 }): ReactNode {
   const { t } = useCopy();
   return (
@@ -107,7 +113,7 @@ export function VaultSettings({
           </dl>
         </section>
         <VaultHistoryPanel />
-        <VaultCleanupPanel entries={entries} />
+        <VaultCleanupPanel entries={entries} onApply={onApplyCleanup} />
         <VaultKeyCheckPanel entries={entries} />
         <VaultBackupPanel />
         </>

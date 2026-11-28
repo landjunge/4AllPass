@@ -29,12 +29,15 @@ export interface VaultItem {
   kind: string;
   providerId: string;
   totpSecret: string;
+  /** Set when the app's trash (P0 #279 "Papierkorb") holds this entry. */
+  deletedAt: string | null;
 }
 
 function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
   const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as Partial<VaultItem> & {
     providerId?: unknown;
     kind?: unknown;
+    deletedAt?: unknown;
   };
   return {
     id,
@@ -46,6 +49,7 @@ function decodeItem(id: string, plaintext: Uint8Array): VaultItem {
     kind: typeof parsed.kind === "string" ? parsed.kind : "web",
     providerId: typeof parsed.providerId === "string" ? parsed.providerId : "",
     totpSecret: typeof parsed.totpSecret === "string" ? parsed.totpSecret : "",
+    deletedAt: typeof parsed.deletedAt === "string" ? parsed.deletedAt : null,
   };
 }
 
@@ -190,7 +194,10 @@ export function decryptUnlockedSnapshot(
       zeroize(entry.plaintext);
     }
   });
-  return { entries: items, pin: nextPin };
+  // Trashed in the app (P0 #279 "Papierkorb") is never offered for autofill
+  // here — the extension has no trash UI, so a deleted login must simply
+  // stop being usable, not need a permanent purge first.
+  return { entries: items.filter((item) => item.deletedAt == null), pin: nextPin };
 }
 
 /**

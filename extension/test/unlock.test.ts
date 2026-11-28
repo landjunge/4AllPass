@@ -192,6 +192,22 @@ test("memory pin store persists the digest across unlocks", async () => {
   );
 });
 
+test("openUnlockedSnapshot excludes a trashed entry from autofill, not just the app's list views", () => {
+  // P1 review finding on PR #316: a soft-deleted entry (app Trash, #279) stayed
+  // decrypted plaintext and remained in the snapshot's sealed manifest — but it
+  // must not keep being offered for autofill here. No permanent purge required.
+  const vaultId = "vault_ext_trash_01HZX4ALLPASS00000001";
+  const { wire } = sealedSnapshot(vaultId, 1, {
+    entry_active: '{"title":"Active","username":"a","password":"one"}',
+    entry_trashed:
+      '{"title":"Trashed","username":"b","password":"two","deletedAt":"2026-11-01T00:00:00.000Z"}',
+  });
+  const opened = openUnlockedSnapshot(wire, { vaultId, vaultPassword: PASSWORD });
+  assert.equal(opened.entries.length, 1);
+  assert.equal(opened.entries[0]?.title, "Active");
+  assert.equal(opened.entries.some((entry) => entry.title === "Trashed"), false);
+});
+
 test("decryptUnlockedSnapshot picks up a newer revision with the same vault key", () => {
   const vaultId = "vault_ext_live_01HZX4ALLPASS0000000001";
   const vaultKey = generateVaultKey();

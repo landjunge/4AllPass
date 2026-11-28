@@ -80,8 +80,8 @@ export function VaultTrashPanel({
                 <span className="device-actions">
                   <span className="muted small" data-testid={`trash-confirm-text-${entry.id}`}>
                     {t({
-                      de: "Endgültig löschen — nicht mehr wiederherstellbar.",
-                      en: "Delete for good — cannot be restored afterwards.",
+                      de: "Entfernt den Eintrag aus dem Papierkorb — ältere Revisionen in der Versionshistorie bleiben davon unberührt.",
+                      en: "Removes the entry from Trash — older revisions in version history are unaffected.",
                     })}
                   </span>
                   <button

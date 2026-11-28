@@ -154,9 +154,9 @@ export function useVaultState() {
     setDraftSession((session) => session + 1);
     setBusy(true);
     try {
-      const next = upsertDraft(entries, draft, selectedId);
+      const next = upsertDraft(allEntries, draft, selectedId);
       await saveEntries(next);
-      const id = idAfterUpsert(entries, next, selectedId);
+      const id = idAfterUpsert(allEntries, next, selectedId);
       const saved = next.find((row) => row.id === id);
       if (saved) {
         setSelectedId(saved.id);
@@ -212,7 +212,7 @@ export function useVaultState() {
     try {
       const chosen = selectedImportEntries(importPending);
       if (chosen.length === 0) return;
-      await saveEntries(mergeImport(entries, chosen, importPending.source));
+      await saveEntries(mergeImport(allEntries, chosen, importPending.source));
       setImportPending(null);
       if (fromBrowser && onboarding) {
         markOnboardingDone(vault.vaultId);
@@ -230,7 +230,7 @@ export function useVaultState() {
     const nextFlag = !entry.favorite;
     try {
       await saveEntries(
-        entries.map((candidate) =>
+        allEntries.map((candidate) =>
           candidate.id === entry.id
             ? { ...candidate, favorite: nextFlag, updatedAt: new Date().toISOString() }
             : candidate,
@@ -299,15 +299,15 @@ export function useVaultState() {
   }
 
   async function ensureDemoLogin(): Promise<void> {
-    const next = withAutofillDemoEntry(entries);
-    if (next === entries) return;
+    const next = withAutofillDemoEntry(allEntries);
+    if (next === allEntries) return;
     await saveEntries(next);
   }
 
   async function seedAccessDemo(): Promise<void> {
     setBusy(true);
     try {
-      await saveEntries(withDemoGithubEntry(entries));
+      await saveEntries(withDemoGithubEntry(allEntries));
     } catch {
       // The banner shows the reason.
     } finally {

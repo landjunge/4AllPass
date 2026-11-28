@@ -5,6 +5,7 @@ import { VaultBackupPanel } from "./VaultBackupPanel.tsx";
 import { VaultCleanupPanel } from "./VaultCleanupPanel.tsx";
 import { VaultHistoryPanel } from "./VaultHistoryPanel.tsx";
 import { VaultKeyCheckPanel } from "./VaultKeyCheckPanel.tsx";
+import { VaultTrashPanel } from "./VaultTrashPanel.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import type { SettingsPane, VaultEntry } from "../../types/vault.ts";
 
@@ -14,12 +15,24 @@ export function VaultSettings({
   revision,
   vaultKeyVersion,
   entries,
+  trashEntries,
+  trashBusy,
+  trashRetentionDays,
+  onRestoreTrashEntry,
+  onPurgeTrashEntry,
+  onTrashRetentionDaysChange,
 }: {
   pane: SettingsPane;
   onPaneChange: (pane: SettingsPane) => void;
   revision: number;
   vaultKeyVersion: number;
   entries: VaultEntry[];
+  trashEntries: VaultEntry[];
+  trashBusy: boolean;
+  trashRetentionDays: number | null;
+  onRestoreTrashEntry: (entry: VaultEntry) => void;
+  onPurgeTrashEntry: (entry: VaultEntry) => void;
+  onTrashRetentionDaysChange: (days: number | null) => void;
 }): ReactNode {
   const { t } = useCopy();
   return (
@@ -48,8 +61,25 @@ export function VaultSettings({
         >
           {t({ de: "Sicherheit", en: "Security" })}
         </button>
+        <button
+          type="button"
+          className={pane === "trash" ? "active" : ""}
+          onClick={() => onPaneChange("trash")}
+          data-testid="tab-trash"
+        >
+          {t({ de: "Papierkorb", en: "Trash" })}
+        </button>
       </nav>
-      {pane === "devices" ? (
+      {pane === "trash" ? (
+        <VaultTrashPanel
+          entries={trashEntries}
+          busy={trashBusy}
+          retentionDays={trashRetentionDays}
+          onRestore={onRestoreTrashEntry}
+          onPurge={onPurgeTrashEntry}
+          onRetentionDaysChange={onTrashRetentionDaysChange}
+        />
+      ) : pane === "devices" ? (
         <DevicesPanel />
       ) : pane === "security" ? (
         <>

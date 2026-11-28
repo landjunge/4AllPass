@@ -52,6 +52,12 @@ export function VaultPage(): ReactNode {
           revision={vault.vault.revision}
           vaultKeyVersion={vault.vault.vaultKeyVersion}
           entries={vault.entries}
+          trashEntries={vault.trashEntries}
+          trashBusy={vault.busy}
+          trashRetentionDays={vault.trashRetentionDays}
+          onRestoreTrashEntry={(entry) => void vault.restoreTrashEntry(entry)}
+          onPurgeTrashEntry={(entry) => void vault.purgeTrashEntry(entry)}
+          onTrashRetentionDaysChange={vault.setTrashRetentionDays}
         />
       ) : vault.tab === "access" ? (
         <AccessPanel entries={vault.entries} onSeedDemo={() => vault.seedAccessDemo()} />

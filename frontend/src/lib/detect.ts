@@ -179,3 +179,31 @@ export function draftFromDetection(detected: DetectedCredential): EntryDraft {
     totpSecret: detected.totpSecret || draft.totpSecret,
   };
 }
+
+/**
+ * Takes over a captured credential (issue #278's clipboard capture) into an
+ * *already open* draft without discarding what the user already typed.
+ * Unlike `draftFromDetection` — which builds a brand-new draft from
+ * `emptyDraft` for the manual paste/detect flow — this only overlays the
+ * fields that actually describe the captured credential.
+ *
+ * `password`, `provider`, `url`, and `capabilities` always come from the
+ * new detection: they describe *this* key, so re-capturing a different
+ * provider (GitHub, then OpenAI, before ever saving) must update all of
+ * them together — leaving the old provider/URL next to the new password
+ * would save an internally inconsistent entry. `title` is the one
+ * exception: it is the user's own label, so it is only filled in when
+ * still blank. `account`, `notes`, `username`, and everything else the
+ * user typed are left alone entirely.
+ */
+export function mergeDetectedCredential(current: EntryDraft, detected: DetectedCredential): EntryDraft {
+  const from = draftFromDetection(detected);
+  return {
+    ...current,
+    password: from.password,
+    provider: from.provider,
+    url: from.url,
+    capabilities: from.capabilities,
+    title: current.title || from.title,
+  };
+}

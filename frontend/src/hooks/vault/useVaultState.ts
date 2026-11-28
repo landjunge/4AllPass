@@ -5,6 +5,8 @@ import type { BrowserLoginRow } from "../../lib/import.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../../lib/providers.ts";
 import { isOnboardingDone, markOnboardingDone } from "../../lib/onboarding.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../../lib/clipboard.ts";
+import { mergeDetectedCredential } from "../../lib/detect.ts";
+import { useKeyCreateCapture } from "./useKeyCreateCapture.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import {
@@ -55,6 +57,11 @@ export function useVaultState() {
   const [paste, setPaste] = useState("");
   const [detectedLabel, setDetectedLabel] = useState<Line | null>(null);
   const [customTemplate, setCustomTemplate] = useState("");
+  // Identifies which open draft a running key-create clipboard capture
+  // belongs to. Bumped whenever the open draft changes identity (a new
+  // blank draft, a different existing entry selected, or the form closed) —
+  // see useKeyCreateCapture's sessionKey param.
+  const [draftSession, setDraftSession] = useState(0);
 
   useEffect(() => {
     setRevealPassword(false);
@@ -80,12 +87,21 @@ export function useVaultState() {
     setSelectedId(null);
     setShowMore(false);
     setDraft(createNewDraft(kind));
+    setDraftSession((session) => session + 1);
   }
 
   function startEdit(entry: VaultEntry): void {
     setSelectedId(entry.id);
     setShowMore(draftHasAdvancedFields(entry));
     setDraft(draftFromEntry(entry));
+    setDraftSession((session) => session + 1);
+  }
+
+  // Closing the form without saving must end any running capture for it too
+  // — a hidden panel left capturing in the background is still a capture.
+  function cancelEdit(): void {
+    setDraft(null);
+    setDraftSession((session) => session + 1);
   }
 
   function alertError(error: unknown): void {
@@ -106,6 +122,10 @@ export function useVaultState() {
 
   async function save(): Promise<void> {
     if (!draft || !vault) return;
+    // Bumped *before* the snapshot below and the async write, not after —
+    // a clipboard match resolving during the in-flight save must never
+    // land on `draft` after it has already been snapshotted into `next`.
+    setDraftSession((session) => session + 1);
     setBusy(true);
     try {
       const next = upsertDraft(entries, draft, selectedId);
@@ -202,6 +222,7 @@ export function useVaultState() {
       await saveEntries(removeEntryById(entries, entry.id));
       setDraft(null);
       setSelectedId(null);
+      setDraftSession((session) => session + 1);
     } catch {
       // The banner shows the reason.
     } finally {
@@ -296,6 +317,21 @@ export function useVaultState() {
       .catch(() => undefined);
   }
 
+  // "Neuen Schlüssel erstellen" (issue #278). Only ever applies to the open
+  // draft, never writes to the vault itself — the existing Save button
+  // still does that, and a duplicate is always surfaced by the panel
+  // instead of silently folded in.
+  const keyCreateCapture = useKeyCreateCapture(
+    entries,
+    !vault,
+    (credential) => {
+      setDraft((current) => (current && current.kind === "api" ? mergeDetectedCredential(current, credential) : current));
+    },
+    draftSession,
+    draft?.kind === "api",
+    draft?.account ?? "",
+  );
+
   return {
     vault,
     t,
@@ -330,6 +366,7 @@ export function useVaultState() {
     copyField,
     startNew,
     startEdit,
+    cancelEdit,
     toggleFavorite,
     save,
     onImportFile,
@@ -347,6 +384,7 @@ export function useVaultState() {
     applyCustomTemplate,
     generateDraftPassword,
     copyShareKey,
+    keyCreateCapture,
     pickAllImport: () => importPending && setImportPending(pickAllImport(importPending)),
     pickNoneImport: () => importPending && setImportPending(pickNoneImport(importPending)),
     toggleImportPick: (id: string) =>

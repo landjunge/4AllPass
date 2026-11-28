@@ -72,6 +72,28 @@ export async function clearCopiedSecret(clipboard?: SecretClipboard): Promise<vo
   lastCopied = null;
 }
 
+/**
+ * Clears the clipboard only if it still holds exactly `expected` — used
+ * after the "create a new API key" clipboard capture (issue #278) is
+ * actually applied. Never called on a timer and never called just because
+ * a capture phase detected a key; only after the user's own Save. If the
+ * clipboard now holds something else (the user copied something new, or
+ * the OS/another app changed it), it is left untouched — this never
+ * destroys clipboard content it did not itself just capture.
+ */
+export async function clearClipboardIfUnchanged(
+  expected: string,
+  clipboard?: SecretClipboard,
+): Promise<void> {
+  const clip = clipboard ?? defaultClipboard();
+  try {
+    const current = await clip.readText();
+    if (current === expected) await clip.writeText("");
+  } catch {
+    // No clipboard-read permission, or OS refused: leave it as is.
+  }
+}
+
 /** Test-only: drop timer state without touching a clipboard. */
 export function resetCopiedSecretForTests(): void {
   pending = null;

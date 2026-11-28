@@ -129,10 +129,11 @@ export function VaultPage(): ReactNode {
                     onApplyCustomTemplate={vault.applyCustomTemplate}
                     onApplyBuiltinTemplate={vault.applyBuiltinTemplate}
                     onSave={() => void vault.save()}
-                    onCancel={() => vault.setDraft(null)}
+                    onCancel={vault.cancelEdit}
                     onShare={vault.startShare}
                     onRemove={() => vault.selected && void vault.remove(vault.selected)}
                     onGeneratePassword={vault.generateDraftPassword}
+                    keyCreateCapture={vault.keyCreateCapture}
                   />
                 ) : (
                   <VaultDetailEmpty onAdd={vault.startNew} />

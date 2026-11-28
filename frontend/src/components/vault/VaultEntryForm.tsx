@@ -8,6 +8,8 @@ import { applyKindToDraft, applyTotpInput } from "../../utils/vault/drafts.ts";
 import { formatRelativeChanged, kindLabel, newEntryHeading } from "../../utils/vault/labels.ts";
 import { passwordStrength } from "../../utils/vault/strength.ts";
 import { FieldLabel } from "./FieldLabel.tsx";
+import { VaultKeyCreatePanel } from "./VaultKeyCreatePanel.tsx";
+import type { KeyCreateCaptureApi } from "../../hooks/vault/useKeyCreateCapture.ts";
 
 export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void }): ReactNode {
   const { t } = useCopy();
@@ -92,6 +94,7 @@ export function VaultEntryForm({
   onShare,
   onRemove,
   onGeneratePassword,
+  keyCreateCapture,
 }: {
   draft: EntryDraft;
   selected: VaultEntry | null;
@@ -119,6 +122,7 @@ export function VaultEntryForm({
   onShare: () => void;
   onRemove: () => void;
   onGeneratePassword: () => void;
+  keyCreateCapture: KeyCreateCaptureApi;
 }): ReactNode {
   const { t } = useCopy();
   const strength = passwordStrength(draft.password);
@@ -148,6 +152,7 @@ export function VaultEntryForm({
           </button>
         ))}
       </div>
+      {draft.kind === "api" && !selectedId ? <VaultKeyCreatePanel capture={keyCreateCapture} /> : null}
       <p className="form-step">{t({ de: "2. Wie heißt er?", en: "2. What is it called?" })}</p>
       <label>
         <FieldLabel

@@ -1,7 +1,13 @@
 export {
+  activeEntries,
   appendDraft,
   idAfterUpsert,
+  purgeExpiredTrash,
+  purgeTrashedEntryById,
   removeEntryById,
+  restoreEntryFromTrashById,
+  softDeleteEntryById,
+  trashedEntries,
   upsertDraft,
   withAutofillDemoEntry,
   withDemoGithubEntry,

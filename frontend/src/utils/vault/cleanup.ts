@@ -314,6 +314,11 @@ export function applyCleanup(
   let mergedGroups = 0;
   let staleTrashed = 0;
   const trashedIds: string[] = [];
+  // An id a merge in this same apply just kept active. A separately selected
+  // stale finding for that same id must not then trash it anyway — that
+  // would both break the duplicate-group's own "(kept)" label and silently
+  // leave the group with no active entry at all (#279 review).
+  const protectedSurvivorIds = new Set<string>();
 
   for (const finding of run.preview.findings) {
     if (!selectedKeys.has(cleanupFindingKey(finding))) continue;
@@ -326,6 +331,7 @@ export function applyCleanup(
       // this same apply already trashed one side), skip rather than guess.
       if (group.length < 2) continue;
       const survivor = pickSurvivor(group);
+      protectedSurvivorIds.add(survivor.id);
       for (const entry of group) {
         if (entry.id === survivor.id) continue;
         next = softDeleteEntryById(next, entry.id, now);
@@ -333,6 +339,7 @@ export function applyCleanup(
       }
       mergedGroups += 1;
     } else {
+      if (protectedSurvivorIds.has(finding.entryId)) continue;
       const entry = next.find((candidate) => candidate.id === finding.entryId);
       if (!entry || entry.deletedAt != null) continue;
       next = softDeleteEntryById(next, finding.entryId, now);

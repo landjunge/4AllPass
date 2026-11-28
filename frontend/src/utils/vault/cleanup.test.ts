@@ -372,6 +372,54 @@ test("survivorIdForGroup names the same entry applyCleanup actually keeps, even 
   );
 });
 
+test("a merge survivor that is also separately flagged stale stays active when both findings are selected", () => {
+  // #279 review follow-up: the stale pass ran after the merge pass and did
+  // not know the merge had just kept this id — selecting both findings used
+  // to trash the very entry the merge (and its "(kept)" label) just kept,
+  // leaving the whole group with no active entry.
+  const richOld = entry({
+    id: "rich-old",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    notes: "has notes",
+    updatedAt: "2025-01-01T00:00:00.000Z", // old enough to also be "stale"
+  });
+  const sparseNew = entry({
+    id: "sparse-new",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    updatedAt: "2026-11-01T00:00:00.000Z",
+  });
+  const entries = [richOld, sparseNew];
+  const preview = previewCleanup(entries, { now: FIXED_NOW });
+  const similarKey = cleanupFindingKey(
+    preview.findings.find((finding) => finding.kind === "similar")!,
+  );
+  const staleKey = cleanupFindingKey(
+    preview.findings.find((finding) => finding.kind === "stale" && finding.entryId === "rich-old")!,
+  );
+  const run: CleanupRun = { entries, preview };
+  const result = applyCleanup(
+    entries,
+    entries,
+    run,
+    new Set([similarKey, staleKey]),
+  ) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(
+    result.entries.find((row) => row.id === "rich-old")!.deletedAt,
+    null,
+    "the merge survivor stays active even though it was also separately selected as stale",
+  );
+  assert.ok(
+    result.entries.find((row) => row.id === "sparse-new")!.deletedAt != null,
+    "the other side of the merge still goes to trash",
+  );
+  assert.equal(result.staleTrashed, 0, "the protected survivor is not counted as a stale trash either");
+});
+
 test("a tie on completeness falls back to the newer entry as the survivor", () => {
   const older = entry({ id: "older", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" });
   const newer = entry({ id: "newer", host: "github.com", username: "me", password: "pw", updatedAt: "2026-06-01T00:00:00.000Z" });

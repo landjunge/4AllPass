@@ -181,3 +181,24 @@ export async function openProviderKeyPage(providerId: string): Promise<boolean> 
     return false;
   }
 }
+
+/**
+ * Opens TollGate's local dashboard (`http://127.0.0.1:8787`) in the user's
+ * default *external* browser — never the 4AllPass webview (issue #279,
+ * point 9). TollGate is a separate, self-contained product; 4AllPass never
+ * fetches its API, never reads or shows its limits/cost data, and never
+ * sends a vault key or password to it. The Rust command takes no
+ * parameters and always opens the same fixed URL; this call carries no
+ * data across the IPC boundary at all. Returns whether the OS call
+ * actually happened: `false` outside the desktop shell (no trusted native
+ * transport exists there).
+ */
+export async function openTollgateDashboard(): Promise<boolean> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("open_tollgate_dashboard");
+    return true;
+  } catch {
+    return false;
+  }
+}

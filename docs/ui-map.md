@@ -272,6 +272,22 @@ Scope-Hinweis in „API-Schlüssel prüfen" (GitHubs `X-OAuth-Scopes`-Header,
 unbewertet angezeigt). Keine neuen Netzwerkaufrufe über das bereits
 bestehende HIBP- und Key-Check-Verfahren hinaus.
 
+**V7.7 Kosten/Limits (#279 Punkt 9).** Eine Frage: *Wo sehe ich, was ein
+API-Key kostet oder noch an Kontingent hat?* Nicht hier. Die Karte erklärt
+knapp, dass Anbieter-Kontingente und Kosten für API-Key-Einträge das
+separate, eigenständige Werkzeug TollGate verwaltet (lokaler Prozess,
+eigene HTTP-API auf `127.0.0.1:8787`), **nicht** 4AllPass. Ein Button „
+TollGate-Dashboard öffnen" ruft `open_tollgate_dashboard` auf — **kein
+Netzwerkzugriff aus dem Frontend, nur ein OS-Open-Befehl** (`open`/`start`/
+`xdg-open`, identisch zu `open_provider_key_page` aus #278): die feste URL
+`http://127.0.0.1:8787` wird im externen Standardbrowser geöffnet, nie im
+4AllPass-Fenster, nie per `fetch` aus der Webview. 4AllPass liest TollGates
+Limits nicht, zeigt hier keine Live-Daten und sendet nie einen
+Tresorschlüssel oder ein Passwort an TollGate. Die
+`connect-src`-Beschränkung aus `docs/desktop-network-boundary.md` bleibt
+unverändert — dieser Weg braucht keine neue CSP-Erlaubnis, weil er keine
+Verbindung aus dem 4AllPass-Prozess oder der Webview herstellt.
+
 > Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 
 ---

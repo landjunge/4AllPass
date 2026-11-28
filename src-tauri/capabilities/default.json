@@ -22,6 +22,7 @@
     "allow-open-autofill-demo",
     "allow-import-browser-logins",
     "allow-check-provider-keys",
-    "allow-open-provider-key-page"
+    "allow-open-provider-key-page",
+    "allow-open-tollgate-dashboard"
   ]
 }

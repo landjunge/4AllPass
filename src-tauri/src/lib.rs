@@ -17,6 +17,7 @@ mod secret_fs;
 mod sidecar_http;
 mod sidecar_target;
 mod sleep;
+mod tollgate_link;
 mod tray;
 
 use loopback::{prepare_loopback_core, wait_our_core};

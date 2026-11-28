@@ -14,7 +14,8 @@ macro_rules! app_commands {
             browsers::open_autofill_demo,
             browser_passwords::import_browser_logins,
             provider_key_check::check_provider_keys,
-            provider_key_create::open_provider_key_page
+            provider_key_create::open_provider_key_page,
+            tollgate_link::open_tollgate_dashboard
         ]
     };
 }
@@ -54,7 +55,7 @@ mod tests {
             .map(|name| format!("allow-{}", name.replace('_', "-")))
             .collect();
         assert_eq!(own_main, expected);
-        assert_eq!(APP_COMMAND_NAMES.len(), 12);
+        assert_eq!(APP_COMMAND_NAMES.len(), 13);
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
         assert_eq!(

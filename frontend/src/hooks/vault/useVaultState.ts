@@ -4,12 +4,14 @@ import { generatePassword } from "../../lib/entries.ts";
 import type { BrowserLoginRow } from "../../lib/import.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../../lib/providers.ts";
 import { isOnboardingDone, markOnboardingDone } from "../../lib/onboarding.ts";
+import { getTrashRetentionDays, setTrashRetentionDays } from "../../lib/trash-retention.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../../lib/clipboard.ts";
 import { mergeDetectedCredential } from "../../lib/detect.ts";
 import { useKeyCreateCapture } from "./useKeyCreateCapture.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import {
+  activeEntries,
   applyDetectedText,
   browserLoginsToPending,
   createEntryShare,
@@ -20,9 +22,13 @@ import {
   pickAllImport,
   pickNoneImport,
   idAfterUpsert,
-  removeEntryById,
+  purgeExpiredTrash,
+  purgeTrashedEntryById,
+  restoreEntryFromTrashById,
   selectedImportEntries,
+  softDeleteEntryById,
   toggleImportPick,
+  trashedEntries,
   upsertDraft,
   withAutofillDemoEntry,
   withDemoGithubEntry,
@@ -74,8 +80,28 @@ export function useVaultState() {
     setOnboarding(!isOnboardingDone(vaultId));
   }, [vaultId]);
 
-  const entries = vault?.entries ?? [];
+  const [trashRetentionDays, setTrashRetentionDaysState] = useState<number | null>(null);
+  useEffect(() => {
+    setTrashRetentionDaysState(vaultId ? getTrashRetentionDays(vaultId) : null);
+  }, [vaultId]);
+
+  const allEntries = vault?.entries ?? [];
+  const entries = activeEntries(allEntries);
+  const trashEntries = trashedEntries(allEntries);
   const selected = entries.find((entry) => entry.id === selectedId) ?? null;
+
+  // Optional automatic retention (P0 #279): sweep once per vault/setting
+  // change. A no-op (no write) when nothing is actually expired yet.
+  useEffect(() => {
+    if (!vault || trashRetentionDays == null) return;
+    const swept = purgeExpiredTrash(vault.entries, trashRetentionDays);
+    if (swept.length !== vault.entries.length) {
+      void saveEntries(swept).catch(() => {
+        // Best-effort housekeeping; the banner (if any) is for user actions, not this.
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vault?.vaultId, vault?.revision, trashRetentionDays]);
 
   function copyField(label: string, value: string): void {
     void copySecret(value)
@@ -216,10 +242,14 @@ export function useVaultState() {
     }
   }
 
+  /**
+   * Soft delete (P0 #279 "Papierkorb"): moves the entry to the trash view.
+   * It stays in the committed, encrypted snapshot — nothing is purged here.
+   */
   async function remove(entry: VaultEntry): Promise<void> {
     setBusy(true);
     try {
-      await saveEntries(removeEntryById(entries, entry.id));
+      await saveEntries(softDeleteEntryById(allEntries, entry.id));
       setDraft(null);
       setSelectedId(null);
       setDraftSession((session) => session + 1);
@@ -228,6 +258,35 @@ export function useVaultState() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function restoreTrashEntry(entry: VaultEntry): Promise<void> {
+    setBusy(true);
+    try {
+      await saveEntries(restoreEntryFromTrashById(allEntries, entry.id));
+    } catch {
+      // The banner shows the reason.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Conscious, final purge — the explicit second step the UI confirms before calling this. */
+  async function purgeTrashEntry(entry: VaultEntry): Promise<void> {
+    setBusy(true);
+    try {
+      await saveEntries(purgeTrashedEntryById(allEntries, entry.id));
+    } catch {
+      // The banner shows the reason.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateTrashRetentionDays(days: number | null): void {
+    if (!vaultId) return;
+    setTrashRetentionDays(vaultId, days);
+    setTrashRetentionDaysState(getTrashRetentionDays(vaultId));
   }
 
   function ingestBrowserLogins(rows: BrowserLoginRow[]): void {
@@ -336,6 +395,9 @@ export function useVaultState() {
     vault,
     t,
     entries,
+    trashEntries,
+    trashRetentionDays,
+    setTrashRetentionDays: updateTrashRetentionDays,
     selected,
     selectedId,
     draft,
@@ -374,6 +436,8 @@ export function useVaultState() {
     openShare,
     confirmImport,
     remove,
+    restoreTrashEntry,
+    purgeTrashEntry,
     ingestBrowserLogins,
     ensureDemoLogin,
     seedAccessDemo,

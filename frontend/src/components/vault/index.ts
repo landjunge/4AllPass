@@ -8,6 +8,7 @@ export { VaultHeader } from "./VaultHeader.tsx";
 export { VaultImportReview } from "./VaultImportReview.tsx";
 export { VaultList } from "./VaultList.tsx";
 export { VaultSearchAndFilters } from "./VaultSearchAndFilters.tsx";
+export { VaultSecurityReviewPanel } from "./VaultSecurityReviewPanel.tsx";
 export { VaultSettings } from "./VaultSettings.tsx";
 export { VaultShareDialog } from "./VaultShareDialog.tsx";
 export { VaultShareImportDialog } from "./VaultShareImportDialog.tsx";

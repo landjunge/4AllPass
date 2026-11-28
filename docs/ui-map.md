@@ -229,6 +229,25 @@ anderen Gerät braucht es Master-Passwort oder Recovery-Kit — keine portable
 Freigabe. Der Erfolgstext nennt den tatsächlichen Ausgang (Download gestartet
 ≠ gespeichert).
 
+**V7.6 Sicherheitsprüfung (#279 Punkt 8).** Eine Frage: *Was ist konkret zu
+tun?* Statt verstreuter Einzelsignale sammelt eine Karte unter Einstellungen →
+Sicherheit alle lokal erkennbaren Funde an einem Ort und bietet pro Fund
+„Jetzt bearbeiten" (wechselt auf den Tresor-Tab und öffnet genau diesen
+Eintrag). **Doppelverwendung:** exakte Passwort-Gleichheit über
+unterschiedliche Dienste hinweg (neue Gruppierung, strenger als der
+„reused"-Signal des Health-Scores, das auf Ähnlichkeit per
+Levenshtein-Distanz beruht) — gruppiert Einträge, deren Passwort-Wert
+byte-identisch ist; der Wert selbst erscheint nie, nur Titel/Host. **Mögliche
+Offenlegung:** übernimmt die bereits vorhandenen „leaked"-Treffer aus dem
+Health-Score (derselbe k-anonyme HIBP-Bereichsabgleich, keine zusätzliche
+Netzwerkabfrage). **Unnötige Rechte:** bewusst **keine** vorgetäuschte
+Bewertung — 4AllPass kann ohne echte Scope-Introspektion beim Anbieter nicht
+wissen, welche Rechte ein Key tatsächlich braucht; die Karte verweist
+stattdessen ehrlich auf den bereits bestehenden, rein informativen
+Scope-Hinweis in „API-Schlüssel prüfen" (GitHubs `X-OAuth-Scopes`-Header,
+unbewertet angezeigt). Keine neuen Netzwerkaufrufe über das bereits
+bestehende HIBP- und Key-Check-Verfahren hinaus.
+
 > Wireframe: [v7-settings.html](screenshots/v7-settings.html)
 
 ---

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { checkProviderKeys } from "../../modules/desktop-adapter/index.ts";
+import { describeExpiry } from "../../lib/key-expiry.ts";
 import {
   CHECKABLE_PROVIDERS,
   currentResultFor,
@@ -165,6 +166,19 @@ export function VaultKeyCheckPanel({ entries }: { entries: VaultEntry[] }): Reac
                   {new Date(result.checkedAt).toLocaleTimeString()}
                   {statusHint(result.status, t) ? <span className="hint"> {statusHint(result.status, t)}</span> : null}
                 </span>
+              ) : null}
+              {result && result.status === "valid" ? (
+                (() => {
+                  const expiry = describeExpiry(result.expiry, t);
+                  return (
+                    <span
+                      className={`issue-pill key-expiry-${expiry.tone}`}
+                      data-testid={`key-check-expiry-${entry.id}`}
+                    >
+                      {expiry.label}
+                    </span>
+                  );
+                })()
               ) : null}
             </li>
           );

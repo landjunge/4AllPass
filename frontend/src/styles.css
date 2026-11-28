@@ -512,6 +512,27 @@ form.banner {
   color: var(--warn);
 }
 
+/* Issue #279: local, read-only expiry reminder next to a key-check result. */
+.key-expiry-unknown {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.key-expiry-ok {
+  border-color: var(--accent);
+  color: var(--accent-hi);
+}
+
+.key-expiry-warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.key-expiry-expired {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .notice {
   margin: 12px 0 0;
   font-weight: 500;

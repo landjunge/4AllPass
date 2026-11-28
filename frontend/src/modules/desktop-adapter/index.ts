@@ -140,6 +140,11 @@ export interface ProviderKeyCheckResult {
     | "unreachable"
     | "not_checkable";
   scopeHint: string | null;
+  /** Issue #279. Mirrors `KeyExpiry` in `provider_key_check.rs`: a real
+   * expiry the provider reported (currently only GitHub's fine-grained/
+   * expiring PATs via its `github-authentication-token-expiration` response
+   * header), or `unknown` — never a guessed/estimated lifetime. */
+  expiry: { kind: "unknown" } | { kind: "known"; expiresAt: string };
 }
 
 /**
@@ -154,7 +159,7 @@ export async function checkProviderKeys(items: ProviderKeyCheckItem[]): Promise<
     const { invoke } = await import("@tauri-apps/api/core");
     return await invoke<ProviderKeyCheckResult[]>("check_provider_keys", { items });
   } catch {
-    return items.map((item) => ({ id: item.id, status: "not_checkable", scopeHint: null }));
+    return items.map((item) => ({ id: item.id, status: "not_checkable", scopeHint: null, expiry: { kind: "unknown" } }));
   }
 }
 

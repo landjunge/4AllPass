@@ -8,6 +8,7 @@
  * logs a key value.
  */
 import type { Translate } from "../types/vault.ts";
+import type { ProviderKeyExpiry } from "./key-expiry.ts";
 
 /** Exactly the providers `packages/providers` already lists with an "api"
  * credential kind in this codebase, and that have one documented, free,
@@ -57,6 +58,9 @@ export interface ProviderKeyCheckOutcome {
   id: string;
   status: ProviderKeyCheckStatus;
   scopeHint: string | null;
+  /** Issue #279: a real expiry the provider reported, or `unknown` — never
+   * an estimate. Mirrors `KeyExpiry` in `provider_key_check.rs`. */
+  expiry: ProviderKeyExpiry;
 }
 
 /** A displayed result: the outcome plus the moment it was taken and the

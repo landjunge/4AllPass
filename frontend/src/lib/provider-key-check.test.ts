@@ -70,7 +70,13 @@ test("403/429 labels never claim the key is invalid", () => {
 });
 
 function record(providerId: ProviderKeyCheckRecord["providerId"]): ProviderKeyCheckRecord {
-  return { providerId, status: "valid", scopeHint: null, checkedAt: "2026-11-27T00:00:00.000Z" };
+  return {
+    providerId,
+    status: "valid",
+    scopeHint: null,
+    expiry: { kind: "unknown" },
+    checkedAt: "2026-11-27T00:00:00.000Z",
+  };
 }
 
 // VaultKeyCheckPanel (issue #277 finding 2): the panel used to key results
@@ -107,7 +113,7 @@ test("checkProviderKeys outside a Tauri shell degrades to not_checkable for ever
     { id: "b", providerId: "openai", key: "synthetic-key-b" },
   ]);
   assert.deepEqual(results, [
-    { id: "a", status: "not_checkable", scopeHint: null },
-    { id: "b", status: "not_checkable", scopeHint: null },
+    { id: "a", status: "not_checkable", scopeHint: null, expiry: { kind: "unknown" } },
+    { id: "b", status: "not_checkable", scopeHint: null, expiry: { kind: "unknown" } },
   ]);
 });

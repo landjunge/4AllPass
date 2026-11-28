@@ -15,7 +15,7 @@ fn ok_200_is_valid() {
         location: None,
         body: "{}",
     });
-    let (status, scope) = check_against(CheckedProvider::OpenAi, SYNTHETIC_KEY, &base(&server));
+    let (status, scope, _) = check_against(CheckedProvider::OpenAi, SYNTHETIC_KEY, &base(&server));
     assert_eq!(status, KeyCheckStatus::Valid);
     assert_eq!(scope, None);
     assert_eq!(server.count(), 1);
@@ -32,7 +32,7 @@ fn github_200_without_a_scope_header_claims_no_scope() {
     // status/body/location), so this asserts the no-header branch: no scope
     // claimed when the provider sends none. The Authorization header itself
     // is sent regardless — that is the request transport, not a log.
-    let (status, scope) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
+    let (status, scope, _) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
     assert_eq!(status, KeyCheckStatus::Valid);
     assert_eq!(scope, None);
 }
@@ -45,7 +45,7 @@ fn status_401_is_invalid_for_every_covered_provider() {
             location: None,
             body: "synthetic unauthorized",
         });
-        let (status, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
+        let (status, _, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
         assert_eq!(status, KeyCheckStatus::Invalid, "{provider:?}");
     }
 }
@@ -58,7 +58,7 @@ fn status_403_without_rate_limit_signal_is_insufficient_permission_not_invalid()
             location: None,
             body: "synthetic forbidden",
         });
-        let (status, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
+        let (status, _, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
         assert_eq!(status, KeyCheckStatus::InsufficientPermission, "{provider:?}");
         assert_ne!(status, KeyCheckStatus::Invalid);
     }
@@ -72,7 +72,7 @@ fn status_429_is_quota_exceeded_not_invalid() {
             location: None,
             body: "synthetic rate limited",
         });
-        let (status, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
+        let (status, _, _) = check_against(provider, SYNTHETIC_KEY, &base(&server));
         assert_eq!(status, KeyCheckStatus::QuotaExceeded, "{provider:?}");
         assert_ne!(status, KeyCheckStatus::Invalid);
     }
@@ -86,7 +86,7 @@ fn status_5xx_is_unreachable_not_invalid() {
             location: None,
             body: "synthetic server error",
         });
-        let (status, _) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
+        let (status, _, _) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
         assert_eq!(status, KeyCheckStatus::Unreachable, "{code}");
         assert_ne!(status, KeyCheckStatus::Invalid);
     }
@@ -99,7 +99,7 @@ fn status_404_is_not_checkable_not_invalid() {
         location: None,
         body: "synthetic not found",
     });
-    let (status, _) = check_against(CheckedProvider::Stripe, SYNTHETIC_KEY, &base(&server));
+    let (status, _, _) = check_against(CheckedProvider::Stripe, SYNTHETIC_KEY, &base(&server));
     assert_eq!(status, KeyCheckStatus::NotCheckable);
     assert_ne!(status, KeyCheckStatus::Invalid);
 }
@@ -117,7 +117,7 @@ fn redirect_is_never_followed_and_is_not_checkable() {
         location: Some(target.clone()),
         body: "synthetic redirect",
     });
-    let (status, scope) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&source));
+    let (status, scope, _) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&source));
     assert_eq!(status, KeyCheckStatus::NotCheckable);
     assert_eq!(scope, None);
     assert_eq!(
@@ -132,7 +132,7 @@ fn transport_failure_is_unreachable() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     drop(listener); // nothing is listening: connection refused
-    let (status, _) = check_against(CheckedProvider::OpenAi, SYNTHETIC_KEY, &format!("http://127.0.0.1:{port}"));
+    let (status, _, _) = check_against(CheckedProvider::OpenAi, SYNTHETIC_KEY, &format!("http://127.0.0.1:{port}"));
     assert_eq!(status, KeyCheckStatus::Unreachable);
 }
 
@@ -148,7 +148,7 @@ fn real_timeout_is_unreachable_not_invalid() {
         }
     });
     let started = std::time::Instant::now();
-    let (status, _) = check_against(CheckedProvider::Stripe, SYNTHETIC_KEY, &format!("http://127.0.0.1:{port}"));
+    let (status, _, _) = check_against(CheckedProvider::Stripe, SYNTHETIC_KEY, &format!("http://127.0.0.1:{port}"));
     assert_eq!(status, KeyCheckStatus::Unreachable);
     assert!(started.elapsed() < Duration::from_secs(15), "timeout must stay bounded");
 }
@@ -319,9 +319,71 @@ fn outcome_serializes_without_leaking_field_names_that_look_like_secrets() {
         id: "entry-3".into(),
         status: KeyCheckStatus::Valid,
         scope_hint: Some("repo".into()),
+        expiry: KeyExpiry::Known {
+            expires_at: "2027-01-01T00:00:00Z".into(),
+        },
     };
     let json = serde_json::to_string(&outcome).unwrap();
     assert!(json.contains("\"status\":\"valid\""));
+    assert!(json.contains("\"expiry\":{\"kind\":\"known\",\"expiresAt\":\"2027-01-01T00:00:00Z\"}"));
     assert!(!json.to_lowercase().contains("password"));
     assert!(!json.to_lowercase().contains("\"key\""));
+}
+
+// Issue #279: real expiry only, never an invented one.
+#[test]
+fn github_expiration_header_parses_into_iso_instant() {
+    assert_eq!(
+        parse_github_expiration_header("2027-01-01 00:00:00 UTC"),
+        Some("2027-01-01T00:00:00Z".to_string())
+    );
+}
+
+#[test]
+fn github_expiration_header_rejects_anything_not_exactly_the_documented_shape() {
+    assert_eq!(parse_github_expiration_header(""), None);
+    assert_eq!(parse_github_expiration_header("garbage"), None);
+    assert_eq!(parse_github_expiration_header("2027-01-01 00:00:00 EST"), None, "non-UTC zone must not be trusted as UTC");
+    assert_eq!(parse_github_expiration_header("2027-01-01T00:00:00Z"), None, "already-ISO-shaped input is not this header's documented format");
+    assert_eq!(parse_github_expiration_header("2027-01-01 00:00:00"), None, "missing zone must not default to UTC");
+}
+
+#[test]
+fn github_success_without_the_expiration_header_is_unknown_not_no_expiry() {
+    let server = Server::start(|_| Reply {
+        status: 200,
+        location: None,
+        body: "{}",
+    });
+    // The fixture cannot set arbitrary response headers, so this proves the
+    // honest default: a real 200 with no expiration header read must come
+    // back `Unknown`, never a synthesized "no expiration" claim.
+    let (status, _, expiry) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
+    assert_eq!(status, KeyCheckStatus::Valid);
+    assert_eq!(expiry, KeyExpiry::Unknown);
+}
+
+#[test]
+fn openai_and_stripe_never_report_an_expiry_even_on_success() {
+    for provider in [CheckedProvider::OpenAi, CheckedProvider::Stripe] {
+        let server = Server::start(|_| Reply {
+            status: 200,
+            location: None,
+            body: "{}",
+        });
+        let (status, _, expiry) = check_against(provider, SYNTHETIC_KEY, &base(&server));
+        assert_eq!(status, KeyCheckStatus::Valid, "{provider:?}");
+        assert_eq!(expiry, KeyExpiry::Unknown, "{provider:?}");
+    }
+}
+
+#[test]
+fn a_401_never_carries_an_expiry_even_for_github() {
+    let server = Server::start(|_| Reply {
+        status: 401,
+        location: None,
+        body: "synthetic unauthorized",
+    });
+    let (_, _, expiry) = check_against(CheckedProvider::GitHub, SYNTHETIC_KEY, &base(&server));
+    assert_eq!(expiry, KeyExpiry::Unknown);
 }

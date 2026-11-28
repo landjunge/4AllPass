@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 
 import {
+  clearClipboardIfUnchanged,
   clearCopiedSecret,
   copySecret,
   readClipboardText,
@@ -102,4 +103,28 @@ test("clearCopiedSecret overwrites a matching clipboard on lock", async () => {
   });
   await clearCopiedSecret(clipboard);
   assert.deepEqual(writes, ["s3cret", ""]);
+});
+
+test("clearClipboardIfUnchanged clears when the clipboard still holds the captured text", async () => {
+  const { clipboard, writes } = fakeClipboard("ghp_capturedtokenvalue00000000");
+  await clearClipboardIfUnchanged("ghp_capturedtokenvalue00000000", clipboard);
+  assert.deepEqual(writes, [""]);
+});
+
+test("clearClipboardIfUnchanged never touches a clipboard the user already replaced", async () => {
+  const { clipboard, writes } = fakeClipboard("something else entirely");
+  await clearClipboardIfUnchanged("ghp_capturedtokenvalue00000000", clipboard);
+  assert.deepEqual(writes, []);
+});
+
+test("clearClipboardIfUnchanged never throws when the OS denies the read", async () => {
+  const clipboard = {
+    async readText(): Promise<string> {
+      throw new Error("denied");
+    },
+    async writeText(): Promise<void> {
+      throw new Error("should not be called");
+    },
+  };
+  await assert.doesNotReject(() => clearClipboardIfUnchanged("ghp_capturedtokenvalue00000000", clipboard));
 });

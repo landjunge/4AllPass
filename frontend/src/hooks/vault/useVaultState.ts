@@ -5,6 +5,8 @@ import type { BrowserLoginRow } from "../../lib/import.ts";
 import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../../lib/providers.ts";
 import { isOnboardingDone, markOnboardingDone } from "../../lib/onboarding.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../../lib/clipboard.ts";
+import { draftFromDetection } from "../../lib/detect.ts";
+import { useKeyCreateCapture } from "./useKeyCreateCapture.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
 import {
@@ -296,6 +298,18 @@ export function useVaultState() {
       .catch(() => undefined);
   }
 
+  // "Neuen Schlüssel erstellen" (issue #278). Only ever applies to the open
+  // draft, never writes to the vault itself — the existing Save button
+  // still does that, and a duplicate is always surfaced by the panel
+  // instead of silently folded in.
+  const keyCreateCapture = useKeyCreateCapture(entries, !vault, (credential) => {
+    setDraft((current) => {
+      if (!current || current.kind !== "api") return current;
+      const detected = draftFromDetection(credential);
+      return { ...current, ...detected, password: detected.password };
+    });
+  });
+
   return {
     vault,
     t,
@@ -347,6 +361,7 @@ export function useVaultState() {
     applyCustomTemplate,
     generateDraftPassword,
     copyShareKey,
+    keyCreateCapture,
     pickAllImport: () => importPending && setImportPending(pickAllImport(importPending)),
     pickNoneImport: () => importPending && setImportPending(pickNoneImport(importPending)),
     toggleImportPick: (id: string) =>

@@ -133,6 +133,7 @@ export function VaultPage(): ReactNode {
                     onShare={vault.startShare}
                     onRemove={() => vault.selected && void vault.remove(vault.selected)}
                     onGeneratePassword={vault.generateDraftPassword}
+                    keyCreateCapture={vault.keyCreateCapture}
                   />
                 ) : (
                   <VaultDetailEmpty onAdd={vault.startNew} />

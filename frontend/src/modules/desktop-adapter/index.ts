@@ -157,3 +157,22 @@ export async function checkProviderKeys(items: ProviderKeyCheckItem[]): Promise<
     return items.map((item) => ({ id: item.id, status: "not_checkable", scopeHint: null }));
   }
 }
+
+/**
+ * Opens the given provider's verified, official key-creation page in the
+ * user's default *external* browser — never the 4AllPass webview (issue
+ * #278). The Rust command maps `providerId` to one of a small fixed
+ * allow-list of official URLs and rejects anything else; this call never
+ * carries a URL across the IPC boundary. Returns whether the OS call
+ * actually happened: `false` outside the desktop shell (no trusted native
+ * transport exists there) or when the provider id was not recognized.
+ */
+export async function openProviderKeyPage(providerId: string): Promise<boolean> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("open_provider_key_page", { providerId });
+    return true;
+  } catch {
+    return false;
+  }
+}

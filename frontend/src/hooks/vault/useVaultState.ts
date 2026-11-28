@@ -44,6 +44,12 @@ import type {
   VaultTab,
 } from "../../types/vault.ts";
 import { createNewDraft, draftFromEntry, draftHasAdvancedFields } from "../../utils/vault/drafts.ts";
+import {
+  applyCleanup,
+  type CleanupApplyRejected,
+  type CleanupApplyResult,
+  type CleanupRun,
+} from "../../utils/vault/cleanup.ts";
 
 export function useVaultState() {
   const { vault, saveEntries } = useApp();
@@ -283,6 +289,29 @@ export function useVaultState() {
     }
   }
 
+  /**
+   * Applies a (possibly partial) cleanup selection: merges duplicates to the
+   * most complete/newest survivor and moves stale entries to trash, both via
+   * soft delete — never a hard delete. Rejects without writing anything if
+   * `run` no longer matches the current active entries (race since the
+   * preview was computed); the panel then must recompute and let the user
+   * decide again instead of applying a stale decision.
+   */
+  async function applyVaultCleanup(
+    run: CleanupRun,
+    selectedKeys: ReadonlySet<string>,
+  ): Promise<CleanupApplyResult | CleanupApplyRejected> {
+    const result = applyCleanup(allEntries, entries, run, selectedKeys);
+    if (!result.ok) return result;
+    setBusy(true);
+    try {
+      await saveEntries(result.entries);
+      return result;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function updateTrashRetentionDays(days: number | null): void {
     if (!vaultId) return;
     setTrashRetentionDays(vaultId, days);
@@ -438,6 +467,7 @@ export function useVaultState() {
     remove,
     restoreTrashEntry,
     purgeTrashEntry,
+    applyVaultCleanup,
     ingestBrowserLogins,
     ensureDemoLogin,
     seedAccessDemo,

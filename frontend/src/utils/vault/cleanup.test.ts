@@ -4,8 +4,12 @@ import { test } from "node:test";
 import { emptyDraft, type VaultEntry } from "../../lib/entries.ts";
 import {
   DEFAULT_STALE_AFTER_DAYS,
+  applyCleanup,
+  cleanupFindingKey,
   previewCleanup,
   runMatchesEntries,
+  survivorIdForGroup,
+  type CleanupApplyResult,
   type CleanupRun,
   type SimilarGroup,
   type StaleFinding,
@@ -16,6 +20,7 @@ function entry(partial: Partial<VaultEntry> & { id: string }): VaultEntry {
     ...emptyDraft("web"),
     id: partial.id,
     updatedAt: "2026-01-01T00:00:00.000Z",
+    deletedAt: null,
     ...partial,
   };
 }
@@ -291,4 +296,217 @@ test("runMatchesEntries is null-safe and binds by array reference", () => {
   // Immutable replacement with equal content still counts as a change.
   const equalContent = [entry({ id: "a", host: "x.example", username: "u", password: "p", updatedAt: "2026-01-01T00:00:00.000Z" })];
   assert.equal(runMatchesEntries(run, equalContent), false);
+});
+
+// --- applyCleanup -----------------------------------------------------
+
+function allSelected(run: CleanupRun): Set<string> {
+  return new Set(run.preview.findings.map(cleanupFindingKey));
+}
+
+test("merging a duplicate group keeps the more complete entry and moves the other to trash, never hard-deleting either", () => {
+  const sparse = entry({
+    id: "sparse",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+  const rich = entry({
+    id: "rich",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    notes: "has notes",
+    totpSecret: "AAA",
+    updatedAt: "2026-01-02T00:00:00.000Z",
+  });
+  const entries = [sparse, rich];
+  const run: CleanupRun = { entries, preview: previewCleanup(entries, { now: FIXED_NOW }) };
+  const result = applyCleanup(entries, entries, run, allSelected(run), "2026-11-12T00:00:00.000Z") as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(result.mergedGroups, 1);
+  assert.equal(result.staleTrashed, 0);
+  // No data loss: both entries still exist in the returned array.
+  assert.equal(result.entries.length, 2);
+  const survivor = result.entries.find((row) => row.id === "rich")!;
+  const loser = result.entries.find((row) => row.id === "sparse")!;
+  assert.equal(survivor.deletedAt, null, "the more complete entry stays active");
+  assert.equal(loser.deletedAt, "2026-11-12T00:00:00.000Z", "the other side is soft-deleted, not removed");
+  assert.deepEqual(result.trashedIds, ["sparse"]);
+});
+
+test("survivorIdForGroup names the same entry applyCleanup actually keeps, even when it is the older one", () => {
+  // #279 review finding: the preview's entryIds are newest-first for display,
+  // but applyCleanup picks the survivor by completeness first. A UI using
+  // entryIds[0] for a "(kept)" label would here point at the newer, sparser
+  // entry while applyCleanup actually keeps the older, richer one.
+  const older = entry({
+    id: "older",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    notes: "has notes",
+    totpSecret: "AAA",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+  const newer = entry({
+    id: "newer",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    updatedAt: "2026-06-01T00:00:00.000Z",
+  });
+  const entries = [older, newer];
+  const preview = previewCleanup(entries, { now: FIXED_NOW });
+  const group = preview.findings.find((finding) => finding.kind === "similar") as SimilarGroup;
+  assert.equal(group.entryIds[0], "newer", "the preview still lists the newest id first for display");
+  assert.equal(survivorIdForGroup(group, entries), "older", "but the actual survivor is the more complete entry");
+
+  const run: CleanupRun = { entries, preview };
+  const result = applyCleanup(entries, entries, run, allSelected(run)) as CleanupApplyResult;
+  assert.equal(
+    result.entries.find((row) => row.id === "older")!.deletedAt,
+    null,
+    "applyCleanup agrees: the older, more complete entry is the one actually kept",
+  );
+});
+
+test("a merge survivor that is also separately flagged stale stays active when both findings are selected", () => {
+  // #279 review follow-up: the stale pass ran after the merge pass and did
+  // not know the merge had just kept this id — selecting both findings used
+  // to trash the very entry the merge (and its "(kept)" label) just kept,
+  // leaving the whole group with no active entry.
+  const richOld = entry({
+    id: "rich-old",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    notes: "has notes",
+    updatedAt: "2025-01-01T00:00:00.000Z", // old enough to also be "stale"
+  });
+  const sparseNew = entry({
+    id: "sparse-new",
+    host: "github.com",
+    username: "me",
+    password: "pw",
+    updatedAt: "2026-11-01T00:00:00.000Z",
+  });
+  const entries = [richOld, sparseNew];
+  const preview = previewCleanup(entries, { now: FIXED_NOW });
+  const similarKey = cleanupFindingKey(
+    preview.findings.find((finding) => finding.kind === "similar")!,
+  );
+  const staleKey = cleanupFindingKey(
+    preview.findings.find((finding) => finding.kind === "stale" && finding.entryId === "rich-old")!,
+  );
+  const run: CleanupRun = { entries, preview };
+  const result = applyCleanup(
+    entries,
+    entries,
+    run,
+    new Set([similarKey, staleKey]),
+  ) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(
+    result.entries.find((row) => row.id === "rich-old")!.deletedAt,
+    null,
+    "the merge survivor stays active even though it was also separately selected as stale",
+  );
+  assert.ok(
+    result.entries.find((row) => row.id === "sparse-new")!.deletedAt != null,
+    "the other side of the merge still goes to trash",
+  );
+  assert.equal(result.staleTrashed, 0, "the protected survivor is not counted as a stale trash either");
+});
+
+test("a tie on completeness falls back to the newer entry as the survivor", () => {
+  const older = entry({ id: "older", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" });
+  const newer = entry({ id: "newer", host: "github.com", username: "me", password: "pw", updatedAt: "2026-06-01T00:00:00.000Z" });
+  const entries = [older, newer];
+  const run: CleanupRun = { entries, preview: previewCleanup(entries, { now: FIXED_NOW }) };
+  const result = applyCleanup(entries, entries, run, allSelected(run)) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(result.entries.find((row) => row.id === "newer")!.deletedAt, null);
+  assert.ok(result.entries.find((row) => row.id === "older")!.deletedAt != null);
+});
+
+test("stale entries are moved to trash (soft delete), never hard-deleted", () => {
+  const stale = entry({ id: "stale", host: "example.com", username: "me", password: "pw", updatedAt: "2025-01-01T00:00:00.000Z" });
+  const fresh = entry({ id: "fresh", host: "example.org", username: "me", password: "pw", updatedAt: "2026-10-01T00:00:00.000Z" });
+  const entries = [stale, fresh];
+  const run: CleanupRun = { entries, preview: previewCleanup(entries, { now: FIXED_NOW }) };
+  const result = applyCleanup(entries, entries, run, allSelected(run), "2026-11-12T00:00:00.000Z") as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(result.staleTrashed, 1);
+  assert.equal(result.entries.length, 2, "the stale entry still exists, now in trash");
+  assert.equal(result.entries.find((row) => row.id === "stale")!.deletedAt, "2026-11-12T00:00:00.000Z");
+  assert.equal(result.entries.find((row) => row.id === "fresh")!.deletedAt, null);
+  assert.deepEqual(result.trashedIds, ["stale"]);
+});
+
+test("applyCleanup rejects instead of applying when the vault changed since the preview (runMatchesEntries false)", () => {
+  const before = [
+    entry({ id: "a", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" }),
+    entry({ id: "b", host: "github.com", username: "me", password: "pw", updatedAt: "2026-02-01T00:00:00.000Z" }),
+  ];
+  const run: CleanupRun = { entries: before, preview: previewCleanup(before, { now: FIXED_NOW }) };
+  // A different array (e.g. an edit landed between preview and apply), even with identical content.
+  const changed = [...before];
+  const changedAllEntries = [...before];
+  const result = applyCleanup(changedAllEntries, changed, run, allSelected(run));
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.reason, "stale-run");
+  // Nothing was touched.
+  assert.equal(changedAllEntries.every((e) => e.deletedAt == null), true);
+});
+
+test("applyCleanup applies only the selected findings, leaving deselected ones untouched", () => {
+  const dupA = entry({ id: "dupA", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" });
+  const dupB = entry({ id: "dupB", host: "github.com", username: "me", password: "pw", updatedAt: "2026-06-01T00:00:00.000Z" });
+  const staleEntry = entry({ id: "staleOnly", host: "example.com", username: "me", password: "pw", updatedAt: "2025-01-01T00:00:00.000Z" });
+  const entries = [dupA, dupB, staleEntry];
+  const run: CleanupRun = { entries, preview: previewCleanup(entries, { now: FIXED_NOW }) };
+  const similarFinding = run.preview.findings.find((f): f is SimilarGroup => f.kind === "similar")!;
+  // Select only the duplicate merge, not the stale move.
+  const selection = new Set([cleanupFindingKey(similarFinding)]);
+  const result = applyCleanup(entries, entries, run, selection) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(result.mergedGroups, 1);
+  assert.equal(result.staleTrashed, 0);
+  assert.equal(result.entries.find((row) => row.id === "staleOnly")!.deletedAt, null, "deselected stale finding stays active");
+  assert.ok(result.entries.find((row) => row.id === "dupA")!.deletedAt != null || result.entries.find((row) => row.id === "dupB")!.deletedAt != null);
+});
+
+test("applyCleanup with an empty selection changes nothing", () => {
+  const rows = [
+    entry({ id: "a", host: "github.com", username: "me", password: "pw", updatedAt: "2026-01-01T00:00:00.000Z" }),
+    entry({ id: "b", host: "github.com", username: "me", password: "pw", updatedAt: "2026-06-01T00:00:00.000Z" }),
+  ];
+  const run: CleanupRun = { entries: rows, preview: previewCleanup(rows, { now: FIXED_NOW }) };
+  const result = applyCleanup(rows, rows, run, new Set()) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  assert.equal(result.mergedGroups, 0);
+  assert.equal(result.staleTrashed, 0);
+  assert.equal(result.entries.every((e) => e.deletedAt == null), true);
+});
+
+test("applyCleanup never touches entries outside the active set it was checked against (trashed entries stay as-is)", () => {
+  const active = [
+    entry({ id: "a", host: "example.com", username: "me", password: "pw", updatedAt: "2025-01-01T00:00:00.000Z" }),
+  ];
+  const alreadyTrashed = entry({
+    id: "trashed",
+    host: "other.example",
+    username: "me",
+    password: "pw",
+    updatedAt: "2020-01-01T00:00:00.000Z",
+    deletedAt: "2026-01-01T00:00:00.000Z",
+  });
+  const allEntries = [...active, alreadyTrashed];
+  const run: CleanupRun = { entries: active, preview: previewCleanup(active, { now: FIXED_NOW }) };
+  const result = applyCleanup(allEntries, active, run, allSelected(run)) as CleanupApplyResult;
+  assert.equal(result.ok, true);
+  const untouched = result.entries.find((row) => row.id === "trashed")!;
+  assert.equal(untouched.deletedAt, "2026-01-01T00:00:00.000Z");
 });

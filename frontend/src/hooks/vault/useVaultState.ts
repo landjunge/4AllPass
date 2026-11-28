@@ -6,7 +6,7 @@ import { applyTemplate, BUILTIN_TEMPLATES, parseProviderTemplate } from "../../l
 import { isOnboardingDone, markOnboardingDone } from "../../lib/onboarding.ts";
 import { getTrashRetentionDays, setTrashRetentionDays } from "../../lib/trash-retention.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../../lib/clipboard.ts";
-import { mergeDetectedCredential } from "../../lib/detect.ts";
+import { mergeDetectedCredential, mergeRotatedCredential } from "../../lib/detect.ts";
 import { isUnchangedKey } from "../../lib/key-rotation.ts";
 import { useKeyCreateCapture } from "./useKeyCreateCapture.ts";
 import { useApp } from "../../state/app-state.tsx";
@@ -450,7 +450,7 @@ export function useVaultState() {
     !vault,
     (credential) => {
       if (selected) setRotationNotice(isUnchangedKey(selected, credential.password) ? rotationUnchangedNotice : null);
-      setDraft((current) => (current && current.kind === "api" ? mergeDetectedCredential(current, credential) : current));
+      setDraft((current) => (current && current.kind === "api" ? mergeRotatedCredential(current, credential) : current));
     },
     draftSession,
     draft?.kind === "api" && selectedId !== null,

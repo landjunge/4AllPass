@@ -207,3 +207,20 @@ export function mergeDetectedCredential(current: EntryDraft, detected: DetectedC
     title: current.title || from.title,
   };
 }
+
+/**
+ * Takes over a captured credential during key rotation (issue #279 Punkt 5)
+ * into the draft of an *existing* entry. Unlike `mergeDetectedCredential`
+ * (#278, new-entry creation, where switching providers mid-capture is
+ * expected and must replace url/capabilities/provider together), rotation
+ * is locked to the entry's existing provider — only the secret itself was
+ * renewed at the provider. So only `password` changes here; everything
+ * else, including capabilities or a URL the user customized away from the
+ * detector's default, is left exactly as it was (#279 review finding).
+ */
+export function mergeRotatedCredential(current: EntryDraft, detected: DetectedCredential): EntryDraft {
+  return {
+    ...current,
+    password: detected.password || current.password,
+  };
+}

@@ -1,5 +1,5 @@
 import type { Line } from "../../lib/copy-mode.ts";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { TotpCode } from "../TotpCode.tsx";
 import { BUILTIN_TEMPLATES } from "../../lib/providers.ts";
 import { useCopy } from "../../state/copy-mode.tsx";
@@ -127,6 +127,26 @@ export function VaultEntryForm({
 }): ReactNode {
   const { t } = useCopy();
   const strength = passwordStrength(draft.password);
+  // Raw "used by" text while the field is being edited (#279 review): the
+  // controlled textarea must not round-trip every keystroke through
+  // parse+format, or a trailing separator/space is stripped right after
+  // being typed, making it impossible to end a line or type a name with a
+  // space. Only resync from the draft when it changed from the outside
+  // (switching entries), and only commit the normalized form on blur.
+  const [usedByText, setUsedByText] = useState(() => formatUsedByInput(draft.usedBy));
+  const lastSyncedUsedBy = useRef(draft.usedBy);
+  useEffect(() => {
+    if (draft.usedBy !== lastSyncedUsedBy.current) {
+      lastSyncedUsedBy.current = draft.usedBy;
+      setUsedByText(formatUsedByInput(draft.usedBy));
+    }
+  }, [draft.usedBy]);
+  function commitUsedBy(): void {
+    const parsed = parseUsedByInput(usedByText);
+    lastSyncedUsedBy.current = parsed;
+    setUsedByText(formatUsedByInput(parsed));
+    onChange({ ...draft, usedBy: parsed });
+  }
   return (
     <>
       <h3>{selectedId ? kindLabel(draft.kind, t) : newEntryHeading(draft.kind, t)}</h3>
@@ -372,8 +392,9 @@ export function VaultEntryForm({
         />
         <textarea
           rows={2}
-          value={formatUsedByInput(draft.usedBy)}
-          onChange={(event) => onChange({ ...draft, usedBy: parseUsedByInput(event.target.value) })}
+          value={usedByText}
+          onChange={(event) => setUsedByText(event.target.value)}
+          onBlur={commitUsedBy}
           data-testid="entry-used-by"
           placeholder={t({
             de: "Ein Werkzeug pro Zeile, z. B.\nn8n\nKiraBridge",

@@ -31,13 +31,18 @@ import {
   BackupFormatError,
   BackupLimitExceededError,
   buildBackupPackage,
+  listBackupEntries,
   openBackupEntries,
   parseBackupPackage,
+  resolveSingleEntryFromBackup,
   restoreBackup,
+  restoreBackupEntry,
   serializeBackupPackage,
   type BackupPackage,
   type RestoreBackupDependencies,
+  type RestoreBackupEntryDependencies,
 } from "./backup.ts";
+import { EntryAlreadyPresentError } from "./entry-restore.ts";
 import { clearTestStorage } from "./test-storage-shim.ts";
 import { savePin } from "./revision-pin.ts";
 import { captureVaultLiveness, VaultLockedError } from "./vault-liveness.ts";
@@ -350,6 +355,174 @@ test("restoreBackup keeps the CAS conflict contract with real crypto", async () 
 
   await assert.rejects(
     () => restoreBackup({ current, text: serialized, liveness }),
+    CommitConflict,
+  );
+});
+
+// --- listBackupEntries / resolveSingleEntryFromBackup (single-entry restore) ---
+
+test("listBackupEntries lists title and host only, never a secret", () => {
+  const vault = unlockedVault(5, [A]);
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+
+  const summary = listBackupEntries(vault, pack);
+
+  assert.deepEqual(summary.map((row) => row.id).sort(), ["entry-a", "entry-b"]);
+  for (const row of summary) {
+    assert.deepEqual(Object.keys(row).sort(), ["host", "id", "title"]);
+  }
+  const serializedSummary = JSON.stringify(summary);
+  assert.equal(serializedSummary.includes("BACKUP-SECRET-A"), false);
+  assert.equal(serializedSummary.includes("BACKUP-SECRET-B"), false);
+  assert.equal(serializedSummary.includes("note-a"), false);
+  assert.equal(serializedSummary.includes("totp-a"), false);
+});
+
+test("resolveSingleEntryFromBackup restores exactly the selected entry and not the others", () => {
+  const vault = unlockedVault(5, []);
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+
+  const next = resolveSingleEntryFromBackup(vault, pack, B.id);
+
+  const ids = next.map((row) => row.id).sort();
+  assert.deepEqual(ids, ["entry-b"]);
+  assert.equal(next.find((row) => row.id === "entry-b")?.password, "BACKUP-SECRET-B");
+});
+
+test("resolveSingleEntryFromBackup rejects an id that already exists", () => {
+  const vault = unlockedVault(5, [A]);
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+
+  assert.throws(() => resolveSingleEntryFromBackup(vault, pack, A.id), EntryAlreadyPresentError);
+});
+
+test("resolveSingleEntryFromBackup rejects an id absent from the backup", () => {
+  const vault = unlockedVault(5, []);
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+
+  assert.throws(() => resolveSingleEntryFromBackup(vault, pack, "entry-ghost"), IntegrityError);
+});
+
+test("resolveSingleEntryFromBackup still refuses a tampered backup", () => {
+  const vault = unlockedVault(5, []);
+  const snap = snapshot(5, [A, B]);
+  const wire = encodeVaultSnapshot(snap) as WireVaultSnapshot;
+  const tampered: BackupPackage = {
+    kind: BACKUP_KIND,
+    createdAt: "",
+    snapshot: { ...wire, entries: wire.entries.slice(0, 1) },
+  };
+  assert.throws(() => resolveSingleEntryFromBackup(vault, tampered, B.id), IntegrityError);
+});
+
+test("resolveSingleEntryFromBackup refuses a backup sealed under an earlier vault key", () => {
+  const vault = { ...unlockedVault(5, []), vaultKeyVersion: 2 };
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+
+  assert.throws(() => resolveSingleEntryFromBackup(vault, pack, B.id), HistoricRevisionUnreadable);
+});
+
+// --- restoreBackupEntry orchestration (injected dependencies) ---
+
+test("restoreBackupEntry commits the picked entry forward on the original vault", async () => {
+  const current = unlockedVault(5, [A]);
+  const restored = restoredFixture();
+  const committedVault = { ...unlockedVault(6, [A, restored]) };
+  let committedEntries: VaultEntry[] | null = null;
+  const deps: RestoreBackupEntryDependencies = {
+    resolve: () => [...current.entries, restored],
+    commitEntries: async (_vault, entries) => { committedEntries = entries; return committedVault; },
+    lock: (value) => lockVault(value),
+  };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+
+  const result = await restoreBackupEntry({ current, pack: PACK, entryId: restored.id, liveness }, deps);
+
+  assert.equal(result, committedVault);
+  assert.ok(committedEntries?.some((row) => row.id === "entry-restored"));
+  // The handed-over object was disposed; the aliased current entry was not.
+  assert.equal(restored.password, "");
+  assert.equal(A.password, "BACKUP-SECRET-A");
+});
+
+test("restoreBackupEntry: lock during the commit refuses and wipes", async () => {
+  const current = unlockedVault(5, []);
+  const restored = restoredFixture();
+  const commit = (() => {
+    let resolve!: (v: UnlockedVault) => void;
+    const promise = new Promise<UnlockedVault>((yes) => { resolve = yes; });
+    return { promise, resolve };
+  })();
+  const events: string[] = [];
+  const deps: RestoreBackupEntryDependencies = {
+    resolve: () => [restored],
+    commitEntries: () => { events.push("commit"); return commit.promise; },
+    lock: (value) => { events.push("lock"); lockVault(value); },
+  };
+  let currentVault: UnlockedVault | null = current;
+  let epoch = 0;
+  const liveness = captureVaultLiveness(current, () => epoch, () => currentVault);
+  const operation = restoreBackupEntry({ current, pack: PACK, entryId: restored.id, liveness }, deps);
+
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(events, ["commit"]);
+  const next = { ...unlockedVault(6, [restored]), vaultKey: new Uint8Array(32).fill(5) };
+  epoch += 1;
+  currentVault = null;
+  commit.resolve(next);
+
+  await assert.rejects(operation, VaultLockedError);
+  assert.ok(events.includes("lock"));
+  assert.ok(next.vaultKey.every((byte) => byte === 0));
+  assert.equal(restored.password, "");
+});
+
+test("restoreBackupEntry: cancelled before dispatch returns null and never commits", async () => {
+  const current = unlockedVault(5, []);
+  const restored = restoredFixture();
+  const events: string[] = [];
+  const deps: RestoreBackupEntryDependencies = {
+    resolve: () => [restored],
+    commitEntries: async () => { events.push("commit"); return unlockedVault(6, []); },
+    lock: (value) => lockVault(value),
+  };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+
+  const result = await restoreBackupEntry(
+    { current, pack: PACK, entryId: restored.id, liveness, isCancelled: () => true },
+    deps,
+  );
+
+  assert.equal(result, null);
+  assert.ok(!events.includes("commit"));
+  assert.equal(restored.password, "");
+});
+
+test("restoreBackupEntry: a commit conflict surfaces and wipes", async () => {
+  const current = unlockedVault(5, []);
+  const restored = restoredFixture();
+  const deps: RestoreBackupEntryDependencies = {
+    resolve: () => [restored],
+    commitEntries: async () => { throw new CommitConflict(6); },
+    lock: (value) => lockVault(value),
+  };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+
+  await assert.rejects(
+    () => restoreBackupEntry({ current, pack: PACK, entryId: restored.id, liveness }, deps),
+    CommitConflict,
+  );
+  assert.equal(restored.password, "");
+});
+
+test("restoreBackupEntry keeps the CAS conflict contract with real crypto", async () => {
+  const current = unlockedVault(5, []);
+  const pack: BackupPackage = { kind: BACKUP_KIND, createdAt: "", snapshot: encodeVaultSnapshot(snapshot(5, [A, B])) };
+  api.commitSnapshot = async () => { throw new ApiError(409, { currentRevision: 6 }); };
+  const liveness = captureVaultLiveness(current, () => 0, () => current);
+
+  await assert.rejects(
+    () => restoreBackupEntry({ current, pack, entryId: A.id, liveness }),
     CommitConflict,
   );
 });

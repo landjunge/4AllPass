@@ -96,22 +96,12 @@ mod tests {
         assert_eq!(TOLLGATE_DASHBOARD_URL.matches('/').count(), 2, "url must have no path segment");
     }
 
-    #[test]
-    fn open_tollgate_dashboard_takes_no_parameters_so_nothing_can_redirect_it() {
-        // The command's signature itself is the guarantee here: it is a
-        // zero-argument function, so there is no input path through which a
-        // caller could ever supply a different URL. This test only pins
-        // that the call compiles and returns the same Result shape the
-        // other OS-open commands use.
-        let result: Result<(), String> = open_tollgate_dashboard();
-        // On a machine without "open"/"start"/"xdg-open" available this may
-        // fail; we only assert it is the expected error shape, never a
-        // panic, and never a different URL in the message.
-        if let Err(message) = result {
-            assert!(
-                !message.contains("http://") || message.contains(TOLLGATE_DASHBOARD_URL),
-                "any url mentioned in an error must be the fixed dashboard url: {message}"
-            );
-        }
-    }
+    // No test calls `open_tollgate_dashboard()` or `open_url()` itself: both
+    // genuinely shell out to the OS's "open"/"start"/"xdg-open", which would
+    // really open a browser window on the machine running `cargo test` — the
+    // same reason `provider_key_create.rs`'s tests only ever exercise the
+    // rejection path, never a real provider id. The command's signature is
+    // the guarantee here: it is a zero-argument function, so there is no
+    // input path through which a caller could ever supply a different URL;
+    // `TOLLGATE_DASHBOARD_URL`'s own shape is covered by the tests above.
 }

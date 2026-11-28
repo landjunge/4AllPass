@@ -101,6 +101,28 @@ test("totpSecret round-trips in entry plaintext", () => {
   assert.equal(again.totpSecret, "JBSWY3DPEHPK3PXP");
 });
 
+test("usedBy (Verwendungsübersicht, #279.6) round-trips and defaults to empty", () => {
+  const id = newEntryId();
+  const entry: VaultEntry = {
+    id,
+    ...emptyDraft("api"),
+    title: "GitHub PAT",
+    usedBy: ["n8n", "KiraBridge"],
+  };
+  const again = decodeEntryPlaintext(id, encodeEntryPlaintext(entry));
+  assert.deepEqual(again.usedBy, ["n8n", "KiraBridge"]);
+
+  const noUsage = decodeEntryPlaintext(id, encodeEntryPlaintext({ ...entry, usedBy: [] }));
+  assert.deepEqual(noUsage.usedBy, []);
+
+  // Older plaintext written before this field existed still decodes, with an empty list.
+  const legacy = decodeEntryPlaintext(
+    id,
+    new TextEncoder().encode(JSON.stringify({ title: "Old", kind: "web", updatedAt: "2026-01-01T00:00:00.000Z" })),
+  );
+  assert.deepEqual(legacy.usedBy, []);
+});
+
 test("api and sftp round-trip in ciphertext JSON", () => {
   const id = newEntryId();
   const api: VaultEntry = {

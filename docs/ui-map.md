@@ -115,6 +115,17 @@ Eine View = ein Kasten. Zahl = Fläche. Ein Satz daneben. HTML-Wireframe öffnen
 | 5 | Geleakt / doppelt / schwach, dann alle anderen nach `updatedAt`. Icon + Titel + User/Host + Badge. |
 | 6 | Formular in Fragen (Art → Name → Zugang). Kopieren am Feld. Oder Empty mit Login/API/Server. |
 
+**V4.6 Verwendungsübersicht (#279 Punkt 6).** Eine Frage: *Was hängt an diesem
+Schlüssel, bevor ich ihn widerrufe oder lösche?* Optionales Freitextfeld
+„Verwendet von“ unter den weiteren Feldern im Formular (ein Werkzeug/Projekt
+pro Zeile) — rein manuell eingetragen, **keine** automatische Erkennung:
+4AllPass hat keinen Einblick in fremde Prozesse oder Dateien außerhalb des
+Tresors. Ist die Liste nicht leer, zeigt das Formular direkt über
+Löschen/Abbrechen einen Hinweis mit den eingetragenen Namen. Der Hinweis
+blockiert nichts — Löschen verschiebt wie immer nur in den Papierkorb
+(V7.3-Mechanik), bewusst keine zusätzliche Zwangsbestätigung, weil der
+Papierkorb bereits das Sicherheitsnetz ist.
+
 Handy: Spalten unter 820 px untereinander.
 
 > Wireframe: [v4-desk.html](screenshots/v4-desk.html) · [v4-desk-empty.html](screenshots/v4-desk-empty.html) · [v4-desk-phone.html](screenshots/v4-desk-phone.html)  

@@ -37,6 +37,14 @@ export interface VaultEntry {
    * go through `softDeleteEntry` / `restoreFromTrash`.
    */
   deletedAt: string | null;
+  /**
+   * Verwendungsübersicht (#279 Punkt 6): manual, user-entered names of local
+   * tools/projects that use this key — 4AllPass has no way to detect this
+   * automatically, so it never pretends to. Encrypted with the rest of the
+   * entry like `notes`. Used only to warn before revoke/rotate/delete; never
+   * a secret itself.
+   */
+  usedBy: string[];
 }
 
 export type EntryDraft = Omit<VaultEntry, "id" | "updatedAt" | "deletedAt">;
@@ -66,6 +74,7 @@ export function emptyDraft(kind: EntryKind = "web"): EntryDraft {
     providerConfidence: 0,
     providerMatchType: "",
     favorite: false,
+    usedBy: [],
   };
 }
 
@@ -96,6 +105,7 @@ export function encodeEntryPlaintext(entry: VaultEntry): Uint8Array {
     providerMatchType: entry.providerMatchType,
     favorite: entry.favorite,
     deletedAt: entry.deletedAt,
+    usedBy: entry.usedBy,
   };
   return new TextEncoder().encode(JSON.stringify(payload));
 }
@@ -136,6 +146,7 @@ export function decodeEntryPlaintext(id: string, plaintext: Uint8Array): VaultEn
     providerMatchType: parsed.providerMatchType ?? "",
     favorite: parsed.favorite === true,
     deletedAt: typeof parsed.deletedAt === "string" ? parsed.deletedAt : null,
+    usedBy: Array.isArray(parsed.usedBy) ? parsed.usedBy.filter((value): value is string => typeof value === "string") : [],
   };
 }
 

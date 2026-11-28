@@ -180,7 +180,12 @@ export function VaultEntryForm({
       </div>
       {draft.kind === "api" && !selectedId ? <VaultKeyCreatePanel capture={keyCreateCapture} /> : null}
       {draft.kind === "api" && selectedId && selected ? (
-        <VaultKeyRotatePanel entry={selected} capture={keyRotateCapture} notice={rotationNotice} />
+        <VaultKeyRotatePanel
+          entry={selected}
+          draftProvider={draft.provider}
+          capture={keyRotateCapture}
+          notice={rotationNotice}
+        />
       ) : null}
       <p className="form-step">{t({ de: "2. Wie heißt er?", en: "2. What is it called?" })}</p>
       <label>

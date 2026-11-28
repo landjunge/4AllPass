@@ -25,10 +25,15 @@ import { entryDisplayTitle } from "../../utils/vault/labels.ts";
  */
 export function VaultKeyRotatePanel({
   entry,
+  draftProvider,
   capture,
   notice,
 }: {
   entry: VaultEntry;
+  /** The *open draft's* current provider text — may already differ from
+   * `entry.provider` while the user is mid-edit (e.g. switched the Provider
+   * field or applied a different provider template) before ever saving. */
+  draftProvider: string;
   capture: KeyCreateCaptureApi;
   /** Issue #279 Punkt 5: set when the just-captured value turned out to be
    * byte-for-byte identical to the entry's current key — never blocks
@@ -37,18 +42,49 @@ export function VaultKeyRotatePanel({
 }): ReactNode {
   const { t } = useCopy();
   const untitled = t({ de: "Ohne Titel", en: "Untitled" });
-  const providerId = rotatableProviderFor(entry.provider);
+  // Rotation renews *this entry's saved key* — if the still-unsaved draft's
+  // provider no longer matches it, the capture callback would merge a
+  // credential for the old provider into a draft now describing a different
+  // one (#279 review finding). Disable the whole flow rather than only the
+  // capture button, so there is never a question of which provider a
+  // running capture belongs to.
+  const providerMismatch = draftProvider !== entry.provider;
+  const providerId = providerMismatch ? null : rotatableProviderFor(entry.provider);
 
   // Always locked to this entry's own provider — never a free picker like
   // the create flow's, because rotation is not "which provider" but "renew
   // the one this entry already has". Re-synced whenever the entry (or its
-  // provider text) changes, e.g. switching which entry is open.
+  // provider text) changes, e.g. switching which entry is open, or the draft
+  // provider diverging from the saved entry's.
   useEffect(() => {
     capture.setProviderId(providerId ?? "");
     // Only the identity of what should be selected matters here, not the
     // capture object's own identity (a new instance every render).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry.id, providerId]);
+
+  // Belt-and-suspenders: `setProviderId("")` above already ends a running
+  // capture via its own provider-change handling, but that depends on
+  // `providerId` changing identity, not on `capturing` being read here. Stop
+  // explicitly too, so a mismatch is never silently left running.
+  useEffect(() => {
+    if (providerMismatch && capture.capturing) capture.cancelCapture();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providerMismatch]);
+
+  if (providerMismatch) {
+    return (
+      <section className="card" data-testid="key-rotate-panel">
+        <h4>{t({ de: "Schlüsselrotation", en: "Key rotation" })}</h4>
+        <p className="muted" data-testid="key-rotate-provider-mismatch">
+          {t({
+            de: "Anbieter wurde geändert und noch nicht gespeichert. Erst speichern oder den ursprünglichen Anbieter wiederherstellen, dann ist die Rotation wieder verfügbar.",
+            en: "Provider was changed and not saved yet. Save first, or restore the original provider, to use rotation again.",
+          })}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="card" data-testid="key-rotate-panel">

@@ -21,7 +21,11 @@ import {
 } from "../../lib/vault-session.ts";
 import { captureVaultLiveness, VaultLockedError, type VaultLiveness } from "../../lib/vault-liveness.ts";
 import { restoreEntry } from "../../lib/entry-restore.ts";
-import { restoreBackup as runRestoreBackup } from "../../lib/backup.ts";
+import {
+  restoreBackup as runRestoreBackup,
+  restoreBackupEntry as runRestoreBackupEntry,
+  type BackupPackage,
+} from "../../lib/backup.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
 import { feedbackError, type SuccessNotice } from "../feedback/index.ts";
 import type { LocalStoreStatus } from "../startup/index.ts";
@@ -73,6 +77,12 @@ export interface VaultLifecycleActions {
     isCancelled: () => boolean,
   ): Promise<boolean>;
   restoreBackup(vault: UnlockedVault, text: string, isCancelled: () => boolean): Promise<boolean>;
+  restoreBackupEntry(
+    vault: UnlockedVault,
+    pack: BackupPackage,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
   dismissRecoveryKey(): void;
   currentVault(): UnlockedVault | null;
   captureVaultLiveness(vault: UnlockedVault): VaultLiveness;
@@ -363,6 +373,24 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     }, (committed) => (committed ? "backup_restored" : null));
   }, [adoptIfLive, captureLiveness, options]);
 
+  const restoreBackupEntry = useCallback(async (
+    vault: UnlockedVault,
+    pack: BackupPackage,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean> => {
+    // Bind the liveness to the *exact* vault the caller captured before this
+    // call. The restore commits on that original vault only; a lock, vault
+    // switch or edit in between makes the liveness stale and refuses.
+    const liveness = captureLiveness(vault);
+    return options.runWithStatus(async () => {
+      const committed = await runRestoreBackupEntry({ current: vault, pack, entryId, liveness, isCancelled });
+      if (committed === null) return false;
+      adoptIfLive(liveness, committed);
+      return true;
+    }, (committed) => (committed ? "entries_saved" : null));
+  }, [adoptIfLive, captureLiveness, options]);
+
   const dismissRecoveryKey = useCallback(() => setRecoveryKey(null), []);
 
   return {
@@ -389,6 +417,7 @@ export function useVaultLifecycle(options: UseVaultLifecycleOptions): VaultLifec
     migrateLegacyVault,
     restoreSingleEntry,
     restoreBackup,
+    restoreBackupEntry,
     dismissRecoveryKey,
     currentVault,
     captureVaultLiveness: captureLiveness,

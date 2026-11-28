@@ -31,6 +31,7 @@ import { useRecoveryManagement, type RecoveryMasterOffer } from "../recovery-man
 import type { VaultEntry } from "../../lib/entries.ts";
 import type { HeadRecovery, LegacyMigrationOutcome, UnlockedVault } from "../../lib/vault-session.ts";
 import type { HistoricSelection } from "../../lib/historic-snapshot.ts";
+import type { BackupPackage } from "../../lib/backup.ts";
 import type { Argon2idProfileName } from "@4allpass/crypto";
 import type { DeviceUnlockMechanism } from "@4allpass/webauthn";
 
@@ -80,6 +81,12 @@ interface AppActions {
     isCancelled: () => boolean,
   ): Promise<boolean>;
   restoreBackup(vault: UnlockedVault, text: string, isCancelled: () => boolean): Promise<boolean>;
+  restoreBackupEntry(
+    vault: UnlockedVault,
+    pack: BackupPackage,
+    entryId: string,
+    isCancelled: () => boolean,
+  ): Promise<boolean>;
   enableBiometrics(): Promise<DeviceUnlockMechanism>;
   revoke(targetDeviceId: string): Promise<void>;
   hardRevoke(
@@ -289,6 +296,7 @@ export function AppProvider({ children }: { children: ReactNode }): ReactNode {
       },
       restoreSingleEntry: vaultLifecycle.restoreSingleEntry,
       restoreBackup: vaultLifecycle.restoreBackup,
+      restoreBackupEntry: vaultLifecycle.restoreBackupEntry,
       async enableBiometrics() {
         return deviceManagement.enableBiometrics();
       },

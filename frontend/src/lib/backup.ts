@@ -25,7 +25,8 @@ import {
   type WireVaultSnapshot,
 } from "@4allpass/crypto";
 import { api } from "./api.ts";
-import { wipeVaultEntry, type VaultEntry } from "./entries.ts";
+import { entryIdExists, wipeVaultEntry, type VaultEntry } from "./entries.ts";
+import { EntryAlreadyPresentError } from "./entry-restore.ts";
 import { openHistoricSnapshot } from "./historic-snapshot.ts";
 import { loadPin } from "./revision-pin.ts";
 import { commitEntries, lock as lockVault, type UnlockedVault } from "./vault-session.ts";
@@ -160,6 +161,64 @@ export function openBackupEntries(vault: UnlockedVault, pack: BackupPackage): Va
   return openHistoricSnapshot(snapshot, vault).entries;
 }
 
+/** What a backup entry lists for selection — never a secret field. */
+export interface BackupEntrySummary {
+  readonly id: string;
+  readonly title: string;
+  readonly host: string;
+}
+
+/**
+ * Decrypt a parsed backup only to list what it contains, for a selection UI:
+ * title and host per entry, sorted, never a password/notes/TOTP value. Every
+ * decrypted entry is wiped before this returns — nothing from the full
+ * decrypt is kept beyond the id/title/host copied into the summary.
+ */
+export function listBackupEntries(vault: UnlockedVault, pack: BackupPackage): BackupEntrySummary[] {
+  const opened = openBackupEntries(vault, pack);
+  try {
+    return opened
+      .map((entry) => ({ id: entry.id, title: entry.title, host: entry.host }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  } finally {
+    for (const entry of opened) wipeVaultEntry(entry);
+  }
+}
+
+/**
+ * Open a parsed backup and hand out exactly one entry (by id), the same
+ * shape as `resolveSingleEntryRestore` in entry-restore.ts, but local: no
+ * server fetch, the backup's own integrity check (via `openBackupEntries`)
+ * stands in for the revision re-fetch/re-bind. Rejects an id already present
+ * in the current vault with the shared `EntryAlreadyPresentError`; every
+ * decrypted entry that is not handed out is wiped on every path.
+ */
+export function resolveSingleEntryFromBackup(
+  vault: UnlockedVault,
+  pack: BackupPackage,
+  entryId: string,
+): VaultEntry[] {
+  const opened = openBackupEntries(vault, pack);
+  const chosen = opened.find((entry) => entry.id === entryId);
+  try {
+    if (!chosen) {
+      throw new IntegrityError(`entry ${entryId} is not in this backup`);
+    }
+    if (entryIdExists(vault.entries, entryId)) {
+      throw new EntryAlreadyPresentError(entryId);
+    }
+    for (const entry of opened) {
+      if (entry.id !== entryId) wipeVaultEntry(entry);
+    }
+    return [...vault.entries, chosen].sort((a, b) => a.title.localeCompare(b.title));
+  } catch (error) {
+    // Rejection or error: nothing is handed out, so wipe every freshly
+    // decrypted object (including the would-be selected entry).
+    for (const entry of opened) wipeVaultEntry(entry);
+    throw error;
+  }
+}
+
 export function downloadBackupFile(pack: BackupPackage): void {
   const blob = new Blob([serializeBackupPackage(pack)], { type: "application/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -220,5 +279,57 @@ export async function restoreBackup(
     // Dispose the freshly decrypted backup entries on every outcome. They are
     // never the current vault's aliased entries.
     for (const entry of entries) wipeVaultEntry(entry);
+  }
+}
+
+export interface RestoreBackupEntryDependencies {
+  resolve(vault: UnlockedVault, pack: BackupPackage, entryId: string): VaultEntry[];
+  commitEntries(vault: UnlockedVault, entries: VaultEntry[], liveness: VaultLiveness): Promise<UnlockedVault>;
+  lock(vault: UnlockedVault): void;
+}
+
+const restoreBackupEntryDefaults: RestoreBackupEntryDependencies = {
+  resolve: resolveSingleEntryFromBackup,
+  commitEntries: (vault, entries, liveness) => commitEntries(vault, entries, liveness),
+  lock: lockVault,
+};
+
+export interface RestoreBackupEntryInput {
+  /** The exact vault the restore was initiated against. Never rebound. */
+  current: UnlockedVault;
+  pack: BackupPackage;
+  entryId: string;
+  /** Liveness captured *before* this call, against `current`. */
+  liveness: VaultLiveness;
+  /** True once the UI cancelled or unmounted the action; checked before commit. */
+  isCancelled?: () => boolean;
+}
+
+/**
+ * Restore exactly one entry out of an already-parsed backup, as a forward
+ * commit on the original vault (never a rewind, never an overwrite of an id
+ * that already exists). Mirrors `restoreEntry` in entry-restore.ts, but the
+ * source is a local file, not a server revision fetch.
+ */
+export async function restoreBackupEntry(
+  input: RestoreBackupEntryInput,
+  dependencies: RestoreBackupEntryDependencies = restoreBackupEntryDefaults,
+): Promise<UnlockedVault | null> {
+  input.liveness.assertLive();
+  const next = dependencies.resolve(input.current, input.pack, input.entryId);
+  try {
+    if (input.isCancelled?.() === true) return null;
+    input.liveness.assertLive();
+    const committed = await dependencies.commitEntries(input.current, next, input.liveness);
+    if (!input.liveness.isLive()) {
+      dependencies.lock(committed);
+      throw new VaultLockedError();
+    }
+    return committed;
+  } finally {
+    // Dispose the handed-over entry on every outcome. It is the only foreign
+    // object in `next` — the current vault's entries are aliased in there.
+    const restored = next.find((entry) => entry.id === input.entryId);
+    if (restored) wipeVaultEntry(restored);
   }
 }

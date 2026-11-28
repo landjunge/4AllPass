@@ -53,6 +53,7 @@ export function VaultPage(): ReactNode {
           vaultKeyVersion={vault.vault.vaultKeyVersion}
           entries={vault.entries}
           health={health.health}
+          leakCheckStatus={health.leakCheckStatus}
           trashEntries={vault.trashEntries}
           trashBusy={vault.busy}
           trashRetentionDays={vault.trashRetentionDays}

@@ -46,6 +46,26 @@ test("three entries sharing a password form one group of three, not three pairs"
   assert.equal(groups[0]?.entryIds.length, 3);
 });
 
+test("two records of the same service sharing a password are not a cross-service finding", () => {
+  // #279 review: a duplicate login (same host + username), not two
+  // independent accounts reusing a secret — that belongs to the existing
+  // cleanup/similarity flow, not here.
+  const shared = "Sunshine!42";
+  const a = entry({ title: "GitHub (old)", url: "https://github.com", username: "me", password: shared });
+  const b = entry({ title: "GitHub (copy)", url: "https://github.com", username: "me", password: shared });
+  assert.equal(findExactPasswordReuseGroups([a, b]).length, 0);
+});
+
+test("a same-service duplicate plus a genuinely different service still reports the real cross-service pair", () => {
+  const shared = "Sunshine!42";
+  const dupeA = entry({ title: "GitHub (old)", url: "https://github.com", username: "me", password: shared });
+  const dupeB = entry({ title: "GitHub (copy)", url: "https://github.com", username: "me", password: shared });
+  const other = entry({ title: "Forum", url: "https://forum.example", username: "me", password: shared });
+  const groups = findExactPasswordReuseGroups([dupeA, dupeB, other]);
+  assert.equal(groups.length, 1);
+  assert.deepEqual(new Set(groups[0]?.entryIds), new Set([dupeA.id, dupeB.id, other.id]));
+});
+
 test("never includes a password value anywhere in the result", () => {
   const secret = "Tr0ub4dor&3-super-secret";
   const a = entry({ title: "A", password: secret });

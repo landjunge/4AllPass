@@ -25,7 +25,7 @@ import { softDeleteEntryById } from "../../services/vault/entries.ts";
 /** Default stale threshold: one year without an update. */
 export const DEFAULT_STALE_AFTER_DAYS = 365;
 
-interface ServiceBoundary {
+export interface ServiceBoundary {
   kind: EntryKind;
   protocol: string;
   port: string;
@@ -77,7 +77,7 @@ function schemeOf(value: string): string {
   return value.trim().toLowerCase().replace(/:$/, "");
 }
 
-function serviceBoundaryOf(entry: VaultEntry): ServiceBoundary | null {
+export function serviceBoundaryOf(entry: VaultEntry): ServiceBoundary | null {
   // Case is preserved for identity: without an explicit service contract,
   // `Alice` and `alice` must not be folded together (e.g. SSH usernames).
   const identity = (entry.username || entry.account || "").trim();

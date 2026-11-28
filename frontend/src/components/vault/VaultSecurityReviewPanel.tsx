@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useCopy } from "../../state/copy-mode.tsx";
+import type { LeakCheckStatus } from "../../hooks/vault/useVaultHealth.ts";
 import type { EntryHealth } from "../../utils/vault/health.ts";
 import { findExactPasswordReuseGroups } from "../../utils/vault/password-reuse.ts";
 import { entryDisplayTitle } from "../../utils/vault/labels.ts";
@@ -26,10 +27,12 @@ import type { VaultEntry } from "../../types/vault.ts";
 export function VaultSecurityReviewPanel({
   entries,
   health,
+  leakCheckStatus,
   onEdit,
 }: {
   entries: VaultEntry[];
   health: EntryHealth[];
+  leakCheckStatus: LeakCheckStatus;
   onEdit: (entry: VaultEntry) => void;
 }): ReactNode {
   const { t } = useCopy();
@@ -53,11 +56,32 @@ export function VaultSecurityReviewPanel({
         })}
       </p>
 
-      {!hasFindings ? (
+      {leakCheckStatus === "unavailable" ? (
+        <p className="hint" data-testid="security-review-leak-check-unavailable">
+          {t({
+            de: "Leak-Abgleich (HIBP) war in diesem Durchlauf nicht erreichbar — nicht geprüft, nicht als unauffällig zu werten.",
+            en: "The leak check (HIBP) could not be reached this pass — not checked, not to be read as clean.",
+          })}
+        </p>
+      ) : leakCheckStatus === "checking" ? (
+        <p className="hint" data-testid="security-review-leak-check-pending">
+          {t({ de: "Leak-Abgleich läuft noch …", en: "Leak check still running …" })}
+        </p>
+      ) : null}
+
+      {!hasFindings && leakCheckStatus === "complete" ? (
         <p className="ok" data-testid="security-review-empty">
           {t({
             de: "Keine Doppelverwendung und keine bekannten Leaks gefunden.",
             en: "No reused passwords and no known leaks found.",
+          })}
+        </p>
+      ) : null}
+      {!hasFindings && leakCheckStatus !== "complete" ? (
+        <p className="hint" data-testid="security-review-reuse-only-clean">
+          {t({
+            de: "Keine Doppelverwendung gefunden (Leak-Status siehe oben).",
+            en: "No reused passwords found (see leak status above).",
           })}
         </p>
       ) : null}

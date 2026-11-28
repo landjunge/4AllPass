@@ -7,6 +7,7 @@ import { isOnboardingDone, markOnboardingDone } from "../../lib/onboarding.ts";
 import { getTrashRetentionDays, setTrashRetentionDays } from "../../lib/trash-retention.ts";
 import { CLIPBOARD_CLEAR_MS, copySecret, readClipboardText } from "../../lib/clipboard.ts";
 import { mergeDetectedCredential } from "../../lib/detect.ts";
+import { isUnchangedKey } from "../../lib/key-rotation.ts";
 import { useKeyCreateCapture } from "./useKeyCreateCapture.ts";
 import { useApp } from "../../state/app-state.tsx";
 import { useCopy } from "../../state/copy-mode.tsx";
@@ -51,6 +52,11 @@ import {
   type CleanupRun,
 } from "../../utils/vault/cleanup.ts";
 
+const rotationUnchangedNotice: Line = {
+  de: "Identisch mit dem bisherigen Schlüssel. Wurde beim Anbieter wirklich ein neuer erzeugt?",
+  en: "Identical to the previous key. Was a new one actually created at the provider?",
+};
+
 export function useVaultState() {
   const { vault, saveEntries } = useApp();
   const { t } = useCopy();
@@ -74,6 +80,12 @@ export function useVaultState() {
   // blank draft, a different existing entry selected, or the form closed) —
   // see useKeyCreateCapture's sessionKey param.
   const [draftSession, setDraftSession] = useState(0);
+  // Rotation-only notice (issue #279 Punkt 5): set when a capture completed
+  // but the "new" key is byte-for-byte the entry's current one — not an
+  // error, just honesty that nothing actually changed at the provider.
+  // Never blocks the merge below; the draft still updates (to the same
+  // value), and Save still works as usual.
+  const [rotationNotice, setRotationNotice] = useState<Line | null>(null);
 
   useEffect(() => {
     setRevealPassword(false);
@@ -120,6 +132,7 @@ export function useVaultState() {
     setShowMore(false);
     setDraft(createNewDraft(kind));
     setDraftSession((session) => session + 1);
+    setRotationNotice(null);
   }
 
   function startEdit(entry: VaultEntry): void {
@@ -127,6 +140,7 @@ export function useVaultState() {
     setShowMore(draftHasAdvancedFields(entry));
     setDraft(draftFromEntry(entry));
     setDraftSession((session) => session + 1);
+    setRotationNotice(null);
   }
 
   // Closing the form without saving must end any running capture for it too
@@ -134,6 +148,7 @@ export function useVaultState() {
   function cancelEdit(): void {
     setDraft(null);
     setDraftSession((session) => session + 1);
+    setRotationNotice(null);
   }
 
   function alertError(error: unknown): void {
@@ -158,6 +173,7 @@ export function useVaultState() {
     // a clipboard match resolving during the in-flight save must never
     // land on `draft` after it has already been snapshotted into `next`.
     setDraftSession((session) => session + 1);
+    setRotationNotice(null);
     setBusy(true);
     try {
       const next = upsertDraft(allEntries, draft, selectedId);
@@ -420,6 +436,27 @@ export function useVaultState() {
     draft?.account ?? "",
   );
 
+  // "Schlüsselrotation" (issue #279 Punkt 5). Deliberately the exact same
+  // hook as the #278 create flow above — same bounded clipboard capture,
+  // same provider allow-list, same "never writes to the vault itself" rule
+  // — pointed at the *open existing* entry instead of a new draft:
+  // - `entries` excludes the entry being rotated, so a captured key cannot
+  //   be reported as a "duplicate" of the very entry it is renewing.
+  // - `isApiDraft` is true only while an existing API entry is selected,
+  //   never for a brand-new draft (that stays the create panel's job, so
+  //   there is never a question of which flow a captured key belongs to).
+  const keyRotateCapture = useKeyCreateCapture(
+    selectedId ? entries.filter((entry) => entry.id !== selectedId) : entries,
+    !vault,
+    (credential) => {
+      if (selected) setRotationNotice(isUnchangedKey(selected, credential.password) ? rotationUnchangedNotice : null);
+      setDraft((current) => (current && current.kind === "api" ? mergeDetectedCredential(current, credential) : current));
+    },
+    draftSession,
+    draft?.kind === "api" && selectedId !== null,
+    draft?.account ?? "",
+  );
+
   return {
     vault,
     t,
@@ -479,6 +516,8 @@ export function useVaultState() {
     generateDraftPassword,
     copyShareKey,
     keyCreateCapture,
+    keyRotateCapture,
+    rotationNotice,
     pickAllImport: () => importPending && setImportPending(pickAllImport(importPending)),
     pickNoneImport: () => importPending && setImportPending(pickNoneImport(importPending)),
     toggleImportPick: (id: string) =>

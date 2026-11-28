@@ -147,6 +147,8 @@ export function VaultPage(): ReactNode {
                     onRemove={() => vault.selected && void vault.remove(vault.selected)}
                     onGeneratePassword={vault.generateDraftPassword}
                     keyCreateCapture={vault.keyCreateCapture}
+                    keyRotateCapture={vault.keyRotateCapture}
+                    rotationNotice={vault.rotationNotice}
                   />
                 ) : (
                   <VaultDetailEmpty onAdd={vault.startNew} />

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { decideAccess } from "./access.ts";
-import { detectCredential, draftFromDetection, mergeDetectedCredential } from "./detect.ts";
+import { detectCredential, draftFromDetection, mergeDetectedCredential, mergeRotatedCredential } from "./detect.ts";
 import { emptyDraft } from "./entries.ts";
 
 test("ghp_ token is GitHub API, not a grant", () => {
@@ -103,4 +103,24 @@ test("mergeDetectedCredential always overwrites the password with the newly capt
   const current = { ...emptyDraft("api"), password: "an-old-stale-value" };
   const merged = mergeDetectedCredential(current, detected);
   assert.equal(merged.password, "ghp_abcdefghijklmnopqrstuvwxyz012345");
+});
+
+test("mergeRotatedCredential (#279 Punkt 5) only updates the password, never url/capabilities/provider the user customized", () => {
+  const detected = detectCredential("ghp_abcdefghijklmnopqrstuvwxyz012345")!;
+  const current = {
+    ...emptyDraft("api"),
+    title: "My GitHub PAT",
+    provider: "GitHub",
+    url: "https://api.github.com/enterprise",
+    capabilities: "repository.write",
+    account: "work",
+    password: "an-old-stale-value",
+  };
+  const merged = mergeRotatedCredential(current, detected);
+  assert.equal(merged.password, "ghp_abcdefghijklmnopqrstuvwxyz012345");
+  assert.equal(merged.url, "https://api.github.com/enterprise");
+  assert.equal(merged.capabilities, "repository.write");
+  assert.equal(merged.provider, "GitHub");
+  assert.equal(merged.title, "My GitHub PAT");
+  assert.equal(merged.account, "work");
 });

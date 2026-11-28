@@ -126,6 +126,30 @@ blockiert nichts — Löschen verschiebt wie immer nur in den Papierkorb
 (V7.3-Mechanik), bewusst keine zusätzliche Zwangsbestätigung, weil der
 Papierkorb bereits das Sicherheitsnetz ist.
 
+**V4.7 Schlüsselrotation (#279 Punkt 5).** Eine Frage: *Wie tausche ich diesen
+Schlüssel beim Anbieter aus, ohne einen zweiten Eintrag anzulegen?* Bewusst
+klein gehalten, wie das Issue es scoped: **keine** automatisierte
+Rotations-API, **kein** Netzwerkaufruf zu einem Anbieter — nur Begleitung der
+manuellen Erneuerung. Erscheint im Formular (Box 6) nur beim Bearbeiten eines
+**bestehenden** API-Eintrags (nie beim Neuanlegen — das bleibt die eigene
+„Neuen Schlüssel erstellen“-Fläche). Für GitHub, OpenAI oder Stripe: dieselbe
+offizielle Anbieter-Seite öffnen und dieselbe bewusste, auf 90 Sekunden
+begrenzte Zwischenablage-Erfassung wie bei „Neuen Schlüssel erstellen“ —
+derselbe Hook, nur ohne Anbieter-Auswahl (fest auf den Anbieter des
+geöffneten Eintrags). Der erfasste Wert fließt in **dasselbe** offene
+Formular zurück, legt **nie** einen zweiten Eintrag an; erst der vorhandene
+Speichern-Button übernimmt ihn. Weil jedes Speichern ohnehin einen neuen
+Tresor-Stand schreibt, bleibt der alte Schlüssel danach unter „Frühere
+Stände“ (V7.3) abrufbar — keine eigene Historie nötig. Zwei ehrliche
+Hinweise statt stiller Übernahme: ein erfasster Wert, der **identisch** mit
+dem bisherigen ist, oder einer, der schon bei einem **anderen** Eintrag
+gespeichert ist. Für andere Anbieter zeigt die Fläche nur eine
+Text-Anleitung (beim Anbieter anmelden, neuen Schlüssel erzeugen, hier
+einfügen) ohne Automatik. `vaultKeyVersion` (Vault-Schlüssel-Generation aus
+der Recovery-Rotation) bleibt davon unberührt — das ist ein anderer, größerer
+Zähler für das gesamte Tresor-Verschlüsselungsmaterial, nicht für einen
+einzelnen Provider-Key.
+
 Handy: Spalten unter 820 px untereinander.
 
 > Wireframe: [v4-desk.html](screenshots/v4-desk.html) · [v4-desk-empty.html](screenshots/v4-desk-empty.html) · [v4-desk-phone.html](screenshots/v4-desk-phone.html)  

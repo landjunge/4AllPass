@@ -10,6 +10,7 @@ import { passwordStrength } from "../../utils/vault/strength.ts";
 import { formatUsedByInput, hasUsageDependents, parseUsedByInput } from "../../utils/vault/usage.ts";
 import { FieldLabel } from "./FieldLabel.tsx";
 import { VaultKeyCreatePanel } from "./VaultKeyCreatePanel.tsx";
+import { VaultKeyRotatePanel } from "./VaultKeyRotatePanel.tsx";
 import type { KeyCreateCaptureApi } from "../../hooks/vault/useKeyCreateCapture.ts";
 
 export function VaultDetailEmpty({ onAdd }: { onAdd: (kind?: EntryKind) => void }): ReactNode {
@@ -96,6 +97,8 @@ export function VaultEntryForm({
   onRemove,
   onGeneratePassword,
   keyCreateCapture,
+  keyRotateCapture,
+  rotationNotice,
 }: {
   draft: EntryDraft;
   selected: VaultEntry | null;
@@ -124,6 +127,8 @@ export function VaultEntryForm({
   onRemove: () => void;
   onGeneratePassword: () => void;
   keyCreateCapture: KeyCreateCaptureApi;
+  keyRotateCapture: KeyCreateCaptureApi;
+  rotationNotice: Line | null;
 }): ReactNode {
   const { t } = useCopy();
   const strength = passwordStrength(draft.password);
@@ -174,6 +179,14 @@ export function VaultEntryForm({
         ))}
       </div>
       {draft.kind === "api" && !selectedId ? <VaultKeyCreatePanel capture={keyCreateCapture} /> : null}
+      {draft.kind === "api" && selectedId && selected ? (
+        <VaultKeyRotatePanel
+          entry={selected}
+          draftProvider={draft.provider}
+          capture={keyRotateCapture}
+          notice={rotationNotice}
+        />
+      ) : null}
       <p className="form-step">{t({ de: "2. Wie heißt er?", en: "2. What is it called?" })}</p>
       <label>
         <FieldLabel
